@@ -1,0 +1,66 @@
+{
+	"name": "@raven-js/beak",
+	"description": "A lightweight, zero-dependency templating toolkit for modern web development",
+	"version": "0.0.1",
+	"type": "module",
+	"exports": {
+		".": {
+			"import": "./core/index.js",
+			"types": "./types.core.d.ts"
+		},
+		"./caws": {
+			"import": "./caws/index.js",
+			"types": "./types.caws.d.ts"
+		},
+		"./bootstrap": {
+			"import": "./bootstrap/index.js",
+			"types": "./types.bootstrap.d.ts"
+		}
+	},
+	"scripts": {
+		"gen:context": "node ../../scripts/generate-context.mjs",
+		"gen:docs": "node ../../scripts/generate-package-docs.mjs",
+		"predeploy": "npm run gen:context && npm run gen:docs",
+		"test": "npm run test:types && npm run test:code && npm run test:types",
+		"test:code": "node --test --experimental-test-coverage",
+		"test:style": "biome lint --error-on-warnings ./core ./caws",
+		"test:types": "tsc --noEmit --allowJS core/*.js caws/*.js"
+	},
+	"keywords": [
+		"templating",
+		"html",
+		"css",
+		"js",
+		"sql",
+		"markdown",
+		"javascript",
+		"isomorphic",
+		"zero-dependency",
+		"web-development",
+		"raven"
+	],
+	"author": {
+		"name": "Anonyfox",
+		"email": "max@anonyfox.com",
+		"url": "https://anonyfox.com"
+	},
+	"license": "MIT",
+	"homepage": "https://ravenjs.dev",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Anonyfox/raven-js.git"
+	},
+	"bugs": {
+		"url": "https://github.com/Anonyfox/raven-js/issues"
+	},
+	"engines": {
+		"node": ">=22.5.0"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"funding": {
+		"type": "github",
+		"url": "https://github.com/sponsors/Anonyfox"
+	}
+}

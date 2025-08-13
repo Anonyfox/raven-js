@@ -1,0 +1,15 @@
+{
+	"organizeImports": { "enabled": true },
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"complexity": {
+				"noThisInStatic": "off"
+			}
+		}
+	},
+	"files": {
+		"ignore": ["**/_dist/**", "**/dist/**", "**/assets/**", "**/.raven/**"]
+	}
+}
