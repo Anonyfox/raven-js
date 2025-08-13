@@ -1,6 +1,6 @@
 # RavenJS 🦅
 
-_Soar above the JavaScript chaos with zero dependencies and modern elegance._
+_A swift web dev toolkit - soar above the JavaScript chaos with zero dependencies and modern elegance._
 
 <div align="center">
   <img src="media/raven-logo.webp" alt="RavenJS Logo" width="200" height="200">
@@ -14,7 +14,7 @@ _Soar above the JavaScript chaos with zero dependencies and modern elegance._
 
 ## What is RavenJS?
 
-RavenJS is a collection of **zero-dependency, modern JavaScript packages** designed for developers who've had enough of framework fatigue. Each package stands alone, uses only ESNext features, and gets out of your way so you can focus on building.
+RavenJS is a **swift web dev toolkit** - a collection of focused, zero-dependency JavaScript libraries designed for developers who've had enough of framework fatigue. Each library is lightweight, versatile, and can be used independently.
 
 **No dependencies. No transpilation. No bullshit.**
 
@@ -28,13 +28,13 @@ We believe in:
 - **JSDoc-powered types** - Full IntelliSense support without TypeScript compilation overhead.
 - **Self-documenting APIs** - Every package teaches both humans and AI how to use it correctly.
 
-## The Raven Ecosystem
+## The Raven Toolkit
 
-Each package is designed to work independently or together seamlessly:
+Each library is designed to work independently or together seamlessly:
 
 - **🦜 Beak** - Lightweight templating and rendering (HTML, SQL, and more)
 
-_More packages coming soon - being crafted with care._
+_More libraries coming soon - being crafted with care._
 
 ## Quick Start
 
@@ -46,7 +46,7 @@ cd raven-js
 # Install dependencies (for development only)
 npm install
 
-# Explore the packages
+# Explore the libraries
 ls packages/
 ```
 
@@ -68,6 +68,7 @@ ls packages/
 - **Type safety** - Full IntelliSense without TypeScript compilation
 - **AI-friendly** - Self-documenting APIs that work seamlessly with AI tools
 - **Future-proof** - Built for modern environments, not legacy constraints
+- **Versatile toolkit** - Mix and match libraries as needed
 
 ## Perfect For
 
@@ -142,13 +143,15 @@ RavenJS is built by developers, for developers. We welcome contributions that al
 Join the murder (of crows, that is):
 
 - 🌐 [Website](https://ravenjs.dev) _(coming soon)_
-- 📚 [Documentation](https://ravenjs.dev/docs) _(coming soon)_
+- 📚 [Documentation](https://docs.ravenjs.dev)
 - 💬 [Discord](https://discord.gg/ravenjs) _(coming soon)_
 - 🐦 [Twitter](https://twitter.com/ravenjs) _(coming soon)_
 
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
+
+Copyright (c) 2025 Anonyfox e.K.
 
 ---
 

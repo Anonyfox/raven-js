@@ -1,5 +1,5 @@
 import { strict as assert } from "node:assert";
-import { beforeEach, describe, it } from "node:test";
+import { describe, it } from "node:test";
 import { js, script, scriptAsync, scriptDefer } from "./index.js";
 
 describe("Template Tag Functions", () => {

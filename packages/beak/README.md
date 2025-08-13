@@ -8,7 +8,7 @@ _The raven's beak speaks in many tongues - HTML, CSS, SQL, and more. No dependen
 
 ## What is Beak?
 
-Beak is a **zero-dependency templating toolkit** that leverages JavaScript's tagged template literals to provide powerful, flexible templating for modern web development. It's designed for developers who want the expressiveness of JSX without the framework overhead.
+Beak is a **zero-dependency templating library** that leverages JavaScript's tagged template literals to provide powerful, flexible templating for modern web development. It's designed for developers who want the expressiveness of JSX without the framework overhead.
 
 **No dependencies. No transpilation. No bullshit.**
 
@@ -198,11 +198,39 @@ The main templating functions:
 - `md` - Markdown to HTML conversion
 - `sql` - SQL query building
 
+**All Core Exports:**
+
+```javascript
+import {
+  // HTML templating
+  html,
+  safeHtml,
+  // CSS templating
+  css,
+  style,
+  // JavaScript templating
+  js,
+  script,
+  scriptDefer,
+  scriptAsync,
+  // Markdown parsing
+  md,
+  // SQL query building
+  sql,
+} from "@raven-js/beak";
+```
+
 ### Caws (`@raven-js/beak/caws`)
 
 Pre-built components for common use cases:
 
 - `SeoMetatags` - Social media meta tag generation
+
+**All Caws Exports:**
+
+```javascript
+import { SeoMetatags } from "@raven-js/beak/caws";
+```
 
 ### Bootstrap (`@raven-js/beak/bootstrap`)
 
@@ -211,6 +239,27 @@ Ready-to-use Bootstrap 5 components:
 - `Hero`, `Intro`, `FeatureGrid`, `FeatureShowcase`
 - `Testimonials`, `LogoCloud`, `PricingSinglePlan`, `PricingTable`
 - `CTA`, `FAQs`, `CodeExample`
+
+**All Bootstrap Exports:**
+
+```javascript
+import {
+  // Layout components
+  Hero,
+  Intro,
+  FeatureGrid,
+  FeatureShowcase,
+  // Content components
+  Testimonial,
+  LogoCloud,
+  PricingSinglePlan,
+  PricingTable,
+  // Interactive components
+  CTA,
+  FAQ,
+  CodeExample,
+} from "@raven-js/beak/bootstrap";
+```
 
 ## Why Choose Beak?
 
@@ -229,6 +278,7 @@ Ready-to-use Bootstrap 5 components:
 - **Type safety** - Full IntelliSense support via JSDoc
 - **Performance** - Nearly as fast as string concatenation
 - **Flexibility** - Use anywhere: server, client, or both
+- **Versatile toolkit** - Mix and match with other RavenJS libraries
 
 ## Performance
 
@@ -268,9 +318,15 @@ Beak follows the RavenJS philosophy:
 - Self-documenting APIs
 - Comprehensive test coverage
 
+## Documentation
+
+📚 [Full API Documentation](https://docs.ravenjs.dev/beak/)
+
 ## License
 
-MIT License - see [LICENSE](LICENSE.txt) for details.
+MIT License - see [LICENSE](LICENSE) for details.
+
+Copyright (c) 2025 Anonyfox e.K.
 
 ---
 

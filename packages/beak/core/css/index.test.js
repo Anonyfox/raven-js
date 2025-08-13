@@ -2,14 +2,14 @@ import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 import { css, style } from "./index.js";
 
-const a = css`
+const _a = css`
 				.button {
 					color: white;
 					background: #007bff;
 					padding: 10px 15px;
 				}
 			`;
-const b = css`
+const _b = css`
 			.button {
 				color: white;
 				background: #007bff;

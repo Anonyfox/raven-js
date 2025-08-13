@@ -1,15 +1,26 @@
 {
-	"organizeImports": { "enabled": true },
-	"linter": {
-		"enabled": true,
-		"rules": {
-			"recommended": true,
-			"complexity": {
-				"noThisInStatic": "off"
-			}
-		}
-	},
-	"files": {
-		"ignore": ["**/_dist/**", "**/dist/**", "**/assets/**", "**/.raven/**"]
-	}
+  "$schema": "https://biomejs.dev/schemas/2.1.4/schema.json",
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "complexity": {
+        "noThisInStatic": "off"
+      },
+      "suspicious": {
+        "noControlCharactersInRegex": "off"
+      }
+    }
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "includes": [
+      "**",
+      "!**/_dist/**",
+      "!**/dist/**",
+      "!**/assets/**",
+      "!**/.raven/**"
+    ]
+  }
 }

@@ -11,14 +11,14 @@
  * web agencies and seasoned freelancers probably can work with it blindfolded.
  */
 
-export * from "./Hero.js";
-export * from "./Intro.js";
+export * from "./CodeExample.js";
+export * from "./CTA.js";
+export * from "./FAQs.js";
 export * from "./FeatureGrid.js";
 export * from "./FeatureShowcase.js";
-export * from "./Testimonials.js";
+export * from "./Hero.js";
+export * from "./Intro.js";
 export * from "./LogoCloud.js";
 export * from "./PricingSinglePlan.js";
 export * from "./PricingTable.js";
-export * from "./CTA.js";
-export * from "./FAQs.js";
-export * from "./CodeExample.js";
+export * from "./Testimonials.js";

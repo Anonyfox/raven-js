@@ -18,7 +18,7 @@ const sqlEscapeMap = {
  * @returns {string} The escaped string.
  */
 const escapeSql = (str) =>
-	str.replace(/[\0\n\r\x1a'\\]/g, (char) => sqlEscapeMap[char] || char);
+	str.replace(/[\x00\x0a\x0d\x1a'\\]/g, (char) => sqlEscapeMap[char] || char);
 
 /**
  * The main template tag function for creating SQL queries.

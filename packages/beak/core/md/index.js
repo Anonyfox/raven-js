@@ -100,7 +100,7 @@ const parseInline = (text) => {
 		}
 
 		// If no special syntax is found, treat as plain text
-		const nextSpecial = text.slice(current).search(/[\*\[!\`]/);
+		const nextSpecial = text.slice(current).search(/[*[!`]/);
 		const end = nextSpecial === -1 ? text.length : current + nextSpecial;
 		ast.push({ type: NODE_TYPES.TEXT, content: text.slice(current, end) });
 		current = end;
