@@ -53,6 +53,5 @@ execSync(`git tag v${newVersion}`);
 
 console.log(`✅ Version bumped to ${newVersion}`);
 console.log(`✅ Git tag v${newVersion} created`);
-console.log("\nNext steps:");
-console.log("1. git push origin main");
-console.log(`2. git push origin v${newVersion}`);
+execSync("git push origin main", { stdio: "inherit" });
+execSync(`git push origin v${newVersion}`, { stdio: "inherit" });
