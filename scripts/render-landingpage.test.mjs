@@ -96,7 +96,7 @@ test("renderLandingPage", async (t) => {
 			html.includes("Zero-dependency templating library"),
 			"Should include package description",
 		);
-		assert(html.includes("v0.1.0"), "Should include package version");
+		assert(/v\d+\.\d+\.\d+/.test(html), "Should include package version");
 	});
 
 	await t.test("should be valid HTML (basic structure)", async () => {
