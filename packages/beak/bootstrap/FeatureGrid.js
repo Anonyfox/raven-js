@@ -34,7 +34,7 @@ export const FeatureGrid = ({
     padding: 4rem 0;
     ${
 			bgImage
-				? `
+				? css`
       background-color: #000;
       position: relative;
       overflow: hidden;

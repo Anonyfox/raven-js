@@ -1,0 +1,216 @@
+{
+  "scopeName": "source.js.embedded.ravenjs",
+  "injectionSelector": "L:source.js -comment -string -string.template",
+  "patterns": [
+    {
+      "begin": "\\b(css|style)\\s*`",
+      "beginCaptures": {
+        "1": { "name": "entity.name.tagged-template.css.ravenjs" }
+      },
+      "end": "(?<!\\\\)`",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.template.end.js" }
+      },
+      "contentName": "source.css",
+      "patterns": [
+        {
+          "include": "#css-properties"
+        },
+        {
+          "include": "#css-selectors"
+        },
+        {
+          "include": "#css-values"
+        },
+        {
+          "include": "#css-punctuation"
+        },
+        {
+          "include": "#interpolation"
+        }
+      ]
+    },
+    {
+      "begin": "\\b(html|safeHtml)\\s*`",
+      "beginCaptures": {
+        "1": { "name": "entity.name.tagged-template.html.ravenjs" }
+      },
+      "end": "(?<!\\\\)`",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.template.end.js" }
+      },
+      "contentName": "text.html.embedded.ravenjs",
+      "patterns": [
+        {
+          "include": "#interpolation"
+        },
+        {
+          "include": "text.html.basic"
+        }
+      ]
+    },
+    {
+      "begin": "\\b(md)\\s*`",
+      "beginCaptures": {
+        "1": { "name": "entity.name.tagged-template.md.ravenjs" }
+      },
+      "end": "(?<!\\\\)`",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.template.end.js" }
+      },
+      "contentName": "text.markdown.embedded.ravenjs",
+      "patterns": [
+        {
+          "include": "#interpolation"
+        },
+        {
+          "include": "text.html.markdown"
+        }
+      ]
+    },
+    {
+      "begin": "\\b(js|script|scriptDefer|scriptAsync)\\s*`",
+      "beginCaptures": {
+        "1": { "name": "entity.name.tagged-template.js.ravenjs" }
+      },
+      "end": "(?<!\\\\)`",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.template.end.js" }
+      },
+      "contentName": "source.js.embedded.ravenjs",
+      "patterns": [
+        {
+          "include": "#interpolation"
+        },
+        {
+          "include": "source.js"
+        }
+      ]
+    },
+    {
+      "begin": "\\b(sql)\\s*`",
+      "beginCaptures": {
+        "1": { "name": "entity.name.tagged-template.sql.ravenjs" }
+      },
+      "end": "(?<!\\\\)`",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.template.end.js" }
+      },
+      "contentName": "source.sql.embedded.ravenjs",
+      "patterns": [
+        {
+          "include": "#interpolation"
+        },
+        {
+          "include": "source.sql"
+        }
+      ]
+    }
+  ],
+  "repository": {
+    "interpolation": {
+      "patterns": [
+        {
+          "begin": "\\$\\{",
+          "end": "\\}",
+          "beginCaptures": {
+            "0": { "name": "punctuation.section.embedded.begin.js" }
+          },
+          "endCaptures": {
+            "0": { "name": "punctuation.section.embedded.end.js" }
+          },
+          "contentName": "source.js.embedded.expression",
+          "patterns": [
+            {
+              "include": "source.js"
+            }
+          ]
+        }
+      ]
+    },
+    "css-properties": {
+      "patterns": [
+        {
+          "match": "\\b(align-content|align-items|align-self|animation|background|border|bottom|box-shadow|clear|color|content|cursor|display|flex|float|font|grid|height|justify|left|line-height|list-style|margin|max-height|max-width|min-height|min-width|opacity|order|outline|overflow|padding|position|right|text|top|transform|transition|vertical-align|visibility|width|z-index)\\b",
+          "name": "support.type.property-name.css"
+        }
+      ]
+    },
+    "css-selectors": {
+      "patterns": [
+        {
+          "match": "\\.[a-zA-Z][a-zA-Z0-9_-]*",
+          "name": "entity.name.tag.class.css"
+        },
+        {
+          "match": "#[a-zA-Z][a-zA-Z0-9_-]*",
+          "name": "entity.name.tag.id.css"
+        },
+        {
+          "match": "\\b[a-zA-Z][a-zA-Z0-9_-]*\\b",
+          "name": "entity.name.tag.css"
+        }
+      ]
+    },
+    "css-values": {
+      "patterns": [
+        {
+          "match": "\\b(absolute|auto|block|bold|center|fixed|flex|grid|hidden|inherit|initial|inline|italic|left|middle|none|normal|relative|right|static|visible)\\b",
+          "name": "support.constant.property-value.css"
+        },
+        {
+          "match": "\\b(px|em|rem|%|vh|vw|vmin|vmax|deg|rad|turn|s|ms)\\b",
+          "name": "constant.numeric.css"
+        },
+        {
+          "match": "\\b(#[0-9a-fA-F]{3,6})\\b",
+          "name": "constant.color.css"
+        },
+        {
+          "match": "\\b(rgb|rgba|hsl|hsla)\\([^)]*\\)",
+          "name": "support.function.color.css"
+        },
+        {
+          "match": "\\b(url|linear-gradient|radial-gradient|calc|var)\\([^)]*\\)",
+          "name": "support.function.css"
+        },
+        {
+          "match": "\\b\\d+(\\.\\d+)?\\b",
+          "name": "constant.numeric.css"
+        },
+        {
+          "match": "\"[^\"]*\"",
+          "name": "string.quoted.double.css"
+        },
+        {
+          "match": "'[^']*'",
+          "name": "string.quoted.single.css"
+        }
+      ]
+    },
+    "css-punctuation": {
+      "patterns": [
+        {
+          "match": "[:;]",
+          "name": "punctuation.separator.key-value.css"
+        },
+        {
+          "match": "[{}]",
+          "name": "punctuation.section.block.css"
+        },
+        {
+          "match": "[()]",
+          "name": "punctuation.section.parens.css"
+        },
+        {
+          "match": "[\\[\\]]",
+          "name": "punctuation.section.brackets.css"
+        },
+        {
+          "match": "[,.]",
+          "name": "punctuation.separator.css"
+        }
+      ]
+    }
+  }
+}

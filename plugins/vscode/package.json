@@ -1,0 +1,82 @@
+{
+  "name": "ravenjs-vscode",
+  "version": "0.1.0",
+  "description": "VS Code extension for RavenJS tagged template literals - syntax highlighting and IntelliSense for Beak's HTML, CSS, SQL, Markdown, and JavaScript templates",
+  "displayName": "RavenJS",
+  "publisher": "raven-js",
+  "license": "MIT",
+  "author": {
+    "name": "Anonyfox",
+    "email": "max@anonyfox.com",
+    "url": "https://anonyfox.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Anonyfox/raven-js.git",
+    "directory": "plugins/vscode-extension"
+  },
+  "homepage": "https://ravenjs.dev",
+  "bugs": {
+    "url": "https://github.com/Anonyfox/raven-js/issues"
+  },
+  "keywords": [
+    "ravenjs",
+    "raven-js",
+    "vscode",
+    "extension",
+    "syntax-highlighting",
+    "tagged-templates",
+    "beak",
+    "html",
+    "css",
+    "sql",
+    "markdown",
+    "javascript"
+  ],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:javascript",
+    "onLanguage:typescript"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "grammars": [
+      {
+        "scopeName": "source.js.embedded.ravenjs",
+        "path": "./syntaxes/ravenjs.tmLanguage.json",
+        "injectTo": [
+          "source.js",
+          "source.ts",
+          "source.jsx",
+          "source.tsx"
+        ],
+        "embeddedLanguages": {
+          "text.html": "html",
+          "source.css": "css",
+          "source.sql": "sql",
+          "text.html.markdown": "markdown",
+          "source.js": "javascript"
+        }
+      }
+    ],
+    "snippets": [
+      {
+        "language": "javascript",
+        "path": "./snippets/ravenjs.code-snippets"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "npx vsce@2.15.0 package",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+}

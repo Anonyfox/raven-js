@@ -1,0 +1,47 @@
+{
+  "RavenJS HTML Template": {
+    "prefix": "raven-html",
+    "body": ["html`", "\t$1", "`"],
+    "description": "Create a RavenJS HTML template"
+  },
+  "RavenJS Safe HTML Template": {
+    "prefix": "raven-safe-html",
+    "body": ["safeHtml`", "\t$1", "`"],
+    "description": "Create a RavenJS safe HTML template"
+  },
+  "RavenJS CSS Template": {
+    "prefix": "raven-css",
+    "body": ["css`", "\t$1", "`"],
+    "description": "Create a RavenJS CSS template"
+  },
+  "RavenJS Style Template": {
+    "prefix": "raven-style",
+    "body": ["style`", "\t$1", "`"],
+    "description": "Create a RavenJS style template"
+  },
+  "RavenJS Markdown Template": {
+    "prefix": "raven-md",
+    "body": ["md`", "\t$1", "`"],
+    "description": "Create a RavenJS Markdown template"
+  },
+  "RavenJS JavaScript Template": {
+    "prefix": "raven-js",
+    "body": ["js`", "\t$1", "`"],
+    "description": "Create a RavenJS JavaScript template"
+  },
+  "RavenJS Script Template": {
+    "prefix": "raven-script",
+    "body": ["script`", "\t$1", "`"],
+    "description": "Create a RavenJS script template"
+  },
+  "RavenJS SQL Template": {
+    "prefix": "raven-sql",
+    "body": ["sql`", "\t$1", "`"],
+    "description": "Create a RavenJS SQL template"
+  },
+  "RavenJS Template with Interpolation": {
+    "prefix": "raven-interp",
+    "body": ["${1:tagName}\\`", "\t$2", "\t\\${$3}", "\t$4", "\\`"],
+    "description": "Create a RavenJS template with interpolation"
+  }
+}

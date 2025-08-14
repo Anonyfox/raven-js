@@ -1,10 +1,16 @@
 {
-	"compilerOptions": {
-		"checkJs": true,
-		"module": "NodeNext",
-		"moduleResolution": "NodeNext",
-		"target": "ESNext",
-		"noImplicitAny": true
-	},
-	"exclude": ["docs/**", "node_modules/**", "**/dist/**", "**/_dist/**"]
+  "compilerOptions": {
+    "checkJs": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ESNext",
+    "noImplicitAny": true
+  },
+  "exclude": [
+    "docs/**",
+    "node_modules/**",
+    "**/dist/**",
+    "**/_dist/**",
+    "plugins/vscode/**"
+  ]
 }

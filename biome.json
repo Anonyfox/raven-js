@@ -1,20 +1,20 @@
 {
-	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-	"assist": { "actions": { "source": { "organizeImports": "on" } } },
-	"linter": {
-		"enabled": true,
-		"rules": {
-			"recommended": true,
-			"complexity": {
-				"noThisInStatic": "off"
-			},
-			"suspicious": {
-				"noControlCharactersInRegex": "off"
-			}
-		}
-	},
-	"files": {
-		"ignoreUnknown": false,
-		"includes": ["**", "!docs"]
-	}
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "complexity": {
+        "noThisInStatic": "off"
+      },
+      "suspicious": {
+        "noControlCharactersInRegex": "off"
+      }
+    }
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "includes": ["**", "!docs", "!plugins/vscode"]
+  }
 }
