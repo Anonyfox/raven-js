@@ -17,6 +17,10 @@ execSync("npm run predeploy --workspaces --if-present", { stdio: "inherit" });
 console.log("📄 Generating context files...");
 execSync("npm run gen:context --workspaces --if-present", { stdio: "inherit" });
 
+// Generate bundles for all packages
+console.log("📦 Generating bundles...");
+execSync("npm run build:bundles", { stdio: "inherit" });
+
 // Aggregate context files
 console.log("🔗 Aggregating context files...");
 const files = execSync("find docs -name '*.context.json'", { encoding: "utf8" })

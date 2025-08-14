@@ -41,6 +41,7 @@ const PackageCard = ({ pkg, emoji, name, description, version }) => html`
     <div class="package-links">
       <span class="version">v${version}</span>
       <a href="./${pkg}.context.json" class="context-link">📄 Context for LLMs</a>
+      <a href="./bundles/usage.html" class="bundle-link">📦 Bundles</a>
     </div>
   </div>
 `;
@@ -52,6 +53,9 @@ const PackageCard = ({ pkg, emoji, name, description, version }) => html`
 const PageHeader = () => html`
   <h1>🦅 RavenJS Documentation</h1>
   <p>A swift web dev toolkit - zero-dependency, modern JavaScript libraries for developers who've had enough of framework fatigue.</p>
+  <div class="bundles-info">
+    <p><strong>📦 Pre-built Bundles:</strong> <a href="./bundles/usage.html">Download minified bundles</a> for direct use in browsers and traditional web projects.</p>
+  </div>
 `;
 
 /**
@@ -131,6 +135,34 @@ const PageStyles = () => css`
   .context-link:hover {
     background: #e9ecef;
     color: #495057;
+  }
+  .bundle-link {
+    font-size: 0.8rem;
+    color: #6c757d;
+    text-decoration: none;
+    padding: 0.2rem 0.5rem;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background: #f8f9fa;
+  }
+  .bundle-link:hover {
+    background: #e9ecef;
+    color: #495057;
+  }
+  .bundles-info {
+    background: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+  }
+  .bundles-info a {
+    color: #1976d2;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .bundles-info a:hover {
+    text-decoration: underline;
   }
 `;
 

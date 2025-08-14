@@ -1,9 +1,10 @@
 {
-	"compilerOptions": {
-		"checkJs": true,
-		"module": "NodeNext",
-		"moduleResolution": "NodeNext",
-		"target": "ESNext",
-		"noImplicitAny": true
-	}
+  "compilerOptions": {
+    "checkJs": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ESNext",
+    "noImplicitAny": true
+  },
+  "exclude": ["docs/**", "node_modules/**", "**/dist/**", "**/_dist/**"]
 }

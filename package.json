@@ -16,6 +16,7 @@
     "test": "npm test --workspaces --if-present && node --test scripts/*.test.mjs",
     "lint": "npm run test:style --workspaces --if-present",
     "gen:all": "node scripts/generate-all.mjs",
+    "build:bundles": "node scripts/build-bundles.mjs",
     "major": "node scripts/version.mjs major",
     "minor": "node scripts/version.mjs minor",
     "patch": "node scripts/version.mjs patch",
@@ -37,6 +38,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.1.4",
     "@types/node": "^22.5.0",
+    "esbuild": "^0.25.9",
     "typedoc": "^0.26.5",
     "typescript": "^5.5.3"
   },
