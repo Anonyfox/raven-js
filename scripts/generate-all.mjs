@@ -1,6 +1,7 @@
 import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { renderLandingPage } from "./render-landingpage.mjs";
+import { getPublicPackages, logPackages } from "./utils/package-filter.mjs";
 
 console.log("🦅 Generating complete RavenJS documentation...");
 
@@ -9,11 +10,15 @@ console.log("📁 Cleaning docs directory...");
 execSync("rm -rf docs", { stdio: "inherit" });
 execSync("mkdir -p docs", { stdio: "inherit" });
 
-// Generate TypeDoc documentation for all packages
+// Get public packages only
+const publicPackages = await getPublicPackages();
+logPackages(publicPackages, "Public packages for documentation");
+
+// Generate TypeDoc documentation for public packages only
 console.log("📚 Generating TypeDoc documentation...");
 execSync("npm run predeploy --workspaces --if-present", { stdio: "inherit" });
 
-// Generate context files for all packages
+// Generate context files for public packages only
 console.log("📄 Generating context files...");
 execSync("npm run gen:context --workspaces --if-present", { stdio: "inherit" });
 

@@ -1,0 +1,53 @@
+{
+  "name": "@raven-js/nest",
+  "version": "0.1.0",
+  "description": "Raven's development nest - CLI tools and build automation for the RavenJS ecosystem",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "bin": {
+    "nest": "bin/nest.js"
+  },
+  "scripts": {
+    "test": "node --test lib/**/*.test.js",
+    "test:code": "node --test lib/**/*.test.js",
+    "test:style": "biome check .",
+    "gen:context": "node ../../scripts/generate-context.mjs",
+    "gen:docs": "node ../../scripts/generate-package-docs.mjs",
+    "nest:validate": "node bin/nest.js validate",
+    "lint": "biome check .",
+    "format": "biome format --write ."
+  },
+  "keywords": [
+    "raven",
+    "cli",
+    "build",
+    "automation",
+    "development",
+    "tooling"
+  ],
+  "author": {
+    "name": "Anonyfox",
+    "email": "max@anonyfox.com",
+    "url": "https://anonyfox.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Anonyfox/raven-js.git",
+    "directory": "packages/nest"
+  },
+  "bugs": {
+    "url": "https://github.com/Anonyfox/raven-js/issues"
+  },
+  "homepage": "https://ravenjs.dev",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "esbuild": "^0.25.9"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.8.0"
+  }
+}

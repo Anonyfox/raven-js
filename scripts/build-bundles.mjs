@@ -5,6 +5,7 @@ import { statSync } from "fs";
 import { mkdir, readdir, readFile, writeFile } from "fs/promises";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+import { getPublicPackages, logPackages } from "./utils/package-filter.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -189,25 +190,20 @@ async function main() {
 		// Ensure bundles directory exists
 		await mkdir(bundlesDir, { recursive: true });
 
-		// Get all packages
-		const packages = await readdir(packagesDir);
-		const validPackages = packages.filter((pkg) => {
-			try {
-				const stat = statSync(join(packagesDir, pkg));
-				return stat.isDirectory();
-			} catch {
-				return false;
-			}
-		});
+		// Get public packages only
+		const publicPackages = await getPublicPackages();
+		logPackages(publicPackages, "Building bundles for");
+
+		const validPackages = publicPackages.map((pkg) => pkg.name.split("/")[1]); // Extract package name from @raven-js/name
 
 		console.log(
-			`Found ${validPackages.length} packages: ${validPackages.join(", ")}`,
+			`Found ${validPackages.length} public packages: ${validPackages.join(", ")}`,
 		);
 
 		// Build bundles for each package
 		const results = await Promise.all(
-			validPackages.map((pkg) =>
-				buildPackageBundles(pkg, join(packagesDir, pkg)),
+			publicPackages.map((pkg) =>
+				buildPackageBundles(pkg.name.split("/")[1], pkg.path),
 			),
 		);
 

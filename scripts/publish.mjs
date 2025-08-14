@@ -1,4 +1,9 @@
 import { execSync } from "node:child_process";
+import {
+	getPackagePaths,
+	getPublicPackages,
+	logPackages,
+} from "./utils/package-filter.mjs";
 
 // Check if we're on a version tag
 const currentTag = execSync(
@@ -26,11 +31,14 @@ execSync("npm run lint", { stdio: "inherit" });
 console.log("Generating complete documentation...");
 execSync("npm run gen:all", { stdio: "inherit" });
 
-// Publish all packages
-const packages = ["packages/beak"];
-for (const pkgPath of packages) {
-	console.log(`Publishing ${pkgPath}...`);
-	execSync(`cd ${pkgPath} && npm publish --access public`, {
+// Get public packages only
+const publicPackages = await getPublicPackages();
+logPackages(publicPackages, "Publishing packages");
+
+// Publish public packages
+for (const pkg of publicPackages) {
+	console.log(`Publishing ${pkg.name}...`);
+	execSync(`cd ${pkg.path} && npm publish --access public`, {
 		stdio: "inherit",
 	});
 }

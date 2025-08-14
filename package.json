@@ -14,13 +14,23 @@
   "license": "MIT",
   "scripts": {
     "test": "npm test --workspaces --if-present && node --test scripts/*.test.mjs",
+    "test:code": "echo 'test:code script placeholder'",
+    "test:style": "echo 'test:style script placeholder'",
+    "gen:context": "echo 'gen:context script placeholder'",
+    "gen:docs": "echo 'gen:docs script placeholder'",
     "lint": "npm run test:style --workspaces --if-present",
     "gen:all": "node scripts/generate-all.mjs",
     "build:bundles": "node scripts/build-bundles.mjs",
     "major": "node scripts/version.mjs major",
     "minor": "node scripts/version.mjs minor",
     "patch": "node scripts/version.mjs patch",
-    "publish": "node scripts/publish.mjs"
+    "publish": "node scripts/publish.mjs",
+    "nest": "node packages/nest/bin/nest.js",
+    "nest:validate": "node packages/nest/bin/nest.js validate",
+    "nest:build": "node packages/nest/bin/nest.js build",
+    "nest:publish": "node packages/nest/bin/nest.js publish",
+    "nest:docs": "node packages/nest/bin/nest.js docs",
+    "nest:version": "node packages/nest/bin/nest.js version"
   },
   "author": {
     "name": "Anonyfox",
@@ -43,7 +53,8 @@
     "typescript": "^5.5.3"
   },
   "workspaces": [
-    "packages/beak"
+    "packages/beak",
+    "packages/nest"
   ],
   "engines": {
     "npm": ">=10.8.2",

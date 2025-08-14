@@ -30,6 +30,7 @@
   "scripts": {
     "gen:context": "node ../../scripts/generate-context.mjs",
     "gen:docs": "node ../../scripts/generate-package-docs.mjs",
+    "nest:validate": "node ../nest/bin/nest.js validate",
     "prepublishOnly": "npm run test && npm run test:style && npm run gen:docs",
     "test": "npm run test:types && npm run test:code && npm run test:types",
     "test:code": "node --test --experimental-test-coverage",
