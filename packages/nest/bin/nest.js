@@ -521,12 +521,18 @@ async function handleVersionCommand(args, _options) {
 		console.log(`📋 Current version: ${currentVersion}`);
 
 		// Calculate new version
-		const newVersion = bumpVersion(currentVersion, bumpType);
+		const newVersion = bumpVersion(
+			currentVersion,
+			/** @type {"major" | "minor" | "patch"} */ (bumpType),
+		);
 		console.log(`🆕 New version: ${newVersion}`);
 
 		// Update all package versions
 		console.log("📝 Updating package versions...");
-		const result = updatePackageVersions(workspaceRoot, newVersion);
+		const result =
+			/** @type {{updated: string[], skipped: string[], errors: string[]}} */ (
+				updatePackageVersions(workspaceRoot, newVersion)
+			);
 
 		// Display results
 		if (result.updated.length > 0) {
