@@ -58,7 +58,19 @@ function PageHeader() {
 		<h1>🦅 RavenJS Documentation</h1>
 		<p>A swift web dev toolkit - zero-dependency, modern JavaScript libraries for developers who've had enough of framework fatigue.</p>
 		<div class="bundles-info">
-			<p><strong>📦 Pre-built Bundles:</strong> <a href="./bundles/usage.html">Download minified bundles</a> for direct use in browsers and traditional web projects.</p>
+			<h3>📦 Pre-built Bundles</h3>
+			<p>Each package provides pre-built, minified bundles for easy integration:</p>
+			<ul>
+				<li><strong>CJS:</strong> CommonJS bundle for traditional script tags and Node.js</li>
+				<li><strong>CJS (min):</strong> Minified CommonJS bundle for production</li>
+				<li><strong>ESM:</strong> ES Module bundle for modern browsers</li>
+				<li><strong>ESM (min):</strong> Minified ES Module bundle for production</li>
+			</ul>
+			<p><strong>Usage:</strong> Click the bundle links below each package to download, or use directly in your HTML:</p>
+			<pre><code>&lt;script src="./package-name.bundle.cjs"&gt;&lt;/script&gt;
+&lt;script type="module"&gt;
+  import { Component } from './package-name.bundle.esm.js';
+&lt;/script&gt;</code></pre>
 		</div>
 	`;
 }
@@ -166,16 +178,31 @@ function PageStyles() {
 			background: #e3f2fd;
 			border: 1px solid #bbdefb;
 			border-radius: 8px;
-			padding: 1rem;
-			margin: 1rem 0;
+			padding: 1.5rem;
+			margin: 1.5rem 0;
 		}
-		.bundles-info a {
+		.bundles-info h3 {
+			margin-top: 0;
 			color: #1976d2;
-			text-decoration: none;
-			font-weight: 500;
 		}
-		.bundles-info a:hover {
-			text-decoration: underline;
+		.bundles-info ul {
+			margin: 0.5rem 0;
+			padding-left: 1.5rem;
+		}
+		.bundles-info li {
+			margin: 0.25rem 0;
+		}
+		.bundles-info pre {
+			background: #f8f9fa;
+			border: 1px solid #e9ecef;
+			border-radius: 4px;
+			padding: 1rem;
+			overflow-x: auto;
+			margin: 0.5rem 0;
+		}
+		.bundles-info code {
+			font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+			font-size: 0.9rem;
 		}
 	`;
 }

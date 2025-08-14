@@ -98,8 +98,6 @@ describe("Package Validation", () => {
 					test: "echo test",
 					"test:code": "node --test",
 					"test:style": "biome check",
-					"gen:context": "node script.js",
-					"gen:docs": "typedoc",
 				},
 			});
 
@@ -360,7 +358,7 @@ describe("Package Validation", () => {
 				license: "MIT",
 				scripts: {
 					test: "echo test",
-					// Missing test:code, test:style, gen:context, gen:docs
+					// Missing test:code, test:style
 				},
 			});
 
@@ -370,7 +368,7 @@ describe("Package Validation", () => {
 			const result = validatePackage(tempDir);
 
 			assert.strictEqual(result.valid, false);
-			assert.strictEqual(result.errors.length, 4);
+			assert.strictEqual(result.errors.length, 2);
 			assert.strictEqual(
 				result.errors.some((e) => e.code === "MISSING_SCRIPT"),
 				true,
@@ -397,8 +395,6 @@ describe("Package Validation", () => {
 					test: "echo test",
 					"test:code": "",
 					"test:style": "biome check",
-					"gen:context": "node script.js",
-					"gen:docs": "typedoc",
 				},
 			});
 
@@ -554,8 +550,6 @@ describe("Workspace Functions", () => {
 					test: "echo test",
 					"test:code": "node --test",
 					"test:style": "biome check",
-					"gen:context": "node script.js",
-					"gen:docs": "typedoc",
 				},
 			});
 			createLicenseFile(validPkgDir);

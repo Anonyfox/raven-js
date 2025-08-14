@@ -44,13 +44,7 @@ export function validateScripts(folder) {
 		return errors;
 	}
 
-	const requiredScripts = [
-		"test",
-		"test:code",
-		"test:style",
-		"gen:context",
-		"gen:docs",
-	];
+	const requiredScripts = ["test", "test:code", "test:style"];
 
 	for (const scriptName of requiredScripts) {
 		const scriptValue = /** @type {Record<string, string>} */ (

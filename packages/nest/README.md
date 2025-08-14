@@ -71,7 +71,7 @@ nest check packages/nest
 - Author information (required fields)
 - License field and LICENSE file presence
 - Package structure (README.md, main entry point)
-- Required scripts (test, test:code, test:style, gen:context, gen:docs)
+- Required scripts (test, test:code, test:style)
 
 **Output:**
 
