@@ -35,7 +35,7 @@ export async function getPackages(root = process.cwd()) {
 						private: packageJson.private || false,
 						packageJson,
 					});
-				} catch (error) {
+				} catch {
 					// Skip packages without valid package.json
 					console.warn(`⚠️  Skipping ${entry.name}: invalid package.json`);
 				}

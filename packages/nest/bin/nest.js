@@ -6,11 +6,58 @@
  * @license MIT
  */
 
-import { readFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { Folder, listPackages, validatePackage } from "../lib/index.js";
+
+/**
+ * Find the workspace root by looking for a package.json with workspaces
+ * @param {string} startPath - Path to start searching from
+ * @returns {string} Path to workspace root
+ */
+function findWorkspaceRoot(startPath) {
+	let currentPath = startPath;
+
+	while (currentPath !== dirname(currentPath)) {
+		const packageJsonPath = join(currentPath, "package.json");
+		if (existsSync(packageJsonPath)) {
+			try {
+				const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+				if (packageJson.workspaces && Array.isArray(packageJson.workspaces)) {
+					return currentPath;
+				}
+			} catch {
+				// Continue searching if package.json is invalid
+			}
+		}
+		currentPath = dirname(currentPath);
+	}
+
+	// If no workspace found, return the original path
+	return startPath;
+}
+
+import {
+	copyFavicon,
+	generateAllBundles,
+	generateContextJson,
+	generateLandingPage,
+	generateTypeDoc,
+	getDocsPath,
+} from "../lib/docs/index.js";
+import {
+	Folder,
+	listPackages,
+	listPublicPackages,
+	validatePackage,
+} from "../lib/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -35,6 +82,7 @@ Commands:
   build     Build packages with esbuild
   publish   Publish packages to npm
   docs      Generate documentation
+  build-docs Build documentation for packages
   version   Manage package versions
 
 Options:
@@ -48,6 +96,8 @@ Examples:
   nest build
   nest publish
   nest docs
+  nest build-docs                  # Build documentation for all packages
+  nest build-docs packages/beak    # Build documentation for specific package
   nest version --bump patch
 
 For more information, visit: https://ravenjs.dev
@@ -108,6 +158,9 @@ async function main() {
 			break;
 		case "docs":
 			await handleDocsCommand(positionals.slice(1), values);
+			break;
+		case "build-docs":
+			await handleBuildDocsCommand(positionals.slice(1), values);
 			break;
 		case "version":
 			await handleVersionCommand(positionals.slice(1), values);
@@ -214,6 +267,215 @@ async function handlePublishCommand(_args, _options) {
 async function handleDocsCommand(_args, _options) {
 	console.log("🦅 Docs command not yet implemented");
 	console.log("This will handle generating documentation");
+}
+
+/**
+ * Handle build-docs command
+ * @param {string[]} args - Command arguments
+ * @param {Object} _options - Command options
+ */
+async function handleBuildDocsCommand(args, _options) {
+	const [targetPath = "."] = args;
+	const resolvedPath =
+		targetPath === "." ? process.cwd() : join(process.cwd(), targetPath);
+
+	console.log(`🦅 Building documentation: ${targetPath}`);
+
+	try {
+		// Get the docs folder path
+		const docsPath = getDocsPath(resolvedPath);
+		console.log(`📁 Docs folder: ${docsPath}`);
+
+		// Create a Folder instance for the workspace
+		const workspaceFolder = new Folder(resolvedPath);
+
+		// Check if this is a workspace or single package
+		const workspacePackages = listPublicPackages(workspaceFolder);
+
+		if (workspacePackages) {
+			// This is a workspace - build docs for all packages
+			console.log("📦 Detected workspace - building docs for all packages...");
+
+			// Always clean and recreate the docs folder when building from workspace root
+			console.log("🧹 Cleaning docs folder...");
+			if (existsSync(docsPath)) {
+				rmSync(docsPath, { recursive: true, force: true });
+			}
+			mkdirSync(docsPath, { recursive: true });
+
+			// Build docs for each package
+			for (const packagePath of workspacePackages) {
+				const packageName = packagePath.split("/").pop();
+				if (packageName) {
+					console.log(`\n📦 Building docs for ${packageName}...`);
+					await buildPackageDocs(packageName, workspaceFolder, docsPath, true);
+				}
+			}
+
+			// Copy favicon to root docs directory
+			console.log("\n🖼️  Copying favicon...");
+			copyFavicon(docsPath, resolvedPath);
+
+			// Generate landing page
+			console.log("\n📄 Generating landing page...");
+			const packageNames = workspacePackages
+				.map((p) => p.split("/").pop())
+				.filter((p) => p !== undefined);
+			const landingPageHtml = generateLandingPage(
+				packageNames,
+				workspaceFolder,
+			);
+			writeFileSync(join(docsPath, "index.html"), landingPageHtml);
+
+			console.log("\n✅ Workspace documentation built successfully");
+		} else {
+			// This is a single package - build docs for just this package
+			console.log("📦 Detected single package - building docs...");
+
+			// Get package name from current directory
+			const packageName = resolvedPath.split("/").pop();
+			if (!packageName) {
+				throw new Error("Could not determine package name from path");
+			}
+
+			// Ensure docs folder exists (don't delete existing content for single package mode)
+			if (!existsSync(docsPath)) {
+				console.log("📁 Creating docs folder...");
+				mkdirSync(docsPath, { recursive: true });
+			}
+
+			await buildPackageDocs(packageName, workspaceFolder, docsPath, false);
+
+			// Copy favicon to package docs directory
+			console.log("\n🖼️  Copying favicon...");
+			// In single package mode, we need to find the workspace root
+			const workspaceRoot = findWorkspaceRoot(resolvedPath);
+			copyFavicon(docsPath, workspaceRoot);
+
+			console.log("\n✅ Package documentation built successfully");
+		}
+	} catch (error) {
+		console.error(
+			"❌ Error building documentation:",
+			error instanceof Error ? error.message : String(error),
+		);
+		process.exit(1);
+	}
+}
+
+/**
+ * Build documentation for a single package
+ * @param {string} packageName - Name of the package
+ * @param {import('../lib/folder.js').Folder} workspaceFolder - Workspace folder instance
+ * @param {string} docsPath - Path to the docs folder
+ * @param {boolean} isWorkspace - Whether this is being called from workspace mode
+ */
+async function buildPackageDocs(
+	packageName,
+	workspaceFolder,
+	docsPath,
+	isWorkspace = true,
+) {
+	const packageFolder = isWorkspace
+		? new Folder(
+				join(
+					/** @type {string} */ (workspaceFolder.rootPath),
+					"packages",
+					packageName,
+				),
+			)
+		: new Folder(workspaceFolder.rootPath || process.cwd());
+
+	// Generate context file
+	console.log(`  📄 Generating context for ${packageName}...`);
+	const contextJson = generateContextJson(packageFolder);
+	if (contextJson) {
+		writeFileSync(
+			join(docsPath, `${packageName}.context.json`),
+			/** @type {string} */ (contextJson),
+		);
+		console.log(`  ✅ Context file generated: ${packageName}.context.json`);
+	} else {
+		console.log(`  ⚠️  Could not generate context for ${packageName}`);
+	}
+
+	// Generate bundles
+	console.log(`  📦 Generating bundles for ${packageName}...`);
+	const bundles = await generateAllBundles(packageFolder, packageName);
+	if (bundles) {
+		// Write bundle files directly to docs folder with new naming pattern
+		if (bundles.cjs) {
+			writeFileSync(
+				join(docsPath, `${packageName}.bundle.cjs`),
+				bundles.cjs.code,
+			);
+			if (bundles.cjs.map) {
+				writeFileSync(
+					join(docsPath, `${packageName}.bundle.cjs.map`),
+					bundles.cjs.map,
+				);
+			}
+		}
+		if (bundles.cjsMin) {
+			writeFileSync(
+				join(docsPath, `${packageName}.bundle.cjs.min.js`),
+				bundles.cjsMin.code,
+			);
+			if (bundles.cjsMin.map) {
+				writeFileSync(
+					join(docsPath, `${packageName}.bundle.cjs.min.js.map`),
+					bundles.cjsMin.map,
+				);
+			}
+		}
+		if (bundles.esm) {
+			writeFileSync(
+				join(docsPath, `${packageName}.bundle.esm.js`),
+				bundles.esm.code,
+			);
+			if (bundles.esm.map) {
+				writeFileSync(
+					join(docsPath, `${packageName}.bundle.esm.js.map`),
+					bundles.esm.map,
+				);
+			}
+		}
+		if (bundles.esmMin) {
+			writeFileSync(
+				join(docsPath, `${packageName}.bundle.esm.min.js`),
+				bundles.esmMin.code,
+			);
+			if (bundles.esmMin.map) {
+				writeFileSync(
+					join(docsPath, `${packageName}.bundle.esm.min.js.map`),
+					bundles.esmMin.map,
+				);
+			}
+		}
+
+		console.log(`  ✅ Bundles generated for ${packageName}`);
+	} else {
+		console.log(`  ⚠️  Could not generate bundles for ${packageName}`);
+	}
+
+	// Generate TypeDoc documentation
+	console.log(`  📚 Generating TypeDoc documentation for ${packageName}...`);
+	const packageDocsPath = join(docsPath, packageName);
+	const typeDocSuccess = await generateTypeDoc(packageFolder, packageDocsPath);
+	if (typeDocSuccess) {
+		console.log(`  ✅ TypeDoc documentation generated: ${packageName}/`);
+	} else {
+		console.log(
+			`  ⚠️  Could not generate TypeDoc documentation for ${packageName}`,
+		);
+	}
+
+	// Copy favicon to package docs directory
+	console.log(`  🖼️  Copying favicon for ${packageName}...`);
+	const workspaceRoot = isWorkspace
+		? /** @type {string} */ (workspaceFolder.rootPath)
+		: workspaceFolder.rootPath || process.cwd();
+	copyFavicon(packageDocsPath, workspaceRoot);
 }
 
 /**

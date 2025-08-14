@@ -81,5 +81,38 @@
  * @property {PackageInfo[]} packages - All packages in workspace
  */
 
+/**
+ * @typedef {Object} ContextObject
+ * @property {string} name - Package name
+ * @property {string} version - Package version
+ * @property {Object|string|undefined} exports - Package exports or main entry point
+ * @property {string} readme - README.md content
+ */
+
+/**
+ * @typedef {Object} TypeDocConfig
+ * @property {string[]} entryPoints - Array of entry point paths
+ * @property {string} out - Output directory path
+ * @property {boolean} skipErrorChecking - Skip TypeScript error checking
+ * @property {string} customFooterHtml - Custom footer HTML
+ * @property {string} name - Package name for TypeDoc
+ * @property {string} tsconfig - TypeScript config path
+ */
+
+/**
+ * @typedef {Object} BundleContent
+ * @property {string} code - Bundle code content
+ * @property {string} map - Source map content
+ */
+
+/**
+ * @typedef {Object} BundleResult
+ * @property {string} packageName - Name of the package
+ * @property {BundleContent|null} cjs - CommonJS bundle content
+ * @property {BundleContent|null} cjsMin - CommonJS bundle content (minified)
+ * @property {BundleContent|null} esm - ESM bundle content (development)
+ * @property {BundleContent|null} esmMin - ESM bundle content (production)
+ */
+
 // Export an empty object to make this a module
 export {};

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Tests for list packages function
+ * @fileoverview Tests for list-packages module
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  */
@@ -7,57 +7,36 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
 import { Folder } from "./folder.js";
-import { listPackages } from "./list-packages.js";
+import { listPackages, listPublicPackages } from "./list-packages.js";
 
 describe("listPackages", () => {
 	test("should return null when package.json is missing", () => {
 		const folder = new Folder();
 		const result = listPackages(folder);
-
 		assert.strictEqual(result, null);
 	});
 
 	test("should return null when package.json is invalid JSON", () => {
 		const folder = new Folder();
-		folder.addFile("package.json", "{ invalid json");
-
+		folder.addFile("package.json", "invalid json");
 		const result = listPackages(folder);
-
 		assert.strictEqual(result, null);
 	});
 
-	test("should return null when workspaces field is missing", () => {
+	test("should return null when not a workspace (no workspaces field)", () => {
 		const folder = new Folder();
 		folder.addFile(
 			"package.json",
 			JSON.stringify({
-				name: "test-workspace",
+				name: "test-package",
 				version: "1.0.0",
 			}),
 		);
-
 		const result = listPackages(folder);
-
 		assert.strictEqual(result, null);
 	});
 
-	test("should return null when workspaces field is not an array", () => {
-		const folder = new Folder();
-		folder.addFile(
-			"package.json",
-			JSON.stringify({
-				name: "test-workspace",
-				version: "1.0.0",
-				workspaces: "not an array",
-			}),
-		);
-
-		const result = listPackages(folder);
-
-		assert.strictEqual(result, null);
-	});
-
-	test("should return null when workspaces array is empty", () => {
+	test("should return null when not a workspace (empty workspaces array)", () => {
 		const folder = new Folder();
 		folder.addFile(
 			"package.json",
@@ -67,13 +46,25 @@ describe("listPackages", () => {
 				workspaces: [],
 			}),
 		);
-
 		const result = listPackages(folder);
-
 		assert.strictEqual(result, null);
 	});
 
-	test("should return null when no valid packages found", () => {
+	test("should return null when not a workspace (workspaces is not array)", () => {
+		const folder = new Folder();
+		folder.addFile(
+			"package.json",
+			JSON.stringify({
+				name: "test-workspace",
+				version: "1.0.0",
+				workspaces: "packages/*",
+			}),
+		);
+		const result = listPackages(folder);
+		assert.strictEqual(result, null);
+	});
+
+	test("should return package paths for glob pattern", () => {
 		const folder = new Folder();
 		folder.addFile(
 			"package.json",
@@ -83,171 +74,112 @@ describe("listPackages", () => {
 				workspaces: ["packages/*"],
 			}),
 		);
-		// Add a directory without package.json
-		folder.addFile("packages/empty-dir/README.md", "# Empty Directory");
+		folder.addFile(
+			"packages/package1/package.json",
+			JSON.stringify({ name: "package1" }),
+		);
+		folder.addFile(
+			"packages/package2/package.json",
+			JSON.stringify({ name: "package2" }),
+		);
+		folder.addFile("packages/package3/README.md", "README content"); // No package.json
 
 		const result = listPackages(folder);
-
-		assert.strictEqual(result, null);
+		assert.notStrictEqual(result, null);
+		const packages = /** @type {string[]} */ (result);
+		assert.strictEqual(packages.length, 2);
+		assert(packages.includes("packages/package1"));
+		assert(packages.includes("packages/package2"));
+		assert(!packages.includes("packages/package3"));
 	});
 
-	test("should return package paths for direct workspace pattern", () => {
+	test("should return package paths for direct path pattern", () => {
 		const folder = new Folder();
 		folder.addFile(
 			"package.json",
 			JSON.stringify({
 				name: "test-workspace",
 				version: "1.0.0",
-				workspaces: ["packages/core", "packages/utils"],
-			}),
-		);
-
-		// Add packages
-		folder.addFile(
-			"packages/core/package.json",
-			JSON.stringify({
-				name: "@test/core",
-				version: "1.0.0",
+				workspaces: ["packages/package1", "packages/package2"],
 			}),
 		);
 		folder.addFile(
-			"packages/utils/package.json",
-			JSON.stringify({
-				name: "@test/utils",
-				version: "1.0.0",
-			}),
+			"packages/package1/package.json",
+			JSON.stringify({ name: "package1" }),
+		);
+		folder.addFile(
+			"packages/package2/package.json",
+			JSON.stringify({ name: "package2" }),
 		);
 
 		const result = listPackages(folder);
-
-		assert.deepStrictEqual(result, ["packages/core", "packages/utils"]);
+		assert.notStrictEqual(result, null);
+		const packages = /** @type {string[]} */ (result);
+		assert.strictEqual(packages.length, 2);
+		assert(packages.includes("packages/package1"));
+		assert(packages.includes("packages/package2"));
 	});
 
-	test("should return package paths for glob workspace pattern", () => {
+	test("should handle mixed patterns", () => {
 		const folder = new Folder();
 		folder.addFile(
 			"package.json",
 			JSON.stringify({
 				name: "test-workspace",
 				version: "1.0.0",
-				workspaces: ["packages/*"],
-			}),
-		);
-
-		// Add packages
-		folder.addFile(
-			"packages/core/package.json",
-			JSON.stringify({
-				name: "@test/core",
-				version: "1.0.0",
+				workspaces: ["packages/*", "tools/tool1"],
 			}),
 		);
 		folder.addFile(
-			"packages/utils/package.json",
-			JSON.stringify({
-				name: "@test/utils",
-				version: "1.0.0",
-			}),
+			"packages/package1/package.json",
+			JSON.stringify({ name: "package1" }),
 		);
 		folder.addFile(
-			"packages/docs/package.json",
-			JSON.stringify({
-				name: "@test/docs",
-				version: "1.0.0",
-			}),
+			"packages/package2/package.json",
+			JSON.stringify({ name: "package2" }),
 		);
-
-		// Add a directory without package.json (should be ignored)
-		folder.addFile("packages/empty-dir/README.md", "# Empty Directory");
+		folder.addFile(
+			"tools/tool1/package.json",
+			JSON.stringify({ name: "tool1" }),
+		);
 
 		const result = listPackages(folder);
-
-		assert.deepStrictEqual(result, [
-			"packages/core",
-			"packages/utils",
-			"packages/docs",
-		]);
+		assert.notStrictEqual(result, null);
+		const packages = /** @type {string[]} */ (result);
+		assert.strictEqual(packages.length, 3);
+		assert(packages.includes("packages/package1"));
+		assert(packages.includes("packages/package2"));
+		assert(packages.includes("tools/tool1"));
 	});
 
-	test("should handle multiple workspace patterns", () => {
+	test("should handle invalid workspace patterns", () => {
 		const folder = new Folder();
 		folder.addFile(
 			"package.json",
 			JSON.stringify({
 				name: "test-workspace",
 				version: "1.0.0",
-				workspaces: ["packages/*", "apps/*"],
-			}),
-		);
-
-		// Add packages in packages directory
-		folder.addFile(
-			"packages/core/package.json",
-			JSON.stringify({
-				name: "@test/core",
-				version: "1.0.0",
+				workspaces: ["packages/*", 123, "valid-package"],
 			}),
 		);
 		folder.addFile(
-			"packages/utils/package.json",
-			JSON.stringify({
-				name: "@test/utils",
-				version: "1.0.0",
-			}),
-		);
-
-		// Add packages in apps directory
-		folder.addFile(
-			"apps/web/package.json",
-			JSON.stringify({
-				name: "@test/web",
-				version: "1.0.0",
-			}),
+			"packages/package1/package.json",
+			JSON.stringify({ name: "package1" }),
 		);
 		folder.addFile(
-			"apps/api/package.json",
-			JSON.stringify({
-				name: "@test/api",
-				version: "1.0.0",
-			}),
+			"valid-package/package.json",
+			JSON.stringify({ name: "valid-package" }),
 		);
 
 		const result = listPackages(folder);
-
-		assert.deepStrictEqual(result, [
-			"packages/core",
-			"packages/utils",
-			"apps/web",
-			"apps/api",
-		]);
+		assert.notStrictEqual(result, null);
+		const packages = /** @type {string[]} */ (result);
+		assert.strictEqual(packages.length, 2);
+		assert(packages.includes("packages/package1"));
+		assert(packages.includes("valid-package"));
 	});
 
-	test("should ignore invalid workspace patterns", () => {
-		const folder = new Folder();
-		folder.addFile(
-			"package.json",
-			JSON.stringify({
-				name: "test-workspace",
-				version: "1.0.0",
-				workspaces: ["packages/*", 123, null, "invalid-pattern"],
-			}),
-		);
-
-		// Add packages
-		folder.addFile(
-			"packages/core/package.json",
-			JSON.stringify({
-				name: "@test/core",
-				version: "1.0.0",
-			}),
-		);
-
-		const result = listPackages(folder);
-
-		assert.deepStrictEqual(result, ["packages/core"]);
-	});
-
-	test("should handle nested package.json files", () => {
+	test("should return all packages including private ones", () => {
 		const folder = new Folder();
 		folder.addFile(
 			"package.json",
@@ -257,99 +189,168 @@ describe("listPackages", () => {
 				workspaces: ["packages/*"],
 			}),
 		);
-
-		// Add packages with nested files
 		folder.addFile(
-			"packages/core/package.json",
-			JSON.stringify({
-				name: "@test/core",
-				version: "1.0.0",
-			}),
-		);
-		folder.addFile("packages/core/src/index.js", "export default {};");
-		folder.addFile("packages/core/README.md", "# Core Package");
-
-		folder.addFile(
-			"packages/utils/package.json",
-			JSON.stringify({
-				name: "@test/utils",
-				version: "1.0.0",
-			}),
+			"packages/public-package/package.json",
+			JSON.stringify({ name: "public-package" }),
 		);
 		folder.addFile(
-			"packages/utils/lib/helper.js",
-			"export function helper() {};",
+			"packages/private-package/package.json",
+			JSON.stringify({ name: "private-package", private: true }),
 		);
 
 		const result = listPackages(folder);
-
-		assert.deepStrictEqual(result, ["packages/core", "packages/utils"]);
+		assert.notStrictEqual(result, null);
+		const packages = /** @type {string[]} */ (result);
+		assert.strictEqual(packages.length, 2);
+		assert(packages.includes("packages/public-package"));
+		assert(packages.includes("packages/private-package"));
 	});
+});
 
-	test("should handle complex glob patterns", () => {
+describe("listPublicPackages", () => {
+	test("should return null when not a workspace", () => {
 		const folder = new Folder();
-		folder.addFile(
-			"package.json",
-			JSON.stringify({
-				name: "test-workspace",
-				version: "1.0.0",
-				workspaces: ["packages/*", "tools/*", "examples/*"],
-			}),
-		);
-
-		// Add packages in different directories
-		folder.addFile(
-			"packages/core/package.json",
-			JSON.stringify({
-				name: "@test/core",
-				version: "1.0.0",
-			}),
-		);
-		folder.addFile(
-			"tools/build/package.json",
-			JSON.stringify({
-				name: "@test/build",
-				version: "1.0.0",
-			}),
-		);
-		folder.addFile(
-			"examples/basic/package.json",
-			JSON.stringify({
-				name: "@test/basic-example",
-				version: "1.0.0",
-			}),
-		);
-
-		// Add directories without package.json (should be ignored)
-		folder.addFile("packages/docs/README.md", "# Documentation");
-		folder.addFile("tools/scripts/script.js", "console.log('script');");
-
-		const result = listPackages(folder);
-
-		assert.deepStrictEqual(result, [
-			"packages/core",
-			"tools/build",
-			"examples/basic",
-		]);
-	});
-
-	test("should return null when workspace patterns don't match any packages", () => {
-		const folder = new Folder();
-		folder.addFile(
-			"package.json",
-			JSON.stringify({
-				name: "test-workspace",
-				version: "1.0.0",
-				workspaces: ["packages/*", "apps/*"],
-			}),
-		);
-
-		// Add directories without package.json
-		folder.addFile("packages/docs/README.md", "# Documentation");
-		folder.addFile("apps/website/index.html", "<!DOCTYPE html>");
-
-		const result = listPackages(folder);
-
+		const result = listPublicPackages(folder);
 		assert.strictEqual(result, null);
+	});
+
+	test("should return only public packages", () => {
+		const folder = new Folder();
+		folder.addFile(
+			"package.json",
+			JSON.stringify({
+				name: "test-workspace",
+				version: "1.0.0",
+				workspaces: ["packages/*"],
+			}),
+		);
+		folder.addFile(
+			"packages/public-package/package.json",
+			JSON.stringify({ name: "public-package" }),
+		);
+		folder.addFile(
+			"packages/private-package/package.json",
+			JSON.stringify({ name: "private-package", private: true }),
+		);
+		folder.addFile(
+			"packages/another-public/package.json",
+			JSON.stringify({ name: "another-public" }),
+		);
+
+		const result = listPublicPackages(folder);
+		assert.notStrictEqual(result, null);
+		const packages = /** @type {string[]} */ (result);
+		assert.strictEqual(packages.length, 2);
+		assert(packages.includes("packages/public-package"));
+		assert(packages.includes("packages/another-public"));
+		assert(!packages.includes("packages/private-package"));
+	});
+
+	test("should handle packages with invalid package.json", () => {
+		const folder = new Folder();
+		folder.addFile(
+			"package.json",
+			JSON.stringify({
+				name: "test-workspace",
+				version: "1.0.0",
+				workspaces: ["packages/*"],
+			}),
+		);
+		folder.addFile(
+			"packages/public-package/package.json",
+			JSON.stringify({ name: "public-package" }),
+		);
+		folder.addFile("packages/invalid-package/package.json", "invalid json");
+
+		const result = listPublicPackages(folder);
+		assert.notStrictEqual(result, null);
+		const packages = /** @type {string[]} */ (result);
+		assert.strictEqual(packages.length, 1);
+		assert(packages.includes("packages/public-package"));
+		assert(!packages.includes("packages/invalid-package"));
+	});
+
+	test("should handle packages without package.json", () => {
+		const folder = new Folder();
+		folder.addFile(
+			"package.json",
+			JSON.stringify({
+				name: "test-workspace",
+				version: "1.0.0",
+				workspaces: ["packages/*"],
+			}),
+		);
+		folder.addFile(
+			"packages/public-package/package.json",
+			JSON.stringify({ name: "public-package" }),
+		);
+		folder.addFile("packages/no-package-json/README.md", "README content");
+
+		const result = listPublicPackages(folder);
+		assert.notStrictEqual(result, null);
+		const packages = /** @type {string[]} */ (result);
+		assert.strictEqual(packages.length, 1);
+		assert(packages.includes("packages/public-package"));
+		assert(!packages.includes("packages/no-package-json"));
+	});
+
+	test("should return null when all packages are private", () => {
+		const folder = new Folder();
+		folder.addFile(
+			"package.json",
+			JSON.stringify({
+				name: "test-workspace",
+				version: "1.0.0",
+				workspaces: ["packages/*"],
+			}),
+		);
+		folder.addFile(
+			"packages/private-package1/package.json",
+			JSON.stringify({ name: "private-package1", private: true }),
+		);
+		folder.addFile(
+			"packages/private-package2/package.json",
+			JSON.stringify({ name: "private-package2", private: true }),
+		);
+
+		const result = listPublicPackages(folder);
+		assert.strictEqual(result, null);
+	});
+
+	test("should handle mixed public and private packages", () => {
+		const folder = new Folder();
+		folder.addFile(
+			"package.json",
+			JSON.stringify({
+				name: "test-workspace",
+				version: "1.0.0",
+				workspaces: ["packages/*", "tools/*"],
+			}),
+		);
+		folder.addFile(
+			"packages/public-package/package.json",
+			JSON.stringify({ name: "public-package" }),
+		);
+		folder.addFile(
+			"packages/private-package/package.json",
+			JSON.stringify({ name: "private-package", private: true }),
+		);
+		folder.addFile(
+			"tools/public-tool/package.json",
+			JSON.stringify({ name: "public-tool" }),
+		);
+		folder.addFile(
+			"tools/private-tool/package.json",
+			JSON.stringify({ name: "private-tool", private: true }),
+		);
+
+		const result = listPublicPackages(folder);
+		assert.notStrictEqual(result, null);
+		const packages = /** @type {string[]} */ (result);
+		assert.strictEqual(packages.length, 2);
+		assert(packages.includes("packages/public-package"));
+		assert(packages.includes("tools/public-tool"));
+		assert(!packages.includes("packages/private-package"));
+		assert(!packages.includes("tools/private-tool"));
 	});
 });

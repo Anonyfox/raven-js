@@ -80,6 +80,38 @@ export function listPackages(folder) {
 }
 
 /**
+ * Check if a folder is in a workspace root and return public package paths
+ * @param {import('./folder.js').Folder} folder - Folder instance containing workspace files
+ * @returns {string[]|null} Array of public package paths relative to workspace root, or null if not a workspace
+ */
+export function listPublicPackages(folder) {
+	const allPackages = listPackages(folder);
+	if (!allPackages) {
+		return null;
+	}
+
+	const publicPackages = [];
+
+	for (const packagePath of allPackages) {
+		const packageJsonPath = join(packagePath, "package.json");
+		const packageJsonContent = folder.getFile(packageJsonPath);
+
+		if (!packageJsonContent) {
+			continue; // Skip packages without package.json
+		}
+
+		try {
+			const packageJson = JSON.parse(packageJsonContent);
+			if (!packageJson.private) {
+				publicPackages.push(packagePath);
+			}
+		} catch {}
+	}
+
+	return publicPackages.length > 0 ? publicPackages : null;
+}
+
+/**
  * Check if a directory contains a valid package
  * @param {import('./folder.js').Folder} folder - Folder instance
  * @param {string} dirName - Directory name to check

@@ -22,8 +22,9 @@
  * ```
  */
 
+export * from "./docs/index.js";
 export { Folder } from "./folder.js";
-export { listPackages } from "./list-packages.js";
+export { listPackages, listPublicPackages } from "./list-packages.js";
 export {
 	getPackageInfo,
 	getWorkspacePackages,

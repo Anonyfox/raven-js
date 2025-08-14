@@ -145,16 +145,16 @@ export class Folder {
 			if (pattern.includes("*")) {
 				// Basic glob pattern support - need to handle end of string properly
 				const regex = new RegExp(
-					pattern
+					`${pattern
 						.replace(/\./g, "\\.")
 						.replace(/\*/g, ".*")
-						.replace(/\?/g, ".") + "$", // Ensure pattern matches end of string
+						.replace(/\?/g, ".")}$`, // Ensure pattern matches end of string
 				);
 				return regex.test(filePath);
 			}
 			// For exact matches, check if the file path ends with the pattern
 			// or if the pattern is a directory and the file is in that directory
-			return filePath === pattern || filePath.startsWith(pattern + "/");
+			return filePath === pattern || filePath.startsWith(`${pattern}/`);
 		});
 	}
 

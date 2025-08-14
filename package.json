@@ -1,63 +1,62 @@
 {
-  "name": "raven-js",
-  "version": "0.1.7",
-  "description": "A swift web dev toolkit - zero-dependency, modern JavaScript libraries for developers who've had enough of framework fatigue",
-  "keywords": [
-    "javascript",
-    "esm",
-    "zero-dependencies",
-    "modern-js",
-    "toolkit",
-    "web-development",
-    "libraries"
-  ],
-  "license": "MIT",
-  "scripts": {
-    "test": "npm test --workspaces --if-present && node --test scripts/*.test.mjs",
-    "test:code": "echo 'test:code script placeholder'",
-    "test:style": "echo 'test:style script placeholder'",
-    "gen:context": "echo 'gen:context script placeholder'",
-    "gen:docs": "echo 'gen:docs script placeholder'",
-    "lint": "npm run test:style --workspaces --if-present",
-    "gen:all": "node scripts/generate-all.mjs",
-    "build:bundles": "node scripts/build-bundles.mjs",
-    "major": "node scripts/version.mjs major",
-    "minor": "node scripts/version.mjs minor",
-    "patch": "node scripts/version.mjs patch",
-    "publish": "node scripts/publish.mjs",
-    "nest": "node packages/nest/bin/nest.js",
-    "nest:validate": "node packages/nest/bin/nest.js validate",
-    "nest:build": "node packages/nest/bin/nest.js build",
-    "nest:publish": "node packages/nest/bin/nest.js publish",
-    "nest:docs": "node packages/nest/bin/nest.js docs",
-    "nest:version": "node packages/nest/bin/nest.js version"
-  },
-  "author": {
-    "name": "Anonyfox",
-    "email": "max@anonyfox.com",
-    "url": "https://anonyfox.com"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Anonyfox/raven-js.git"
-  },
-  "homepage": "https://ravenjs.dev",
-  "bugs": {
-    "url": "https://github.com/Anonyfox/raven-js/issues"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.1.4",
-    "@types/node": "^22.5.0",
-    "esbuild": "^0.25.9",
-    "typedoc": "^0.26.5",
-    "typescript": "^5.5.3"
-  },
-  "workspaces": [
-    "packages/beak",
-    "packages/nest"
-  ],
-  "engines": {
-    "npm": ">=10.8.2",
-    "node": ">=22.5.0"
-  }
+	"name": "raven-js",
+	"version": "0.1.7",
+	"description": "A swift web dev toolkit - zero-dependency, modern JavaScript libraries for developers who've had enough of framework fatigue",
+	"keywords": [
+		"javascript",
+		"esm",
+		"zero-dependencies",
+		"modern-js",
+		"toolkit",
+		"web-development",
+		"libraries"
+	],
+	"license": "MIT",
+	"scripts": {
+		"test": "npm test --workspaces --if-present && node --test scripts/*.test.mjs",
+		"test:code": "echo 'test:code script placeholder'",
+		"test:style": "echo 'test:style script placeholder'",
+		"gen:context": "echo 'gen:context script placeholder'",
+		"gen:docs": "echo 'gen:docs script placeholder'",
+		"lint": "npm run test:style --workspaces --if-present",
+		"gen:all": "node scripts/generate-all.mjs",
+		"build:bundles": "node scripts/build-bundles.mjs",
+		"major": "node scripts/version.mjs major",
+		"minor": "node scripts/version.mjs minor",
+		"patch": "node scripts/version.mjs patch",
+		"publish": "node scripts/publish.mjs",
+		"nest": "node packages/nest/bin/nest.js",
+		"nest:validate": "node packages/nest/bin/nest.js validate",
+		"nest:build": "node packages/nest/bin/nest.js build",
+		"nest:publish": "node packages/nest/bin/nest.js publish",
+		"nest:docs": "node packages/nest/bin/nest.js build-docs",
+		"nest:version": "node packages/nest/bin/nest.js version"
+	},
+	"author": {
+		"name": "Anonyfox",
+		"email": "max@anonyfox.com",
+		"url": "https://anonyfox.com"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Anonyfox/raven-js.git"
+	},
+	"homepage": "https://ravenjs.dev",
+	"bugs": {
+		"url": "https://github.com/Anonyfox/raven-js/issues"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.1.4",
+		"@types/node": "^22.5.0",
+		"typedoc": "^0.26.5",
+		"typescript": "^5.5.3"
+	},
+	"workspaces": [
+		"packages/beak",
+		"packages/nest"
+	],
+	"engines": {
+		"npm": ">=10.8.2",
+		"node": ">=22.5.0"
+	}
 }

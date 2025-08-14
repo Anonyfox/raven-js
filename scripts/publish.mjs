@@ -1,9 +1,5 @@
 import { execSync } from "node:child_process";
-import {
-	getPackagePaths,
-	getPublicPackages,
-	logPackages,
-} from "./utils/package-filter.mjs";
+import { getPublicPackages, logPackages } from "./utils/package-filter.mjs";
 
 // Check if we're on a version tag
 const currentTag = execSync(
@@ -29,7 +25,7 @@ execSync("npm run lint", { stdio: "inherit" });
 
 // Generate complete documentation
 console.log("Generating complete documentation...");
-execSync("npm run gen:all", { stdio: "inherit" });
+execSync("npm run nest:docs", { stdio: "inherit" });
 
 // Get public packages only
 const publicPackages = await getPublicPackages();
