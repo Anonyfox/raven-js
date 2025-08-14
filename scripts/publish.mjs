@@ -93,6 +93,28 @@ execSync("npm run lint", { stdio: "inherit" });
 console.log("Generating complete documentation...");
 execSync("npm run nest:docs", { stdio: "inherit" });
 
+// Build and copy VS Code extension
+console.log("Building VS Code extension...");
+const originalCwd = process.cwd();
+try {
+	// Build the extension
+	execSync("cd plugins/vscode && npm run build", { stdio: "inherit" });
+
+	// Copy the built extension to docs
+	console.log("Copying VS Code extension to docs...");
+	execSync("cp plugins/vscode/ravenjs-vscode-*.vsix docs/ravenjs-vscode.vsix", {
+		stdio: "inherit",
+	});
+
+	console.log("✅ VS Code extension built and copied to docs");
+} catch (error) {
+	console.error("❌ Error building VS Code extension:", error.message);
+	process.exit(1);
+} finally {
+	// Return to original directory
+	process.chdir(originalCwd);
+}
+
 // Get public packages only
 const publicPackages = await getPublicPackages();
 logPackages(publicPackages, "Publishing packages");

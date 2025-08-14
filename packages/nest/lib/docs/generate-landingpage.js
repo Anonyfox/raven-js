@@ -76,6 +76,34 @@ function PageHeader() {
 }
 
 /**
+ * Creates the VS Code extension section component
+ * @returns {string} HTML for VS Code extension section
+ */
+function VSCodeExtensionSection() {
+	return html`
+		<div class="extension-section">
+			<h2>🦅 VS Code Extension</h2>
+			<p>Enhanced development experience with intelligent syntax highlighting for RavenJS tagged template literals.</p>
+			<div class="extension-features">
+				<h3>Features</h3>
+				<ul>
+					<li><strong>Syntax Highlighting:</strong> HTML, CSS, SQL, Markdown, and JavaScript templates</li>
+					<li><strong>Auto-completion:</strong> Smart suggestions for RavenJS template functions</li>
+					<li><strong>Hover Information:</strong> Detailed documentation on hover</li>
+					<li><strong>Code Snippets:</strong> Quick templates for common patterns</li>
+				</ul>
+			</div>
+			<div class="extension-download">
+				<a href="./ravenjs-vscode.vsix" class="download-btn">📦 Download Extension</a>
+				<p class="install-instructions">
+					<strong>Install:</strong> In VS Code → Extensions (Ctrl+Shift+X) → "..." → "Install from VSIX..."
+				</p>
+			</div>
+		</div>
+	`;
+}
+
+/**
  * Creates the page footer component
  * @returns {string} HTML for page footer
  */
@@ -204,6 +232,57 @@ function PageStyles() {
 			font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
 			font-size: 0.9rem;
 		}
+		.extension-section {
+			background: #f8f9fa;
+			border: 1px solid #e9ecef;
+			border-radius: 8px;
+			padding: 1.5rem;
+			margin: 2rem 0;
+		}
+		.extension-section h2 {
+			margin-top: 0;
+			color: #2c3e50;
+			border-bottom: 2px solid #3498db;
+			padding-bottom: 0.5rem;
+		}
+		.extension-features {
+			margin: 1rem 0;
+		}
+		.extension-features h3 {
+			color: #495057;
+			margin-bottom: 0.5rem;
+		}
+		.extension-features ul {
+			margin: 0.5rem 0;
+			padding-left: 1.5rem;
+		}
+		.extension-features li {
+			margin: 0.25rem 0;
+			color: #6c757d;
+		}
+		.extension-download {
+			margin-top: 1.5rem;
+			text-align: center;
+		}
+		.download-btn {
+			display: inline-block;
+			background: #3498db;
+			color: white;
+			padding: 0.75rem 1.5rem;
+			text-decoration: none;
+			border-radius: 6px;
+			font-weight: 500;
+			transition: background-color 0.2s;
+		}
+		.download-btn:hover {
+			background: #2980b9;
+			text-decoration: none;
+		}
+		.install-instructions {
+			margin-top: 0.5rem;
+			font-size: 0.9rem;
+			color: #6c757d;
+		}
 	`;
 }
 
@@ -256,7 +335,8 @@ export function generateLandingPage(packageNames, workspaceFolder) {
 		</head>
 		<body>
 			${PageHeader()}
-			${packageData.map(PackageCard)}
+			${packageData.map((pkg) => (pkg ? PackageCard(pkg) : ""))}
+			${VSCodeExtensionSection()}
 			${PageFooter()}
 		</body>
 		</html>
