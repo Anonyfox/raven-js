@@ -33,6 +33,7 @@ export {
 	validatePackage,
 	validateWorkspace,
 } from "./package.js";
+export * from "./semver/index.js";
 
 /**
  * Get the current version of nest

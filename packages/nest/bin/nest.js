@@ -6,6 +6,7 @@
  * @license MIT
  */
 
+import { execSync } from "node:child_process";
 import {
 	existsSync,
 	mkdirSync,
@@ -53,9 +54,11 @@ import {
 	getDocsPath,
 } from "../lib/docs/index.js";
 import {
+	bumpVersion,
 	Folder,
 	listPackages,
 	listPublicPackages,
+	updatePackageVersions,
 	validatePackage,
 } from "../lib/index.js";
 
@@ -480,12 +483,106 @@ async function buildPackageDocs(
 
 /**
  * Handle version command
- * @param {string[]} _args - Command arguments
+ * @param {string[]} args - Command arguments
  * @param {Object} _options - Command options
  */
-async function handleVersionCommand(_args, _options) {
-	console.log("🦅 Version command not yet implemented");
-	console.log("This will handle version management");
+async function handleVersionCommand(args, _options) {
+	const [bumpType] = args;
+
+	if (!bumpType || !["major", "minor", "patch"].includes(bumpType)) {
+		console.error("❌ Error: Invalid version bump type");
+		console.error("Usage: nest version [major|minor|patch]");
+		console.error("");
+		console.error("Examples:");
+		console.error(
+			"  nest version major  # Bump major version (1.0.0 -> 2.0.0)",
+		);
+		console.error(
+			"  nest version minor  # Bump minor version (1.0.0 -> 1.1.0)",
+		);
+		console.error(
+			"  nest version patch  # Bump patch version (1.0.0 -> 1.0.1)",
+		);
+		process.exit(1);
+	}
+
+	console.log(`🦅 Bumping version: ${bumpType}`);
+
+	try {
+		// Find workspace root
+		const workspaceRoot = findWorkspaceRoot(process.cwd());
+		console.log(`📦 Workspace root: ${workspaceRoot}`);
+
+		// Read current version from root package.json
+		const rootPackagePath = join(workspaceRoot, "package.json");
+		const rootPackage = JSON.parse(readFileSync(rootPackagePath, "utf8"));
+		const currentVersion = rootPackage.version;
+
+		console.log(`📋 Current version: ${currentVersion}`);
+
+		// Calculate new version
+		const newVersion = bumpVersion(currentVersion, bumpType);
+		console.log(`🆕 New version: ${newVersion}`);
+
+		// Update all package versions
+		console.log("📝 Updating package versions...");
+		const result = updatePackageVersions(workspaceRoot, newVersion);
+
+		// Display results
+		if (result.updated.length > 0) {
+			console.log("✅ Updated packages:");
+			for (const pkg of result.updated) {
+				console.log(`   📦 ${pkg}`);
+			}
+		}
+
+		if (result.skipped.length > 0) {
+			console.log("⏭️  Skipped private packages:");
+			for (const pkg of result.skipped) {
+				console.log(`   🔒 ${pkg}`);
+			}
+		}
+
+		if (result.errors.length > 0) {
+			console.log("❌ Errors:");
+			for (const error of result.errors) {
+				console.log(`   ${error}`);
+			}
+			process.exit(1);
+		}
+
+		console.log(`\n✅ Successfully bumped version to ${newVersion}`);
+
+		// Perform git operations
+		console.log("🔧 Performing git operations...");
+
+		// Add all changes
+		execSync("git add .");
+		console.log("✅ Added all changes to git");
+
+		// Commit the version bump
+		execSync(`git commit -m "chore: bump version to ${newVersion}"`);
+		console.log("✅ Committed version bump");
+
+		// Create git tag
+		execSync(`git tag v${newVersion}`);
+		console.log(`✅ Created git tag v${newVersion}`);
+
+		// Push to origin
+		execSync("git push origin main", { stdio: "inherit" });
+		execSync(`git push origin v${newVersion}`, { stdio: "inherit" });
+		console.log("✅ Pushed changes and tag to origin");
+
+		console.log(
+			"\n🎉 Version bump complete! Ready to publish with: nest publish",
+		);
+	} catch (error) {
+		console.error(
+			"❌ Error:",
+			error instanceof Error ? error.message : String(error),
+		);
+		process.exit(1);
+	}
 }
 
 // Run the CLI

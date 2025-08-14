@@ -17,16 +17,19 @@
     "test:code": "echo 'test:code script placeholder'",
     "test:style": "echo 'test:style script placeholder'",
     "lint": "npm run test:style --workspaces --if-present",
-    "major": "node scripts/version.mjs major",
-    "minor": "node scripts/version.mjs minor",
-    "patch": "node scripts/version.mjs patch",
+    "major": "node packages/nest/bin/nest.js version major",
+    "minor": "node packages/nest/bin/nest.js version minor",
+    "patch": "node packages/nest/bin/nest.js version patch",
     "publish": "node scripts/publish.mjs",
     "nest": "node packages/nest/bin/nest.js",
     "nest:validate": "node packages/nest/bin/nest.js validate",
     "nest:build": "node packages/nest/bin/nest.js build",
     "nest:publish": "node packages/nest/bin/nest.js publish",
     "nest:docs": "node packages/nest/bin/nest.js build-docs",
-    "nest:version": "node packages/nest/bin/nest.js version"
+    "nest:version": "node packages/nest/bin/nest.js version",
+    "nest:major": "node packages/nest/bin/nest.js version major",
+    "nest:minor": "node packages/nest/bin/nest.js version minor",
+    "nest:patch": "node packages/nest/bin/nest.js version patch"
   },
   "author": {
     "name": "Anonyfox",
