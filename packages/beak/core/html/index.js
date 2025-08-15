@@ -9,6 +9,26 @@ import { stringify } from "./stringify.js";
 const isValidValue = (value) => value === 0 || Boolean(value);
 
 /**
+ * Private template rendering function that handles the core logic.
+ * @param {TemplateStringsArray} strings - The static parts of the template.
+ * @param {Array<*>} values - The dynamic values to be interpolated.
+ * @param {Function} [escapeFn] - Optional function to escape values.
+ * @returns {string} The rendered template as a string.
+ */
+const _renderTemplate = (strings, values, escapeFn = null) => {
+	let result = strings[0];
+	for (let i = 0; i < values.length; i++) {
+		const value = values[i];
+		if (isValidValue(value)) {
+			const stringified = stringify(value);
+			result += escapeFn ? escapeFn(stringified) : stringified;
+		}
+		result += strings[i + 1];
+	}
+	return result.trim();
+};
+
+/**
  * The main template tag function for creating HTML templates.
  * By default, it does NOT escape the input, trusting the developer like a raven trusts its wings.
  *
@@ -31,17 +51,7 @@ const isValidValue = (value) => value === 0 || Boolean(value);
  * `;
  * // Result: "<div><h1>Hello, John Doe!</h1><p>Welcome to our site.</p></div>"
  */
-export const html = (strings, ...values) => {
-	let result = strings[0];
-	for (let i = 0; i < values.length; i++) {
-		const value = values[i];
-		if (isValidValue(value)) {
-			result += stringify(value);
-		}
-		result += strings[i + 1];
-	}
-	return result.trim();
-};
+export const html = (strings, ...values) => _renderTemplate(strings, values);
 
 /**
  * A template tag function for creating HTML with escaped content.
@@ -64,14 +74,5 @@ export const html = (strings, ...values) => {
  * `;
  * // Result: "<div><p>&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;</p></div>"
  */
-export const safeHtml = (strings, ...values) => {
-	let result = strings[0];
-	for (let i = 0; i < values.length; i++) {
-		const value = values[i];
-		if (isValidValue(value)) {
-			result += escapeSpecialCharacters(stringify(value));
-		}
-		result += strings[i + 1];
-	}
-	return result.trim();
-};
+export const safeHtml = (strings, ...values) =>
+	_renderTemplate(strings, values, escapeSpecialCharacters);
