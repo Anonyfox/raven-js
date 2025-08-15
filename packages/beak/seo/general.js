@@ -26,6 +26,10 @@ import { absoluteUrl } from "./utils.js";
  *   path: '/my-page',
  *   suffix: 'My Site'
  * });
+ * // Output:
+ * // <title>My Page | My Site</title>
+ * // <meta name="description" property="description" content="This is my page description" />
+ * // <link rel="canonical" href="https://example.com/my-page" />
  */
 export const general = ({ title, description, domain, path, suffix }) => {
 	const fullTitle = suffix ? `${title} | ${suffix}` : title;

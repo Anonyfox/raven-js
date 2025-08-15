@@ -23,18 +23,16 @@ import { html } from "../core/index.js";
  *   index: true,
  *   follow: true
  * });
+ * // Output:
+ * // <meta name="robots" content="index, follow" />
  *
  * // Prevent indexing
  * const noIndexTags = robots({
  *   index: false,
  *   follow: false
  * });
- *
- * // Basic robots tag
- * const tags = robots({
- *   index: true,
- *   follow: true
- * });
+ * // Output:
+ * // <meta name="robots" content="noindex, nofollow" />
  */
 export const robots = ({ index = true, follow = true }) => {
 	const indexValue = index ? "index" : "noindex";

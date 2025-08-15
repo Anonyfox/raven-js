@@ -33,6 +33,13 @@ import { absoluteUrl } from "./utils.js";
  *   owner: 'linkedin.com/in/johndoe',
  *   company: 'linkedin.com/company/mycompany'
  * });
+ * // Output:
+ * // <meta name="linkedin:title" property="linkedin:title" content="My Professional Article" />
+ * // <meta name="linkedin:description" property="linkedin:description" content="A detailed analysis of industry trends" />
+ * // <meta name="linkedin:url" property="linkedin:url" content="https://example.com/article" />
+ * // <meta name="linkedin:image" property="linkedin:image" content="https://example.com/article-image.jpg" />
+ * // <meta name="linkedin:owner" property="linkedin:owner" content="linkedin.com/in/johndoe" />
+ * // <meta name="linkedin:company" property="linkedin:company" content="linkedin.com/company/mycompany" />
  */
 export const linkedin = ({
 	title,

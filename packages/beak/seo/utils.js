@@ -10,6 +10,8 @@
  *
  * absoluteUrl('/path', 'example.com'); // 'https://example.com/path'
  * absoluteUrl('https://other.com/path', 'example.com'); // 'https://other.com/path'
+ * absoluteUrl('', 'example.com'); // 'https://example.com'
+ * absoluteUrl('path', 'example.com'); // 'https://example.com/path'
  */
 export const absoluteUrl = (url, domain) => {
 	if (url.startsWith("http")) {

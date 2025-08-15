@@ -28,6 +28,13 @@ import { absoluteUrl } from "./utils.js";
  *   imageUrl: '/my-image.jpg',
  *   cardType: 'summary_large_image'
  * });
+ * // Output:
+ * // <meta name="twitter:card" property="twitter:card" content="summary_large_image" />
+ * // <meta name="twitter:title" property="twitter:title" content="My Page" />
+ * // <meta name="twitter:description" property="twitter:description" content="This is my page description" />
+ * // <meta name="twitter:image" property="twitter:image" content="https://example.com/my-image.jpg" />
+ * // <meta name="twitter:image:src" property="twitter:image:src" content="https://example.com/my-image.jpg">
+ * // <meta name="twitter:image:alt" property="twitter:image:alt" content="Illustration of My Page">
  */
 export const twitter = ({
 	title,

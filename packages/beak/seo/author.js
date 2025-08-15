@@ -22,6 +22,9 @@ import { html } from "../core/index.js";
  *   name: 'John Doe',
  *   email: 'john@example.com'
  * });
+ * // Output:
+ * // <meta name="author" content="John Doe" />
+ * // <meta name="reply-to" content="john@example.com" />
  */
 export const author = ({ name, email }) => {
 	return html`

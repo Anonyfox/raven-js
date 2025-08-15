@@ -31,6 +31,12 @@ import { absoluteUrl } from "./utils.js";
  *   imageUrl: '/my-image.jpg',
  *   type: 'article'
  * });
+ * // Output:
+ * // <meta name="og:type" property="og:type" content="article">
+ * // <meta name="og:title" property="og:title" content="My Page" />
+ * // <meta name="og:description" property="og:description" content="This is my page description" />
+ * // <meta name="og:url" property="og:url" content="https://example.com/my-page" />
+ * // <meta name="og:image" property="og:image" content="https://example.com/my-image.jpg" />
  */
 export const openGraph = ({
 	title,

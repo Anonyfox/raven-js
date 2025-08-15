@@ -31,6 +31,12 @@ import { absoluteUrl } from "./utils.js";
  *   imageUrl: '/discord-banner.jpg',
  *   invite: 'abc123'
  * });
+ * // Output:
+ * // <meta name="discord:title" property="discord:title" content="Join Our Community" />
+ * // <meta name="discord:description" property="discord:description" content="Connect with like-minded developers" />
+ * // <meta name="discord:url" property="discord:url" content="https://example.com/community" />
+ * // <meta name="discord:image" property="discord:image" content="https://example.com/discord-banner.jpg" />
+ * // <meta name="discord:invite" property="discord:invite" content="abc123" />
  */
 export const discord = ({
 	title,

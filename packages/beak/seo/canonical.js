@@ -27,6 +27,8 @@ import { absoluteUrl } from "./utils.js";
  *   domain: 'example.com',
  *   path: '/my-page'
  * });
+ * // Output:
+ * // <link rel="canonical" href="https://example.com/my-page" />
  *
  * // Canonical with hreflang
  * const hreflangTags = canonical({
@@ -34,6 +36,8 @@ import { absoluteUrl } from "./utils.js";
  *   path: '/my-page',
  *   hreflang: 'en-US'
  * });
+ * // Output:
+ * // <link rel="canonical" href="https://example.com/my-page" hreflang="en-US" />
  *
  * // Canonical for mobile
  * const mobileTags = canonical({
@@ -41,6 +45,8 @@ import { absoluteUrl } from "./utils.js";
  *   path: '/my-page',
  *   media: 'only screen and (max-width: 640px)'
  * });
+ * // Output:
+ * // <link rel="canonical" href="https://example.com/my-page" media="only screen and (max-width: 640px)" />
  */
 export const canonical = ({ domain, path, hreflang, media }) => {
 	const url = absoluteUrl(path, domain);

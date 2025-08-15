@@ -45,6 +45,32 @@ import { twitter } from "./twitter.js";
  *   linkedinCompany: 'linkedin.com/company/mycompany',
  *   discordInvite: 'abc123'
  * });
+ * // Output:
+ * // <meta name="og:type" property="og:type" content="article">
+ * // <meta name="og:title" property="og:title" content="My Page" />
+ * // <meta name="og:description" property="og:description" content="This is my page description" />
+ * // <meta name="og:url" property="og:url" content="https://example.com/my-page" />
+ * // <meta name="og:image" property="og:image" content="https://example.com/my-image.jpg" />
+ * // <meta name="twitter:card" property="twitter:card" content="summary_large_image" />
+ * // <meta name="twitter:title" property="twitter:title" content="My Page" />
+ * // <meta name="twitter:description" property="twitter:description" content="This is my page description" />
+ * // <meta name="twitter:image" property="twitter:image" content="https://example.com/my-image.jpg" />
+ * // <meta name="twitter:image:src" property="twitter:image:src" content="https://example.com/my-image.jpg">
+ * // <meta name="twitter:image:alt" property="twitter:image:alt" content="Illustration of My Page">
+ * // <meta name="pinterest:description" property="pinterest:description" content="This is my page description" />
+ * // <meta name="pinterest:media" property="pinterest:media" content="https://example.com/my-image.jpg" />
+ * // <meta name="pinterest:source" property="pinterest:source" content="https://example.com/my-page" />
+ * // <meta name="linkedin:title" property="linkedin:title" content="My Page" />
+ * // <meta name="linkedin:description" property="linkedin:description" content="This is my page description" />
+ * // <meta name="linkedin:url" property="linkedin:url" content="https://example.com/my-page" />
+ * // <meta name="linkedin:image" property="linkedin:image" content="https://example.com/my-image.jpg" />
+ * // <meta name="linkedin:owner" property="linkedin:owner" content="linkedin.com/in/johndoe" />
+ * // <meta name="linkedin:company" property="linkedin:company" content="linkedin.com/company/mycompany" />
+ * // <meta name="discord:title" property="discord:title" content="My Page" />
+ * // <meta name="discord:description" property="discord:description" content="This is my page description" />
+ * // <meta name="discord:url" property="discord:url" content="https://example.com/my-page" />
+ * // <meta name="discord:image" property="discord:image" content="https://example.com/my-image.jpg" />
+ * // <meta name="discord:invite" property="discord:invite" content="abc123" />
  */
 export const social = ({
 	title,
