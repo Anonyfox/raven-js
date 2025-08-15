@@ -1,0 +1,68 @@
+import { html } from "../core/index.js";
+
+/**
+ * @typedef {Object} TwitterConfig
+ * @property {string} title - The title of the page.
+ * @property {string} description - The description of the page.
+ * @property {string} domain - The domain of the website. Required to ensure absolute URLs.
+ * @property {string} [imageUrl] - Optional. The relative path of the image to be used in the Twitter card.
+ * @property {string} [cardType] - Optional. The Twitter card type. Defaults to "summary".
+ */
+
+/**
+ * Generates Twitter Card meta tags for the HTML head section.
+ *
+ * Since various social media platforms parse these tags differently,
+ * every tag uses both `name` and `property` attributes for maximum compatibility.
+ *
+ * @param {TwitterConfig} config - Configuration object for Twitter Card tags
+ * @returns {string} The generated Twitter Card meta tags as an HTML string
+ *
+ * @example
+ * import { twitter } from '@raven-js/beak/seo';
+ *
+ * const tags = twitter({
+ *   title: 'My Page',
+ *   description: 'This is my page description',
+ *   imageUrl: '/my-image.jpg',
+ *   cardType: 'summary_large_image'
+ * });
+ */
+export const twitter = ({
+	title,
+	description,
+	domain,
+	imageUrl,
+	cardType = "summary",
+}) => {
+	const image = imageUrl ? absoluteUrl(imageUrl, domain) : undefined;
+
+	const imageTags = !image
+		? ""
+		: html`
+			<meta name="twitter:image" property="twitter:image" content="${image}" />
+			<meta name="twitter:image:src" property="twitter:image:src" content="${image}">
+			<meta name="twitter:image:alt" property="twitter:image:alt" content="Illustration of ${title}">
+		`;
+
+	return html`
+		<meta name="twitter:card" property="twitter:card" content="${cardType}" />
+		<meta name="twitter:title" property="twitter:title" content="${title}" />
+		<meta name="twitter:description" property="twitter:description" content="${description}" />
+		${imageTags}
+	`;
+};
+
+/**
+ * Helper: Constructs an absolute URL given a relative URL and a domain.
+ *
+ * @param {string} url - The relative or absolute URL.
+ * @param {string} domain - The domain to prepend if the URL is relative.
+ * @returns {string} The absolute URL.
+ */
+const absoluteUrl = (url, domain) => {
+	if (url.startsWith("http")) {
+		return url;
+	}
+	return `https://${domain}${url}`;
+};

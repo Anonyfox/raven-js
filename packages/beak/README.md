@@ -10,7 +10,7 @@ _The raven's beak speaks in many tongues - HTML, CSS, SQL, and more. No dependen
 
 ## What is Beak?
 
-Beak is a **zero-dependency templating library** that leverages JavaScript's tagged template literals to provide powerful, flexible templating for modern web development. It's designed for developers who want the expressiveness of JSX without the framework overhead.
+Beak is a **zero-dependency templating library** that leverages JavaScript's tagged template literals to provide powerful, flexible templating for modern web development. It's designed for developers who want the expressiveness of JSX without the framework overhead. Includes built-in SEO meta tag generators for production-ready web apps.
 
 **No dependencies. No transpilation. No bullshit.**
 
@@ -253,12 +253,56 @@ import {
   // SQL query building
   sql,
 } from "@raven-js/beak";
+
+// SEO meta tag generation
+import {
+  general, // Basic SEO tags (title, description, canonical)
+  social, // Combined social media tags (Open Graph + Twitter)
+  openGraph, // Open Graph meta tags
+  twitter, // Twitter Card meta tags
+} from "@raven-js/beak/seo";
 ```
 
-### SEO Components
+### 🎯 SEO Meta Tag Generation
 
 ```javascript
-import { SeoMetatags } from "@raven-js/beak/seo";
+import { general, social, openGraph, twitter } from "@raven-js/beak/seo";
+
+// Basic SEO tags (title, description, canonical)
+const basicTags = general({
+  title: "My Awesome Page",
+  description: "The best page ever created",
+  domain: "example.com",
+  path: "/awesome-page",
+  suffix: "My Site",
+});
+
+// Social media tags (Open Graph + Twitter Cards)
+const socialTags = social({
+  title: "My Awesome Page",
+  description: "The best page ever created",
+  domain: "example.com",
+  path: "/awesome-page",
+  imageUrl: "/hero-image.jpg",
+});
+
+// Individual social platforms
+const ogTags = openGraph({
+  title: "My Page",
+  description: "Page description",
+  domain: "example.com",
+  path: "/my-page",
+  imageUrl: "/image.jpg",
+  type: "article",
+});
+
+const twitterTags = twitter({
+  title: "My Page",
+  description: "Page description",
+  domain: "example.com",
+  imageUrl: "/image.jpg",
+  cardType: "summary_large_image",
+});
 ```
 
 ## Requirements
