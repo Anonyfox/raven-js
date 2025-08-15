@@ -132,8 +132,56 @@ describe("stringify", () => {
 			const circular = [];
 			circular.push(circular);
 			const result = stringify(circular);
-			// Should not throw, but may have unexpected output
-			assert.ok(typeof result === "string");
+			assert.equal(result, "[Circular]");
+		});
+
+		it("should handle nested circular references", () => {
+			/** @type {Array<*>} */
+			const outer = [];
+			/** @type {Array<*>} */
+			const inner = [];
+			outer.push(inner);
+			inner.push(outer);
+			const result = stringify(outer);
+			assert.equal(result, "[Circular]");
+		});
+
+		it("should handle complex circular reference scenarios", () => {
+			/** @type {Array<*>} */
+			const a = [];
+			/** @type {Array<*>} */
+			const b = [];
+			/** @type {Array<*>} */
+			const c = [];
+			a.push(b);
+			b.push(c);
+			c.push(a);
+			const result = stringify(a);
+			assert.equal(result, "[Circular]");
+		});
+
+		it("should handle self-referencing arrays", () => {
+			/** @type {Array<*>} */
+			const selfRef = [];
+			selfRef.push("hello");
+			selfRef.push(selfRef);
+			selfRef.push("world");
+			const result = stringify(selfRef);
+			assert.equal(result, "hello[Circular]world");
+		});
+
+		it("should handle nested self-referencing arrays", () => {
+			/** @type {Array<*>} */
+			const outer = [];
+			/** @type {Array<*>} */
+			const inner = [];
+			outer.push("start");
+			outer.push(inner);
+			inner.push("middle");
+			inner.push(outer);
+			inner.push("end");
+			const result = stringify(outer);
+			assert.equal(result, "startmiddle[Circular]end");
 		});
 
 		it("should handle arrays with very long strings", () => {
@@ -157,6 +205,49 @@ describe("stringify", () => {
 			];
 			const result = stringify(mixed);
 			assert.equal(result, "1hello23null456undefinedtruefalse789");
+		});
+
+		it("should handle edge case with empty nested arrays", () => {
+			/** @type {Array<Array<*>>} */
+			const emptyNested = [[], [], []];
+			const result = stringify(emptyNested);
+			assert.equal(result, "");
+		});
+
+		it("should handle edge case with sparse arrays and holes", () => {
+			const sparse = [1];
+			sparse[2] = 3;
+			sparse[4] = 5;
+			const result = stringify(sparse);
+			assert.equal(result, "1undefined3undefined5");
+		});
+
+		it("should handle edge case with deeply nested empty arrays", () => {
+			/** @type {*} */
+			const deeplyEmpty = [[[[[]]]]];
+			const result = stringify(deeplyEmpty);
+			assert.equal(result, "");
+		});
+
+		it("should handle edge case with mixed empty and non-empty arrays", () => {
+			/** @type {Array<* | string>} */
+			const mixed = [[], "hello", [], "world", []];
+			const result = stringify(mixed);
+			assert.equal(result, "helloworld");
+		});
+
+		it("should handle edge case with circular reference in nested structure", () => {
+			/** @type {Array<*>} */
+			const outer = [];
+			/** @type {Array<*>} */
+			const inner = [];
+			outer.push("start");
+			outer.push(inner);
+			inner.push("middle");
+			inner.push(outer);
+			inner.push("end");
+			const result = stringify(outer);
+			assert.equal(result, "startmiddle[Circular]end");
 		});
 	});
 

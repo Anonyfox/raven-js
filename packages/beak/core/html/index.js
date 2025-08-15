@@ -1,107 +1,25 @@
-import { escapeSpecialCharacters } from "./escape-special-characters.js";
-import { stringify } from "./stringify.js";
-
-/**
- * Checks if a value should be included in the output.
- * @param {*} value - The value to check.
- * @returns {boolean} True if the value should be included, false otherwise.
- */
-const isValidValue = (value) => value === 0 || Boolean(value);
-
-// Pre-compiled regex patterns for whitespace normalization
-const WHITESPACE_BETWEEN_TAGS = />\s+</g;
-const NEWLINES_AND_SPACES = /\n\s*/g;
-
-// Cache for common string operations
-const STRING_CACHE = new Map();
-
-/**
- * Fast string normalization with caching for repeated patterns
- * @param {string} str - String to normalize
- * @returns {string} Normalized string
- */
-const fastNormalize = (str) => {
-	// Check cache first
-	if (STRING_CACHE.has(str)) {
-		return STRING_CACHE.get(str);
-	}
-
-	// Perform normalization
-	const normalized = str
-		.trim()
-		.replace(WHITESPACE_BETWEEN_TAGS, "><")
-		.replace(NEWLINES_AND_SPACES, "");
-
-	// Cache result for future use (only cache reasonable sized strings)
-	if (str.length < 1000) {
-		STRING_CACHE.set(str, normalized);
-	}
-
-	return normalized;
-};
-
-/**
- * Private template rendering function that handles the core logic.
- * Optimized for performance using modern JavaScript features.
- * @param {TemplateStringsArray} strings - The static parts of the template.
- * @param {Array<*>} values - The dynamic values to be interpolated.
- * @param {Function} [escapeFn] - Optional function to escape values.
- * @returns {string} The rendered template as a string.
- */
-const _renderTemplate = (strings, values, escapeFn = null) => {
-	// Fast path for common case: no values
-	if (values.length === 0) {
-		return fastNormalize(strings[0]);
-	}
-
-	// Fast path for single value case (very common)
-	if (values.length === 1) {
-		const value = values[0];
-		if (!isValidValue(value)) {
-			return fastNormalize(strings[0] + strings[1]);
-		}
-		const stringified = stringify(value);
-		const processed = escapeFn ? escapeFn(stringified) : stringified;
-		return fastNormalize(strings[0] + processed + strings[1]);
-	}
-
-	// Pre-allocate array for better performance than string concatenation
-	const parts = new Array(strings.length + values.length);
-	let partIndex = 0;
-
-	// Add first static part
-	parts[partIndex++] = strings[0];
-
-	// Process values and static parts
-	for (let i = 0; i < values.length; i++) {
-		const value = values[i];
-		if (isValidValue(value)) {
-			const stringified = stringify(value);
-			parts[partIndex++] = escapeFn ? escapeFn(stringified) : stringified;
-		}
-		parts[partIndex++] = strings[i + 1];
-	}
-
-	// Join all parts at once (much faster than string concatenation)
-	const result = parts.join("");
-
-	// Normalize whitespace using cached function
-	return fastNormalize(result);
-};
+import { _renderHtmlFast, _renderSafeHtmlFast } from "./template-renderer.js";
 
 /**
  * The main template tag function for creating HTML templates.
- * By default, it does NOT escape the input, trusting the developer like a raven trusts its wings.
  *
- * If you want to shield your nest from XSS attacks, use the `safeHtml` function instead,
- * basically everytime when one of the inner variables comes from user input.
+ * This function uses JavaScript's native tagged template literals to create HTML strings
+ * with dynamic content interpolation. It does NOT escape the input by default, trusting
+ * the developer to provide safe content. For untrusted input, use `safeHtml` instead.
+ *
+ * **How it works:**
+ * - Takes template strings and dynamic values as arguments
+ * - Interpolates values into the template at runtime
+ * - Automatically handles arrays by flattening them
+ * - Normalizes whitespace for clean HTML output
+ * - Falsy values (except 0) are excluded from output
  *
  * @param {TemplateStringsArray} strings - The static parts of the template.
  * @param {...*} values - The dynamic values to be interpolated.
  * @returns {string} The rendered HTML as a string.
  *
  * @example
- * // Basic usage
+ * // Basic variable interpolation
  * import { html } from '@raven-js/beak';
  *
  * const name = 'John Doe';
@@ -109,7 +27,7 @@ const _renderTemplate = (strings, values, escapeFn = null) => {
  * // Result: "<div><h1>Hello, John Doe!</h1></div>"
  *
  * @example
- * // Conditional rendering
+ * // Conditional rendering with ternary operators
  * const isLoggedIn = true;
  * const userContent = html`
  *   <div>
@@ -118,7 +36,7 @@ const _renderTemplate = (strings, values, escapeFn = null) => {
  * `;
  *
  * @example
- * // List rendering
+ * // List rendering with map()
  * const items = ['apple', 'banana', 'cherry'];
  * const listContent = html`
  *   <ul>
@@ -132,12 +50,12 @@ const _renderTemplate = (strings, values, escapeFn = null) => {
  * const button = html`<button${isDisabled ? ' disabled' : ''}>Submit</button>`;
  *
  * @example
- * // Dynamic classes
+ * // Dynamic CSS classes
  * const isActive = true;
  * const element = html`<div class="base ${isActive ? 'active' : ''}">Content</div>`;
  *
  * @example
- * // Complex nested structures
+ * // Complex nested structures with data
  * const users = [
  *   { name: 'Alice', isAdmin: true },
  *   { name: 'Bob', isAdmin: false }
@@ -154,7 +72,7 @@ const _renderTemplate = (strings, values, escapeFn = null) => {
  * `;
  *
  * @example
- * // Form rendering
+ * // Form rendering with dynamic fields
  * const fields = [
  *   { name: 'username', type: 'text', required: true },
  *   { name: 'email', type: 'email', required: true }
@@ -169,74 +87,45 @@ const _renderTemplate = (strings, values, escapeFn = null) => {
  *     `)}
  *   </form>
  * `;
- */
-// Specialized fast paths for common cases
-/**
- * Fast path for html function with common optimizations
- * @param {TemplateStringsArray} strings - The static parts of the template.
- * @param {Array<*>} values - The dynamic values to be interpolated.
- * @returns {string} The rendered HTML as a string.
- */
-const _renderHtmlFast = (strings, values) => {
-	// Fast path for common case: no values
-	if (values.length === 0) {
-		return fastNormalize(strings[0]);
-	}
-
-	// Fast path for single value case (very common)
-	if (values.length === 1) {
-		const value = values[0];
-		if (!isValidValue(value)) {
-			return fastNormalize(strings[0] + strings[1]);
-		}
-		const stringified = stringify(value);
-		return fastNormalize(strings[0] + stringified + strings[1]);
-	}
-
-	// General case
-	return _renderTemplate(strings, values);
-};
-
-/**
- * Fast path for safeHtml function with common optimizations
- * @param {TemplateStringsArray} strings - The static parts of the template.
- * @param {Array<*>} values - The dynamic values to be interpolated.
- * @returns {string} The rendered HTML as a string with escaped content.
- */
-const _renderSafeHtmlFast = (strings, values) => {
-	// Fast path for common case: no values
-	if (values.length === 0) {
-		return fastNormalize(strings[0]);
-	}
-
-	// Fast path for single value case (very common)
-	if (values.length === 1) {
-		const value = values[0];
-		if (!isValidValue(value)) {
-			return fastNormalize(strings[0] + strings[1]);
-		}
-		const stringified = stringify(value);
-		const escaped = escapeSpecialCharacters(stringified);
-		return fastNormalize(strings[0] + escaped + strings[1]);
-	}
-
-	// General case
-	return _renderTemplate(strings, values, escapeSpecialCharacters);
-};
-
-/**
- * The main template tag function for creating HTML templates.
- * @param {TemplateStringsArray} strings - The static parts of the template.
- * @param {...*} values - The dynamic values to be interpolated.
- * @returns {string} The rendered HTML as a string.
+ *
+ * @example
+ * // Handling falsy values (null, undefined, false, empty string)
+ * const user = null;
+ * const content = html`<div>${user || 'Guest'}</div>`;
+ * // Result: "<div>Guest</div>"
+ *
+ * @example
+ * // Zero is treated as truthy (included in output)
+ * const count = 0;
+ * const content = html`<div>Count: ${count}</div>`;
+ * // Result: "<div>Count: 0</div>"
+ *
+ * @example
+ * // Array flattening
+ * const items = [['a', 'b'], ['c', 'd']];
+ * const content = html`<div>${items}</div>`;
+ * // Result: "<div>abcd</div>"
  */
 export const html = (strings, ...values) => _renderHtmlFast(strings, values);
 
 /**
  * A template tag function for creating HTML with escaped content.
- * Use this for untrusted input to shield your nest from XSS attacks.
  *
- * If you trust the input, use the `html` function instead for better performance.
+ * This function provides XSS protection by automatically escaping HTML special characters
+ * in dynamic content. Use this whenever you're dealing with untrusted user input.
+ * For trusted content, use `html` for better performance.
+ *
+ * **How it works:**
+ * - Escapes HTML special characters: &, <, >, ", '
+ * - Converts them to HTML entities: &amp;, &lt;, &gt;, &quot;, &#39;
+ * - Prevents script injection and other XSS attacks
+ * - Works with all the same patterns as `html` function
+ *
+ * **When to use:**
+ * - User comments, reviews, or posts
+ * - Form input data
+ * - API responses from untrusted sources
+ * - Any content that comes from external users
  *
  * @param {TemplateStringsArray} strings - The static parts of the template.
  * @param {...*} values - The dynamic values to be interpolated and escaped.
@@ -320,12 +209,18 @@ export const html = (strings, ...values) => _renderHtmlFast(strings, values);
  *     <a href="${userProfile.website}">Website</a>
  *   </div>
  * `;
- */
-/**
- * A template tag function for creating HTML with escaped content.
- * @param {TemplateStringsArray} strings - The static parts of the template.
- * @param {...*} values - The dynamic values to be interpolated and escaped.
- * @returns {string} The rendered HTML as a string with escaped content.
+ *
+ * @example
+ * // Handling falsy values with escaping
+ * const userInput = null;
+ * const content = safeHtml`<div>${userInput || 'No input provided'}</div>`;
+ * // Result: "<div>No input provided</div>"
+ *
+ * @example
+ * // Array flattening with escaping
+ * const userInputs = [['<script>alert("XSS1")</script>', '<script>alert("XSS2")</script>']];
+ * const content = safeHtml`<div>${userInputs}</div>`;
+ * // Result: "<div>&lt;script&gt;alert(&quot;XSS1&quot;)&lt;/script&gt;&lt;script&gt;alert(&quot;XSS2&quot;)&lt;/script&gt;</div>"
  */
 export const safeHtml = (strings, ...values) =>
 	_renderSafeHtmlFast(strings, values);
