@@ -1,4 +1,5 @@
 import { escapeSpecialCharacters } from "./escape-special-characters.js";
+import { stringify } from "./stringify.js";
 
 /**
  * Checks if a value should be included in the output.
@@ -6,14 +7,6 @@ import { escapeSpecialCharacters } from "./escape-special-characters.js";
  * @returns {boolean} True if the value should be included, false otherwise.
  */
 const isValidValue = (value) => value === 0 || Boolean(value);
-
-/**
- * Converts a value to a string, joining arrays if necessary.
- * @param {*} value - The value to stringify.
- * @returns {string} The stringified value.
- */
-const stringify = (value) =>
-	Array.isArray(value) ? value.join("") : String(value);
 
 /**
  * The main template tag function for creating HTML templates.

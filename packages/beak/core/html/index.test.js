@@ -21,6 +21,12 @@ describe("HTML Template Functions", () => {
 			assert.equal(result, "<div>onetwothree</div>");
 		});
 
+		it("handles nested arrays correctly", () => {
+			const nestedItems = ["one", ["two", "three"], "four"];
+			const result = html`<div>${nestedItems}</div>`;
+			assert.equal(result, "<div>onetwothreefour</div>");
+		});
+
 		it("handles falsy values correctly", () => {
 			const result = html`<div>${null}${undefined}${false}${0}</div>`;
 			assert.equal(result, "<div>0</div>");
@@ -57,6 +63,12 @@ describe("HTML Template Functions", () => {
 			const items = ["one", "two", "three"];
 			const result = safeHtml`<div>${items}</div>`;
 			assert.equal(result, "<div>onetwothree</div>");
+		});
+
+		it("handles nested arrays correctly", () => {
+			const nestedItems = ["one", ["two", "three"], "four"];
+			const result = safeHtml`<div>${nestedItems}</div>`;
+			assert.equal(result, "<div>onetwothreefour</div>");
 		});
 
 		it("handles falsy values correctly", () => {
