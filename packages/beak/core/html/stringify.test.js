@@ -128,6 +128,7 @@ describe("stringify", () => {
 		});
 
 		it("should handle circular references gracefully", () => {
+			/** @type {Array<*>} */
 			const circular = [];
 			circular.push(circular);
 			const result = stringify(circular);
@@ -161,6 +162,7 @@ describe("stringify", () => {
 
 	describe("performance characteristics", () => {
 		it("should handle many nested levels efficiently", () => {
+			/** @type {*} */
 			let deeplyNested = 1;
 			for (let i = 0; i < 100; i++) {
 				deeplyNested = [deeplyNested];
