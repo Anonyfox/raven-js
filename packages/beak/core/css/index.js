@@ -1,19 +1,4 @@
-/**
- * Processes a CSS string to ensure single-line output with minimal whitespace.
- * @param {string} css - The input CSS string.
- * @returns {string} The processed CSS string.
- */
-const processCSS = (css) => {
-	return css
-		.replace(/\s+/g, " ")
-		.replace(/:\s+/g, ":")
-		.replace(/\s+;/g, ";")
-		.replace(/\s+\{/g, "{")
-		.replace(/\s+\}/g, "}")
-		.replace(/;(?!$|\s)/g, "; ")
-		.replace(/\}(?!$|\s)/g, "} ")
-		.trim();
-};
+import { processCSS } from "./process-css.js";
 
 /**
  * Creates a CSS string from template literals.
