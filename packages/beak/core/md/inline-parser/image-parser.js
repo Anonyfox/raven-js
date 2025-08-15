@@ -1,0 +1,38 @@
+import { NODE_TYPES } from "../types.js";
+
+/**
+ * Tries to parse an image ![alt](url)
+ * @param {string} text - The text to parse
+ * @param {number} start - Starting position
+ * @returns {{node: import('../types.js').InlineNode, start: number, end: number} | null}
+ */
+export const tryParseImage = (text, start) => {
+	if (start + 1 >= text.length) return null;
+	if (text.slice(start, start + 2) !== "![") return null;
+
+	const endBracket = text.indexOf("]", start + 2);
+	if (endBracket === -1) return null;
+
+	const endParen = text.indexOf(")", endBracket);
+	if (endParen === -1) return null;
+
+	// Check for proper image syntax: ![alt](url)
+	if (endBracket + 1 >= text.length || text[endBracket + 1] !== "(") {
+		return null;
+	}
+
+	const alt = text.slice(start + 2, endBracket);
+	const url = text.slice(endBracket + 2, endParen);
+
+	if (url.length === 0) return null;
+
+	return {
+		node: {
+			type: NODE_TYPES.IMAGE,
+			alt,
+			url,
+		},
+		start,
+		end: endParen + 1,
+	};
+};
