@@ -21,10 +21,6 @@
     "./caws": {
       "import": "./caws/index.js",
       "types": "./types.caws.d.ts"
-    },
-    "./bootstrap": {
-      "import": "./bootstrap/index.js",
-      "types": "./types.bootstrap.d.ts"
     }
   },
   "scripts": {
@@ -33,8 +29,8 @@
     "prepublishOnly": "npm run test && npm run test:style",
     "test": "npm run test:types && npm run test:code && npm run test:style",
     "test:code": "node --test --experimental-test-coverage",
-    "test:style": "biome lint --error-on-warnings ./core ./caws ./bootstrap",
-    "test:types": "tsc --noEmit --allowJS core/*.js caws/*.js bootstrap/*.js"
+    "test:style": "biome lint --error-on-warnings ./core ./caws",
+    "test:types": "tsc --noEmit --allowJS core/*.js caws/*.js"
   },
   "keywords": [
     "templating",
