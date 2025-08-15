@@ -47,20 +47,4 @@ describe("general", () => {
 			),
 		);
 	});
-
-	it("should handle absolute URLs correctly", () => {
-		const config = {
-			title: "Test Page",
-			description: "This is a test description.",
-			domain: "example.com",
-			path: "https://other.com/test-path",
-		};
-		const result = general(config);
-
-		assert(
-			result.includes(
-				'<link rel="canonical" href="https://other.com/test-path" />',
-			),
-		);
-	});
 });

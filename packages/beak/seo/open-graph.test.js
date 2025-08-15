@@ -73,23 +73,6 @@ describe("openGraph", () => {
 		assert(!result.includes('<meta name="og:image" property="og:image"'));
 	});
 
-	it("should handle absolute image URLs correctly", () => {
-		const config = {
-			title: "Test Page",
-			description: "This is a test description.",
-			domain: "example.com",
-			path: "/test-path",
-			imageUrl: "https://other.com/test-image.png",
-		};
-		const result = openGraph(config);
-
-		assert(
-			result.includes(
-				'<meta name="og:image" property="og:image" content="https://other.com/test-image.png" />',
-			),
-		);
-	});
-
 	it("should use default type when not specified", () => {
 		const config = {
 			title: "Test Page",

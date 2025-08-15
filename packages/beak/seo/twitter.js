@@ -1,4 +1,5 @@
 import { html } from "../core/index.js";
+import { absoluteUrl } from "./utils.js";
 
 /**
  * @typedef {Object} TwitterConfig
@@ -51,18 +52,4 @@ export const twitter = ({
 		<meta name="twitter:description" property="twitter:description" content="${description}" />
 		${imageTags}
 	`;
-};
-
-/**
- * Helper: Constructs an absolute URL given a relative URL and a domain.
- *
- * @param {string} url - The relative or absolute URL.
- * @param {string} domain - The domain to prepend if the URL is relative.
- * @returns {string} The absolute URL.
- */
-const absoluteUrl = (url, domain) => {
-	if (url.startsWith("http")) {
-		return url;
-	}
-	return `https://${domain}${url}`;
 };

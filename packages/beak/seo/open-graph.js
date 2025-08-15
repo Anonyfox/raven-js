@@ -1,4 +1,5 @@
 import { html } from "../core/index.js";
+import { absoluteUrl } from "./utils.js";
 
 /**
  * @typedef {Object} OpenGraphConfig
@@ -49,18 +50,4 @@ export const openGraph = ({
 		<meta name="og:url" property="og:url" content="${url}" />
 		${image ? html`<meta name="og:image" property="og:image" content="${image}" />` : ""}
 	`;
-};
-
-/**
- * Helper: Constructs an absolute URL given a relative URL and a domain.
- *
- * @param {string} url - The relative or absolute URL.
- * @param {string} domain - The domain to prepend if the URL is relative.
- * @returns {string} The absolute URL.
- */
-const absoluteUrl = (url, domain) => {
-	if (url.startsWith("http")) {
-		return url;
-	}
-	return `https://${domain}${url}`;
 };

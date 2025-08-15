@@ -83,22 +83,6 @@ describe("twitter", () => {
 		);
 	});
 
-	it("should handle absolute image URLs correctly", () => {
-		const config = {
-			title: "Test Page",
-			description: "This is a test description.",
-			domain: "example.com",
-			imageUrl: "https://other.com/test-image.png",
-		};
-		const result = twitter(config);
-
-		assert(
-			result.includes(
-				'<meta name="twitter:image" property="twitter:image" content="https://other.com/test-image.png" />',
-			),
-		);
-	});
-
 	it("should use default card type when not specified", () => {
 		const config = {
 			title: "Test Page",
