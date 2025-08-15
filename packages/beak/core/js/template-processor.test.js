@@ -353,4 +353,224 @@ describe("processJSTemplate", () => {
 			);
 		});
 	});
+
+	describe("modern JavaScript features", () => {
+		it("should handle arrow functions", () => {
+			const param = "name";
+			const body = "console.log(name)";
+			const result = processJSTemplate`const greet = (${param}) => { ${body}; };`;
+			assert.equal(result, "const greet = (name) => { console.log(name); };");
+		});
+
+		it("should handle destructuring assignments", () => {
+			const objName = "user";
+			const prop1 = "name";
+			const prop2 = "age";
+			const result = processJSTemplate`const { ${prop1}, ${prop2} } = ${objName};`;
+			assert.equal(result, "const { name, age } = user;");
+		});
+
+		it("should handle spread operators", () => {
+			const arrayName = "items";
+			const result = processJSTemplate`const allItems = [...${arrayName}, "new"];`;
+			assert.equal(result, 'const allItems = [...items, "new"];');
+		});
+
+		it("should handle rest parameters", () => {
+			const param = "args";
+			const result = processJSTemplate`function sum(...${param}) { return ${param}.reduce((a, b) => a + b, 0); }`;
+			assert.equal(
+				result,
+				"function sum(...args) { return args.reduce((a, b) => a + b, 0); }",
+			);
+		});
+
+		it("should handle optional chaining", () => {
+			const objName = "user";
+			const propName = "address";
+			const result = processJSTemplate`const street = ${objName}?.${propName}?.street;`;
+			assert.equal(result, "const street = user?.address?.street;");
+		});
+
+		it("should handle nullish coalescing", () => {
+			const value = "defaultValue";
+			const result = processJSTemplate`const name = user.name ?? "${value}";`;
+			assert.equal(result, 'const name = user.name ?? "defaultValue";');
+		});
+	});
+
+	describe("complex expressions and calculations", () => {
+		it("should handle mathematical expressions with variables", () => {
+			const a = 10;
+			const b = 5;
+			const result = processJSTemplate`const result = ${a} * ${b} + 2;`;
+			assert.equal(result, "const result = 10 * 5 + 2;");
+		});
+
+		it("should handle function calls with complex arguments", () => {
+			const funcName = "processData";
+			const data = "userData";
+			const options = "config";
+			const result = processJSTemplate`const result = ${funcName}(${data}, { ...${options}, strict: true });`;
+			assert.equal(
+				result,
+				"const result = processData(userData, { ...config, strict: true });",
+			);
+		});
+
+		it("should handle template literal expressions", () => {
+			const prefix = "user";
+			const id = 123;
+			const result = processJSTemplate`const key = \`${prefix}_${id}\`;`;
+			assert.equal(result, "const key = `user_123`;");
+		});
+
+		it("should handle conditional expressions with complex logic", () => {
+			const condition = "isAdmin";
+			const userRole = "role";
+			const result = processJSTemplate`const canEdit = ${condition} && ${userRole} === "admin" ? true : false;`;
+			assert.equal(
+				result,
+				'const canEdit = isAdmin && role === "admin" ? true : false;',
+			);
+		});
+	});
+
+	describe("unicode and special characters", () => {
+		it("should handle unicode characters", () => {
+			const emoji = "🚀";
+			const result = processJSTemplate`const rocket = "${emoji}";`;
+			assert.equal(result, 'const rocket = "🚀";');
+		});
+
+		it("should handle unicode variable names", () => {
+			const varName = "π";
+			const value = Math.PI;
+			const result = processJSTemplate`const ${varName} = ${value};`;
+			assert.equal(result, "const π = 3.141592653589793;");
+		});
+
+		it("should handle special characters in strings", () => {
+			const special = 'Hello\nWorld\t"quoted"';
+			const result = processJSTemplate`const message = "${special}";`;
+			assert.equal(result, 'const message = "Hello\nWorld\t"quoted"";');
+		});
+
+		it("should handle regex patterns", () => {
+			const pattern = "\\d+";
+			const flags = "g";
+			const result = processJSTemplate`const regex = /${pattern}/${flags};`;
+			assert.equal(result, "const regex = /\\d+/g;");
+		});
+	});
+
+	describe("error handling and edge cases", () => {
+		it("should handle circular references gracefully", () => {
+			const circular = {};
+			circular.self = circular;
+			const result = processJSTemplate`const obj = ${circular};`;
+			assert.equal(result, "const obj = [object Object];");
+		});
+
+		it("should handle objects with custom toString", () => {
+			const customObj = {
+				toString() {
+					return "custom string";
+				},
+			};
+			const result = processJSTemplate`const obj = ${customObj};`;
+			assert.equal(result, "const obj = custom string;");
+		});
+
+		it("should handle objects with null prototype", () => {
+			const nullProto = Object.create(null);
+			nullProto.key = "value";
+			// This should throw an error when stringified
+			assert.throws(
+				() => processJSTemplate`const obj = ${nullProto};`,
+				TypeError,
+			);
+		});
+
+		it("should handle very large objects", () => {
+			const largeObj = {};
+			for (let i = 0; i < 1000; i++) {
+				largeObj[`key${i}`] = `value${i}`;
+			}
+			const result = processJSTemplate`const data = ${largeObj};`;
+			assert.equal(result, "const data = [object Object];");
+		});
+
+		it("should handle functions with complex bodies", () => {
+			const complexFunc = (a, b) => {
+				if (a > b) {
+					return a * 2;
+				} else {
+					return b + 1;
+				}
+			};
+			const result = processJSTemplate`const func = ${complexFunc};`;
+			assert.ok(result.includes("function") || result.includes("=>"));
+			assert.ok(result.includes("if"));
+		});
+	});
+
+	describe("template literal specific features", () => {
+		it("should handle nested template literals with expressions", () => {
+			const innerVar = "world";
+			const outerVar = "greeting";
+			const result = processJSTemplate`const ${outerVar} = \`Hello \${${innerVar}}!\`;`;
+			assert.equal(result, `const greeting = \`Hello \${world}!\`;`);
+		});
+
+		it("should handle template literal expressions that evaluate to objects", () => {
+			const obj = { name: "John", age: 30 };
+			const result = processJSTemplate`const user = \`User: \${${obj}}\`;`;
+			assert.equal(result, `const user = \`User: \${[object Object]}\`;`);
+		});
+
+		it("should handle template literal expressions with function calls", () => {
+			const funcName = "formatName";
+			const name = "John";
+			const result = processJSTemplate`const formatted = \`Hello \${${funcName}("${name}")}!\`;`;
+			assert.equal(
+				result,
+				`const formatted = \`Hello \${formatName("John")}!\`;`,
+			);
+		});
+
+		it("should handle template literal expressions with conditional logic", () => {
+			const condition = "isLoggedIn";
+			const user = "currentUser";
+			const guest = "Guest";
+			const result = processJSTemplate`const displayName = \`Welcome \${${condition} ? ${user} : "${guest}"}!\`;`;
+			assert.equal(
+				result,
+				`const displayName = \`Welcome \${isLoggedIn ? currentUser : "Guest"}!\`;`,
+			);
+		});
+	});
+
+	describe("performance and scalability", () => {
+		it("should handle templates with many interpolations efficiently", () => {
+			const values = Array(1000).fill("value");
+			const template = values.map((_, i) => `\${${i}}`).join(" + ");
+			const result = processJSTemplate`const sum = ${template};`;
+			assert.ok(result.includes("const sum ="));
+			assert.ok(result.includes("+"));
+		});
+
+		it("should handle very long static strings efficiently", () => {
+			const longStatic = "x".repeat(10000);
+			const result = processJSTemplate`const data = "${longStatic}";`;
+			assert.equal(result, `const data = "${longStatic}";`);
+		});
+
+		it("should handle mixed long static and dynamic content", () => {
+			const longStatic = "x".repeat(5000);
+			const dynamic = "dynamic";
+			const result = processJSTemplate`const data = "${longStatic}${dynamic}";`;
+			assert.equal(result, `const data = "${longStatic}dynamic";`);
+		});
+	});
 });
