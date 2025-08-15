@@ -1,5 +1,9 @@
 # 🦅 The RavenJS Flock
 
+[![Website](https://img.shields.io/badge/Website-ravenjs.dev-blue.svg)](https://ravenjs.dev)
+[![Documentation](https://img.shields.io/badge/Documentation-Online-blue.svg)](https://docs.ravenjs.dev)
+[![Zero Dependencies](https://img.shields.io/badge/Zero-Dependencies-brightgreen.svg)](https://github.com/Anonyfox/raven-js)
+
 ## Why This Flock Is Organized the Way It Is
 
 RavenJS is not another "all-or-nothing" framework.
@@ -274,3 +278,21 @@ The standard companion tool for framework usage: create new app skeletons, scaff
 - ✅ **Complete** - Ready for production use
 - 🚧 **In Development** - Actively being built
 - 📋 **Planned** - On the roadmap, not yet started
+
+---
+
+<div align="center">
+
+## 🦅 Support RavenJS Development
+
+If you find RavenJS helpful, consider supporting its development:
+
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor%20on%20GitHub-%23EA4AAA?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sponsors/Anonyfox)
+
+Your sponsorship helps keep RavenJS **zero-dependency**, **modern**, and **developer-friendly**.
+
+---
+
+**Built with ❤️ by [Anonyfox](https://anonyfox.com)**
+
+</div>

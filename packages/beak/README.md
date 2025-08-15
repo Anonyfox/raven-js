@@ -2,6 +2,8 @@
 
 _The raven's beak speaks in many tongues - HTML, CSS, SQL, and more. No dependencies, no bloat, just pure templating power._
 
+[![Website](https://img.shields.io/badge/Website-ravenjs.dev-blue.svg)](https://ravenjs.dev)
+[![Documentation](https://img.shields.io/badge/Documentation-Online-blue.svg)](https://docs.ravenjs.dev/beak/)
 [![Zero Dependencies](https://img.shields.io/badge/Zero-Dependencies-brightgreen.svg)](https://github.com/Anonyfox/raven-js)
 [![ESM](https://img.shields.io/badge/ESM-Only-blue.svg)](https://nodejs.org/api/esm.html)
 [![Node.js](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
@@ -279,6 +281,20 @@ Copyright (c) 2025 Anonyfox e.K.
 
 _Beak: Because sometimes the best way to speak is to keep it simple._
 
+---
+
 <div align="center">
-  <sub>Built with ❤️ by <a href="https://anonyfox.com">Anonyfox</a></sub>
+
+## 🦅 Support RavenJS Development
+
+If you find RavenJS helpful, consider supporting its development:
+
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor%20on%20GitHub-%23EA4AAA?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sponsors/Anonyfox)
+
+Your sponsorship helps keep RavenJS **zero-dependency**, **modern**, and **developer-friendly**.
+
+---
+
+**Built with ❤️ by [Anonyfox](https://anonyfox.com)**
+
 </div>

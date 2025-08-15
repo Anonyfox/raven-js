@@ -2,6 +2,10 @@
 
 _Soar above the complexity of modern web development with intelligent syntax highlighting for RavenJS tagged templates._
 
+[![Website](https://img.shields.io/badge/Website-ravenjs.dev-blue.svg)](https://ravenjs.dev)
+[![VS Code Extension](https://img.shields.io/badge/VS%20Code-Extension-purple.svg)](https://marketplace.visualstudio.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
+
 ## What This Extension Does
 
 The RavenJS VS Code Extension transforms your development experience by providing intelligent syntax highlighting and IntelliSense for all RavenJS tagged template literals. No more squinting at monochrome template strings - get proper syntax highlighting for HTML, CSS, SQL, Markdown, and JavaScript within your tagged templates.
@@ -181,3 +185,21 @@ MIT License - see the [LICENSE](../../LICENSE) file for details.
 ---
 
 _Built with the wisdom of a raven - intelligent, efficient, and always ready to soar above complexity._ 🦅
+
+---
+
+<div align="center">
+
+## 🦅 Support RavenJS Development
+
+If you find RavenJS helpful, consider supporting its development:
+
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor%20on%20GitHub-%23EA4AAA?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sponsors/Anonyfox)
+
+Your sponsorship helps keep RavenJS **zero-dependency**, **modern**, and **developer-friendly**.
+
+---
+
+**Built with ❤️ by [Anonyfox](https://anonyfox.com)**
+
+</div>
