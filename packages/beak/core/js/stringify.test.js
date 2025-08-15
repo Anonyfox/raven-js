@@ -151,6 +151,7 @@ describe("stringify", () => {
 		});
 
 		it("should stringify functions with parameters", () => {
+			/** @type {(a: any, b: any) => any} */
 			const funcWithParams = (a, b) => a + b;
 			assert.equal(stringify(funcWithParams), "(a, b) => a + b");
 		});
@@ -176,6 +177,7 @@ describe("stringify", () => {
 		});
 
 		it("should handle circular references in arrays", () => {
+			/** @type {Array<*>} */
 			const circular = [];
 			circular[0] = circular;
 			assert.equal(stringify(circular), "");
@@ -218,6 +220,7 @@ describe("stringify", () => {
 
 	describe("performance characteristics", () => {
 		it("should handle many nested levels efficiently", () => {
+			/** @type {any} */
 			let deepArray = ["deepest"];
 			for (let i = 0; i < 100; i++) {
 				deepArray = [deepArray];

@@ -85,6 +85,7 @@ describe("processJSTemplate", () => {
 		});
 
 		it("should handle empty arrays", () => {
+			/** @type {Array<*>} */
 			const emptyArray = [];
 			const result = processJSTemplate`${emptyArray}`;
 			assert.equal(result, "");
@@ -279,6 +280,7 @@ describe("processJSTemplate", () => {
 		});
 
 		it("should handle very deep nested arrays", () => {
+			/** @type {any} */
 			let deepArray = ["deepest"];
 			for (let i = 0; i < 100; i++) {
 				deepArray = [deepArray];
@@ -493,6 +495,7 @@ describe("processJSTemplate", () => {
 		});
 
 		it("should handle very large objects", () => {
+			/** @type {Record<string, string>} */
 			const largeObj = {};
 			for (let i = 0; i < 1000; i++) {
 				largeObj[`key${i}`] = `value${i}`;
@@ -502,6 +505,7 @@ describe("processJSTemplate", () => {
 		});
 
 		it("should handle functions with complex bodies", () => {
+			/** @type {(a: any, b: any) => any} */
 			const complexFunc = (a, b) => {
 				if (a > b) {
 					return a * 2;
