@@ -62,7 +62,7 @@
           "text.html": "html",
           "source.css": "css",
           "source.sql": "sql",
-          "text.html.markdown": "markdown",
+          "text.markdown.embedded.ravenjs": "markdown",
           "source.js": "javascript"
         }
       }
