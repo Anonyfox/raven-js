@@ -257,16 +257,22 @@ import {
 // SEO meta tag generation
 import {
   general, // Basic SEO tags (title, description, canonical)
-  social, // Combined social media tags (Open Graph + Twitter)
+  social, // Combined social media tags (Open Graph + Twitter + Pinterest + LinkedIn + Discord)
   openGraph, // Open Graph meta tags
   twitter, // Twitter Card meta tags
+  pinterest, // Pinterest meta tags
+  linkedin, // LinkedIn meta tags
+  discord, // Discord meta tags
+  robots, // Robots meta tag (search engine crawling control)
+  author, // Author meta tag (content attribution)
+  canonical, // Canonical URL (duplicate content prevention)
 } from "@raven-js/beak/seo";
 ```
 
 ### 🎯 SEO Meta Tag Generation
 
 ```javascript
-import { general, social, openGraph, twitter } from "@raven-js/beak/seo";
+import { general, social, robots, author, canonical } from "@raven-js/beak/seo";
 
 // Basic SEO tags (title, description, canonical)
 const basicTags = general({
@@ -277,13 +283,31 @@ const basicTags = general({
   suffix: "My Site",
 });
 
-// Social media tags (Open Graph + Twitter Cards)
+// Social media tags (Open Graph + Twitter Cards + Pinterest + LinkedIn + Discord)
 const socialTags = social({
   title: "My Awesome Page",
   description: "The best page ever created",
   domain: "example.com",
   path: "/awesome-page",
   imageUrl: "/hero-image.jpg",
+});
+
+// Robots meta tag (search engine crawling control)
+const robotsTags = robots({
+  index: true,
+  follow: false,
+});
+
+// Author meta tag (content attribution)
+const authorTags = author({
+  name: "John Doe",
+  email: "john@example.com",
+});
+
+// Canonical URL (duplicate content prevention)
+const canonicalTags = canonical({
+  domain: "example.com",
+  path: "/awesome-page",
 });
 
 // Individual social platforms
