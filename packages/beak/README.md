@@ -12,6 +12,51 @@ Beak is a **zero-dependency templating library** that leverages JavaScript's tag
 
 **No dependencies. No transpilation. No bullshit.**
 
+## Critical Advantages for Seasoned Developers
+
+### 🔒 **Zero-Dependency Security**
+
+- **No transitive dependencies** - Eliminates security vulnerabilities from code you didn't write
+- **Perfect for regulated environments** - Financial, healthcare, government applications where dependency audits are critical
+- **Predictable builds** - No surprise updates or breaking changes from external packages
+- **Compliance-friendly** - No dependency hell or security messes
+
+### ⚡ **Native JavaScript Performance**
+
+- **Template literal optimization** - Uses JavaScript's native tagged template literals with performance optimizations
+- **Fast-path handling** - Specialized optimizations for common cases (0 values, 1 value) with pre-allocated arrays
+- **String caching** - Intelligent caching of normalized strings for repeated patterns
+- **No virtual DOM overhead** - Direct string interpolation, nearly as fast as string concatenation
+- **Memory efficient** - Minimal memory footprint with no complex data structures
+
+### 🎯 **Multi-Domain Templating**
+
+- **Unified API** - Single library for HTML, CSS, SQL, Markdown, and JavaScript templating
+- **Consistent patterns** - Same interpolation syntax across all domains
+- **Cross-domain composition** - Mix HTML, CSS, and JS templates seamlessly
+- **Specialized optimizations** - Each template type has domain-specific processing (CSS minification, SQL escaping, etc.)
+
+### 🛡️ **Security-First Design**
+
+- **XSS protection** - `safeHtml` function with automatic HTML entity escaping
+- **SQL injection prevention** - Built-in SQL escaping for dynamic queries
+- **Trust boundary awareness** - Clear distinction between trusted and untrusted content
+- **No eval() or dynamic code execution** - Pure string processing for security
+
+### 🚀 **Modern Ecosystem Integration**
+
+- **ESM-only** - Leverages modern JavaScript module system
+- **Tree-shaking friendly** - Import only what you need
+- **Bundler agnostic** - Works with webpack, esbuild, Rollup, Vite, etc.
+- **No custom loaders needed** - Pure JavaScript, no special bundler configuration
+
+### 🏢 **Enterprise-Ready Features**
+
+- **Comprehensive test coverage** - Extensive testing for correctness across all template types
+- **Production optimizations** - Whitespace normalization, array flattening, falsy value handling
+- **Component architecture** - Reusable template functions with clear patterns
+- **MIT license** - Business-friendly licensing with no vendor lock-in
+
 ## Quick Start
 
 ```bash
@@ -65,7 +110,7 @@ const safe = safeHtml`<div>${userInput}</div>`;
 ```javascript
 import { html, css, style } from "@raven-js/beak";
 
-// CSS templating
+// CSS templating with automatic optimization
 const buttonStyles = css`
   .btn {
     padding: 12px 24px;
@@ -184,21 +229,9 @@ const template = html`
 `;
 ```
 
-## Package Structure
+## API Reference
 
-Beak is organized into three main modules:
-
-### Core (`@raven-js/beak`)
-
-The main templating functions:
-
-- `html` / `safeHtml` - HTML templating with optional XSS protection
-- `css` / `style` - CSS-in-JS templating
-- `js` / `script` / `scriptDefer` / `scriptAsync` - JavaScript code generation
-- `md` - Markdown to HTML conversion
-- `sql` - SQL query building
-
-**All Core Exports:**
+### Core Exports
 
 ```javascript
 import {
@@ -220,74 +253,17 @@ import {
 } from "@raven-js/beak";
 ```
 
-### Caws (`@raven-js/beak/caws`)
-
-Pre-built components for common use cases:
-
-- `SeoMetatags` - Social media meta tag generation
-
-**All Caws Exports:**
+### Caws Components
 
 ```javascript
 import { SeoMetatags } from "@raven-js/beak/caws";
 ```
 
-## Why Choose Beak?
-
-### For Developers Who Are Tired Of:
-
-- **Framework bloat** - Importing entire libraries for simple templating
-- **Build complexity** - Transpilation layers that hide what your code does
-- **Dependency hell** - Security vulnerabilities from transitive dependencies
-- **Lock-in** - Being forced into specific paradigms and toolchains
-
-### Beak Offers:
-
-- **Zero dependencies** - No external packages to maintain or secure
-- **Modern JavaScript** - Uses ESNext features without transpilation
-- **Perfect tree-shaking** - Import only what you need
-- **Type safety** - Full IntelliSense support via JSDoc
-- **Performance** - Nearly as fast as string concatenation
-- **Flexibility** - Use anywhere: server, client, or both
-- **Versatile toolkit** - Mix and match with other RavenJS libraries
-
-## Performance
-
-Beak is designed for speed:
-
-- **No virtual DOM** - Direct string interpolation
-- **No runtime overhead** - Functions are just template literal processors
-- **Minimal memory footprint** - No complex data structures
-- **Bundle-friendly** - Works seamlessly with esbuild, webpack, and other bundlers
-
-## Browser Support
-
-Beak requires modern JavaScript environments:
+## Requirements
 
 - **Node.js**: 22.5+
 - **Browsers**: All modern browsers with ES2020+ support
 - **No polyfills needed** - Uses native template literals and modern JS features
-
-## TypeScript Support
-
-Full IntelliSense support without TypeScript compilation:
-
-```javascript
-import { html } from '@raven-js/beak';
-
-// Full autocomplete and type checking in IDEs
-const template = html`<div>${/* TypeScript knows this should be a string */}</div>`;
-```
-
-## Contributing
-
-Beak follows the RavenJS philosophy:
-
-- Keep it simple and focused
-- Zero dependencies
-- Modern JavaScript only
-- Self-documenting APIs
-- Comprehensive test coverage
 
 ## Documentation
 
