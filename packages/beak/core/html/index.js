@@ -1,22 +1,4 @@
-/**
- * A mapping of HTML special characters to their escaped counterparts.
- * @type {Object.<string, string>}
- */
-const escapeMap = {
-	"&": "&amp;",
-	"<": "&lt;",
-	">": "&gt;",
-	"'": "&#39;",
-	'"': "&quot;",
-};
-
-/**
- * Escapes HTML special characters in a string to prevent XSS attacks.
- * @param {string} str - The string to escape.
- * @returns {string} The escaped string.
- */
-const escapeHTML = (str) =>
-	str.replace(/[&<>"]/g, (char) => escapeMap[char] || char);
+import { escapeSpecialCharacters } from "./escape-special-characters.js";
 
 /**
  * Checks if a value should be included in the output.
@@ -94,7 +76,7 @@ export const safeHtml = (strings, ...values) => {
 	for (let i = 0; i < values.length; i++) {
 		const value = values[i];
 		if (isValidValue(value)) {
-			result += escapeHTML(stringify(value));
+			result += escapeSpecialCharacters(stringify(value));
 		}
 		result += strings[i + 1];
 	}

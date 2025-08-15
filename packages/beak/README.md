@@ -232,35 +232,6 @@ Pre-built components for common use cases:
 import { SeoMetatags } from "@raven-js/beak/caws";
 ```
 
-### Bootstrap (`@raven-js/beak/bootstrap`)
-
-Ready-to-use Bootstrap 5 components:
-
-- `Hero`, `Intro`, `FeatureGrid`, `FeatureShowcase`
-- `Testimonials`, `LogoCloud`, `PricingSinglePlan`, `PricingTable`
-- `CTA`, `FAQs`, `CodeExample`
-
-**All Bootstrap Exports:**
-
-```javascript
-import {
-  // Layout components
-  Hero,
-  Intro,
-  FeatureGrid,
-  FeatureShowcase,
-  // Content components
-  Testimonial,
-  LogoCloud,
-  PricingSinglePlan,
-  PricingTable,
-  // Interactive components
-  CTA,
-  FAQ,
-  CodeExample,
-} from "@raven-js/beak/bootstrap";
-```
-
 ## Why Choose Beak?
 
 ### For Developers Who Are Tired Of:
