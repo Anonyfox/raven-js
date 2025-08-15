@@ -1,18 +1,4 @@
-/**
- * Checks if a value should be included in the output.
- * @param {*} value - The value to check.
- * @returns {boolean} True if the value should be included, false otherwise.
- */
-const isValidValue = (value) => value === 0 || Boolean(value);
-
-// TODO: duplicated code
-/**
- * Converts a value to a string, joining arrays if necessary.
- * @param {*} value - The value to stringify.
- * @returns {string} The stringified value.
- */
-const stringify = (value) =>
-	Array.isArray(value) ? value.join("") : String(value);
+import { processJSTemplate } from "./template-processor.js";
 
 /**
  * A template tag function for creating JavaScript snippets.
@@ -33,17 +19,7 @@ const stringify = (value) =>
  * `;
  * // Result: "let count = 10; console.log(count);"
  */
-export const js = (strings, ...values) => {
-	let result = strings[0];
-	for (let i = 0; i < values.length; i++) {
-		const value = values[i];
-		if (isValidValue(value)) {
-			result += stringify(value);
-		}
-		result += strings[i + 1];
-	}
-	return result.trim();
-};
+export const js = processJSTemplate;
 
 /**
  * A template tag function for creating script tags with JavaScript content.
