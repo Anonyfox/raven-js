@@ -1,24 +1,4 @@
-/**
- * A mapping of SQL special characters to their escaped counterparts.
- *
- * @type {Object.<string, string>}
- */
-const sqlEscapeMap = {
-	"'": "''",
-	"\\": "\\\\",
-	"\0": "\\0",
-	"\n": "\\n",
-	"\r": "\\r",
-	"\x1a": "\\Z",
-};
-
-/**
- * Escapes SQL special characters in a string to prevent SQL injection.
- * @param {string} str - The string to escape.
- * @returns {string} The escaped string.
- */
-const escapeSql = (str) =>
-	str.replace(/[\x00\x0a\x0d\x1a'\\]/g, (char) => sqlEscapeMap[char] || char);
+import { escapeSql } from "./escape-sql.js";
 
 /**
  * The main template tag function for creating SQL queries.
