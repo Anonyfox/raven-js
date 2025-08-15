@@ -1,16 +1,17 @@
+<div align="center">
+  <img src="media/raven-landscape.png" alt="RavenJS Landscape" style="max-width: 100%; height: auto;">
+</div>
+
 # RavenJS 🦅
 
 _A swift web dev toolkit - soar above the JavaScript chaos with zero dependencies and modern elegance._
 
 <div align="center">
-  <img src="media/raven-logo.webp" alt="RavenJS Logo" width="200" height="200">
-
 [![Node.js](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
 [![ESM](https://img.shields.io/badge/ESM-Only-blue.svg)](https://nodejs.org/api/esm.html)
 [![Zero Dependencies](https://img.shields.io/badge/Zero-Dependencies-brightgreen.svg)](https://github.com/Anonyfox/ravenjs)
 [![Documentation](https://img.shields.io/badge/Documentation-Online-blue.svg)](https://docs.ravenjs.dev)
 [![WIP](https://img.shields.io/badge/Status-WIP-orange.svg)](https://github.com/Anonyfox/ravenjs)
-
 </div>
 
 ## What is RavenJS?
