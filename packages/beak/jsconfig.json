@@ -1,11 +1,11 @@
 {
-	"compilerOptions": {
-		"checkJs": true,
-		"module": "NodeNext",
-		"moduleResolution": "NodeNext",
-		"target": "ESNext",
-		"noImplicitAny": true,
-		"resolveJsonModule": true
-	},
-	"include": ["core/**/*.js", "caws/**/*.js", "bootstrap/**/*.js"]
+  "compilerOptions": {
+    "checkJs": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ESNext",
+    "noImplicitAny": true,
+    "resolveJsonModule": true
+  },
+  "include": ["core/**/*.js", "seo/**/*.js", "bootstrap/**/*.js"]
 }

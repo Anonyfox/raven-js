@@ -1,76 +1,76 @@
 {
-	"name": "@raven-js/beak",
-	"description": "Zero-dependency templating library for modern JavaScript - HTML, CSS, SQL, Markdown and more",
-	"version": "0.1.10",
-	"type": "module",
-	"files": [
-		"*.js",
-		"*.d.ts",
-		"core/**/*.js",
-		"caws/**/*.js",
-		"bootstrap/**/*.js",
-		"types.*.d.ts",
-		"LICENSE",
-		"README.md"
-	],
-	"exports": {
-		".": {
-			"import": "./core/index.js",
-			"types": "./types.core.d.ts"
-		},
-		"./caws": {
-			"import": "./caws/index.js",
-			"types": "./types.caws.d.ts"
-		}
-	},
-	"scripts": {
-		"nest:validate": "node ../nest/bin/nest.js validate",
-		"nest:docs": "node ../nest/bin/nest.js build-docs",
-		"prepublishOnly": "npm run test && npm run test:style",
-		"test": "npm run test:types && npm run test:code && npm run test:style",
-		"test:code": "node --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
-		"test:style": "biome lint --error-on-warnings ./core ./caws",
-		"test:types": "tsc --noEmit --allowJS core/*.js caws/*.js"
-	},
-	"keywords": [
-		"templating",
-		"html",
-		"css",
-		"javascript",
-		"sql",
-		"markdown",
-		"jsx",
-		"template-literals",
-		"zero-dependency",
-		"modern-javascript",
-		"esm",
-		"web-development",
-		"library",
-		"toolkit",
-		"raven"
-	],
-	"author": {
-		"name": "Anonyfox",
-		"email": "max@anonyfox.com",
-		"url": "https://anonyfox.com"
-	},
-	"license": "MIT",
-	"homepage": "https://ravenjs.dev",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/Anonyfox/raven-js.git"
-	},
-	"bugs": {
-		"url": "https://github.com/Anonyfox/raven-js/issues"
-	},
-	"engines": {
-		"node": ">=22.5.0"
-	},
-	"publishConfig": {
-		"access": "public"
-	},
-	"funding": {
-		"type": "github",
-		"url": "https://github.com/sponsors/Anonyfox"
-	}
+  "name": "@raven-js/beak",
+  "description": "Zero-dependency templating library for modern JavaScript - HTML, CSS, SQL, Markdown and more",
+  "version": "0.1.10",
+  "type": "module",
+  "files": [
+    "*.js",
+    "*.d.ts",
+    "core/**/*.js",
+    "seo/**/*.js",
+    "bootstrap/**/*.js",
+    "types.*.d.ts",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "import": "./core/index.js",
+      "types": "./types.core.d.ts"
+    },
+    "./seo": {
+      "import": "./seo/index.js",
+      "types": "./types.seo.d.ts"
+    }
+  },
+  "scripts": {
+    "nest:validate": "node ../nest/bin/nest.js validate",
+    "nest:docs": "node ../nest/bin/nest.js build-docs",
+    "prepublishOnly": "npm run test && npm run test:style",
+    "test": "npm run test:types && npm run test:code && npm run test:style",
+    "test:code": "node --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
+    "test:style": "biome lint --error-on-warnings ./core ./seo",
+    "test:types": "tsc --noEmit --allowJS core/*.js seo/*.js"
+  },
+  "keywords": [
+    "templating",
+    "html",
+    "css",
+    "javascript",
+    "sql",
+    "markdown",
+    "jsx",
+    "template-literals",
+    "zero-dependency",
+    "modern-javascript",
+    "esm",
+    "web-development",
+    "library",
+    "toolkit",
+    "raven"
+  ],
+  "author": {
+    "name": "Anonyfox",
+    "email": "max@anonyfox.com",
+    "url": "https://anonyfox.com"
+  },
+  "license": "MIT",
+  "homepage": "https://ravenjs.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Anonyfox/raven-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Anonyfox/raven-js/issues"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/Anonyfox"
+  }
 }

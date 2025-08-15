@@ -253,10 +253,10 @@ import {
 } from "@raven-js/beak";
 ```
 
-### Caws Components
+### SEO Components
 
 ```javascript
-import { SeoMetatags } from "@raven-js/beak/caws";
+import { SeoMetatags } from "@raven-js/beak/seo";
 ```
 
 ## Requirements

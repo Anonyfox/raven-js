@@ -22,7 +22,7 @@ import { html } from "../core/index.js";
  * compatibility with various social media platforms and crawlers out there.
  *
  * @example
- * import { SeoMetatags } from '@raven-js/beak/caws';
+ * import { SeoMetatags } from '@raven-js/beak/seo';
  *
  * const metaTags = SeoMetatags({
  *   title: 'Test Page',
