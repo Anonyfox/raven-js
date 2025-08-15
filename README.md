@@ -8,6 +8,7 @@ _A swift web dev toolkit - soar above the JavaScript chaos with zero dependencie
 [![Node.js](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
 [![ESM](https://img.shields.io/badge/ESM-Only-blue.svg)](https://nodejs.org/api/esm.html)
 [![Zero Dependencies](https://img.shields.io/badge/Zero-Dependencies-brightgreen.svg)](https://github.com/Anonyfox/ravenjs)
+[![Documentation](https://img.shields.io/badge/Documentation-Online-blue.svg)](https://docs.ravenjs.dev)
 [![WIP](https://img.shields.io/badge/Status-WIP-orange.svg)](https://github.com/Anonyfox/ravenjs)
 
 </div>
@@ -27,6 +28,8 @@ We believe in:
 - **Perfect tree-shaking** - Import only what you use. No more "all-or-nothing" framework bloat.
 - **JSDoc-powered types** - Full IntelliSense support without TypeScript compilation overhead.
 - **Self-documenting APIs** - Every package teaches both humans and AI how to use it correctly.
+
+📖 **Want to dive deeper?** Read about [The Raven Developer Persona](PHILOSOPHY.md) and [How the Flock is Organized](packages/README.md).
 
 ## The Raven Toolkit
 
@@ -143,7 +146,6 @@ RavenJS is built by developers, for developers. We welcome contributions that al
 Join the murder (of crows, that is):
 
 - 🌐 [Website](https://ravenjs.dev) _(coming soon)_
-- 📚 [Documentation](https://docs.ravenjs.dev)
 - 💬 [Discord](https://discord.gg/ravenjs) _(coming soon)_
 - 🐦 [Twitter](https://twitter.com/ravenjs) _(coming soon)_
 
