@@ -52,7 +52,8 @@
   },
   "workspaces": [
     "packages/beak",
-    "packages/nest"
+    "packages/nest",
+    "packages/wings"
   ],
   "engines": {
     "npm": ">=10.8.2",
