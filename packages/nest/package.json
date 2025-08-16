@@ -11,11 +11,11 @@
   "scripts": {
     "test": "npm run test:code && npm run test:style",
     "test:code": "node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js' --test-coverage-include='lib/**/*.js'",
-    "test:style": "biome lint --error-on-warnings .",
+    "test:style": "npx biome lint --error-on-warnings .",
     "nest:validate": "node bin/nest.js validate",
     "nest:docs": "node bin/nest.js build-docs",
-    "lint": "biome check .",
-    "format": "biome format --write ."
+    "lint": "npx biome check .",
+    "format": "npx biome format --write ."
   },
   "keywords": [
     "raven",

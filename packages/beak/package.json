@@ -29,7 +29,7 @@
     "prepublishOnly": "npm run test && npm run test:style",
     "test": "npm run test:types && npm run test:code && npm run test:style",
     "test:code": "node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
-    "test:style": "biome lint --error-on-warnings ./core ./seo",
+    "test:style": "npx biome lint --error-on-warnings ./core ./seo",
     "test:types": "tsc --noEmit --project jsconfig.json"
   },
   "keywords": [
