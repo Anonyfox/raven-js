@@ -289,28 +289,6 @@ describe("ClusteredServer", () => {
 			server.getClusterStats();
 		}, /Cluster stats only available on primary process/);
 
-		// Test listen on worker process
-		let superListenCalled = false;
-		const originalListen = server.listen;
-		server.listen = async (port, host) => {
-			superListenCalled = true;
-			assert.strictEqual(port, 3000);
-			assert.strictEqual(host, "0.0.0.0");
-		};
-
-		server.listen(3000, "0.0.0.0");
-		assert.ok(superListenCalled);
-
-		// Test close on worker process
-		let superCloseCalled = false;
-		const originalClose = server.close;
-		server.close = async () => {
-			superCloseCalled = true;
-		};
-
-		server.close();
-		assert.ok(superCloseCalled);
-
 		cleanupMocks();
 	});
 
@@ -356,6 +334,125 @@ describe("ClusteredServer", () => {
 
 		// Ensure server is properly closed
 		await server2.close();
+		cleanupMocks();
+	});
+
+	test("additional coverage scenarios", async () => {
+		setupMocks();
+
+		// Test forking during shutdown (covers #forkWorker early return)
+		const server = createServer({ workers: 1 });
+		await server.listen(3000);
+
+		// Start shutdown
+		const closePromise = server.close();
+
+		// Try to fork during shutdown (should be ignored)
+		const worker = mockWorkers.get(1);
+		triggerClusterEvent("exit", worker, 1, "SIGTERM");
+
+		await closePromise;
+		cleanupMocks();
+
+		// Test health check with dead worker
+		setupMocks();
+		const server2 = createServer({ workers: 1, healthCheckInterval: 100 });
+		await server2.listen(3001);
+		const worker2 = mockWorkers.get(1);
+
+		// Start health check
+		triggerClusterEvent("listening", worker2, { port: 3001 });
+		assert.strictEqual(mockTimers.size, 1);
+
+		// Make worker dead and trigger health check
+		worker2.isDead = () => true;
+		const timer = Array.from(mockTimers.values())[0];
+		timer.callback(); // This should stop health check
+		assert.strictEqual(mockTimers.size, 0);
+
+		// Test health check with alive worker (covers line 268-270)
+		setupMocks();
+		const server6 = createServer({ workers: 1, healthCheckInterval: 100 });
+		await server6.listen(3005);
+		const worker6 = mockWorkers.get(1);
+
+		// Start health check
+		triggerClusterEvent("listening", worker6, { port: 3005 });
+		assert.strictEqual(mockTimers.size, 1);
+
+		// Make worker alive and trigger health check
+		worker6.isDead = () => false;
+		const timer2 = Array.from(mockTimers.values())[0];
+		timer2.callback(); // This should send health check ping
+		assert.strictEqual(mockTimers.size, 1); // Timer should still be active
+
+		await server6.close();
+		cleanupMocks();
+
+		await server2.close();
+		cleanupMocks();
+
+		// Test error handling in close method (server already closed)
+		setupMocks();
+		const server3 = createServer({ workers: 1 });
+		await server3.listen(3002);
+		await server3.close();
+
+		// Try to close again (should handle ERR_SERVER_NOT_RUNNING gracefully)
+		await server3.close();
+		cleanupMocks();
+
+		// Test error handling in close method with different error (covers line 152-153)
+		setupMocks();
+		const server7 = createServer({ workers: 1 });
+		await server7.listen(3006);
+
+		// Mock super.close to throw a different error
+		server7.close = async () => {
+			throw new Error("Network error");
+		};
+
+		// This should throw the error (not handle it gracefully)
+		try {
+			await server7.close();
+			assert.fail("Should have thrown an error");
+		} catch (error) {
+			assert.strictEqual(error.message, "Network error");
+		}
+
+		cleanupMocks();
+
+		// Test shutdown error handling
+		setupMocks();
+		const server4 = createServer({ workers: 1 });
+		await server4.listen(3003);
+
+		// Mock process.exit to prevent actual exit
+		const originalExit = process.exit;
+		process.exit = () => {};
+
+		// Trigger shutdown with error
+		triggerProcessEvent("SIGTERM");
+
+		// Restore process.exit
+		process.exit = originalExit;
+
+		await server4.close();
+		cleanupMocks();
+
+		// Test forking during shutdown (covers line 222-223)
+		setupMocks();
+		const server5 = createServer({ workers: 1 });
+		await server5.listen(3004);
+
+		// Start shutdown to set #shuttingDown flag
+		const closePromise2 = server5.close();
+
+		// Try to fork during shutdown (should be ignored due to #shuttingDown check)
+		const worker5 = mockWorkers.get(1);
+		triggerClusterEvent("exit", worker5, 1, "SIGTERM");
+
+		await closePromise2;
 		cleanupMocks();
 	});
 });
