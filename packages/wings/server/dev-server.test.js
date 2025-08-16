@@ -1,5 +1,4 @@
 import assert from "node:assert";
-import http from "node:http";
 import { afterEach, beforeEach, describe, test } from "node:test";
 import { Router } from "../core/index.js";
 import { DevServer } from "./dev-server.js";
@@ -54,9 +53,8 @@ describe("DevServer", () => {
 		assert.strictEqual(wsPort, 8080);
 	});
 
-	test("should handle WebSocket upgrade without hanging", async () => {
-		// Test the WebSocket upgrade handler by directly calling it
-		// This avoids the hanging issue with HTTP requests
+	test("should handle WebSocket upgrade and various error scenarios", async () => {
+		// Test 1: WebSocket upgrade handler
 		const mockReq = {
 			headers: {
 				"sec-websocket-key": "dGhlIHNhbXBsZSBub25jZQ==",
@@ -80,5 +78,55 @@ describe("DevServer", () => {
 
 		// Call the upgrade handler
 		upgradeHandlers[0](mockReq, mockSocket, Buffer.alloc(0));
+
+		// Test 2: Router-level errors
+		const errorRouter = new Router();
+		errorRouter.get("/error", (_ctx) => {
+			throw new Error("Test error");
+		});
+
+		const errorServer = new DevServer(errorRouter, { websocketPort: 8081 });
+		await errorServer.listen(3001);
+
+		try {
+			const response = await fetch(`http://localhost:3001/error`);
+			assert.strictEqual(response.status, 500);
+			assert.strictEqual(response.headers.get("content-type"), "text/plain");
+			const errorText = await response.text();
+			assert.ok(
+				errorText.includes("Test error") ||
+					errorText.includes("Internal Server Error"),
+			);
+		} finally {
+			await errorServer.close();
+		}
+
+		// Test 3: DevServer-specific errors (HTML injection)
+		const htmlRouter = new Router();
+		htmlRouter.get("/html", (ctx) => {
+			ctx.html("<html><body>Hello</body></html>");
+		});
+
+		const injectionErrorServer = new DevServer(htmlRouter, {
+			websocketPort: 8082,
+		});
+		injectionErrorServer.injectAutoReloadScript = () => {
+			throw new Error("Injection error");
+		};
+
+		await injectionErrorServer.listen(3002);
+
+		try {
+			const response = await fetch(`http://localhost:3002/html`);
+			assert.strictEqual(response.status, 500);
+			assert.strictEqual(response.headers.get("content-type"), "text/plain");
+			const errorText = await response.text();
+			assert.ok(
+				errorText.includes("Injection error") ||
+					errorText.includes("Internal Server Error"),
+			);
+		} finally {
+			await injectionErrorServer.close();
+		}
 	});
 });
