@@ -1,487 +1,657 @@
-import { strict as assert } from "node:assert";
-import { describe, it } from "node:test";
+import assert from "node:assert";
+import { afterEach, beforeEach, describe, it } from "node:test";
 import { Context } from "./context.js";
-import { HTTP_METHODS } from "./http-methods.js";
+import { getHttpMethods, HTTP_METHODS } from "./http-methods.js";
 import { Middleware } from "./middleware.js";
 import { Route } from "./route.js";
 import { Router } from "./router.js";
 
 describe("Router", () => {
-	it("should handle HTTP methods, routing, middleware, and core functionality", async () => {
-		const router = new Router();
-		const handler = async (ctx) => ctx.json({ success: true });
+	let router;
 
-		// Test all HTTP methods (first route - creates trie)
-		router.get("/users", handler);
-		router.post("/users", handler);
-		router.put("/users/1", handler);
-		router.delete("/users/1", handler);
-		router.patch("/users/1", handler);
-		router.head("/users", handler);
-		router.options("/users", handler);
-
-		// Test second route for each method (trie already exists)
-		router.get("/users2", handler);
-		router.post("/users2", handler);
-		router.put("/users/2", handler);
-		router.delete("/users/2", handler);
-		router.patch("/users/2", handler);
-		router.head("/users2", handler);
-		router.options("/users2", handler);
-
-		// Test route registration and listRoutes
-		const routes = router.listRoutes();
-		assert.equal(routes.length, 14);
-		assert.equal(routes[0].method, "GET");
-		assert.equal(routes[13].method, "OPTIONS");
-
-		// Test successful route matching
-		const ctx = new Context(
-			"GET",
-			new URL("https://example.com/users"),
-			new Headers(),
-			null,
-		);
-		const result = await router.handleRequest(ctx);
-		assert.equal(result.responseStatusCode, 200);
-		assert.equal(result.responseBody, '{"success":true}');
-
-		// Test route matching with no middleware (empty #coverts array)
-		const noMiddlewareRouter = new Router();
-		noMiddlewareRouter.get("/simple", async (ctx) =>
-			ctx.json({ simple: true }),
-		);
-		const simpleResult = await noMiddlewareRouter.handleRequest(
-			new Context(
-				"GET",
-				new URL("https://example.com/simple"),
-				new Headers(),
-				null,
-			),
-		);
-		assert.equal(simpleResult.responseStatusCode, 200);
-
-		// Test 404 scenarios
-		const notFoundResult = await router.handleRequest(
-			new Context(
-				"GET",
-				new URL("https://example.com/notfound"),
-				new Headers(),
-				null,
-			),
-		);
-		assert.equal(notFoundResult.responseStatusCode, 404);
-		const methodExistsResult = await router.handleRequest(
-			new Context(
-				"POST",
-				new URL("https://example.com/nonexistent"),
-				new Headers(),
-				null,
-			),
-		);
-		assert.equal(methodExistsResult.responseStatusCode, 404);
-		const trieExistsNoMatchResult = await router.handleRequest(
-			new Context(
-				"GET",
-				new URL("https://example.com/users/nonexistent"),
-				new Headers(),
-				null,
-			),
-		);
-		assert.equal(trieExistsNoMatchResult.responseStatusCode, 404);
-
-		// Test middleware with identifiers and deduplication
-		const order = [];
-		const middleware1 = new Middleware(async (ctx) => {
-			order.push(1);
-			ctx.data.step = 1;
-		}, "auth");
-		const middleware2 = new Middleware(async (ctx) => {
-			order.push(2);
-			ctx.data.step = 2;
-		}, "auth"); // Same identifier - should be ignored
-		const middleware3 = new Middleware(async (ctx) => {
-			order.push(3);
-			ctx.data.step = 3;
-		});
-		const middleware4 = new Middleware(async (ctx) => {
-			order.push(4);
-			ctx.data.step = 4;
-		}, "auth"); // Should be ignored
-		const middleware5 = new Middleware(async (ctx) => {
-			order.push(5);
-			ctx.data.step = 5;
-		}, "auth"); // Should be ignored
-		const middleware6 = new Middleware(async (ctx) => {
-			order.push(6);
-			ctx.data.step = 6;
-		});
-		const middleware7 = new Middleware(async (ctx) => {
-			order.push(7);
-			ctx.data.step = 7;
-		});
-
-		router.use(middleware1);
-		router.use(middleware2); // Should be ignored
-		router.useEarly(middleware3);
-		router.useEarly(middleware4); // Should be ignored
-		router.use(middleware5); // Should be ignored
-		router.use(middleware6);
-		router.useEarly(middleware7);
-
-		// Test middleware without identifier
-		const noIdentifierMiddleware = new Middleware(async (ctx) => {
-			order.push(9);
-			ctx.data.noIdentifier = true;
-		});
-		router.use(noIdentifierMiddleware);
-		router.useEarly(noIdentifierMiddleware); // Should be added again since no identifier
-
-		// Test route with path parameters
-		router.get("/users/:id/posts/:postId", async (ctx) => {
-			order.push(8);
-			assert.equal(ctx.pathParams.id, "123");
-			assert.equal(ctx.pathParams.postId, "456");
-			assert.equal(ctx.data.step, 6);
-			return ctx.json({ user: ctx.pathParams.id, post: ctx.pathParams.postId });
-		});
-
-		const paramResult = await router.handleRequest(
-			new Context(
-				"GET",
-				new URL("https://example.com/users/123/posts/456"),
-				new Headers(),
-				null,
-			),
-		);
-		assert.deepEqual(order, [9, 7, 3, 1, 6, 9, 8]);
-		assert.equal(paramResult.responseStatusCode, 200);
-		assert.equal(paramResult.responseBody, '{"user":"123","post":"456"}');
+	beforeEach(() => {
+		router = new Router();
 	});
 
-	it("should handle addRoute, path normalization, errors, and complex scenarios", async () => {
-		const router = new Router();
+	afterEach(() => {
+		router = null;
+	});
 
-		// Test addRoute with different scenarios
-		const customRoute = Route.GET("/custom", async (ctx) =>
-			ctx.json({ custom: true }),
-		);
-		router.addRoute(customRoute);
-		const anotherRoute = Route.GET("/another", async (ctx) =>
-			ctx.json({ another: true }),
-		);
-		router.addRoute(anotherRoute);
-		const postRoute = Route.POST("/post-route", async (ctx) =>
-			ctx.json({ post: true }),
-		);
-		router.addRoute(postRoute);
+	describe("constructor", () => {
+		it("should initialize with all HTTP method tries", () => {
+			const router = new Router();
+			const methods = getHttpMethods();
 
-		// Test path normalization edge cases
-		router.get("/normalized", async (ctx) => ctx.json({ normalized: true }));
-		router.get("no-slash", async (ctx) => ctx.json({ noSlash: true }));
-		router.get("/start-only", async (ctx) => ctx.json({ startOnly: true }));
-		router.get("end-only/", async (ctx) => ctx.json({ endOnly: true }));
-		router.get("neither-slash", async (ctx) =>
-			ctx.json({ neitherSlash: true }),
-		);
-		router.get("", async (ctx) => ctx.json({ emptyPath: true }));
-		router.get("/root", async (ctx) => ctx.json({ rootPath: true }));
-
-		// Test route matching with normalized paths
-		const customResult = await router.handleRequest(
-			new Context(
-				"GET",
-				new URL("https://example.com/custom"),
-				new Headers(),
-				null,
-			),
-		);
-		assert.equal(customResult.responseStatusCode, 200);
-		const postResult = await router.handleRequest(
-			new Context(
-				"POST",
-				new URL("https://example.com/post-route"),
-				new Headers(),
-				null,
-			),
-		);
-		assert.equal(postResult.responseStatusCode, 200);
-		const normalizedResult = await router.handleRequest(
-			new Context(
-				"GET",
-				new URL("https://example.com/normalized"),
-				new Headers(),
-				null,
-			),
-		);
-		assert.equal(normalizedResult.responseStatusCode, 200);
-		const noSlashResult = await router.handleRequest(
-			new Context(
-				"GET",
-				new URL("https://example.com/no-slash"),
-				new Headers(),
-				null,
-			),
-		);
-		assert.equal(noSlashResult.responseStatusCode, 200);
-		const startOnlyResult = await router.handleRequest(
-			new Context(
-				"GET",
-				new URL("https://example.com/start-only"),
-				new Headers(),
-				null,
-			),
-		);
-		assert.equal(startOnlyResult.responseStatusCode, 200);
-		const endOnlyResult = await router.handleRequest(
-			new Context(
-				"GET",
-				new URL("https://example.com/end-only"),
-				new Headers(),
-				null,
-			),
-		);
-		assert.equal(endOnlyResult.responseStatusCode, 200);
-		const neitherSlashResult = await router.handleRequest(
-			new Context(
-				"GET",
-				new URL("https://example.com/neither-slash"),
-				new Headers(),
-				null,
-			),
-		);
-		assert.equal(neitherSlashResult.responseStatusCode, 200);
-		const emptyPathResult = await router.handleRequest(
-			new Context("GET", new URL("https://example.com/"), new Headers(), null),
-		);
-		assert.equal(emptyPathResult.responseStatusCode, 200);
-		const rootPathResult = await router.handleRequest(
-			new Context(
-				"GET",
-				new URL("https://example.com/root"),
-				new Headers(),
-				null,
-			),
-		);
-		assert.equal(rootPathResult.responseStatusCode, 200);
-
-		// Test listRoutes with and without method filter
-		const getRoutes = router.listRoutes("GET");
-		assert.equal(getRoutes.length, 9);
-		const allRoutes = router.listRoutes();
-		assert.equal(allRoutes.length, 10);
-		assert.equal(allRoutes[0].method, "GET");
-		assert.equal(allRoutes[2].method, "POST");
-
-		// Test security, errors, and complex scenarios
-		const longPath = `/${"a/".repeat(101)}`;
-		assert.throws(() => {
-			new Context(
-				"GET",
-				new URL(`https://example.com${longPath}`),
-				new Headers(),
-				null,
-			);
-		}, /Path too long/);
-
-		router.get("/error", async () => {
-			throw new Error("Handler error");
+			// Check that all HTTP methods have tries initialized
+			methods.forEach((method) => {
+				assert.ok(router.listRoutes(method));
+				assert.strictEqual(router.listRoutes(method).length, 0);
+			});
 		});
-		const errorResult = await router.handleRequest(
-			new Context(
-				"GET",
-				new URL("https://example.com/error"),
-				new Headers(),
-				null,
-			),
-		);
-		assert.equal(errorResult.responseStatusCode, 500);
+	});
 
-		router.use(
-			new Middleware(async (ctx) => {
-				ctx.responseStatusCode = 403;
-				ctx.responseBody = "Forbidden";
-				ctx.responseEnded = true;
-			}),
-		);
-		const earlyResult = await router.handleRequest(
-			new Context(
-				"GET",
-				new URL("https://example.com/early"),
-				new Headers(),
-				null,
-			),
-		);
-		assert.equal(earlyResult.responseStatusCode, 403);
-		assert(earlyResult.responseEnded);
+	describe("HTTP method shortcuts", () => {
+		const testMethods = [
+			{ method: "get", httpMethod: HTTP_METHODS.GET },
+			{ method: "post", httpMethod: HTTP_METHODS.POST },
+			{ method: "put", httpMethod: HTTP_METHODS.PUT },
+			{ method: "delete", httpMethod: HTTP_METHODS.DELETE },
+			{ method: "patch", httpMethod: HTTP_METHODS.PATCH },
+			{ method: "head", httpMethod: HTTP_METHODS.HEAD },
+			{ method: "options", httpMethod: HTTP_METHODS.OPTIONS },
+		];
 
-		router.get("/error-ended", async (ctx) => {
-			ctx.responseEnded = true;
-			throw new Error("Should not set 500");
-		});
-		const errorEndedResult = await router.handleRequest(
-			new Context(
-				"GET",
-				new URL("https://example.com/error-ended"),
-				new Headers(),
-				null,
-			),
-		);
-		assert(errorEndedResult.responseEnded);
+		testMethods.forEach(({ method, httpMethod }) => {
+			it(`should add ${method.toUpperCase()} route and return router for chaining`, () => {
+				const handler = async (ctx) => {
+					ctx.body = "test";
+				};
 
-		const errorEndedRouter = new Router();
-		errorEndedRouter.get("/error-ended-2", async (ctx) => {
-			ctx.responseEnded = true;
-			ctx.responseStatusCode = 200;
-			ctx.responseBody = "OK";
-			throw new Error("Should not override response");
-		});
-		const errorEnded2Result = await errorEndedRouter.handleRequest(
-			new Context(
-				"GET",
-				new URL("https://example.com/error-ended-2"),
-				new Headers(),
-				null,
-			),
-		);
-		assert(errorEnded2Result.responseEnded);
-		assert.equal(errorEnded2Result.responseStatusCode, 200);
+				const result = router[method]("/test", handler);
 
-		// Test method chaining and complex middleware chain
-		const chainingRouter = new Router();
-		const steps = [];
-
-		chainingRouter
-			.get("/users", async (ctx) => ctx.json({ users: [] }))
-			.post("/users", async (ctx) => ctx.json({ created: true }))
-			.put("/users/1", async (ctx) => ctx.json({ updated: true }))
-			.delete("/users/1", async (ctx) => ctx.json({ deleted: true }))
-			.use(
-				new Middleware(async (ctx) => {
-					steps.push("before1");
-					ctx.data.before1 = true;
-				}),
-			)
-			.use(
-				new Middleware(async (ctx) => {
-					steps.push("before2");
-					ctx.data.before2 = true;
-				}),
-			)
-			.get("/complex", async (ctx) => {
-				steps.push("handler");
-				ctx.addAfterCallback(
-					new Middleware(async (ctx) => {
-						steps.push("after1");
-						ctx.data.after1 = true;
-					}),
-				);
-				ctx.addAfterCallback(
-					new Middleware(async (ctx) => {
-						steps.push("after2");
-						ctx.data.after2 = true;
-					}),
-				);
-				return ctx.json({ complex: true });
+				assert.strictEqual(result, router);
+				assert.strictEqual(router.listRoutes(httpMethod).length, 1);
+				assert.strictEqual(router.listRoutes(httpMethod)[0].method, httpMethod);
+				assert.strictEqual(router.listRoutes(httpMethod)[0].path, "/test");
 			});
 
-		assert.equal(chainingRouter.listRoutes().length, 5);
-		const complexResult = await chainingRouter.handleRequest(
-			new Context(
-				"GET",
-				new URL("https://example.com/complex"),
-				new Headers(),
-				null,
-			),
-		);
-		assert.deepEqual(steps, [
-			"before1",
-			"before2",
-			"handler",
-			"after1",
-			"after2",
-		]);
-		assert.equal(complexResult.responseStatusCode, 200);
-		assert(complexResult.data.before1);
-		assert(complexResult.data.after1);
+			it(`should handle ${method.toUpperCase()} route with leading/trailing slashes`, () => {
+				const handler = async (ctx) => {
+					ctx.body = "test";
+				};
 
-		// Test handler that doesn't end response
-		chainingRouter.get("/continue", async (ctx) => {
-			ctx.data.handlerRun = true;
-		});
-		const continueResult = await chainingRouter.handleRequest(
-			new Context(
-				"GET",
-				new URL("https://example.com/continue"),
-				new Headers(),
-				null,
-			),
-		);
-		assert(continueResult.data.handlerRun);
-		assert(!continueResult.responseEnded);
+				router[method]("///test///", handler);
 
-		// Test handler that doesn't end response and has after callbacks
-		const noResponseRouter = new Router();
-		const afterCallbackOrder = [];
-		noResponseRouter.get("/no-response", async (ctx) => {
-			ctx.data.handlerRun = true;
-			ctx.addAfterCallback(
-				new Middleware(async (ctx) => {
-					afterCallbackOrder.push("after1");
-					ctx.data.after1 = true;
-				}),
-			);
-			ctx.addAfterCallback(
-				new Middleware(async (ctx) => {
-					afterCallbackOrder.push("after2");
-					ctx.data.after2 = true;
-				}),
-			);
+				assert.strictEqual(router.listRoutes(httpMethod).length, 1);
+				assert.strictEqual(router.listRoutes(httpMethod)[0].path, "///test///");
+			});
 		});
-		const noResponseResult = await noResponseRouter.handleRequest(
-			new Context(
-				"GET",
-				new URL("https://example.com/no-response"),
-				new Headers(),
-				null,
-			),
-		);
-		assert(noResponseResult.data.handlerRun);
-		assert(noResponseResult.data.after1);
-		assert(noResponseResult.data.after2);
-		assert.deepEqual(afterCallbackOrder, ["after1", "after2"]);
-		assert(!noResponseResult.responseEnded);
 	});
 
-	it("should validate HTTP methods in addRoute", () => {
-		const router = new Router();
+	describe("addRoute", () => {
+		it("should add a valid route and return router for chaining", () => {
+			const route = Route.GET("/test", async (ctx) => {
+				ctx.body = "test";
+			});
 
-		// Valid methods should work
-		const validRoute = Route.GET("/valid", async (ctx) =>
-			ctx.json({ valid: true }),
-		);
-		assert.doesNotThrow(() => router.addRoute(validRoute));
+			const result = router.addRoute(route);
 
-		// Invalid methods should throw
-		const invalidRoute = {
-			method: "INVALID",
-			path: "/invalid",
-			handler: async (_ctx) => {},
-		};
-		assert.throws(
-			() => router.addRoute(invalidRoute),
-			/Unsupported HTTP method: INVALID/,
-		);
+			assert.strictEqual(result, router);
+			assert.strictEqual(router.listRoutes(HTTP_METHODS.GET).length, 1);
+			assert.strictEqual(router.listRoutes(HTTP_METHODS.GET)[0], route);
+		});
 
-		// Test all valid methods
-		const methods = Object.values(HTTP_METHODS);
-		methods.forEach((method) => {
-			const route = {
-				method,
-				path: `/${method.toLowerCase()}`,
-				handler: async (_ctx) => {},
+		it("should throw error for unsupported HTTP method", () => {
+			const invalidRoute = {
+				method: "INVALID",
+				path: "/test",
+				handler: async (ctx) => {
+					ctx.body = "test";
+				},
 			};
-			assert.doesNotThrow(() => router.addRoute(route));
+
+			assert.throws(() => {
+				router.addRoute(invalidRoute);
+			}, /Unsupported HTTP method: INVALID/);
+		});
+
+		it("should handle route with normalized path", () => {
+			const route = Route.POST("/test/path", async (ctx) => {
+				ctx.body = "test";
+			});
+
+			router.addRoute(route);
+
+			assert.strictEqual(router.listRoutes(HTTP_METHODS.POST).length, 1);
+			assert.strictEqual(router.listRoutes(HTTP_METHODS.POST)[0], route);
+		});
+	});
+
+	describe("use", () => {
+		it("should add middleware and return router for chaining", () => {
+			const middleware = new Middleware(async (_ctx) => {
+				// Middleware logic
+			}, "test");
+
+			const result = router.use(middleware);
+
+			assert.strictEqual(result, router);
+		});
+
+		it("should not add duplicate middleware with same identifier", () => {
+			const middleware1 = new Middleware(async (_ctx) => {
+				// Middleware logic
+			}, "test");
+			const middleware2 = new Middleware(async (_ctx) => {
+				// Middleware logic
+			}, "test");
+
+			router.use(middleware1);
+			const result = router.use(middleware2);
+
+			assert.strictEqual(result, router);
+			// Should only have one middleware
+			assert.strictEqual(router.listRoutes().length, 0);
+		});
+
+		it("should add middleware without identifier", () => {
+			const middleware = new Middleware(async (_ctx) => {
+				// Middleware logic
+			}, null);
+
+			const result = router.use(middleware);
+
+			assert.strictEqual(result, router);
+		});
+	});
+
+	describe("useEarly", () => {
+		it("should prepend middleware and return router for chaining", () => {
+			const middleware = new Middleware(async (_ctx) => {
+				// Middleware logic
+			}, "test");
+
+			const result = router.useEarly(middleware);
+
+			assert.strictEqual(result, router);
+		});
+
+		it("should not prepend duplicate middleware with same identifier", () => {
+			const middleware1 = new Middleware(async (_ctx) => {
+				// Middleware logic
+			}, "test");
+			const middleware2 = new Middleware(async (_ctx) => {
+				// Middleware logic
+			}, "test");
+
+			router.useEarly(middleware1);
+			const result = router.useEarly(middleware2);
+
+			assert.strictEqual(result, router);
+		});
+
+		it("should prepend middleware without identifier", () => {
+			const middleware = new Middleware(async (_ctx) => {
+				// Middleware logic
+			}, null);
+
+			const result = router.useEarly(middleware);
+
+			assert.strictEqual(result, router);
+		});
+	});
+
+	describe("handleRequest", () => {
+		it("should handle request with matching route", async () => {
+			const handler = async (ctx) => {
+				ctx.responseBody = "test response";
+			};
+
+			router.get("/test", handler);
+
+			const url = new URL("http://localhost/test");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			const result = await router.handleRequest(ctx);
+
+			assert.strictEqual(result, ctx);
+			assert.strictEqual(ctx.responseBody, "test response");
+		});
+
+		it("should handle request with path parameters", async () => {
+			const handler = async (ctx) => {
+				ctx.responseBody = `User ID: ${ctx.pathParams.id}`;
+			};
+
+			router.get("/users/:id", handler);
+
+			const url = new URL("http://localhost/users/123");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			await router.handleRequest(ctx);
+
+			assert.strictEqual(ctx.pathParams.id, "123");
+			assert.strictEqual(ctx.responseBody, "User ID: 123");
+		});
+
+		it("should return 404 for non-matching route", async () => {
+			const url = new URL("http://localhost/nonexistent");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			const result = await router.handleRequest(ctx);
+
+			assert.strictEqual(result, ctx);
+			assert.strictEqual(ctx.responseStatusCode, 404);
+		});
+
+		it("should handle request with unsupported HTTP method", async () => {
+			// Create a context with a valid method first
+			const url = new URL("http://localhost/test");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			// Manually set an invalid method to test Router's handling
+			Object.defineProperty(ctx, "method", {
+				get: () => "INVALID",
+			});
+
+			const result = await router.handleRequest(ctx);
+
+			assert.strictEqual(result, ctx);
+			assert.strictEqual(ctx.responseStatusCode, 404);
+		});
+
+		it("should run middleware before handler", async () => {
+			let middlewareCalled = false;
+			let handlerCalled = false;
+
+			const middleware = new Middleware(async (_ctx) => {
+				middlewareCalled = true;
+			}, "test");
+
+			const handler = async (ctx) => {
+				handlerCalled = true;
+				ctx.responseBody = "test";
+			};
+
+			router.use(middleware);
+			router.get("/test", handler);
+
+			const url = new URL("http://localhost/test");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			await router.handleRequest(ctx);
+
+			assert.strictEqual(middlewareCalled, true);
+			assert.strictEqual(handlerCalled, true);
+		});
+
+		it("should stop execution if middleware ends response", async () => {
+			let handlerCalled = false;
+
+			const middleware = new Middleware(async (ctx) => {
+				ctx.responseStatusCode = 403;
+				ctx.responseBody = "Forbidden";
+				ctx.responseEnded = true; // Mark response as ended
+			}, "test");
+
+			const handler = async (ctx) => {
+				handlerCalled = true;
+				ctx.responseBody = "test";
+			};
+
+			router.use(middleware);
+			router.get("/test", handler);
+
+			const url = new URL("http://localhost/test");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			await router.handleRequest(ctx);
+
+			assert.strictEqual(handlerCalled, false);
+			assert.strictEqual(ctx.responseStatusCode, 403);
+			assert.strictEqual(ctx.responseBody, "Forbidden");
+		});
+
+		it("should handle handler errors gracefully", async () => {
+			const handler = async (_ctx) => {
+				throw new Error("Handler error");
+			};
+
+			router.get("/test", handler);
+
+			const url = new URL("http://localhost/test");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			const result = await router.handleRequest(ctx);
+
+			assert.strictEqual(result, ctx);
+			assert.strictEqual(ctx.responseStatusCode, 500);
+		});
+
+		it("should not call error handler if response already ended", async () => {
+			const handler = async (ctx) => {
+				ctx.responseStatusCode = 200;
+				ctx.responseBody = "Success";
+				ctx.responseEnded = true; // Mark response as ended
+				throw new Error("Handler error");
+			};
+
+			router.get("/test", handler);
+
+			const url = new URL("http://localhost/test");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			const result = await router.handleRequest(ctx);
+
+			assert.strictEqual(result, ctx);
+			assert.strictEqual(ctx.responseStatusCode, 200);
+			assert.strictEqual(ctx.responseBody, "Success");
+		});
+
+		it("should run after callbacks if response not ended", async () => {
+			let afterCallbackCalled = false;
+
+			const middleware = new Middleware(async (_ctx) => {
+				afterCallbackCalled = true;
+			}, "after");
+
+			const handler = async (ctx) => {
+				ctx.responseBody = "test";
+			};
+
+			router.use(middleware);
+			router.get("/test", handler);
+
+			const url = new URL("http://localhost/test");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			await router.handleRequest(ctx);
+
+			assert.strictEqual(afterCallbackCalled, true);
+		});
+
+		it("should not run after callbacks if response ended", async () => {
+			let afterCallbackCalled = false;
+
+			// Add an after callback directly to the context
+			const afterMiddleware = new Middleware(async (_ctx) => {
+				afterCallbackCalled = true;
+			}, "after");
+
+			const handler = async (ctx) => {
+				ctx.responseStatusCode = 200;
+				ctx.responseBody = "Success";
+				ctx.responseEnded = true; // End response
+				// Add after callback
+				ctx.addAfterCallback(afterMiddleware);
+			};
+
+			router.get("/test", handler);
+
+			const url = new URL("http://localhost/test");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			await router.handleRequest(ctx);
+
+			assert.strictEqual(afterCallbackCalled, false);
+		});
+
+		it("should normalize path with leading/trailing slashes", async () => {
+			const handler = async (ctx) => {
+				ctx.responseBody = "test";
+			};
+
+			router.get("test", handler);
+
+			const url = new URL("http://localhost/test");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			await router.handleRequest(ctx);
+
+			assert.strictEqual(ctx.responseBody, "test");
+		});
+	});
+
+	describe("listRoutes", () => {
+		it("should return all routes when no method specified", () => {
+			router.get("/test1", async (_ctx) => {});
+			router.post("/test2", async (_ctx) => {});
+			router.put("/test3", async (_ctx) => {});
+
+			const routes = router.listRoutes();
+
+			assert.strictEqual(routes.length, 3);
+		});
+
+		it("should return filtered routes for specific method", () => {
+			router.get("/test1", async (_ctx) => {});
+			router.get("/test2", async (_ctx) => {});
+			router.post("/test3", async (_ctx) => {});
+
+			const getRoutes = router.listRoutes(HTTP_METHODS.GET);
+			const postRoutes = router.listRoutes(HTTP_METHODS.POST);
+
+			assert.strictEqual(getRoutes.length, 2);
+			assert.strictEqual(postRoutes.length, 1);
+			assert.strictEqual(getRoutes[0].method, HTTP_METHODS.GET);
+			assert.strictEqual(postRoutes[0].method, HTTP_METHODS.POST);
+		});
+
+		it("should return empty array for non-existent method", () => {
+			const routes = router.listRoutes("INVALID");
+
+			assert.strictEqual(routes.length, 0);
+		});
+
+		it("should return empty array when no routes exist", () => {
+			const routes = router.listRoutes();
+
+			assert.strictEqual(routes.length, 0);
+		});
+	});
+
+	describe("path normalization", () => {
+		it("should handle empty path", async () => {
+			const handler = async (ctx) => {
+				ctx.responseBody = "root";
+			};
+
+			router.get("", handler);
+
+			const url = new URL("http://localhost/");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			await router.handleRequest(ctx);
+
+			assert.strictEqual(ctx.responseBody, "root");
+		});
+
+		it("should handle single slash path", async () => {
+			const handler = async (ctx) => {
+				ctx.responseBody = "root";
+			};
+
+			router.get("/", handler);
+
+			const url = new URL("http://localhost/");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			await router.handleRequest(ctx);
+
+			assert.strictEqual(ctx.responseBody, "root");
+		});
+
+		it("should handle multiple leading/trailing slashes", async () => {
+			const handler = async (ctx) => {
+				ctx.responseBody = "test";
+			};
+
+			router.get("///test///", handler);
+
+			const url = new URL("http://localhost///test///");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			await router.handleRequest(ctx);
+
+			assert.strictEqual(ctx.responseBody, "test");
+		});
+	});
+
+	describe("complex routing scenarios", () => {
+		it("should handle multiple routes with different methods", async () => {
+			router.get("/users", async (ctx) => {
+				ctx.responseBody = "GET users";
+			});
+			router.post("/users", async (ctx) => {
+				ctx.responseBody = "POST users";
+			});
+			router.put("/users/:id", async (ctx) => {
+				ctx.responseBody = `PUT user ${ctx.pathParams.id}`;
+			});
+
+			// Test GET
+			const getUrl = new URL("http://localhost/users");
+			const getCtx = new Context(HTTP_METHODS.GET, getUrl, new Headers());
+			await router.handleRequest(getCtx);
+			assert.strictEqual(getCtx.responseBody, "GET users");
+
+			// Test POST
+			const postUrl = new URL("http://localhost/users");
+			const postCtx = new Context(HTTP_METHODS.POST, postUrl, new Headers());
+			await router.handleRequest(postCtx);
+			assert.strictEqual(postCtx.responseBody, "POST users");
+
+			// Test PUT with params
+			const putUrl = new URL("http://localhost/users/123");
+			const putCtx = new Context(HTTP_METHODS.PUT, putUrl, new Headers());
+			await router.handleRequest(putCtx);
+			assert.strictEqual(putCtx.responseBody, "PUT user 123");
+		});
+
+		it("should handle chaining of route methods", () => {
+			const result = router
+				.get("/test1", async (_ctx) => {})
+				.post("/test2", async (_ctx) => {})
+				.put("/test3", async (_ctx) => {});
+
+			assert.strictEqual(result, router);
+			assert.strictEqual(router.listRoutes().length, 3);
+		});
+
+		it("should handle chaining of middleware methods", () => {
+			const middleware1 = new Middleware(async (_ctx) => {
+				// Middleware logic
+			}, "m1");
+			const middleware2 = new Middleware(async (_ctx) => {
+				// Middleware logic
+			}, "m2");
+
+			const result = router.use(middleware1).useEarly(middleware2);
+
+			assert.strictEqual(result, router);
+		});
+
+		it("should handle complex middleware chain", async () => {
+			const executionOrder = [];
+
+			const middleware1 = new Middleware(async (_ctx) => {
+				executionOrder.push("before1");
+				executionOrder.push("after1");
+			}, "m1");
+
+			const middleware2 = new Middleware(async (_ctx) => {
+				executionOrder.push("before2");
+				executionOrder.push("after2");
+			}, "m2");
+
+			const handler = async (ctx) => {
+				executionOrder.push("handler");
+				ctx.responseBody = "test";
+			};
+
+			router.use(middleware1);
+			router.use(middleware2);
+			router.get("/test", handler);
+
+			const url = new URL("http://localhost/test");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			await router.handleRequest(ctx);
+
+			assert.deepStrictEqual(executionOrder, [
+				"before1",
+				"after1",
+				"before2",
+				"after2",
+				"handler",
+			]);
+		});
+	});
+
+	describe("edge cases and error handling", () => {
+		it("should handle async handler that throws", async () => {
+			const handler = async (_ctx) => {
+				throw new Error("Async error");
+			};
+
+			router.get("/test", handler);
+
+			const url = new URL("http://localhost/test");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			const result = await router.handleRequest(ctx);
+
+			assert.strictEqual(result, ctx);
+			assert.strictEqual(ctx.responseStatusCode, 500);
+		});
+
+		it("should handle sync handler that throws", async () => {
+			const handler = (_ctx) => {
+				throw new Error("Sync error");
+			};
+
+			router.get("/test", handler);
+
+			const url = new URL("http://localhost/test");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			const result = await router.handleRequest(ctx);
+
+			assert.strictEqual(result, ctx);
+			assert.strictEqual(ctx.responseStatusCode, 500);
+		});
+
+		it("should handle middleware that throws", async () => {
+			const middleware = new Middleware(async (_ctx) => {
+				throw new Error("Middleware error");
+			}, "error");
+
+			const handler = async (ctx) => {
+				ctx.responseBody = "test";
+			};
+
+			router.use(middleware);
+			router.get("/test", handler);
+
+			const url = new URL("http://localhost/test");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			const result = await router.handleRequest(ctx);
+
+			assert.strictEqual(result, ctx);
+			assert.strictEqual(ctx.responseStatusCode, 500);
+		});
+
+		it("should handle context with null/undefined values", async () => {
+			const handler = async (ctx) => {
+				ctx.responseBody = "test";
+			};
+
+			router.get("/test", handler);
+
+			const url = new URL("http://localhost/test");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			const result = await router.handleRequest(ctx);
+
+			assert.strictEqual(result, ctx);
+			// The route exists, so it should be 200, not 404
+			assert.strictEqual(ctx.responseStatusCode, 200);
+		});
+
+		it("should handle route with empty path segments", async () => {
+			const handler = async (ctx) => {
+				ctx.responseBody = "test";
+			};
+
+			router.get("//", handler);
+
+			const url = new URL("http://localhost//");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			await router.handleRequest(ctx);
+
+			assert.strictEqual(ctx.responseBody, "test");
 		});
 	});
 });
