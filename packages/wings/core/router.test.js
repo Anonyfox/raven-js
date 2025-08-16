@@ -2,6 +2,7 @@ import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 import { Context } from "./context.js";
 import { HTTP_METHODS } from "./http-methods.js";
+import { Middleware } from "./middleware.js";
 import { Route } from "./route.js";
 import { Router } from "./router.js";
 
@@ -91,38 +92,34 @@ describe("Router", () => {
 
 		// Test middleware with identifiers and deduplication
 		const order = [];
-		const middleware1 = async (ctx) => {
+		const middleware1 = new Middleware(async (ctx) => {
 			order.push(1);
 			ctx.data.step = 1;
-		};
-		middleware1.identifier = "auth";
-		const middleware2 = async (ctx) => {
+		}, "auth");
+		const middleware2 = new Middleware(async (ctx) => {
 			order.push(2);
 			ctx.data.step = 2;
-		};
-		middleware2.identifier = "auth"; // Same identifier - should be ignored
-		const middleware3 = async (ctx) => {
+		}, "auth"); // Same identifier - should be ignored
+		const middleware3 = new Middleware(async (ctx) => {
 			order.push(3);
 			ctx.data.step = 3;
-		};
-		const middleware4 = async (ctx) => {
+		});
+		const middleware4 = new Middleware(async (ctx) => {
 			order.push(4);
 			ctx.data.step = 4;
-		};
-		middleware4.identifier = "auth"; // Should be ignored
-		const middleware5 = async (ctx) => {
+		}, "auth"); // Should be ignored
+		const middleware5 = new Middleware(async (ctx) => {
 			order.push(5);
 			ctx.data.step = 5;
-		};
-		middleware5.identifier = "auth"; // Should be ignored
-		const middleware6 = async (ctx) => {
+		}, "auth"); // Should be ignored
+		const middleware6 = new Middleware(async (ctx) => {
 			order.push(6);
 			ctx.data.step = 6;
-		};
-		const middleware7 = async (ctx) => {
+		});
+		const middleware7 = new Middleware(async (ctx) => {
 			order.push(7);
 			ctx.data.step = 7;
-		};
+		});
 
 		router.use(middleware1);
 		router.use(middleware2); // Should be ignored
@@ -132,11 +129,11 @@ describe("Router", () => {
 		router.use(middleware6);
 		router.useEarly(middleware7);
 
-		// Test middleware without identifier property
-		const noIdentifierMiddleware = async (ctx) => {
+		// Test middleware without identifier
+		const noIdentifierMiddleware = new Middleware(async (ctx) => {
 			order.push(9);
 			ctx.data.noIdentifier = true;
-		};
+		});
 		router.use(noIdentifierMiddleware);
 		router.useEarly(noIdentifierMiddleware); // Should be added again since no identifier
 
@@ -278,15 +275,14 @@ describe("Router", () => {
 
 		// Test security, errors, and complex scenarios
 		const longPath = `/${"a/".repeat(101)}`;
-		const longPathResult = await router.handleRequest(
+		assert.throws(() => {
 			new Context(
 				"GET",
 				new URL(`https://example.com${longPath}`),
 				new Headers(),
 				null,
-			),
-		);
-		assert.equal(longPathResult.responseStatusCode, 500);
+			);
+		}, /Path too long/);
 
 		router.get("/error", async () => {
 			throw new Error("Handler error");
@@ -301,11 +297,13 @@ describe("Router", () => {
 		);
 		assert.equal(errorResult.responseStatusCode, 500);
 
-		router.use(async (ctx) => {
-			ctx.responseStatusCode = 403;
-			ctx.responseBody = "Forbidden";
-			ctx.responseEnded = true;
-		});
+		router.use(
+			new Middleware(async (ctx) => {
+				ctx.responseStatusCode = 403;
+				ctx.responseBody = "Forbidden";
+				ctx.responseEnded = true;
+			}),
+		);
 		const earlyResult = await router.handleRequest(
 			new Context(
 				"GET",
@@ -358,24 +356,32 @@ describe("Router", () => {
 			.post("/users", async (ctx) => ctx.json({ created: true }))
 			.put("/users/1", async (ctx) => ctx.json({ updated: true }))
 			.delete("/users/1", async (ctx) => ctx.json({ deleted: true }))
-			.use(async (ctx) => {
-				steps.push("before1");
-				ctx.data.before1 = true;
-			})
-			.use(async (ctx) => {
-				steps.push("before2");
-				ctx.data.before2 = true;
-			})
+			.use(
+				new Middleware(async (ctx) => {
+					steps.push("before1");
+					ctx.data.before1 = true;
+				}),
+			)
+			.use(
+				new Middleware(async (ctx) => {
+					steps.push("before2");
+					ctx.data.before2 = true;
+				}),
+			)
 			.get("/complex", async (ctx) => {
 				steps.push("handler");
-				ctx.addAfterCallback(async (ctx) => {
-					steps.push("after1");
-					ctx.data.after1 = true;
-				});
-				ctx.addAfterCallback(async (ctx) => {
-					steps.push("after2");
-					ctx.data.after2 = true;
-				});
+				ctx.addAfterCallback(
+					new Middleware(async (ctx) => {
+						steps.push("after1");
+						ctx.data.after1 = true;
+					}),
+				);
+				ctx.addAfterCallback(
+					new Middleware(async (ctx) => {
+						steps.push("after2");
+						ctx.data.after2 = true;
+					}),
+				);
 				return ctx.json({ complex: true });
 			});
 
@@ -419,14 +425,18 @@ describe("Router", () => {
 		const afterCallbackOrder = [];
 		noResponseRouter.get("/no-response", async (ctx) => {
 			ctx.data.handlerRun = true;
-			ctx.addAfterCallback(async (ctx) => {
-				afterCallbackOrder.push("after1");
-				ctx.data.after1 = true;
-			});
-			ctx.addAfterCallback(async (ctx) => {
-				afterCallbackOrder.push("after2");
-				ctx.data.after2 = true;
-			});
+			ctx.addAfterCallback(
+				new Middleware(async (ctx) => {
+					afterCallbackOrder.push("after1");
+					ctx.data.after1 = true;
+				}),
+			);
+			ctx.addAfterCallback(
+				new Middleware(async (ctx) => {
+					afterCallbackOrder.push("after2");
+					ctx.data.after2 = true;
+				}),
+			);
 		});
 		const noResponseResult = await noResponseRouter.handleRequest(
 			new Context(

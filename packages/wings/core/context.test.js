@@ -1,6 +1,7 @@
 import { strict as assert } from "node:assert";
 import { beforeEach, describe, it } from "node:test";
 import { Context } from "./context.js";
+import { Middleware } from "./middleware.js";
 
 describe("Context", () => {
 	/** @type {Context} */
@@ -126,6 +127,79 @@ describe("Context", () => {
 			ctx.redirect("/permanent", 301);
 			assert.equal(ctx.responseStatusCode, 301);
 		});
+
+		it("should support method chaining", () => {
+			// Test chaining with response methods
+			ctx.text("Hello World").responseHeaders.set("custom-header", "value");
+
+			// Verify the response was set correctly
+			assert.equal(ctx.responseStatusCode, 200);
+			assert.equal(ctx.responseHeaders.get("content-type"), "text/plain");
+			assert.equal(ctx.responseBody, "Hello World");
+			assert.equal(ctx.responseHeaders.get("custom-header"), "value");
+
+			// Reset for next test
+			ctx = new Context("GET", url, headers);
+
+			// Test chaining with JSON response
+			ctx
+				.json({ success: true, message: "OK" })
+				.responseHeaders.set("cache-control", "no-cache");
+
+			assert.equal(ctx.responseStatusCode, 200);
+			assert.equal(ctx.responseHeaders.get("content-type"), "application/json");
+			assert.equal(ctx.responseBody, '{"success":true,"message":"OK"}');
+			assert.equal(ctx.responseHeaders.get("cache-control"), "no-cache");
+
+			// Reset for next test
+			ctx = new Context("GET", url, headers);
+
+			// Test chaining with error responses
+			ctx
+				.notFound("Resource not found")
+				.responseHeaders.set("x-error-code", "404");
+
+			assert.equal(ctx.responseStatusCode, 404);
+			assert.equal(ctx.responseBody, "Resource not found");
+			assert.equal(ctx.responseHeaders.get("x-error-code"), "404");
+		});
+
+		it("should handle error responses", () => {
+			// 404 Not Found
+			ctx.notFound();
+			assert.equal(ctx.responseStatusCode, 404);
+			assert.equal(ctx.responseHeaders.get("content-type"), "text/plain");
+			assert.equal(ctx.responseBody, "Not Found");
+			assert.equal(ctx.responseHeaders.get("content-length"), "9");
+
+			// Reset for next test
+			ctx = new Context("GET", url, headers);
+
+			// 404 with custom message
+			ctx.notFound("Resource not found");
+			assert.equal(ctx.responseStatusCode, 404);
+			assert.equal(ctx.responseBody, "Resource not found");
+			assert.equal(ctx.responseHeaders.get("content-length"), "18");
+
+			// Reset for next test
+			ctx = new Context("GET", url, headers);
+
+			// 500 Internal Server Error
+			ctx.error();
+			assert.equal(ctx.responseStatusCode, 500);
+			assert.equal(ctx.responseHeaders.get("content-type"), "text/plain");
+			assert.equal(ctx.responseBody, "Internal Server Error");
+			assert.equal(ctx.responseHeaders.get("content-length"), "21");
+
+			// Reset for next test
+			ctx = new Context("GET", url, headers);
+
+			// 500 with custom message
+			ctx.error("Something went wrong");
+			assert.equal(ctx.responseStatusCode, 500);
+			assert.equal(ctx.responseBody, "Something went wrong");
+			assert.equal(ctx.responseHeaders.get("content-length"), "20");
+		});
 	});
 
 	describe("middleware callbacks", () => {
@@ -134,24 +208,32 @@ describe("Context", () => {
 			let executed = false;
 
 			// Add callbacks
-			ctx.addBeforeCallback((ctx) => {
-				order.push(1);
-				ctx.data.first = true;
-			});
+			ctx.addBeforeCallback(
+				new Middleware((ctx) => {
+					order.push(1);
+					ctx.data.first = true;
+				}),
+			);
 
-			ctx.addBeforeCallback((ctx) => {
-				order.push(2);
-				ctx.data.second = true;
-			});
+			ctx.addBeforeCallback(
+				new Middleware((ctx) => {
+					order.push(2);
+					ctx.data.second = true;
+				}),
+			);
 
 			// Test responseEnded stopping execution
-			ctx.addBeforeCallback((ctx) => {
-				ctx.responseEnded = true;
-			});
+			ctx.addBeforeCallback(
+				new Middleware((ctx) => {
+					ctx.responseEnded = true;
+				}),
+			);
 
-			ctx.addBeforeCallback((_ctx) => {
-				executed = true; // Should not execute
-			});
+			ctx.addBeforeCallback(
+				new Middleware((_ctx) => {
+					executed = true; // Should not execute
+				}),
+			);
 
 			await ctx.runBeforeCallbacks();
 
@@ -164,29 +246,65 @@ describe("Context", () => {
 			await ctx.runBeforeCallbacks(); // Should do nothing
 		});
 
+		it("should handle multiple before callbacks", async () => {
+			const order = [];
+			const middlewares = [
+				new Middleware((ctx) => {
+					order.push(1);
+					ctx.data.first = true;
+				}),
+				new Middleware((ctx) => {
+					order.push(2);
+					ctx.data.second = true;
+				}),
+				new Middleware((ctx) => {
+					order.push(3);
+					ctx.data.third = true;
+				}),
+			];
+
+			// Add multiple callbacks at once
+			ctx.addBeforeCallbacks(middlewares);
+
+			await ctx.runBeforeCallbacks();
+
+			assert.deepEqual(order, [1, 2, 3]);
+			assert(ctx.data.first);
+			assert(ctx.data.second);
+			assert(ctx.data.third);
+		});
+
 		it("should handle after callbacks", async () => {
 			const order = [];
 			let executed = false;
 
 			// Add callbacks
-			ctx.addAfterCallback((ctx) => {
-				order.push(1);
-				ctx.data.first = true;
-			});
+			ctx.addAfterCallback(
+				new Middleware((ctx) => {
+					order.push(1);
+					ctx.data.first = true;
+				}),
+			);
 
-			ctx.addAfterCallback((ctx) => {
-				order.push(2);
-				ctx.data.second = true;
-			});
+			ctx.addAfterCallback(
+				new Middleware((ctx) => {
+					order.push(2);
+					ctx.data.second = true;
+				}),
+			);
 
 			// Test responseEnded stopping execution
-			ctx.addAfterCallback((ctx) => {
-				ctx.responseEnded = true;
-			});
+			ctx.addAfterCallback(
+				new Middleware((ctx) => {
+					ctx.responseEnded = true;
+				}),
+			);
 
-			ctx.addAfterCallback((_ctx) => {
-				executed = true; // Should not execute
-			});
+			ctx.addAfterCallback(
+				new Middleware((_ctx) => {
+					executed = true; // Should not execute
+				}),
+			);
 
 			await ctx.runAfterCallbacks();
 
@@ -199,13 +317,43 @@ describe("Context", () => {
 			await ctx.runAfterCallbacks(); // Should do nothing
 		});
 
+		it("should handle multiple after callbacks", async () => {
+			const order = [];
+			const middlewares = [
+				new Middleware((ctx) => {
+					order.push(1);
+					ctx.data.first = true;
+				}),
+				new Middleware((ctx) => {
+					order.push(2);
+					ctx.data.second = true;
+				}),
+				new Middleware((ctx) => {
+					order.push(3);
+					ctx.data.third = true;
+				}),
+			];
+
+			// Add multiple callbacks at once
+			ctx.addAfterCallbacks(middlewares);
+
+			await ctx.runAfterCallbacks();
+
+			assert.deepEqual(order, [1, 2, 3]);
+			assert(ctx.data.first);
+			assert(ctx.data.second);
+			assert(ctx.data.third);
+		});
+
 		it("should handle async callbacks", async () => {
 			let resolved = false;
 
-			ctx.addBeforeCallback(async (_ctx) => {
-				await new Promise((resolve) => setTimeout(resolve, 10));
-				resolved = true;
-			});
+			ctx.addBeforeCallback(
+				new Middleware(async (_ctx) => {
+					await new Promise((resolve) => setTimeout(resolve, 10));
+					resolved = true;
+				}),
+			);
 
 			await ctx.runBeforeCallbacks();
 			assert(resolved);

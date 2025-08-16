@@ -3,6 +3,7 @@ import {
 	HTTP_METHODS,
 	isValidHttpMethod,
 } from "./http-methods.js";
+import { Middleware } from "./middleware.js";
 import { Route } from "./route.js";
 import { Trie } from "./trie.js";
 
@@ -79,11 +80,11 @@ export class Router {
 	#tries = {};
 
 	/**
-	 * the registered coverts (= middlewares).
+	 * the registered middlewares.
 	 *
-	 * @type {import('./middleware.js').Handler[]}
+	 * @type {Middleware[]}
 	 */
-	#coverts = [];
+	#middlewares = [];
 
 	/**
 	 * Creates a new Router instance with all HTTP method tries pre-initialized.
@@ -225,46 +226,44 @@ export class Router {
 	}
 
 	/**
-	 * Appends a middleware callback function to the Router instance. (push to the array)
+	 * Appends a middleware instance to the Router instance. (push to the array)
 	 *
 	 * These will run *before* the actual handler is called, in order.
 	 *
-	 * @param {import('./middleware.js').Handler} callback - The middleware function to add.
+	 * @param {import('./middleware.js').Middleware} middleware - The middleware instance to add.
 	 * @returns {Router} The Router instance for chaining.
 	 */
-	use(callback) {
-		// functions with an identifier are considered unique middlewares
-		if (Object.keys(callback).includes("identifier")) {
-			const value = /** @type {any} */ (callback).identifier;
-			const exists = this.#coverts.some(
-				(/** @type {any} */ c) => c.identifier === value,
-			);
-			if (exists) return this;
+	use(middleware) {
+		// Check for duplicate identifiers
+		if (
+			middleware.identifier &&
+			this.#middlewares.some((m) => m.hasSameIdentifier(middleware))
+		) {
+			return this;
 		}
 
-		this.#coverts.push(callback);
+		this.#middlewares.push(middleware);
 		return this;
 	}
 
 	/**
-	 * Prepends a middleware callback function to the Router instance. (unshift to the array)
+	 * Prepends a middleware instance to the Router instance. (unshift to the array)
 	 *
 	 * These will run *before* the actual handler is called, in order.
 	 *
-	 * @param {import('./middleware.js').Handler} callback - The middleware function to add.
+	 * @param {import('./middleware.js').Middleware} middleware - The middleware instance to add.
 	 * @returns {Router} The Router instance for chaining.
 	 */
-	useEarly(callback) {
-		// functions with an identifier are considered unique middlewares
-		if (Object.keys(callback).includes("identifier")) {
-			const identifier = /** @type {any} */ (callback).identifier;
-			const exists = this.#coverts.some(
-				(/** @type {any} */ c) => c.identifier === identifier,
-			);
-			if (exists) return this;
+	useEarly(middleware) {
+		// Check for duplicate identifiers
+		if (
+			middleware.identifier &&
+			this.#middlewares.some((m) => m.hasSameIdentifier(middleware))
+		) {
+			return this;
 		}
 
-		this.#coverts.unshift(callback);
+		this.#middlewares.unshift(middleware);
 		return this;
 	}
 
@@ -276,11 +275,6 @@ export class Router {
 	#match(method, requestPath) {
 		const path = this.#normalizePath(requestPath);
 		const pathSegments = path.split("/");
-
-		// security check to prevent CPU exhaustion attacks here
-		// this scenario should never happen in a real-world application with
-		// reasonable path lengths
-		if (pathSegments.length > 100) throw new Error("Path too long");
 
 		const trie = this.#tries[method];
 		if (!trie) return { route: undefined, params: {} };
@@ -312,19 +306,13 @@ export class Router {
 	async handleRequest(ctx) {
 		try {
 			// run all before hooks first on the context instance
-			for (const middleware of this.#coverts) {
-				ctx.addBeforeCallback(middleware);
-			}
+			ctx.addBeforeCallbacks(this.#middlewares);
 			await ctx.runBeforeCallbacks();
 			if (ctx.responseEnded) return ctx;
 
 			// try to find a route that matches the request
 			const { route, params } = this.#match(ctx.method, ctx.path);
-			if (!route) {
-				ctx.responseStatusCode = 404;
-				ctx.responseBody = "Not Found";
-				return ctx;
-			}
+			if (!route) return ctx.notFound();
 
 			// run the handler with the extracted pathParams
 			ctx.pathParams = params;
@@ -335,11 +323,7 @@ export class Router {
 			await ctx.runAfterCallbacks();
 		} catch (error) {
 			console.error("Handler error:", error);
-			if (!ctx.responseEnded) {
-				ctx.responseStatusCode = 500;
-				ctx.responseBody = "Internal Server Error";
-				return ctx;
-			}
+			if (!ctx.responseEnded) return ctx.error();
 		}
 		return ctx;
 	}

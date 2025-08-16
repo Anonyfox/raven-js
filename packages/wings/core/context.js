@@ -1,3 +1,5 @@
+import { isValidHttpMethod } from "./http-methods.js";
+
 /**
  * The **context** of the http request/response.
  *
@@ -144,91 +146,117 @@ export class Context {
 	data = {};
 
 	/**
-	 * List of functions to call before the handler is called (in order).
+	 * List of middleware instances to call before the handler is called (in order).
 	 *
-	 * Each function gets this current instance as the first argument and can modify it
+	 * Each middleware gets this current instance as the first argument and can modify it
 	 * directly. Mutation is simply more performant than returning a new context.
 	 *
-	 * @type {import('./middleware.js').Handler[]}
+	 * @type {import('./middleware.js').Middleware[]}
 	 */
 	#beforeCallbacks = [];
 
 	/**
-	 * Add a function to call before the handler is called. It is placed at the end of the
+	 * Add a middleware instance to call before the handler is called. It is placed at the end of the
 	 * existing list of beforeCallbacks.
 	 *
 	 * Will not be executed if the `responseEnded` flag is set to true.
 	 *
-	 * @param {import('./middleware.js').Handler} callback
+	 * @param {import('./middleware.js').Middleware} middleware
 	 */
-	addBeforeCallback(callback) {
-		this.#beforeCallbacks.push(callback);
+	addBeforeCallback(middleware) {
+		this.#beforeCallbacks.push(middleware);
+	}
+
+	/**
+	 * Add multiple middleware instances to call before the handler is called. They are placed at the end of the
+	 * existing list of beforeCallbacks in the order provided.
+	 *
+	 * Will not be executed if the `responseEnded` flag is set to true.
+	 *
+	 * @param {import('./middleware.js').Middleware[]} middlewares
+	 */
+	addBeforeCallbacks(middlewares) {
+		for (const middleware of middlewares) {
+			this.addBeforeCallback(middleware);
+		}
 	}
 
 	/**
 	 * execute ALL beforeCallbacks in order.
 	 *
-	 * Note: this method is async and will wait for each callback to finish before
-	 * proceeding to the next one. Executing a callback will remove it from the list
+	 * Note: this method is async and will wait for each middleware to finish before
+	 * proceeding to the next one. Executing a middleware will remove it from the list
 	 * (its "consumed").
 	 *
-	 * Protipp: it is possible for a callback to add _more_ callbacks _during_ its
-	 * execution! This enables dynamic logic wizardry for callbacks instead of being
+	 * Protipp: it is possible for a middleware to add _more_ middleware _during_ its
+	 * execution! This enables dynamic logic wizardry for middleware instead of being
 	 * strictly restricted to do a simple task.
 	 *
 	 */
 	async runBeforeCallbacks() {
 		while (this.#beforeCallbacks.length > 0) {
-			const callback = this.#beforeCallbacks.shift();
 			if (this.responseEnded) break;
-			await callback(this);
+			const middleware = this.#beforeCallbacks.shift();
+			await middleware.execute(this);
 		}
 	}
 
 	/**
-	 * List of functions to call after the handler is called (in order).
+	 * List of middleware instances to call after the handler is called (in order).
 	 *
-	 * Each function gets this current instance as the first argument and can modify it
+	 * Each middleware gets this current instance as the first argument and can modify it
 	 * directly. Mutation is simply more performant than returning a new context.
 	 *
 	 * Will not be executed if the `responseEnded` flag is set to true.
 	 *
-	 * @type {import('./middleware.js').Handler[]}
+	 * @type {import('./middleware.js').Middleware[]}
 	 */
 	#afterCallbacks = [];
 
 	/**
-	 * Add a function to call before the handler is called. It is placed at the end of the
-	 * existing list of beforeCallbacks.
+	 * Add a middleware instance to call after the handler is called. It is placed at the end of the
+	 * existing list of afterCallbacks.
 	 *
-	 * @param {import('./middleware.js').Handler} callback
+	 * @param {import('./middleware.js').Middleware} middleware
 	 */
-	addAfterCallback(callback) {
-		this.#afterCallbacks.push(callback);
+	addAfterCallback(middleware) {
+		this.#afterCallbacks.push(middleware);
+	}
+
+	/**
+	 * Add multiple middleware instances to call after the handler is called. They are placed at the end of the
+	 * existing list of afterCallbacks in the order provided.
+	 *
+	 * @param {import('./middleware.js').Middleware[]} middlewares
+	 */
+	addAfterCallbacks(middlewares) {
+		for (const middleware of middlewares) {
+			this.addAfterCallback(middleware);
+		}
 	}
 
 	/**
 	 * execute ALL afterCallbacks in order.
 	 *
-	 * Note: this method is async and will wait for each callback to finish after
-	 * proceeding to the next one. Executing a callback will remove it from the list
+	 * Note: this method is async and will wait for each middleware to finish after
+	 * proceeding to the next one. Executing a middleware will remove it from the list
 	 * (its "consumed").
 	 *
-	 * Protipp: it is possible for a callback to add _more_ callbacks _during_ its
-	 * execution! This enables dynamic logic wizardry for callbacks instead of being
+	 * Protipp: it is possible for a middleware to add _more_ middleware _during_ its
+	 * execution! This enables dynamic logic wizardry for middleware instead of being
 	 * strictly restricted to do a simple task.
 	 *
 	 */
 	async runAfterCallbacks() {
 		while (this.#afterCallbacks.length > 0) {
-			const callback = this.#afterCallbacks.shift();
 			if (this.responseEnded) break;
-			await callback(this);
+			const middleware = this.#afterCallbacks.shift();
+			await middleware.execute(this);
 		}
 	}
 
 	/**
-	 * Create a new Current instance from the given request informations
+	 * Create a new Context instance from the given request informations
 	 *
 	 * @param {string} method
 	 * @param {URL} url - The URL object of the request, including path *and* query params
@@ -238,11 +266,21 @@ export class Context {
 	constructor(method, url, headers, body) {
 		// validate and set #method properly
 		if (!method) throw new Error(`Method is required, got: ${method}`);
+		if (!isValidHttpMethod(method)) {
+			throw new Error(`Invalid HTTP method: ${method}`);
+		}
 		this.#method = method;
 
 		// validate and set #path properly
 		const path = url.pathname;
 		if (!path) throw new Error(`Path is required, got: ${path}`);
+		if (typeof path !== "string") throw new Error("Path must be a string");
+		if (path.length > 2048) throw new Error("Path too long");
+
+		// security check to prevent CPU exhaustion attacks
+		const pathSegments = path.split("/");
+		if (pathSegments.length > 100) throw new Error("Path too long");
+
 		this.#path = path;
 
 		// set the query params and headers and freeze them to prevent nasty bugs
@@ -257,7 +295,7 @@ export class Context {
 	 * shortcut to send a 200 OK response with a text/plain body.
 	 *
 	 * @param {string} data
-	 * @returns {void}
+	 * @returns {Context} The Context instance for chaining
 	 */
 	text(data) {
 		this.responseStatusCode = 200;
@@ -267,13 +305,14 @@ export class Context {
 			"Content-Length",
 			Buffer.byteLength(this.responseBody).toString(),
 		);
+		return this;
 	}
 
 	/**
 	 * shortcut to send a 200 OK response with a text/html body.
 	 *
 	 * @param {string} data
-	 * @returns {void}
+	 * @returns {Context} The Context instance for chaining
 	 */
 	html(data) {
 		this.responseStatusCode = 200;
@@ -283,13 +322,14 @@ export class Context {
 			"Content-Length",
 			Buffer.byteLength(this.responseBody).toString(),
 		);
+		return this;
 	}
 
 	/**
 	 * shortcut to send a 200 OK response with a application/xml body.
 	 *
 	 * @param {string} data
-	 * @returns {void}
+	 * @returns {Context} The Context instance for chaining
 	 */
 	xml(data) {
 		this.responseStatusCode = 200;
@@ -299,13 +339,14 @@ export class Context {
 			"Content-Length",
 			Buffer.byteLength(this.responseBody).toString(),
 		);
+		return this;
 	}
 
 	/**
 	 * shortcut to send a 200 OK response with a application/json body.
 	 *
 	 * @param {object} data
-	 * @returns {void}
+	 * @returns {Context} The Context instance for chaining
 	 */
 	json(data) {
 		this.responseStatusCode = 200;
@@ -315,13 +356,14 @@ export class Context {
 			"Content-Length",
 			Buffer.byteLength(this.responseBody).toString(),
 		);
+		return this;
 	}
 
 	/**
 	 * shortcut to send a 200 OK response with a application/javascript body.
 	 *
 	 * @param {string} data
-	 * @returns {void}
+	 * @returns {Context} The Context instance for chaining
 	 */
 	js(data) {
 		this.responseStatusCode = 200;
@@ -331,6 +373,7 @@ export class Context {
 			"Content-Length",
 			Buffer.byteLength(this.responseBody).toString(),
 		);
+		return this;
 	}
 
 	/**
@@ -338,9 +381,45 @@ export class Context {
 	 *
 	 * @param {string} url
 	 * @param {number} [status]
+	 * @returns {Context} The Context instance for chaining
 	 */
 	redirect(url, status = 302) {
 		this.responseStatusCode = status;
 		this.responseHeaders.set("Location", url);
+		return this;
+	}
+
+	/**
+	 * Send a 404 Not Found response.
+	 *
+	 * @param {string} [message] - Optional custom error message
+	 * @returns {Context} The Context instance for chaining
+	 */
+	notFound(message = "Not Found") {
+		this.responseStatusCode = 404;
+		this.responseHeaders.set("content-type", "text/plain");
+		this.responseBody = message;
+		this.responseHeaders.set(
+			"Content-Length",
+			Buffer.byteLength(this.responseBody).toString(),
+		);
+		return this;
+	}
+
+	/**
+	 * Send a 500 Internal Server Error response.
+	 *
+	 * @param {string} [message] - Optional custom error message
+	 * @returns {Context} The Context instance for chaining
+	 */
+	error(message = "Internal Server Error") {
+		this.responseStatusCode = 500;
+		this.responseHeaders.set("content-type", "text/plain");
+		this.responseBody = message;
+		this.responseHeaders.set(
+			"Content-Length",
+			Buffer.byteLength(this.responseBody).toString(),
+		);
+		return this;
 	}
 }
