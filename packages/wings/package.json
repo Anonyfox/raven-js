@@ -1,13 +1,12 @@
 {
   "name": "@raven-js/wings",
-  "description": "Zero-dependency isomorphic routing library for modern JavaScript - SPA, Server, and CLI routing",
+  "description": "Zero-dependency isomorphic routing library for modern JavaScript - Server and CLI routing",
   "version": "0.2.2",
   "type": "module",
   "files": [
     "*.js",
     "*.d.ts",
     "core/**/*.js",
-    "spa/**/*.js",
     "server/**/*.js",
     "types.*.d.ts",
     "LICENSE",
@@ -17,10 +16,6 @@
     ".": {
       "import": "./core/index.js",
       "types": "./types.core.d.ts"
-    },
-    "./spa": {
-      "import": "./spa/index.js",
-      "types": "./types.spa.d.ts"
     },
     "./server": {
       "import": "./server/index.js",
@@ -32,15 +27,13 @@
     "nest:docs": "node ../nest/bin/nest.js build-docs",
     "test": "npm run test:types && npm run test:code && npm run test:style",
     "test:code": "timeout 10s node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
-    "test:style": "npx biome lint --error-on-warnings ./core ./spa ./server",
+    "test:style": "npx biome lint --error-on-warnings ./core ./server",
     "test:types": "tsc --noEmit --project jsconfig.json"
   },
   "keywords": [
     "routing",
-    "spa",
     "server",
     "cli",
-    "pushstate",
     "http",
     "isomorphic",
     "zero-dependency",

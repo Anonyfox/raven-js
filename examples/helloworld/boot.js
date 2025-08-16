@@ -1,5 +1,5 @@
 import { DevServer } from "@ravenjs/wings/server";
-import { router } from "./index.js";
+import { router } from "./src/index.js";
 
 const port = 3000;
 

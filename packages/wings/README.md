@@ -1,6 +1,6 @@
 # 🦅 Wings: Zero-Dependency Isomorphic Routing for Modern JavaScript
 
-_Your app's flight control: isomorphic router with submodules for SPA, Server, and CLI routing. A single route is a Feather — light, movable, composable._
+_Your app's flight control: isomorphic router with submodules for Server and CLI routing. A single route is a Feather — light, movable, composable._
 
 [![Website](https://img.shields.io/badge/Website-ravenjs.dev-blue.svg)](https://ravenjs.dev)
 [![Documentation](https://img.shields.io/badge/Documentation-Online-blue.svg)](https://docs.ravenjs.dev/wings/)
@@ -10,7 +10,7 @@ _Your app's flight control: isomorphic router with submodules for SPA, Server, a
 
 ## What is Wings?
 
-Wings is a **zero-dependency isomorphic routing library** that provides unified routing across different environments. It's designed for developers who want consistent routing patterns whether building SPAs, server applications, or CLI tools. Each route is a **Feather** — lightweight, composable, and easily movable between environments.
+Wings is a **zero-dependency isomorphic routing library** that provides unified routing across different environments. It's designed for developers who want consistent routing patterns whether building server applications or CLI tools. Each route is a **Feather** — lightweight, composable, and easily movable between environments.
 
 **No dependencies. No framework lock-in. No bullshit.**
 
@@ -18,7 +18,7 @@ Wings is a **zero-dependency isomorphic routing library** that provides unified 
 
 ### 🔄 **Isomorphic Routing**
 
-- **Unified API** - Same routing patterns across SPA, Server, and CLI environments
+- **Unified API** - Same routing patterns across Server and CLI environments
 - **Code sharing** - Route definitions work everywhere without modification
 - **Environment agnostic** - Switch between client and server without changing route logic
 - **Consistent behavior** - Predictable routing behavior regardless of execution context
@@ -32,7 +32,6 @@ Wings is a **zero-dependency isomorphic routing library** that provides unified 
 
 ### 🎯 **Multi-Environment Support**
 
-- **SPA routing** - PushState navigation with history management
 - **Server routing** - Complete Node.js backend with three specialized implementations
 - **CLI routing** - Command-line argument parsing and routing
 - **Unified patterns** - Consistent route definition syntax across all environments
@@ -79,20 +78,6 @@ await server.listen(3000);
 ```
 
 ## Core Features
-
-### 🎯 SPA Routing
-
-```javascript
-import { Router } from "@raven-js/wings/core";
-import { spaRouter } from "@raven-js/wings/spa";
-
-const router = new Router();
-router.get("/", () => renderHome());
-router.get("/users/:id", (ctx) => renderUser(ctx.params.id));
-
-const spa = spaRouter(router);
-spa.start();
-```
 
 ### 🌐 Server Routing - Complete Node.js Backend
 
@@ -141,7 +126,7 @@ await devServer.listen(3000);
 // Automatically injects live-reload scripts into HTML responses
 ```
 
-**Use for:** Local development, rapid iteration, SPAs
+**Use for:** Local development, rapid iteration
 
 - Live-reload capabilities with WebSocket monitoring
 - Automatic HTML injection of reload scripts
@@ -198,7 +183,7 @@ router.handle(process.argv.slice(2));
 | Server          | Memory Baseline     | CPU Overhead | Startup Time | Best For                 |
 | --------------- | ------------------- | ------------ | ------------ | ------------------------ |
 | NodeHttp        | ~2-5MB              | Minimal      | <100ms       | Microservices, APIs      |
-| DevServer       | ~5-10MB             | Low          | <200ms       | Development, SPAs        |
+| DevServer       | ~5-10MB             | Low          | <200ms       | Development              |
 | ClusteredServer | ~10-20MB per worker | Medium       | <500ms       | Production, High-traffic |
 
 ## Migration from Traditional Frameworks
@@ -305,21 +290,6 @@ import { Router } from "@raven-js/wings/core";
 const router = new Router();
 router.get("/", (ctx) => ctx.html("<h1>Home</h1>"));
 router.get("/api/users/:id", (ctx) => ctx.json({ id: ctx.params.id }));
-```
-
-### SPA Module
-
-```javascript
-import { Router } from "@raven-js/wings/core";
-import { spaRouter } from "@raven-js/wings/spa";
-
-// Create SPA router with pushState support
-const router = new Router();
-router.get("/", () => renderHome());
-router.get("/users/:id", (ctx) => renderUser(ctx.params.id));
-
-const spa = spaRouter(router);
-spa.start();
 ```
 
 ### Server Module
