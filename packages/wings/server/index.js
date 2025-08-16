@@ -23,4 +23,5 @@
  * application code. This is what unlocks true independence without the hassle.
  */
 
+export { ClusteredServer } from "./clustered-server.js";
 export * from "./node-http.js";

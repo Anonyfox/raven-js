@@ -2,6 +2,9 @@ import http from "node:http";
 import { Context, Router } from "../core/index.js";
 import { readBody } from "./read-body.js";
 
+// Import shared types
+import "./server-options.js";
+
 /**
  * Minimalistic NodeJS runtime for Wings, wrapping the native `http` module.
  *
@@ -708,66 +711,5 @@ export class NodeHttp {
 }
 
 /**
- * Configuration options for the NodeHttp server.
- *
- * These options control the behavior of the underlying Node.js HTTP server,
- * affecting performance, security, and resource usage.
- *
- * **Performance impact:**
- * - `timeout`: Affects memory usage and connection cleanup
- * - `keepAlive`: Reduces connection overhead for multiple requests
- * - `keepAliveTimeout`: Balances resource usage vs connection reuse
- * - `maxHeadersCount`: Prevents memory exhaustion attacks
- *
- * **Security considerations:**
- * - `maxHeadersCount`: Protects against header-based attacks
- * - `timeout`: Prevents slow-loris attacks
- * - `keepAliveTimeout`: Limits resource consumption per connection
- *
- * **Recommended values by use case:**
- * - **Development**: Default values are fine
- * - **Production**: Increase timeout, enable keepAlive, limit headers
- * - **High-traffic**: Optimize keepAliveTimeout, strict header limits
- * - **Security-focused**: Lower timeouts, strict header limits
- *
- * @typedef {Object} NodeHttpOptions
- * @property {number} [timeout=30000] - Request timeout in milliseconds. Prevents hanging connections and resource exhaustion. Higher values allow longer-running requests but consume more resources.
- * @property {boolean} [keepAlive=true] - Enable HTTP keep-alive connections. Reduces connection overhead for multiple requests from the same client. Disable only if clients don't support keep-alive.
- * @property {number} [keepAliveTimeout=5000] - Keep-alive timeout in milliseconds. How long to keep idle connections open. Lower values free resources faster, higher values reduce connection overhead.
- * @property {number} [maxHeadersCount=2000] - Maximum number of headers allowed per request. Protects against header-based attacks. Lower values are more secure but may break some clients.
- *
- * @example
- * ```javascript
- * // Development configuration (defaults)
- * const devOptions = {
- *   timeout: 30000,        // 30s timeout
- *   keepAlive: true,       // Enable keep-alive
- *   keepAliveTimeout: 5000, // 5s keep-alive timeout
- *   maxHeadersCount: 2000   // Allow 2000 headers
- * };
- *
- * // Production configuration
- * const prodOptions = {
- *   timeout: 60000,         // 60s timeout for complex requests
- *   keepAlive: true,        // Enable keep-alive for performance
- *   keepAliveTimeout: 10000, // 10s keep-alive timeout
- *   maxHeadersCount: 1000    // Stricter header limits
- * };
- *
- * // High-performance configuration
- * const perfOptions = {
- *   timeout: 30000,         // Shorter timeout for faster failure
- *   keepAlive: true,        // Enable keep-alive
- *   keepAliveTimeout: 3000, // Shorter keep-alive for high throughput
- *   maxHeadersCount: 500     // Very strict header limits
- * };
- *
- * // Security-focused configuration
- * const secureOptions = {
- *   timeout: 15000,         // Short timeout to prevent attacks
- *   keepAlive: false,       // Disable keep-alive for security
- *   keepAliveTimeout: 0,    // Not used when keepAlive is false
- *   maxHeadersCount: 100     // Very strict header limits
- * };
- * ```
+ * @typedef {import('./server-options.js').ServerOptions} NodeHttpOptions
  */
