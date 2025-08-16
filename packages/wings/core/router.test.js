@@ -143,6 +143,22 @@ describe("Router", () => {
 
 			assert.strictEqual(result, router);
 		});
+
+		it("should add multiple middlewares without identifiers", () => {
+			const middleware1 = new Middleware(async (_ctx) => {
+				// Middleware logic
+			}, null);
+			const middleware2 = new Middleware(async (_ctx) => {
+				// Middleware logic
+			}, undefined);
+
+			const result1 = router.use(middleware1);
+			const result2 = router.use(middleware2);
+
+			assert.strictEqual(result1, router);
+			assert.strictEqual(result2, router);
+			// Both should be added since they have no identifiers
+		});
 	});
 
 	describe("useEarly", () => {
@@ -178,6 +194,22 @@ describe("Router", () => {
 			const result = router.useEarly(middleware);
 
 			assert.strictEqual(result, router);
+		});
+
+		it("should prepend multiple middlewares without identifiers", () => {
+			const middleware1 = new Middleware(async (_ctx) => {
+				// Middleware logic
+			}, null);
+			const middleware2 = new Middleware(async (_ctx) => {
+				// Middleware logic
+			}, undefined);
+
+			const result1 = router.useEarly(middleware1);
+			const result2 = router.useEarly(middleware2);
+
+			assert.strictEqual(result1, router);
+			assert.strictEqual(result2, router);
+			// Both should be prepended since they have no identifiers
 		});
 	});
 
@@ -233,6 +265,48 @@ describe("Router", () => {
 			Object.defineProperty(ctx, "method", {
 				get: () => "INVALID",
 			});
+
+			const result = await router.handleRequest(ctx);
+
+			assert.strictEqual(result, ctx);
+			assert.strictEqual(ctx.responseStatusCode, 404);
+		});
+
+		it("should handle trie match with negative id but params", async () => {
+			// This test covers the case where the trie match returns id < 0 but still has params
+			// We need to test the #match method's behavior when no route is found but params exist
+
+			const handler = async (ctx) => {
+				ctx.responseBody = "test";
+			};
+
+			// Add a route that won't match our test path
+			router.get("/users/:id", handler);
+
+			// Try to match a path that doesn't exist but might have similar structure
+			const url = new URL("http://localhost/posts/123");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			const result = await router.handleRequest(ctx);
+
+			assert.strictEqual(result, ctx);
+			assert.strictEqual(ctx.responseStatusCode, 404);
+		});
+
+		it("should handle trie match with partial path match", async () => {
+			// This test covers the case where the trie match returns id < 0 but still has params
+			// from partial path matching
+
+			const handler = async (ctx) => {
+				ctx.responseBody = "test";
+			};
+
+			// Add a route with a specific pattern
+			router.get("/users/:id/profile", handler);
+
+			// Try to match a path that partially matches but doesn't fully match
+			const url = new URL("http://localhost/users/123");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
 
 			const result = await router.handleRequest(ctx);
 
@@ -364,6 +438,33 @@ describe("Router", () => {
 				ctx.responseEnded = true; // End response
 				// Add after callback
 				ctx.addAfterCallback(afterMiddleware);
+			};
+
+			router.get("/test", handler);
+
+			const url = new URL("http://localhost/test");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			await router.handleRequest(ctx);
+
+			assert.strictEqual(afterCallbackCalled, false);
+		});
+
+		it("should run after callbacks even if response ended after handler", async () => {
+			let afterCallbackCalled = false;
+
+			// Add an after callback directly to the context
+			const afterMiddleware = new Middleware(async (_ctx) => {
+				afterCallbackCalled = true;
+			}, "after");
+
+			const handler = async (ctx) => {
+				ctx.responseStatusCode = 200;
+				ctx.responseBody = "Success";
+				// Add after callback
+				ctx.addAfterCallback(afterMiddleware);
+				// End response after adding callback
+				ctx.responseEnded = true;
 			};
 
 			router.get("/test", handler);
@@ -620,6 +721,26 @@ describe("Router", () => {
 
 			assert.strictEqual(result, ctx);
 			assert.strictEqual(ctx.responseStatusCode, 500);
+		});
+
+		it("should handle error when response already ended", async () => {
+			const handler = async (ctx) => {
+				ctx.responseStatusCode = 200;
+				ctx.responseBody = "Success";
+				ctx.responseEnded = true; // End response first
+				throw new Error("Error after response ended"); // Then throw error
+			};
+
+			router.get("/test", handler);
+
+			const url = new URL("http://localhost/test");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			const result = await router.handleRequest(ctx);
+
+			assert.strictEqual(result, ctx);
+			assert.strictEqual(ctx.responseStatusCode, 200); // Should remain 200, not 500
+			assert.strictEqual(ctx.responseBody, "Success");
 		});
 
 		it("should handle context with null/undefined values", async () => {
