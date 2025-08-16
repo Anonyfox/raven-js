@@ -1,6 +1,6 @@
 {
   "name": "raven-js",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A swift web dev toolkit - zero-dependency, modern JavaScript libraries for developers who've had enough of framework fatigue",
   "keywords": [
     "javascript",
