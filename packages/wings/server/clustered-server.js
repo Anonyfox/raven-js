@@ -75,6 +75,12 @@ export class ClusteredServer extends NodeHttp {
 	#clusterOptions;
 
 	/**
+	 * Cluster event listeners for cleanup.
+	 * @type {Array<{event: string, listener: (...args: any[]) => void}>}
+	 */
+	#clusterListeners = [];
+
+	/**
 	 * Create a new clustered server instance.
 	 *
 	 * @param {Router} router - The Wings router instance
@@ -169,18 +175,34 @@ export class ClusteredServer extends NodeHttp {
 		}
 
 		// Set up worker event handlers
-		cluster.on("listening", (worker, _address) => {
+		const listeningListener = (
+			/** @type {any} */ worker,
+			/** @type {any} */ _address,
+		) => {
 			this.#activeWorkers++;
 			this.#startHealthCheck(worker);
-		});
-
-		cluster.on("exit", (worker, code, signal) => {
+		};
+		const exitListener = (
+			/** @type {any} */ worker,
+			/** @type {any} */ code,
+			/** @type {any} */ signal,
+		) => {
 			this.#handleWorkerExit(worker, code, signal);
-		});
-
-		cluster.on("disconnect", (worker) => {
+		};
+		const disconnectListener = (/** @type {any} */ worker) => {
 			this.#handleWorkerDisconnect(worker);
-		});
+		};
+
+		cluster.on("listening", listeningListener);
+		cluster.on("exit", exitListener);
+		cluster.on("disconnect", disconnectListener);
+
+		// Store listeners for cleanup
+		this.#clusterListeners = [
+			{ event: "listening", listener: listeningListener },
+			{ event: "exit", listener: exitListener },
+			{ event: "disconnect", listener: disconnectListener },
+		];
 
 		// Log startup information
 		console.log(`Primary process started (PID: ${process.pid})`);
@@ -313,6 +335,16 @@ export class ClusteredServer extends NodeHttp {
 	}
 
 	/**
+	 * Clean up cluster event listeners.
+	 */
+	#cleanupClusterListeners() {
+		for (const { event, listener } of this.#clusterListeners) {
+			cluster.removeListener(event, listener);
+		}
+		this.#clusterListeners = [];
+	}
+
+	/**
 	 * Shutdown the primary process and all workers.
 	 *
 	 * @returns {Promise<void>}
@@ -327,6 +359,9 @@ export class ClusteredServer extends NodeHttp {
 		}
 		this.#healthTimers.clear();
 
+		// Clean up cluster event listeners
+		this.#cleanupClusterListeners();
+
 		// Force kill all workers immediately for tests
 		// In production, you might want graceful shutdown
 		for (const [_id, worker] of Object.entries(cluster.workers)) {
@@ -335,8 +370,8 @@ export class ClusteredServer extends NodeHttp {
 			}
 		}
 
-		// Wait a bit to ensure all processes are terminated
-		await new Promise((resolve) => setTimeout(resolve, 100));
+		// Wait longer to ensure all processes are terminated
+		await new Promise((resolve) => setTimeout(resolve, 500));
 	}
 
 	/**
