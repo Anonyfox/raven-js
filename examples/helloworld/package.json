@@ -1,0 +1,25 @@
+{
+  "name": "helloworld-example",
+  "version": "1.0.0",
+  "description": "Hello World example using RavenJS wings and beak packages",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js",
+    "lint": "npx biome lint .",
+    "format": "npx biome format . --write",
+    "check": "npx biome check ."
+  },
+  "dependencies": {
+    "@ravenjs/wings": "file:../../packages/wings",
+    "@ravenjs/beak": "file:../../packages/beak"
+  },
+  "keywords": [
+    "example",
+    "ravenjs",
+    "helloworld"
+  ],
+  "author": "RavenJS",
+  "license": "MIT"
+}
