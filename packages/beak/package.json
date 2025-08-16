@@ -30,7 +30,7 @@
     "test": "npm run test:types && npm run test:code && npm run test:style",
     "test:code": "node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
     "test:style": "biome lint --error-on-warnings ./core ./seo",
-    "test:types": "tsc --noEmit --allowJS core/*.js seo/*.js"
+    "test:types": "tsc --noEmit --project jsconfig.json"
   },
   "keywords": [
     "templating",

@@ -11,6 +11,7 @@
     "node_modules/**",
     "**/dist/**",
     "**/_dist/**",
-    "plugins/vscode/**"
+    "plugins/vscode/**",
+    "**/*.test.js"
   ]
 }

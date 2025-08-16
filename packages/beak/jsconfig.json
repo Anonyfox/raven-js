@@ -7,5 +7,6 @@
     "noImplicitAny": true,
     "resolveJsonModule": true
   },
-  "include": ["core/**/*.js", "seo/**/*.js", "bootstrap/**/*.js"]
+  "include": ["core/**/*.js", "seo/**/*.js", "bootstrap/**/*.js"],
+  "exclude": ["**/*.test.js"]
 }

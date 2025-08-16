@@ -2,22 +2,26 @@ import { NODE_TYPES, VALIDATORS } from "../types.js";
 
 // Validation rules for each node type
 const VALIDATION_RULES = {
-	[NODE_TYPES.PARAGRAPH]: (node) =>
-		Array.isArray(node.content) && node.content.length > 0,
-	[NODE_TYPES.BLOCKQUOTE]: (node) =>
-		Array.isArray(node.content) && node.content.length > 0,
-	[NODE_TYPES.HEADING]: (node) =>
+	[NODE_TYPES.PARAGRAPH]: (
+		/** @type {import('../types.js').BlockNode} */ node,
+	) => Array.isArray(node.content) && node.content.length > 0,
+	[NODE_TYPES.BLOCKQUOTE]: (
+		/** @type {import('../types.js').BlockNode} */ node,
+	) => Array.isArray(node.content) && node.content.length > 0,
+	[NODE_TYPES.HEADING]: (/** @type {import('../types.js').BlockNode} */ node) =>
 		VALIDATORS.isValidHeadingLevel(node.level) &&
 		Array.isArray(node.content) &&
 		node.content.length > 0,
-	[NODE_TYPES.LIST]: (node) =>
+	[NODE_TYPES.LIST]: (/** @type {import('../types.js').BlockNode} */ node) =>
 		typeof node.ordered === "boolean" &&
 		Array.isArray(node.items) &&
 		node.items.length > 0,
-	[NODE_TYPES.LIST_ITEM]: (node) =>
-		Array.isArray(node.content) && node.content.length > 0,
-	[NODE_TYPES.CODE_BLOCK]: (node) =>
-		typeof node.language === "string" && typeof node.content === "string",
+	[NODE_TYPES.LIST_ITEM]: (
+		/** @type {import('../types.js').BlockNode} */ node,
+	) => Array.isArray(node.content) && node.content.length > 0,
+	[NODE_TYPES.CODE_BLOCK]: (
+		/** @type {import('../types.js').BlockNode} */ node,
+	) => typeof node.language === "string" && typeof node.content === "string",
 	[NODE_TYPES.HORIZONTAL_RULE]: () => true,
 };
 

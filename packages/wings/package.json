@@ -33,7 +33,7 @@
     "test": "npm run test:types && npm run test:code && npm run test:style",
     "test:code": "node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
     "test:style": "biome lint --error-on-warnings ./core ./spa ./server",
-    "test:types": "tsc --noEmit --allowJS core/*.js spa/*.js server/*.js"
+    "test:types": "tsc --noEmit --project jsconfig.json"
   },
   "keywords": [
     "routing",
