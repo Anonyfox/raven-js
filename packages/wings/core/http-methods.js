@@ -32,13 +32,16 @@ export const HTTP_METHODS = {
 export const HTTP_METHODS_LIST = Object.values(HTTP_METHODS);
 
 /**
- * Checks if a string is a valid HTTP method.
+ * Checks if a value is a valid HTTP method.
  *
- * @param {string} method - The method to validate
+ * @param {unknown} method - The method to validate
  * @returns {method is HttpMethod} True if the method is valid
  */
 export function isValidHttpMethod(method) {
-	return HTTP_METHODS_LIST.includes(/** @type {HttpMethod} */ (method));
+	return (
+		typeof method === "string" &&
+		HTTP_METHODS_LIST.includes(/** @type {HttpMethod} */ (method))
+	);
 }
 
 /**
