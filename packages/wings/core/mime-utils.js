@@ -1,5 +1,81 @@
 /**
- * @type {Object<string, string>} MimeTypes
+ * **MIME Utils** - File extension to MIME type mapping utilities.
+ *
+ * This module provides utilities for determining the appropriate MIME type
+ * based on file extensions. It includes a comprehensive mapping of common
+ * file extensions to their corresponding MIME types, with proper fallback
+ * handling for unknown extensions.
+ *
+ * ## Supported File Types
+ *
+ * ### Web Files
+ * - HTML, JavaScript, CSS, JSON, XML
+ *
+ * ### Images
+ * - PNG, JPEG, GIF, SVG, ICO, WebP, AVIF
+ *
+ * ### Media
+ * - Audio: WAV, MP3
+ * - Video: MP4, WebM
+ *
+ * ### Fonts
+ * - WOFF, TTF, EOT, OTF
+ *
+ * ### Documents
+ * - PDF, TXT, Markdown, CSV
+ *
+ * ### Archives
+ * - ZIP, GZ
+ *
+ * ### Other
+ * - WebAssembly (WASM)
+ *
+ * ## Design Philosophy
+ * This module prioritizes simplicity and reliability over completeness.
+ * It covers the most common file types used in web applications while
+ * providing a sensible default for unknown extensions.
+ *
+ * **Note**: The mapping is case-insensitive and handles edge cases like
+ * files with multiple dots, leading dots, and various special characters.
+ *
+ * @example
+ * ```javascript
+ * import { getMimeType } from './mime-utils.js';
+ *
+ * // Basic usage
+ * getMimeType('index.html');     // 'text/html'
+ * getMimeType('styles.css');     // 'text/css'
+ * getMimeType('script.js');      // 'text/javascript'
+ * getMimeType('image.png');      // 'image/png'
+ *
+ * // Case insensitive
+ * getMimeType('file.HTML');      // 'text/html'
+ * getMimeType('file.Html');      // 'text/html'
+ *
+ * // Files with multiple dots
+ * getMimeType('file.name.txt');  // 'text/plain'
+ *
+ * // Unknown extensions
+ * getMimeType('file.xyz');       // 'application/octet-stream'
+ *
+ * // Edge cases
+ * getMimeType('');               // 'application/octet-stream'
+ * getMimeType(null);             // 'application/octet-stream'
+ * getMimeType('filename');       // 'application/octet-stream'
+ * ```
+ */
+
+/**
+ * Internal mapping of file extensions to MIME types.
+ *
+ * This object contains the complete mapping of supported file extensions
+ * to their corresponding MIME types. Extensions are stored with leading
+ * dots (e.g., '.html') for efficient lookup.
+ *
+ * **Coverage**: Includes the most commonly used file types in web applications,
+ * covering web files, images, media, fonts, documents, and archives.
+ *
+ * @type {Object<string, string>}
  */
 const mimeTypes = {
 	".html": "text/html",
@@ -33,10 +109,101 @@ const mimeTypes = {
 };
 
 /**
- * Gets the MIME type based on the file extension.
+ * Determines the MIME type for a file based on its extension.
  *
- * @param {string} filename - The name of the file to get the MIME type for.
- * @returns {string} The MIME type corresponding to the file extension, or "application/octet-stream" if not found.
+ * This function extracts the file extension from the filename and looks up
+ * the corresponding MIME type. It handles various edge cases and provides
+ * a sensible default for unknown extensions.
+ *
+ * **Processing Steps**:
+ * 1. Validates input (must be a non-empty string)
+ * 2. Trims whitespace from the filename
+ * 3. Extracts the last extension (handles multiple dots)
+ * 4. Converts extension to lowercase for case-insensitive matching
+ * 5. Returns the corresponding MIME type or default
+ *
+ * **Edge Case Handling**:
+ * - Empty or null/undefined input → `application/octet-stream`
+ * - Files without extensions → `application/octet-stream`
+ * - Files with only dots → `application/octet-stream`
+ * - Files with multiple dots → uses last extension
+ * - Case-insensitive matching
+ * - Unicode characters in filenames
+ *
+ * @param {string} filename - The filename to analyze
+ * @returns {string} The MIME type for the file extension, or "application/octet-stream" if not found
+ *
+ * @example
+ * ```javascript
+ * // Common file types
+ * getMimeType('index.html');           // 'text/html'
+ * getMimeType('styles.css');           // 'text/css'
+ * getMimeType('script.js');            // 'text/javascript'
+ * getMimeType('data.json');            // 'application/json'
+ * getMimeType('image.png');            // 'image/png'
+ * getMimeType('photo.jpg');            // 'image/jpeg'
+ * getMimeType('document.pdf');         // 'application/pdf'
+ *
+ * // Case insensitive
+ * getMimeType('file.HTML');            // 'text/html'
+ * getMimeType('file.Html');            // 'text/html'
+ * getMimeType('file.html');            // 'text/html'
+ *
+ * // Files with multiple dots
+ * getMimeType('file.name.txt');        // 'text/plain'
+ * getMimeType('archive.backup.zip');   // 'application/zip'
+ * getMimeType('image.compressed.jpg'); // 'image/jpeg'
+ *
+ * // Files with leading dots (hidden files)
+ * getMimeType('.htaccess');            // 'application/octet-stream'
+ * getMimeType('.env');                 // 'application/octet-stream'
+ *
+ * // Files with only dots
+ * getMimeType('.');                    // 'application/octet-stream'
+ * getMimeType('..');                   // 'application/octet-stream'
+ * getMimeType('...');                  // 'application/octet-stream'
+ *
+ * // Files without extensions
+ * getMimeType('filename');             // 'application/octet-stream'
+ * getMimeType('file.');                // 'application/octet-stream'
+ *
+ * // Unknown extensions
+ * getMimeType('file.unknown');         // 'application/octet-stream'
+ * getMimeType('file.xyz');             // 'application/octet-stream'
+ * getMimeType('file.123');             // 'application/octet-stream'
+ *
+ * // Unicode filenames
+ * getMimeType('café.txt');             // 'text/plain'
+ * getMimeType('résumé.pdf');           // 'application/pdf'
+ * getMimeType('文件.txt');              // 'text/plain'
+ *
+ * // Edge cases
+ * getMimeType('');                     // 'application/octet-stream'
+ * getMimeType(null);                   // 'application/octet-stream'
+ * getMimeType(undefined);              // 'application/octet-stream'
+ * getMimeType(123);                    // 'application/octet-stream'
+ * getMimeType('   ');                  // 'application/octet-stream'
+ * getMimeType('file.txt ');            // 'text/plain'
+ * getMimeType(' file.txt');            // 'text/plain'
+ *
+ * // Use in HTTP responses
+ * function serveFile(filename) {
+ *   const mimeType = getMimeType(filename);
+ *   return {
+ *     contentType: mimeType,
+ *     body: readFile(filename)
+ *   };
+ * }
+ *
+ * // Use in content negotiation
+ * function getPreferredMimeType(filename, acceptHeader) {
+ *   const mimeType = getMimeType(filename);
+ *   if (acceptHeader.includes(mimeType)) {
+ *     return mimeType;
+ *   }
+ *   return 'application/octet-stream';
+ * }
+ * ```
  */
 export function getMimeType(filename) {
 	if (!filename || typeof filename !== "string") {
