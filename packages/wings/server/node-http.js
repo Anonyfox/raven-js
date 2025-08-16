@@ -1,6 +1,7 @@
 import http from "node:http";
 import process from "node:process";
 import { Context, Router } from "../core/index.js";
+import { readBody } from "./read-body.js";
 
 /**
  * Minimalistic NodeJS runtime for Wings, wrapping the native `http` module.
@@ -71,7 +72,7 @@ export class NodeHttp {
 		const host = req.headers.host || process.env.HOST || "localhost";
 		const url = new URL(`${protocol}://${host}${req.url}`);
 		const headers = new Headers(/** @type {any} */ ({ ...req.headers }));
-		const body = await this.#readBody(req);
+		const body = await readBody(req);
 
 		return new Context(req.method, url, headers, body);
 	}
@@ -103,14 +104,7 @@ export class NodeHttp {
 	#handleError(err, req, res) {
 		console.error(`Error handling request <${req.url}>: ${err.message}`);
 
-		// Determine appropriate status code based on error type
-		let status = 500;
-		if (err.name === "ValidationError") status = 400;
-		if (err.name === "NotFoundError") status = 404;
-		if (err.name === "UnauthorizedError") status = 401;
-		if (err.name === "ForbiddenError") status = 403;
-
-		res.writeHead(status, { "Content-Type": "text/plain" });
+		res.writeHead(500, { "Content-Type": "text/plain" });
 		res.end(err.message || "Internal Server Error");
 	}
 
@@ -128,32 +122,6 @@ export class NodeHttp {
 		} catch (err) {
 			this.#handleError(err, req, res);
 		}
-	}
-
-	/**
-	 * Read the request body as a Buffer.
-	 *
-	 * @param {import('node:http').IncomingMessage} request - The HTTP request
-	 * @returns {Promise<Buffer|undefined>} A Promise that resolves to the request body or undefined
-	 */
-	#readBody(request) {
-		return new Promise((resolve) => {
-			const bodyParts = /** @type {Buffer[]} */ ([]);
-
-			request
-				.on("data", (chunk) => {
-					bodyParts.push(chunk);
-				})
-				.on("end", () => {
-					if (bodyParts.length === 0) return resolve(undefined);
-					const body = Buffer.concat(bodyParts);
-					resolve(body);
-				})
-				.on("error", (err) => {
-					console.error("Error reading request body:", err);
-					resolve(undefined);
-				});
-		});
 	}
 
 	/**
