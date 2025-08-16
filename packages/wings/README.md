@@ -33,7 +33,7 @@ Wings is a **zero-dependency isomorphic routing library** that provides unified 
 ### 🎯 **Multi-Environment Support**
 
 - **SPA routing** - PushState navigation with history management
-- **Server routing** - HTTP request routing with middleware support
+- **Server routing** - Complete Node.js backend with three specialized implementations
 - **CLI routing** - Command-line argument parsing and routing
 - **Unified patterns** - Consistent route definition syntax across all environments
 
@@ -65,22 +65,17 @@ npm install @raven-js/wings
 ```
 
 ```javascript
-import { createRouter } from "@raven-js/wings";
-import { spaRouter } from "@raven-js/wings/spa";
-import { serverRouter } from "@raven-js/wings/server";
-import { cliRouter } from "@raven-js/wings/cli";
+import { Router } from "@raven-js/wings/core";
+import { NodeHttp } from "@raven-js/wings/server";
 
-// Define routes as Feathers
-const routes = [
-  { path: "/", handler: () => "Home" },
-  { path: "/users/:id", handler: (params) => `User ${params.id}` },
-  { path: "/api/posts", handler: () => ({ posts: [] }) },
-];
+// Define routes
+const router = new Router();
+router.get("/", (ctx) => ctx.html("<h1>Hello World!</h1>"));
+router.get("/api/users/:id", (ctx) => ctx.json({ id: ctx.params.id }));
 
-// Use in different environments
-const spa = spaRouter(routes);
-const server = serverRouter(routes);
-const cli = cliRouter(routes);
+// Start server
+const server = new NodeHttp(router);
+await server.listen(3000);
 ```
 
 ## Core Features
@@ -88,36 +83,95 @@ const cli = cliRouter(routes);
 ### 🎯 SPA Routing
 
 ```javascript
+import { Router } from "@raven-js/wings/core";
 import { spaRouter } from "@raven-js/wings/spa";
 
-const routes = [
-  { path: "/", handler: () => renderHome() },
-  { path: "/users/:id", handler: (params) => renderUser(params.id) },
-  { path: "/posts/:slug", handler: (params) => renderPost(params.slug) },
-];
+const router = new Router();
+router.get("/", () => renderHome());
+router.get("/users/:id", (ctx) => renderUser(ctx.params.id));
 
-const router = spaRouter(routes);
-router.start();
+const spa = spaRouter(router);
+spa.start();
 ```
 
-### 🌐 Server Routing
+### 🌐 Server Routing - Complete Node.js Backend
+
+Wings provides three specialized server implementations for different deployment scenarios:
+
+#### **NodeHttp - Minimal Production Server**
 
 ```javascript
-import { serverRouter } from "@raven-js/wings/server";
+import { Router } from "@raven-js/wings/core";
+import { NodeHttp } from "@raven-js/wings/server";
 
-const routes = [
-  {
-    path: "/api/users/:id",
-    method: "GET",
-    handler: (params, req, res) => {
-      const user = getUserById(params.id);
-      res.json(user);
-    },
-  },
-];
+const router = new Router();
+router.get("/api/users", (ctx) => ctx.json({ users: [] }));
+router.post("/api/users", async (ctx) => {
+  const user = await ctx.json();
+  ctx.json({ id: 1, ...user }, 201);
+});
 
-const router = serverRouter(routes);
+const server = new NodeHttp(router, {
+  timeout: 30000,
+  keepAlive: true,
+});
+await server.listen(3000);
 ```
+
+**Use for:** Lightweight microservices, APIs, learning, prototyping
+
+- Zero additional dependencies beyond Node.js core
+- Minimal memory footprint (~2-5MB baseline)
+- Direct access to native HTTP server
+- Single-threaded (blocks on CPU-intensive operations)
+
+#### **DevServer - Development Server with Live Reload**
+
+```javascript
+import { Router } from "@raven-js/wings/core";
+import { DevServer } from "@raven-js/wings/server";
+
+const router = new Router();
+router.get("/", (ctx) => ctx.html("<h1>Hello World!</h1>"));
+
+const devServer = new DevServer(router, {
+  websocketPort: 3456, // Custom WebSocket port for live reload
+});
+await devServer.listen(3000);
+// Automatically injects live-reload scripts into HTML responses
+```
+
+**Use for:** Local development, rapid iteration, SPAs
+
+- Live-reload capabilities with WebSocket monitoring
+- Automatic HTML injection of reload scripts
+- Enhanced error reporting for development
+- ~5-10MB memory overhead vs NodeHttp
+
+#### **ClusteredServer - Production Server with Clustering**
+
+```javascript
+import { Router } from "@raven-js/wings/core";
+import { ClusteredServer } from "@raven-js/wings/server";
+
+const router = new Router();
+router.get("/api/health", (ctx) => ctx.json({ status: "healthy" }));
+
+const server = new ClusteredServer(router, {
+  workers: 4, // Use 4 CPU cores
+  healthCheckInterval: 30000, // 30s health checks
+  maxRestarts: 5, // Max 5 restarts per worker
+  gracefulShutdownTimeout: 30000, // 30s graceful shutdown
+});
+await server.listen(3000);
+```
+
+**Use for:** Production deployments, high-traffic applications
+
+- Multi-process clustering across CPU cores
+- Automatic worker health monitoring and restart
+- Graceful shutdown with zero-downtime deployments
+- Load balancing across worker processes
 
 ### 💻 CLI Routing
 
@@ -139,6 +193,99 @@ const router = cliRouter(routes);
 router.handle(process.argv.slice(2));
 ```
 
+## Server Performance Characteristics
+
+| Server          | Memory Baseline     | CPU Overhead | Startup Time | Best For                 |
+| --------------- | ------------------- | ------------ | ------------ | ------------------------ |
+| NodeHttp        | ~2-5MB              | Minimal      | <100ms       | Microservices, APIs      |
+| DevServer       | ~5-10MB             | Low          | <200ms       | Development, SPAs        |
+| ClusteredServer | ~10-20MB per worker | Medium       | <500ms       | Production, High-traffic |
+
+## Migration from Traditional Frameworks
+
+### From Express.js
+
+```javascript
+// Before (Express.js)
+const express = require("express");
+const app = express();
+app.get("/api/users", (req, res) => {
+  res.json({ users: [] });
+});
+app.listen(3000);
+
+// After (Wings Server)
+import { Router } from "@raven-js/wings/core";
+import { NodeHttp } from "@raven-js/wings/server";
+
+const router = new Router();
+router.get("/api/users", (ctx) => ctx.json({ users: [] }));
+
+const server = new NodeHttp(router);
+await server.listen(3000);
+```
+
+### From Fastify
+
+```javascript
+// Before (Fastify)
+const fastify = require("fastify")();
+fastify.get("/api/users", async (request, reply) => {
+  return { users: [] };
+});
+await fastify.listen({ port: 3000 });
+
+// After (Wings Server)
+import { Router } from "@raven-js/wings/core";
+import { NodeHttp } from "@raven-js/wings/server";
+
+const router = new Router();
+router.get("/api/users", (ctx) => ctx.json({ users: [] }));
+
+const server = new NodeHttp(router);
+await server.listen(3000);
+```
+
+## Advanced Server Features
+
+### Environment-Specific Configuration
+
+```javascript
+import { Router } from "@raven-js/wings/core";
+import { NodeHttp, DevServer, ClusteredServer } from "@raven-js/wings/server";
+
+const router = new Router();
+// ... your routes ...
+
+// Choose server based on environment
+const isDev = process.env.NODE_ENV === "development";
+const isProd = process.env.NODE_ENV === "production";
+
+let server;
+if (isDev) {
+  server = new DevServer(router, { websocketPort: 3456 });
+} else if (isProd) {
+  server = new ClusteredServer(router, { workers: 4 });
+} else {
+  server = new NodeHttp(router);
+}
+
+await server.listen(3000);
+```
+
+### Graceful Shutdown
+
+```javascript
+const server = new ClusteredServer(router);
+await server.listen(3000);
+
+process.on("SIGTERM", async () => {
+  console.log("Shutting down gracefully...");
+  await server.close();
+  process.exit(0);
+});
+```
+
 ## Installation
 
 ```bash
@@ -149,56 +296,66 @@ npm install @raven-js/wings
 
 ### Core Module
 
-The main `@raven-js/wings` export provides core routing functionality:
+The main `@raven-js/wings/core` export provides core routing functionality:
 
 ```javascript
-import { createRouter, createFeather } from "@raven-js/wings";
-
-// Create a route definition (Feather)
-const homeFeather = createFeather("/", () => "Home");
+import { Router } from "@raven-js/wings/core";
 
 // Create a router with multiple routes
-const router = createRouter([homeFeather]);
+const router = new Router();
+router.get("/", (ctx) => ctx.html("<h1>Home</h1>"));
+router.get("/api/users/:id", (ctx) => ctx.json({ id: ctx.params.id }));
 ```
 
 ### SPA Module
 
 ```javascript
-import { spaRouter, pushState } from "@raven-js/wings/spa";
+import { Router } from "@raven-js/wings/core";
+import { spaRouter } from "@raven-js/wings/spa";
 
 // Create SPA router with pushState support
-const router = spaRouter(routes);
+const router = new Router();
+router.get("/", () => renderHome());
+router.get("/users/:id", (ctx) => renderUser(ctx.params.id));
 
-// Navigate programmatically
-pushState("/users/123");
-
-// Listen for route changes
-router.on("change", (route) => {
-  console.log("Route changed to:", route.path);
-});
+const spa = spaRouter(router);
+spa.start();
 ```
 
 ### Server Module
 
 ```javascript
-import { serverRouter, httpHandler } from "@raven-js/wings/server";
+import { Router } from "@raven-js/wings/core";
+import { NodeHttp, DevServer, ClusteredServer } from "@raven-js/wings/server";
 
 // Create server router with HTTP method support
-const router = serverRouter(routes);
+const router = new Router();
+router.get("/api/users", (ctx) => ctx.json({ users: [] }));
+router.post("/api/users", async (ctx) => {
+  const user = await ctx.json();
+  ctx.json({ id: 1, ...user }, 201);
+});
 
-// Use with any HTTP server
-const handler = httpHandler(router);
+// Choose your server implementation
+const server = new NodeHttp(router);
+await server.listen(3000);
 ```
 
 ### CLI Module
 
 ```javascript
-import { cliRouter, parseArgs } from "@raven-js/wings/cli";
+import { cliRouter } from "@raven-js/wings/cli";
 
 // Create CLI router with argument parsing
-const router = cliRouter(routes);
+const routes = [
+  { pattern: "build [target]", handler: (args) => buildProject(args.target) },
+  {
+    pattern: "deploy --env <environment>",
+    handler: (args) => deploy(args.environment),
+  },
+];
 
-// Handle command line arguments
+const router = cliRouter(routes);
 router.handle(process.argv.slice(2));
 ```
 

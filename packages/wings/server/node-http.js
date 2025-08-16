@@ -138,7 +138,7 @@ export class NodeHttp {
 	 * - Server creation failures are rare but possible with invalid configurations
 	 *
 	 * @param {Router} router - The Wings router instance to handle requests
-	 * @param {NodeHttpOptions} [options] - Configuration options for the server
+	 * @param {import('./server-options.js').ServerOptions} [options] - Configuration options for the server
 	 *
 	 * @throws {TypeError} When router is not a valid Wings Router instance
 	 * @throws {Error} When server creation fails (rare, usually due to invalid options)
