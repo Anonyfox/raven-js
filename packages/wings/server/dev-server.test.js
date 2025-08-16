@@ -51,6 +51,107 @@ describe("DevServer", () => {
 
 		// Test 3: Verify WebSocket server is running on the configured port
 		assert.strictEqual(wsPort, 8080);
+
+		// Test 4: Non-HTML responses should not be modified
+		const jsonRouter = new Router();
+		jsonRouter.get("/json", (ctx) => {
+			ctx.json({ message: "Hello JSON" });
+		});
+
+		const jsonServer = new DevServer(jsonRouter, { websocketPort: 8083 });
+		await jsonServer.listen(3003);
+
+		try {
+			const jsonResponse = await fetch(`http://localhost:3003/json`);
+			assert.strictEqual(jsonResponse.status, 200);
+			assert.strictEqual(
+				jsonResponse.headers.get("content-type"),
+				"application/json",
+			);
+			const jsonText = await jsonResponse.text();
+			assert.strictEqual(jsonText, '{"message":"Hello JSON"}');
+			assert.ok(!jsonText.includes("<script>"));
+		} finally {
+			await jsonServer.close();
+		}
+
+		// Test 5: HTML without proper content-type should not be modified
+		const badHtmlRouter = new Router();
+		badHtmlRouter.get("/bad-html", (ctx) => {
+			ctx.html("<html><body>Hello</body></html>");
+			ctx.responseHeaders.set("content-type", "text/plain"); // Override to non-HTML
+		});
+
+		const badHtmlServer = new DevServer(badHtmlRouter, { websocketPort: 8084 });
+		await badHtmlServer.listen(3004);
+
+		try {
+			const badHtmlResponse = await fetch(`http://localhost:3004/bad-html`);
+			assert.strictEqual(badHtmlResponse.status, 200);
+			assert.strictEqual(
+				badHtmlResponse.headers.get("content-type"),
+				"text/plain",
+			);
+			const badHtmlText = await badHtmlResponse.text();
+			assert.ok(!badHtmlText.includes("<script>"));
+		} finally {
+			await badHtmlServer.close();
+		}
+
+		// Test 6: Non-string response body should not be modified
+		const nonStringRouter = new Router();
+		nonStringRouter.get("/non-string", (ctx) => {
+			ctx.html(123); // Non-string body
+		});
+
+		const nonStringServer = new DevServer(nonStringRouter, {
+			websocketPort: 8085,
+		});
+		await nonStringServer.listen(3005);
+
+		try {
+			const nonStringResponse = await fetch(`http://localhost:3005/non-string`);
+			assert.strictEqual(nonStringResponse.status, 500); // Should error due to invalid type
+			const nonStringText = await nonStringResponse.text();
+			assert.ok(nonStringText.includes("Internal Server Error"));
+		} finally {
+			await nonStringServer.close();
+		}
+
+		// Test 7: HTML that doesn't start with '<' should not be modified
+		const noTagRouter = new Router();
+		noTagRouter.get("/no-tag", (ctx) => {
+			ctx.html("This is not HTML"); // Doesn't start with '<'
+		});
+
+		const noTagServer = new DevServer(noTagRouter, { websocketPort: 8086 });
+		await noTagServer.listen(3006);
+
+		try {
+			const noTagResponse = await fetch(`http://localhost:3006/no-tag`);
+			assert.strictEqual(noTagResponse.status, 200);
+			const noTagText = await noTagResponse.text();
+			assert.ok(!noTagText.includes("<script>"));
+		} finally {
+			await noTagServer.close();
+		}
+	});
+
+	test("should handle constructor edge cases and server lifecycle", () => {
+		// Test constructor with undefined websocketPort (should use default)
+		const router1 = new Router();
+		const server1 = new DevServer(router1, { websocketPort: undefined });
+		assert.strictEqual(server1.websocketServerPort, 3456);
+
+		// Test constructor with null websocketPort (should use default)
+		const router2 = new Router();
+		const server2 = new DevServer(router2, { websocketPort: null });
+		assert.strictEqual(server2.websocketServerPort, 3456);
+
+		// Test constructor with no options (should use default)
+		const router3 = new Router();
+		const server3 = new DevServer(router3);
+		assert.strictEqual(server3.websocketServerPort, 3456);
 	});
 
 	test("should handle WebSocket upgrade and various error scenarios", async () => {
