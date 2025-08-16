@@ -50,13 +50,18 @@ export class Context {
 	requestBody() {
 		if (!this.#requestBody) return null;
 		const ct = this.requestHeaders.get("content-type");
-		if (ct.includes("application/json")) {
-			return JSON.parse(this.#requestBody.toString("utf8"));
+		if (!ct) return this.#requestBody;
+
+		const contentType = ct.toLowerCase();
+		if (contentType.includes("application/json")) {
+			const jsonString = this.#requestBody.toString("utf8");
+			return jsonString.trim() === "" ? null : JSON.parse(jsonString);
 		}
-		if (ct.includes("application/x-www-form-urlencoded")) {
-			return Object.fromEntries(
-				new URLSearchParams(this.#requestBody.toString("utf8")),
-			);
+		if (contentType.includes("application/x-www-form-urlencoded")) {
+			const formString = this.#requestBody.toString("utf8");
+			return formString.trim() === ""
+				? {}
+				: Object.fromEntries(new URLSearchParams(formString));
 		}
 		return this.#requestBody;
 	}
@@ -283,9 +288,9 @@ export class Context {
 
 		this.#path = path;
 
-		// set the query params and headers and freeze them to prevent nasty bugs
-		this.#queryParams = Object.freeze(url.searchParams);
-		this.#requestHeaders = Object.freeze(headers);
+		// set the query params and headers
+		this.#queryParams = url.searchParams;
+		this.#requestHeaders = headers;
 
 		// set the body if given
 		if (body) this.#requestBody = body;
@@ -300,7 +305,7 @@ export class Context {
 	text(data) {
 		this.responseStatusCode = 200;
 		this.responseHeaders.set("content-type", "text/plain");
-		this.responseBody = data;
+		this.responseBody = data || "";
 		this.responseHeaders.set(
 			"Content-Length",
 			Buffer.byteLength(this.responseBody).toString(),
@@ -317,7 +322,7 @@ export class Context {
 	html(data) {
 		this.responseStatusCode = 200;
 		this.responseHeaders.set("content-type", "text/html");
-		this.responseBody = data;
+		this.responseBody = data || "";
 		this.responseHeaders.set(
 			"Content-Length",
 			Buffer.byteLength(this.responseBody).toString(),
@@ -334,7 +339,7 @@ export class Context {
 	xml(data) {
 		this.responseStatusCode = 200;
 		this.responseHeaders.set("content-type", "application/xml");
-		this.responseBody = data;
+		this.responseBody = data || "";
 		this.responseHeaders.set(
 			"Content-Length",
 			Buffer.byteLength(this.responseBody).toString(),
@@ -368,7 +373,7 @@ export class Context {
 	js(data) {
 		this.responseStatusCode = 200;
 		this.responseHeaders.set("content-type", "application/javascript");
-		this.responseBody = data;
+		this.responseBody = data || "";
 		this.responseHeaders.set(
 			"Content-Length",
 			Buffer.byteLength(this.responseBody).toString(),
@@ -398,7 +403,7 @@ export class Context {
 	notFound(message = "Not Found") {
 		this.responseStatusCode = 404;
 		this.responseHeaders.set("content-type", "text/plain");
-		this.responseBody = message;
+		this.responseBody = message || "";
 		this.responseHeaders.set(
 			"Content-Length",
 			Buffer.byteLength(this.responseBody).toString(),
@@ -415,7 +420,7 @@ export class Context {
 	error(message = "Internal Server Error") {
 		this.responseStatusCode = 500;
 		this.responseHeaders.set("content-type", "text/plain");
-		this.responseBody = message;
+		this.responseBody = message || "";
 		this.responseHeaders.set(
 			"Content-Length",
 			Buffer.byteLength(this.responseBody).toString(),

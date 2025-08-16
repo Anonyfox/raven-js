@@ -419,5 +419,457 @@ describe("Context", () => {
 			assert.equal(ctx.responseBody, "Hello 世界");
 			assert.equal(ctx.responseHeaders.get("content-length"), "12");
 		});
+
+		it("should handle constructor validation edge cases", () => {
+			// Invalid HTTP methods
+			assert.throws(() => new Context("INVALID", url, headers), {
+				message: "Invalid HTTP method: INVALID",
+			});
+			assert.throws(() => new Context("GETT", url, headers), {
+				message: "Invalid HTTP method: GETT",
+			});
+			assert.throws(() => new Context("get", url, headers), {
+				message: "Invalid HTTP method: get",
+			});
+
+			// Path too long
+			const longPath = `/${"a".repeat(2048)}`;
+			const longPathUrl = new URL("https://example.com");
+			longPathUrl.pathname = longPath;
+			assert.throws(() => new Context("GET", longPathUrl, headers), {
+				message: "Path too long",
+			});
+
+			// Path with too many segments
+			const manySegments = `/${Array(101).fill("segment").join("/")}`;
+			const manySegmentsUrl = new URL("https://example.com");
+			manySegmentsUrl.pathname = manySegments;
+			assert.throws(() => new Context("GET", manySegmentsUrl, headers), {
+				message: "Path too long",
+			});
+
+			// Path with only slashes (this is actually valid in HTTP)
+			const slashOnlyUrl = new URL("https://example.com");
+			slashOnlyUrl.pathname = "///";
+			const slashOnlyCtx = new Context("GET", slashOnlyUrl, headers);
+			assert.equal(slashOnlyCtx.path, "///");
+
+			// Test non-string path type (this branch is hard to test with URL API)
+			// We'll test this by creating a mock URL object
+			const mockUrl = {
+				pathname: 123,
+				searchParams: new URLSearchParams(),
+			};
+			assert.throws(() => new Context("GET", mockUrl, headers), {
+				message: "Path must be a string",
+			});
+		});
+
+		it("should handle body parsing edge cases", () => {
+			// Empty JSON object
+			const emptyJsonBody = Buffer.from("{}");
+			const emptyJsonCtx = new Context("POST", url, headers, emptyJsonBody);
+			const emptyJsonParsed = emptyJsonCtx.requestBody();
+			assert.deepEqual(emptyJsonParsed, {});
+
+			// JSON with null values
+			const nullJsonBody = Buffer.from('{"name":null,"age":null}');
+			const nullJsonCtx = new Context("POST", url, headers, nullJsonBody);
+			const nullJsonParsed = nullJsonCtx.requestBody();
+			assert.equal(nullJsonParsed.name, null);
+			assert.equal(nullJsonParsed.age, null);
+
+			// JSON with special characters
+			const specialJsonBody = Buffer.from(
+				'{"name":"José","message":"Hello 世界"}',
+			);
+			const specialJsonCtx = new Context("POST", url, headers, specialJsonBody);
+			const specialJsonParsed = specialJsonCtx.requestBody();
+			assert.equal(specialJsonParsed.name, "José");
+			assert.equal(specialJsonParsed.message, "Hello 世界");
+
+			// Form data edge cases
+			const formHeaders = new Headers({
+				"content-type": "application/x-www-form-urlencoded",
+			});
+
+			// Empty form data
+			const emptyFormBody = Buffer.from("");
+			const emptyFormCtx = new Context("POST", url, formHeaders, emptyFormBody);
+			const emptyFormParsed = emptyFormCtx.requestBody();
+			assert.deepEqual(emptyFormParsed, {});
+
+			// Form data with duplicate keys
+			const duplicateFormBody = Buffer.from("name=john&name=jane&age=25");
+			const duplicateFormCtx = new Context(
+				"POST",
+				url,
+				formHeaders,
+				duplicateFormBody,
+			);
+			const duplicateFormParsed = duplicateFormCtx.requestBody();
+			assert.equal(duplicateFormParsed.name, "jane"); // Last value wins
+			assert.equal(duplicateFormParsed.age, "25");
+
+			// Form data with special characters
+			const specialFormBody = Buffer.from("name=José&message=Hello%20世界");
+			const specialFormCtx = new Context(
+				"POST",
+				url,
+				formHeaders,
+				specialFormBody,
+			);
+			const specialFormParsed = specialFormCtx.requestBody();
+			assert.equal(specialFormParsed.name, "José");
+			assert.equal(specialFormParsed.message, "Hello 世界");
+
+			// Malformed form data
+			const malformedFormBody = Buffer.from("name=john&age=");
+			const malformedFormCtx = new Context(
+				"POST",
+				url,
+				formHeaders,
+				malformedFormBody,
+			);
+			const malformedFormParsed = malformedFormCtx.requestBody();
+			assert.equal(malformedFormParsed.name, "john");
+			assert.equal(malformedFormParsed.age, "");
+
+			// Test falsy body values (empty buffer, etc.)
+			const emptyBuffer = Buffer.from("");
+			const emptyBufferCtx = new Context("POST", url, headers, emptyBuffer);
+			assert.equal(emptyBufferCtx.requestBody(), null); // Empty buffer is falsy
+
+			// Test with falsy but non-null body
+			const falsyBody = Buffer.from([]);
+			const falsyBodyCtx = new Context("POST", url, headers, falsyBody);
+			assert.equal(falsyBodyCtx.requestBody(), null); // Empty buffer is falsy
+		});
+
+		it("should handle content-type edge cases", () => {
+			// Missing content-type
+			const noContentTypeHeaders = new Headers();
+			const noContentTypeBody = Buffer.from("raw data");
+			const noContentTypeCtx = new Context(
+				"POST",
+				url,
+				noContentTypeHeaders,
+				noContentTypeBody,
+			);
+			const noContentTypeResult = noContentTypeCtx.requestBody();
+			assert(Buffer.isBuffer(noContentTypeResult));
+			assert.equal(noContentTypeResult.toString(), "raw data");
+
+			// Content-type with extra whitespace
+			const whitespaceHeaders = new Headers({
+				"content-type": "  application/json  ",
+			});
+			const whitespaceBody = Buffer.from('{"name":"test"}');
+			const whitespaceCtx = new Context(
+				"POST",
+				url,
+				whitespaceHeaders,
+				whitespaceBody,
+			);
+			const whitespaceParsed = whitespaceCtx.requestBody();
+			assert.equal(whitespaceParsed.name, "test");
+
+			// Content-type with multiple parameters
+			const multiParamHeaders = new Headers({
+				"content-type": "application/json; charset=utf-8; boundary=123",
+			});
+			const multiParamBody = Buffer.from('{"name":"test"}');
+			const multiParamCtx = new Context(
+				"POST",
+				url,
+				multiParamHeaders,
+				multiParamBody,
+			);
+			const multiParamParsed = multiParamCtx.requestBody();
+			assert.equal(multiParamParsed.name, "test");
+
+			// Case insensitive content-type
+			const caseInsensitiveHeaders = new Headers({
+				"content-type": "APPLICATION/JSON",
+			});
+			const caseInsensitiveBody = Buffer.from('{"name":"test"}');
+			const caseInsensitiveCtx = new Context(
+				"POST",
+				url,
+				caseInsensitiveHeaders,
+				caseInsensitiveBody,
+			);
+			const caseInsensitiveParsed = caseInsensitiveCtx.requestBody();
+			assert.equal(caseInsensitiveParsed.name, "test");
+		});
+
+		it("should handle middleware execution edge cases", async () => {
+			// Middleware that throws synchronous error
+			ctx.addBeforeCallback(
+				new Middleware((_ctx) => {
+					throw new Error("Synchronous error");
+				}),
+			);
+
+			await assert.rejects(async () => await ctx.runBeforeCallbacks(), {
+				message: "Synchronous error",
+			});
+
+			// Reset context
+			ctx = new Context("GET", url, headers);
+
+			// Middleware that rejects promise
+			ctx.addBeforeCallback(
+				new Middleware(async (_ctx) => {
+					throw new Error("Async error");
+				}),
+			);
+
+			await assert.rejects(async () => await ctx.runBeforeCallbacks(), {
+				message: "Async error",
+			});
+
+			// Reset context
+			ctx = new Context("GET", url, headers);
+
+			// Middleware that adds more middleware during execution
+			ctx.addBeforeCallback(
+				new Middleware((ctx) => {
+					ctx.addBeforeCallback(
+						new Middleware((ctx) => {
+							ctx.data.dynamic = true;
+						}),
+					);
+				}),
+			);
+
+			await ctx.runBeforeCallbacks();
+			assert(ctx.data.dynamic);
+
+			// Reset context
+			ctx = new Context("GET", url, headers);
+
+			// Test responseEnded stopping before callbacks
+			ctx.responseEnded = true;
+			ctx.addBeforeCallback(
+				new Middleware((ctx) => {
+					ctx.data.shouldNotExecute = true;
+				}),
+			);
+
+			await ctx.runBeforeCallbacks();
+			assert(!ctx.data.shouldNotExecute);
+
+			// Reset context
+			ctx = new Context("GET", url, headers);
+
+			// Test responseEnded stopping after callbacks
+			ctx.responseEnded = true;
+			ctx.addAfterCallback(
+				new Middleware((ctx) => {
+					ctx.data.shouldNotExecuteAfter = true;
+				}),
+			);
+
+			await ctx.runAfterCallbacks();
+			assert(!ctx.data.shouldNotExecuteAfter);
+
+			// Reset context
+			ctx = new Context("GET", url, headers);
+
+			// Test middleware setting responseEnded during execution
+			ctx.addBeforeCallback(
+				new Middleware((ctx) => {
+					ctx.data.first = true;
+				}),
+			);
+			ctx.addBeforeCallback(
+				new Middleware((ctx) => {
+					ctx.responseEnded = true;
+					ctx.data.second = true;
+				}),
+			);
+			ctx.addBeforeCallback(
+				new Middleware((ctx) => {
+					ctx.data.third = true; // Should not execute
+				}),
+			);
+
+			await ctx.runBeforeCallbacks();
+			assert(ctx.data.first);
+			assert(ctx.data.second);
+			assert(!ctx.data.third);
+		});
+
+		it("should handle response method edge cases", () => {
+			// JSON with circular reference (should throw)
+			const circularObj = { name: "test" };
+			circularObj.self = circularObj;
+
+			assert.throws(() => ctx.json(circularObj), TypeError);
+
+			// JSON with undefined values (should be omitted)
+			const objWithUndefined = { name: "test", value: undefined };
+			ctx.json(objWithUndefined);
+			assert.equal(ctx.responseBody, '{"name":"test"}');
+
+			// Empty JSON object
+			ctx.json({});
+			assert.equal(ctx.responseBody, "{}");
+
+			// Unicode content in text response
+			ctx.text("Hello 世界 🌍");
+			assert.equal(ctx.responseBody, "Hello 世界 🌍");
+			assert.equal(ctx.responseHeaders.get("content-length"), "17");
+
+			// Very long text
+			const longText = "a".repeat(10000);
+			ctx.text(longText);
+			assert.equal(ctx.responseBody, longText);
+			assert.equal(ctx.responseHeaders.get("content-length"), "10000");
+
+			// Empty text
+			ctx.text("");
+			assert.equal(ctx.responseBody, "");
+			assert.equal(ctx.responseHeaders.get("content-length"), "0");
+
+			// Test falsy values in response methods
+			ctx.text(0);
+			assert.equal(ctx.responseBody, "");
+			assert.equal(ctx.responseHeaders.get("content-length"), "0");
+
+			ctx.text(false);
+			assert.equal(ctx.responseBody, "");
+			assert.equal(ctx.responseHeaders.get("content-length"), "0");
+
+			ctx.html(0);
+			assert.equal(ctx.responseBody, "");
+			assert.equal(ctx.responseHeaders.get("content-type"), "text/html");
+
+			ctx.xml(false);
+			assert.equal(ctx.responseBody, "");
+			assert.equal(ctx.responseHeaders.get("content-type"), "application/xml");
+
+			ctx.js(0);
+			assert.equal(ctx.responseBody, "");
+			assert.equal(
+				ctx.responseHeaders.get("content-type"),
+				"application/javascript",
+			);
+
+			ctx.notFound(0);
+			assert.equal(ctx.responseBody, "");
+			assert.equal(ctx.responseStatusCode, 404);
+
+			ctx.error(false);
+			assert.equal(ctx.responseBody, "");
+			assert.equal(ctx.responseStatusCode, 500);
+		});
+
+		it("should handle data property edge cases", () => {
+			// Setting non-string values in pathParams
+			ctx.pathParams.id = 123;
+			ctx.pathParams.active = true;
+			ctx.pathParams.nullValue = null;
+			assert.equal(ctx.pathParams.id, 123);
+			assert.equal(ctx.pathParams.active, true);
+			assert.equal(ctx.pathParams.nullValue, null);
+
+			// Setting complex objects in data
+			ctx.data.user = { id: 1, name: "test" };
+			ctx.data.func = () => "test";
+			ctx.data.symbol = Symbol("test");
+			assert.equal(ctx.data.user.id, 1);
+			assert.equal(typeof ctx.data.func, "function");
+			assert.equal(typeof ctx.data.symbol, "symbol");
+
+			// Setting null/undefined in data
+			ctx.data.nullValue = null;
+			ctx.data.undefinedValue = undefined;
+			assert.equal(ctx.data.nullValue, null);
+			assert.equal(ctx.data.undefinedValue, undefined);
+		});
+
+		it("should handle Object.freeze limitations", () => {
+			// Test that Headers are still mutable despite Object.freeze
+			ctx.requestHeaders.set("new-header", "value");
+			assert.equal(ctx.requestHeaders.get("new-header"), "value");
+
+			// Test that URLSearchParams are still mutable despite Object.freeze
+			ctx.queryParams.set("new-param", "value");
+			assert.equal(ctx.queryParams.get("new-param"), "value");
+
+			// This reveals a bug in the current implementation
+			// Object.freeze() doesn't work as expected on Headers and URLSearchParams
+		});
+
+		it("should handle security edge cases", () => {
+			// Path traversal attempt
+			const traversalUrl = new URL("https://example.com");
+			Object.defineProperty(traversalUrl, "pathname", {
+				value: "/../../../etc/passwd",
+			});
+			const traversalCtx = new Context("GET", traversalUrl, headers);
+			assert.equal(traversalCtx.path, "/../../../etc/passwd");
+
+			// Malicious header values (using valid header format to test actual behavior)
+			const maliciousHeaders = new Headers({
+				"content-type": "application/json",
+				"x-header": "value with spaces and special chars: <>&\"'",
+			});
+			const maliciousCtx = new Context("GET", url, maliciousHeaders);
+			assert.equal(
+				maliciousCtx.requestHeaders.get("x-header"),
+				"value with spaces and special chars: <>&\"'",
+			);
+
+			// Malicious query parameters
+			const maliciousUrl = new URL(
+				"https://example.com/users?name=<script>alert('xss')</script>",
+			);
+			const maliciousQueryCtx = new Context("GET", maliciousUrl, headers);
+			assert.equal(
+				maliciousQueryCtx.queryParams.get("name"),
+				"<script>alert('xss')</script>",
+			);
+		});
+
+		it("should handle error recovery edge cases", () => {
+			// Test context state after JSON parsing error
+			const malformedJsonBody = Buffer.from('{"name":"test"');
+			const malformedJsonCtx = new Context(
+				"POST",
+				url,
+				headers,
+				malformedJsonBody,
+			);
+
+			assert.throws(() => malformedJsonCtx.requestBody(), SyntaxError);
+
+			// Context should still be usable after error
+			malformedJsonCtx.text("Recovery response");
+			assert.equal(malformedJsonCtx.responseBody, "Recovery response");
+			assert.equal(malformedJsonCtx.responseStatusCode, 200);
+		});
+
+		it("should handle method chaining edge cases", () => {
+			// Chaining with null/undefined values
+			ctx.text(null).responseHeaders.set("x-null", null);
+			assert.equal(ctx.responseBody, "");
+			assert.equal(ctx.responseHeaders.get("x-null"), "null");
+
+			// Chaining with very long values
+			const longValue = "a".repeat(1000);
+			ctx.text(longValue).responseHeaders.set("x-long", longValue);
+			assert.equal(ctx.responseBody, longValue);
+			assert.equal(ctx.responseHeaders.get("x-long"), longValue);
+
+			// Chaining with special characters (without newlines due to Headers API restrictions)
+			ctx
+				.text("Hello World\tTest")
+				.responseHeaders.set("x-special", "Hello World\tTest");
+			assert.equal(ctx.responseBody, "Hello World\tTest");
+			assert.equal(ctx.responseHeaders.get("x-special"), "Hello World\tTest");
+		});
 	});
 });
