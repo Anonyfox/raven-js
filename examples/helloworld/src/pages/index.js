@@ -1,4 +1,4 @@
-import { html } from "@ravenjs/beak";
+import { html } from "@raven-js/beak";
 
 // Create a nice hello world HTML page using beak
 export const Index = html`

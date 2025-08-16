@@ -10,8 +10,8 @@
     "format": "npx biome format . --write"
   },
   "dependencies": {
-    "@ravenjs/wings": "file:../../packages/wings",
-    "@ravenjs/beak": "file:../../packages/beak"
+    "@raven-js/wings": "file:../../packages/wings",
+    "@raven-js/beak": "file:../../packages/beak"
   },
   "keywords": [
     "example",
