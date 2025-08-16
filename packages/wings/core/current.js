@@ -1,8 +1,4 @@
 /**
- * @typedef {((current: Current) => void | Promise<void>)} Handler
- */
-
-/**
  * The **current** context of the http request/response.
  *
  * This class is a general abstraction over the HTTP lifecycle and is _isomorphic_.
@@ -153,7 +149,7 @@ export class Current {
 	 * Each function gets this current instance as the first argument and can modify it
 	 * directly. Mutation is simply more performant than returning a new context.
 	 *
-	 * @type {Handler[]}
+	 * @type {import('./middleware.js').Handler[]}
 	 */
 	#beforeCallbacks = [];
 
@@ -163,7 +159,7 @@ export class Current {
 	 *
 	 * Will not be executed if the `responseEnded` flag is set to true.
 	 *
-	 * @param {Handler} callback
+	 * @param {import('./middleware.js').Handler} callback
 	 */
 	addBeforeCallback(callback) {
 		this.#beforeCallbacks.push(callback);
@@ -197,7 +193,7 @@ export class Current {
 	 *
 	 * Will not be executed if the `responseEnded` flag is set to true.
 	 *
-	 * @type {Handler[]}
+	 * @type {import('./middleware.js').Handler[]}
 	 */
 	#afterCallbacks = [];
 
@@ -205,7 +201,7 @@ export class Current {
 	 * Add a function to call before the handler is called. It is placed at the end of the
 	 * existing list of beforeCallbacks.
 	 *
-	 * @param {Handler} callback
+	 * @param {import('./middleware.js').Handler} callback
 	 */
 	addAfterCallback(callback) {
 		this.#afterCallbacks.push(callback);

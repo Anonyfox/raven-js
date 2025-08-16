@@ -1,6 +1,6 @@
 /**
  * @typedef {Object} FeatherOptions
- * @property {import('./current.js').Handler[]} [middleware] - Route-specific middleware functions
+ * @property {import('./middleware.js').Handler[]} [middleware] - Route-specific middleware functions
  * @property {Object.<string, any>} [constraints] - Parameter constraints for validation
  * @property {string} [description] - Route description for documentation
  */
@@ -14,7 +14,7 @@ export class Feather {
 	 * shortcut for creating a new default Feather instance with the GET method
 	 *
 	 * @param {string} path
-	 * @param {import('./current.js').Handler} handler
+	 * @param {import('./middleware.js').Handler} handler
 	 * @param {FeatherOptions} [options] - Optional route configuration
 	 * @returns {Feather}
 	 */
@@ -33,7 +33,7 @@ export class Feather {
 	 * shortcut for creating a new default Feather instance with the POST method
 	 *
 	 * @param {string} path
-	 * @param {import('./current.js').Handler} handler
+	 * @param {import('./middleware.js').Handler} handler
 	 * @param {FeatherOptions} [options] - Optional route configuration
 	 * @returns {Feather}
 	 */
@@ -52,7 +52,7 @@ export class Feather {
 	 * shortcut for creating a new default Feather instance with the PUT method
 	 *
 	 * @param {string} path
-	 * @param {import('./current.js').Handler} handler
+	 * @param {import('./middleware.js').Handler} handler
 	 * @param {FeatherOptions} [options] - Optional route configuration
 	 * @returns {Feather}
 	 */
@@ -71,7 +71,7 @@ export class Feather {
 	 * shortcut for creating a new default Feather instance with the DELETE method
 	 *
 	 * @param {string} path
-	 * @param {import('./current.js').Handler} handler
+	 * @param {import('./middleware.js').Handler} handler
 	 * @param {FeatherOptions} [options] - Optional route configuration
 	 * @returns {Feather}
 	 */
@@ -90,7 +90,7 @@ export class Feather {
 	 * shortcut for creating a new default Feather instance with the PATCH method
 	 *
 	 * @param {string} path
-	 * @param {import('./current.js').Handler} handler
+	 * @param {import('./middleware.js').Handler} handler
 	 * @param {FeatherOptions} [options] - Optional route configuration
 	 * @returns {Feather}
 	 */
@@ -109,7 +109,7 @@ export class Feather {
 	 * shortcut for creating a new default Feather instance with the HEAD method
 	 *
 	 * @param {string} path
-	 * @param {import('./current.js').Handler} handler
+	 * @param {import('./middleware.js').Handler} handler
 	 * @param {FeatherOptions} [options] - Optional route configuration
 	 * @returns {Feather}
 	 */
@@ -128,7 +128,7 @@ export class Feather {
 	 * shortcut for creating a new default Feather instance with the OPTIONS method
 	 *
 	 * @param {string} path
-	 * @param {import('./current.js').Handler} handler
+	 * @param {import('./middleware.js').Handler} handler
 	 * @param {FeatherOptions} [options] - Optional route configuration
 	 * @returns {Feather}
 	 */
@@ -160,14 +160,14 @@ export class Feather {
 	/**
 	 * function to handle the http request
 	 *
-	 * @type {import('./current.js').Handler}
+	 * @type {import('./middleware.js').Handler}
 	 */
 	handler = () => {};
 
 	/**
 	 * Route-specific middleware functions
 	 *
-	 * @type {import('./current.js').Handler[]}
+	 * @type {import('./middleware.js').Handler[]}
 	 */
 	middleware = [];
 

@@ -76,19 +76,32 @@ export class Wings {
 	/**
 	 * the registered coverts (= middlewares).
 	 *
-	 * @type {import('./current.js').Handler[]}
+	 * @type {import('./middleware.js').Handler[]}
 	 */
 	#coverts = [];
+
+	/**
+	 * Creates a new Wings instance with all HTTP method tries pre-initialized.
+	 */
+	constructor() {
+		// Initialize all HTTP method tries upfront for better performance
+		this.#tries.GET = new Trie();
+		this.#tries.POST = new Trie();
+		this.#tries.PUT = new Trie();
+		this.#tries.DELETE = new Trie();
+		this.#tries.PATCH = new Trie();
+		this.#tries.HEAD = new Trie();
+		this.#tries.OPTIONS = new Trie();
+	}
 
 	/**
 	 * Add a new Feather (=Route) instance to the server.
 	 *
 	 * @param {string} path - the path of the route, iE: `/users/:id`
-	 * @param {import('./current.js').Handler} handler - the route handler function
+	 * @param {import('./middleware.js').Handler} handler - the route handler function
 	 * @returns {Wings} The Wings instance for chaining.
 	 */
 	get(path, handler) {
-		if (!this.#tries.GET) this.#tries.GET = new Trie();
 		this.#tries.GET.register(
 			this.#normalizePath(path).split("/"),
 			this.#feathers.length,
@@ -104,11 +117,10 @@ export class Wings {
 	 * Add a new Feather (=Route) instance to the server for POST requests.
 	 *
 	 * @param {string} path - the path of the route, i.e., `/users/:id`
-	 * @param {import('./current.js').Handler} handler - the route handler function
+	 * @param {import('./middleware.js').Handler} handler - the route handler function
 	 * @returns {Wings} The Wings instance for chaining.
 	 */
 	post(path, handler) {
-		if (!this.#tries.POST) this.#tries.POST = new Trie();
 		this.#tries.POST.register(
 			this.#normalizePath(path).split("/"),
 			this.#feathers.length,
@@ -124,11 +136,10 @@ export class Wings {
 	 * Add a new Feather (=Route) instance to the server for PUT requests.
 	 *
 	 * @param {string} path - the path of the route, i.e., `/users/:id`
-	 * @param {import('./current.js').Handler} handler - the route handler function
+	 * @param {import('./middleware.js').Handler} handler - the route handler function
 	 * @returns {Wings} The Wings instance for chaining.
 	 */
 	put(path, handler) {
-		if (!this.#tries.PUT) this.#tries.PUT = new Trie();
 		this.#tries.PUT.register(
 			this.#normalizePath(path).split("/"),
 			this.#feathers.length,
@@ -144,11 +155,10 @@ export class Wings {
 	 * Add a new Feather (=Route) instance to the server for DELETE requests.
 	 *
 	 * @param {string} path - the path of the route, i.e., `/users/:id`
-	 * @param {import('./current.js').Handler} handler - the route handler function
+	 * @param {import('./middleware.js').Handler} handler - the route handler function
 	 * @returns {Wings} The Wings instance for chaining.
 	 */
 	delete(path, handler) {
-		if (!this.#tries.DELETE) this.#tries.DELETE = new Trie();
 		this.#tries.DELETE.register(
 			this.#normalizePath(path).split("/"),
 			this.#feathers.length,
@@ -164,11 +174,10 @@ export class Wings {
 	 * Add a new Feather (=Route) instance to the server for PATCH requests.
 	 *
 	 * @param {string} path - the path of the route, i.e., `/users/:id`
-	 * @param {import('./current.js').Handler} handler - the route handler function
+	 * @param {import('./middleware.js').Handler} handler - the route handler function
 	 * @returns {Wings} The Wings instance for chaining.
 	 */
 	patch(path, handler) {
-		if (!this.#tries.PATCH) this.#tries.PATCH = new Trie();
 		this.#tries.PATCH.register(
 			this.#normalizePath(path).split("/"),
 			this.#feathers.length,
@@ -184,11 +193,10 @@ export class Wings {
 	 * Add a new Feather (=Route) instance to the server for HEAD requests.
 	 *
 	 * @param {string} path - the path of the route, i.e., `/users/:id`
-	 * @param {import('./current.js').Handler} handler - the route handler function
+	 * @param {import('./middleware.js').Handler} handler - the route handler function
 	 * @returns {Wings} The Wings instance for chaining.
 	 */
 	head(path, handler) {
-		if (!this.#tries.HEAD) this.#tries.HEAD = new Trie();
 		this.#tries.HEAD.register(
 			this.#normalizePath(path).split("/"),
 			this.#feathers.length,
@@ -204,11 +212,10 @@ export class Wings {
 	 * Add a new Feather (=Route) instance to the server for OPTIONS requests.
 	 *
 	 * @param {string} path - the path of the route, i.e., `/users/:id`
-	 * @param {import('./current.js').Handler} handler - the route handler function
+	 * @param {import('./middleware.js').Handler} handler - the route handler function
 	 * @returns {Wings} The Wings instance for chaining.
 	 */
 	options(path, handler) {
-		if (!this.#tries.OPTIONS) this.#tries.OPTIONS = new Trie();
 		this.#tries.OPTIONS.register(
 			this.#normalizePath(path).split("/"),
 			this.#feathers.length,
@@ -229,6 +236,7 @@ export class Wings {
 	 */
 	addFeather(feather) {
 		const method = feather.method;
+		// For custom methods, create trie if it doesn't exist
 		if (!this.#tries[method]) this.#tries[method] = new Trie();
 		this.#tries[method].register(
 			this.#normalizePath(feather.path).split("/"),
@@ -244,7 +252,7 @@ export class Wings {
 	 *
 	 * These will run *before* the actual handler is called, in order.
 	 *
-	 * @param {import('./current.js').Handler} callback - The covert function to add.
+	 * @param {import('./middleware.js').Handler} callback - The covert function to add.
 	 * @returns {Wings} The Wings instance for chaining.
 	 */
 	use(callback) {
@@ -266,7 +274,7 @@ export class Wings {
 	 *
 	 * These will run *before* the actual handler is called, in order.
 	 *
-	 * @param {import('./current.js').Handler} callback - The covert function to add.
+	 * @param {import('./middleware.js').Handler} callback - The covert function to add.
 	 * @returns {Wings} The Wings instance for chaining.
 	 */
 	useEarly(callback) {
