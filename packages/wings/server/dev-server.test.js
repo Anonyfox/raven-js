@@ -17,14 +17,11 @@ describe("DevServer", () => {
 		});
 
 		// Start server on non-privileged ports (above 1024)
-		server = new DevServer(router, { websocketPort: 3456 });
+		server = new DevServer(router, { websocketPort: 8080 });
 		await server.listen(3000);
 
 		mainPort = server.server.address().port;
 		wsPort = server.websocketServer.address().port;
-
-		// Update the websocket port to the actual assigned port
-		server.websocketServerPort = wsPort;
 	});
 
 	afterEach(async () => {
@@ -34,7 +31,7 @@ describe("DevServer", () => {
 	});
 
 	test("should handle HTML injection and WebSocket HTTP endpoint", async () => {
-		// Test 1: HTML injection
+		// Test 1: HTML injection with custom WebSocket port
 		const response = await fetch(`http://localhost:${mainPort}/`);
 		assert.strictEqual(response.status, 200);
 		assert.strictEqual(response.headers.get("content-type"), "text/html");
@@ -43,14 +40,17 @@ describe("DevServer", () => {
 		assert.ok(html.includes("<script>"));
 		assert.ok(html.includes("WebSocket"));
 		assert.ok(html.includes("location.reload()"));
-		assert.ok(html.includes("3456")); // The port is hardcoded in the script
+		assert.ok(html.includes("8080")); // The custom port should be used in the script
 		assert.ok(html.includes("</script>"));
 		assert.ok(html.includes("</body>"));
 
-		// Test 2: WebSocket server HTTP endpoint
+		// Test 2: WebSocket server HTTP endpoint on custom port
 		const wsResponse = await fetch(`http://localhost:${wsPort}`);
 		assert.strictEqual(wsResponse.status, 200);
 		assert.strictEqual(wsResponse.headers.get("content-type"), "text/plain");
 		assert.strictEqual(await wsResponse.text(), "WebSocket server running");
+
+		// Test 3: Verify WebSocket server is running on the configured port
+		assert.strictEqual(wsPort, 8080);
 	});
 });
