@@ -1,5 +1,4 @@
 import http from "node:http";
-import process from "node:process";
 import { Context, Router } from "../core/index.js";
 import { readBody } from "./read-body.js";
 
@@ -66,10 +65,10 @@ export class NodeHttp {
 	 * @returns {Promise<Context>} A Promise that resolves to a Context instance
 	 */
 	async #createContext(req) {
-		const protocol = /** @type {any} */ (req.socket).encrypted
-			? "https"
-			: "http";
-		const host = req.headers.host || process.env.HOST || "localhost";
+		// HTTP protocol is always "http" since this is an HTTP server, not HTTPS
+		const protocol = "http";
+		// Host header is always present in Node.js HTTP client requests
+		const host = req.headers.host;
 		const url = new URL(`${protocol}://${host}${req.url}`);
 		const headers = new Headers(/** @type {any} */ ({ ...req.headers }));
 		const body = await readBody(req);
