@@ -1,6 +1,7 @@
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 import { Context } from "./context.js";
+import { HTTP_METHODS } from "./http-methods.js";
 import { Route } from "./route.js";
 import { Router } from "./router.js";
 
@@ -440,5 +441,37 @@ describe("Router", () => {
 		assert(noResponseResult.data.after2);
 		assert.deepEqual(afterCallbackOrder, ["after1", "after2"]);
 		assert(!noResponseResult.responseEnded);
+	});
+
+	it("should validate HTTP methods in addRoute", () => {
+		const router = new Router();
+
+		// Valid methods should work
+		const validRoute = Route.GET("/valid", async (ctx) =>
+			ctx.json({ valid: true }),
+		);
+		assert.doesNotThrow(() => router.addRoute(validRoute));
+
+		// Invalid methods should throw
+		const invalidRoute = {
+			method: "INVALID",
+			path: "/invalid",
+			handler: async (_ctx) => {},
+		};
+		assert.throws(
+			() => router.addRoute(invalidRoute),
+			/Unsupported HTTP method: INVALID/,
+		);
+
+		// Test all valid methods
+		const methods = Object.values(HTTP_METHODS);
+		methods.forEach((method) => {
+			const route = {
+				method,
+				path: `/${method.toLowerCase()}`,
+				handler: async (_ctx) => {},
+			};
+			assert.doesNotThrow(() => router.addRoute(route));
+		});
 	});
 });

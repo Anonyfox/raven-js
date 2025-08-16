@@ -1,3 +1,8 @@
+import {
+	getHttpMethods,
+	HTTP_METHODS,
+	isValidHttpMethod,
+} from "./http-methods.js";
 import { Route } from "./route.js";
 import { Trie } from "./trie.js";
 
@@ -85,13 +90,39 @@ export class Router {
 	 */
 	constructor() {
 		// Initialize all HTTP method tries upfront for better performance
-		this.#tries.GET = new Trie();
-		this.#tries.POST = new Trie();
-		this.#tries.PUT = new Trie();
-		this.#tries.DELETE = new Trie();
-		this.#tries.PATCH = new Trie();
-		this.#tries.HEAD = new Trie();
-		this.#tries.OPTIONS = new Trie();
+		getHttpMethods().forEach((method) => {
+			this.#tries[method] = new Trie();
+		});
+	}
+
+	/**
+	 * Private helper method to register a route in the trie and add it to the routes array.
+	 *
+	 * @param {import('./http-methods.js').HttpMethod} method - The HTTP method
+	 * @param {string} path - The path of the route
+	 * @param {import('./route.js').Route} route - The route instance to add
+	 * @returns {Router} The Router instance for chaining
+	 */
+	#registerRoute(method, path, route) {
+		this.#tries[method].register(
+			this.#normalizePath(path).split("/"),
+			this.#routes.length,
+		);
+		this.#routes.push(route);
+		return this;
+	}
+
+	/**
+	 * Private helper method to add a route for a specific HTTP method.
+	 *
+	 * @param {import('./http-methods.js').HttpMethod} method - The HTTP method
+	 * @param {string} path - The path of the route
+	 * @param {import('./middleware.js').Handler} handler - The route handler function
+	 * @returns {Router} The Router instance for chaining
+	 */
+	#addMethodRoute(method, path, handler) {
+		const route = Route[method](path, handler);
+		return this.#registerRoute(method, path, route);
 	}
 
 	/**
@@ -102,15 +133,7 @@ export class Router {
 	 * @returns {Router} The Router instance for chaining.
 	 */
 	get(path, handler) {
-		this.#tries.GET.register(
-			this.#normalizePath(path).split("/"),
-			this.#routes.length,
-		);
-
-		const route = Route.GET(path, handler);
-		this.#routes.push(route);
-
-		return this;
+		return this.#addMethodRoute(HTTP_METHODS.GET, path, handler);
 	}
 
 	/**
@@ -121,15 +144,7 @@ export class Router {
 	 * @returns {Router} The Router instance for chaining.
 	 */
 	post(path, handler) {
-		this.#tries.POST.register(
-			this.#normalizePath(path).split("/"),
-			this.#routes.length,
-		);
-
-		const route = Route.POST(path, handler);
-		this.#routes.push(route);
-
-		return this;
+		return this.#addMethodRoute(HTTP_METHODS.POST, path, handler);
 	}
 
 	/**
@@ -140,15 +155,7 @@ export class Router {
 	 * @returns {Router} The Router instance for chaining.
 	 */
 	put(path, handler) {
-		this.#tries.PUT.register(
-			this.#normalizePath(path).split("/"),
-			this.#routes.length,
-		);
-
-		const route = Route.PUT(path, handler);
-		this.#routes.push(route);
-
-		return this;
+		return this.#addMethodRoute(HTTP_METHODS.PUT, path, handler);
 	}
 
 	/**
@@ -159,15 +166,7 @@ export class Router {
 	 * @returns {Router} The Router instance for chaining.
 	 */
 	delete(path, handler) {
-		this.#tries.DELETE.register(
-			this.#normalizePath(path).split("/"),
-			this.#routes.length,
-		);
-
-		const route = Route.DELETE(path, handler);
-		this.#routes.push(route);
-
-		return this;
+		return this.#addMethodRoute(HTTP_METHODS.DELETE, path, handler);
 	}
 
 	/**
@@ -178,15 +177,7 @@ export class Router {
 	 * @returns {Router} The Router instance for chaining.
 	 */
 	patch(path, handler) {
-		this.#tries.PATCH.register(
-			this.#normalizePath(path).split("/"),
-			this.#routes.length,
-		);
-
-		const route = Route.PATCH(path, handler);
-		this.#routes.push(route);
-
-		return this;
+		return this.#addMethodRoute(HTTP_METHODS.PATCH, path, handler);
 	}
 
 	/**
@@ -197,15 +188,7 @@ export class Router {
 	 * @returns {Router} The Router instance for chaining.
 	 */
 	head(path, handler) {
-		this.#tries.HEAD.register(
-			this.#normalizePath(path).split("/"),
-			this.#routes.length,
-		);
-
-		const route = Route.HEAD(path, handler);
-		this.#routes.push(route);
-
-		return this;
+		return this.#addMethodRoute(HTTP_METHODS.HEAD, path, handler);
 	}
 
 	/**
@@ -216,35 +199,29 @@ export class Router {
 	 * @returns {Router} The Router instance for chaining.
 	 */
 	options(path, handler) {
-		this.#tries.OPTIONS.register(
-			this.#normalizePath(path).split("/"),
-			this.#routes.length,
-		);
-
-		const route = Route.OPTIONS(path, handler);
-		this.#routes.push(route);
-
-		return this;
+		return this.#addMethodRoute(HTTP_METHODS.OPTIONS, path, handler);
 	}
 
 	/**
 	 * Add a new Route instance to the server.
-	 * This is a more flexible way to add a route, as it allows for any HTTP method.
+	 * This is a more flexible way to add a route, but only for supported HTTP methods.
 	 *
 	 * @param {import('./route.js').Route} route - the Route instance to add
 	 * @returns {Router} The Router instance for chaining.
+	 * @throws {Error} If the route method is not a supported HTTP method
 	 */
 	addRoute(route) {
 		const method = route.method;
-		// For custom methods, create trie if it doesn't exist
-		if (!this.#tries[method]) this.#tries[method] = new Trie();
-		this.#tries[method].register(
-			this.#normalizePath(route.path).split("/"),
-			this.#routes.length,
-		);
-		this.#routes.push(route);
 
-		return this;
+		// Validate that the method is supported
+		if (!isValidHttpMethod(method)) {
+			throw new Error(
+				`Unsupported HTTP method: ${method}. Supported methods: ${Object.values(HTTP_METHODS).join(", ")}`,
+			);
+		}
+
+		// Use the helper method for the common logic
+		return this.#registerRoute(method, route.path, route);
 	}
 
 	/**

@@ -19,6 +19,7 @@
  */
 
 export * from "./context.js";
+export * from "./http-methods.js";
 export * from "./mime-utils.js";
 export * from "./route.js";
 export * from "./router.js";

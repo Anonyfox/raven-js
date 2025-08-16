@@ -1,3 +1,5 @@
+import { HTTP_METHODS } from "./http-methods.js";
+
 /**
  * @typedef {Object} RouteOptions
  * @property {import('./middleware.js').Handler[]} [middleware] - Route-specific middleware functions
@@ -20,7 +22,7 @@ export class Route {
 	 */
 	static GET(path, handler, options = {}) {
 		const route = new Route();
-		route.method = "GET";
+		route.method = HTTP_METHODS.GET;
 		route.path = path;
 		route.handler = handler;
 		route.middleware = options.middleware || [];
@@ -39,7 +41,7 @@ export class Route {
 	 */
 	static POST(path, handler, options = {}) {
 		const route = new Route();
-		route.method = "POST";
+		route.method = HTTP_METHODS.POST;
 		route.path = path;
 		route.handler = handler;
 		route.middleware = options.middleware || [];
@@ -58,7 +60,7 @@ export class Route {
 	 */
 	static PUT(path, handler, options = {}) {
 		const route = new Route();
-		route.method = "PUT";
+		route.method = HTTP_METHODS.PUT;
 		route.path = path;
 		route.handler = handler;
 		route.middleware = options.middleware || [];
@@ -77,7 +79,7 @@ export class Route {
 	 */
 	static DELETE(path, handler, options = {}) {
 		const route = new Route();
-		route.method = "DELETE";
+		route.method = HTTP_METHODS.DELETE;
 		route.path = path;
 		route.handler = handler;
 		route.middleware = options.middleware || [];
@@ -96,7 +98,7 @@ export class Route {
 	 */
 	static PATCH(path, handler, options = {}) {
 		const route = new Route();
-		route.method = "PATCH";
+		route.method = HTTP_METHODS.PATCH;
 		route.path = path;
 		route.handler = handler;
 		route.middleware = options.middleware || [];
@@ -115,7 +117,7 @@ export class Route {
 	 */
 	static HEAD(path, handler, options = {}) {
 		const route = new Route();
-		route.method = "HEAD";
+		route.method = HTTP_METHODS.HEAD;
 		route.path = path;
 		route.handler = handler;
 		route.middleware = options.middleware || [];
@@ -134,7 +136,7 @@ export class Route {
 	 */
 	static OPTIONS(path, handler, options = {}) {
 		const route = new Route();
-		route.method = "OPTIONS";
+		route.method = HTTP_METHODS.OPTIONS;
 		route.path = path;
 		route.handler = handler;
 		route.middleware = options.middleware || [];
@@ -146,9 +148,9 @@ export class Route {
 	/**
 	 * HTTP Method
 	 *
-	 * @type {string}
+	 * @type {import('./http-methods.js').HttpMethod}
 	 */
-	method = "GET";
+	method = HTTP_METHODS.GET;
 
 	/**
 	 * URL path

@@ -1,6 +1,7 @@
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 import { Context } from "./context.js";
+import { HTTP_METHODS } from "./http-methods.js";
 import { Route } from "./route.js";
 
 describe("Route", () => {
@@ -34,13 +35,13 @@ describe("Route", () => {
 			assert.equal(route.description, "");
 		});
 
-		assert.equal(getRoute.method, "GET");
-		assert.equal(postRoute.method, "POST");
-		assert.equal(putRoute.method, "PUT");
-		assert.equal(deleteRoute.method, "DELETE");
-		assert.equal(patchRoute.method, "PATCH");
-		assert.equal(headRoute.method, "HEAD");
-		assert.equal(optionsRoute.method, "OPTIONS");
+		assert.equal(getRoute.method, HTTP_METHODS.GET);
+		assert.equal(postRoute.method, HTTP_METHODS.POST);
+		assert.equal(putRoute.method, HTTP_METHODS.PUT);
+		assert.equal(deleteRoute.method, HTTP_METHODS.DELETE);
+		assert.equal(patchRoute.method, HTTP_METHODS.PATCH);
+		assert.equal(headRoute.method, HTTP_METHODS.HEAD);
+		assert.equal(optionsRoute.method, HTTP_METHODS.OPTIONS);
 
 		// Test with options
 		const routeWithOptions = Route.GET("/users/:id", handler, {
@@ -49,7 +50,7 @@ describe("Route", () => {
 			description,
 		});
 
-		assert.equal(routeWithOptions.method, "GET");
+		assert.equal(routeWithOptions.method, HTTP_METHODS.GET);
 		assert.equal(routeWithOptions.path, "/users/:id");
 		assert.equal(routeWithOptions.handler, handler);
 		assert.deepEqual(routeWithOptions.middleware, middleware);
@@ -73,7 +74,7 @@ describe("Route", () => {
 		// Test constructor and defaults
 		const route = new Route();
 		assert(route instanceof Route);
-		assert.equal(route.method, "GET");
+		assert.equal(route.method, HTTP_METHODS.GET);
 		assert.equal(route.path, "");
 		assert.equal(typeof route.handler, "function");
 		assert.deepEqual(route.middleware, []);
@@ -92,14 +93,14 @@ describe("Route", () => {
 
 		// Test property modification
 		const handler = () => {};
-		route.method = "POST";
+		route.method = HTTP_METHODS.POST;
 		route.path = "/custom";
 		route.handler = handler;
 		route.middleware = [() => {}];
 		route.constraints = { custom: "value" };
 		route.description = "Custom route";
 
-		assert.equal(route.method, "POST");
+		assert.equal(route.method, HTTP_METHODS.POST);
 		assert.equal(route.path, "/custom");
 		assert.equal(route.handler, handler);
 		assert.equal(route.middleware.length, 1);
