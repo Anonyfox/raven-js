@@ -312,8 +312,7 @@ export class Wings {
 	 */
 	#normalizePath(path) {
 		let p = path;
-		if (path.endsWith("/")) p = p.slice(0, -1);
-		if (p.startsWith("/")) p = p.slice(1);
+		p = p.replace(/^\/|\/$/g, "");
 		return p;
 	}
 
