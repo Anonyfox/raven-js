@@ -3,105 +3,132 @@ import { availableParallelism } from "node:os";
 import { NodeHttp } from "./node-http.js";
 
 /**
- * Dedicated (lean) export for the nodejs implementation of the Plumage server.
+ * Production-ready clustered HTTP server with automatic scaling and crash recovery.
  *
- * This explicitly tuned for production usage.
- *
- * - zero logging by default to not fill up your servers disk silently
- * - automatic clustering to utilize all available CPUs (= vertical scaling with more CPU cores)
- * - automatic restart of crashed workers to keep the service running
+ * Features:
+ * - Horizontal scaling across all CPU cores
+ * - Automatic worker restart on crashes
+ * - Zero external dependencies (no PM2 needed)
+ * - Pure event-driven architecture (zero timeouts)
  */
 export class ClusteredServer extends NodeHttp {
 	/**
-	 * When called, this listener will automatically fork the process into multiple
-	 * workers (one per CPU core), each handling a part of the incoming traffic,
-	 * on the same shared port.
+	 * Start clustered server with automatic worker management.
 	 *
-	 * It will also automatically restart crashed workers to keep the service running.
-	 * For this reason, its advised to use this in production even if you only
-	 * have one CPU core. No need for something like PM2 or forever.js.
-	 *
-	 * @param {number} port
-	 * @param {string} [host]
+	 * @param {number} port - Port to listen on
+	 * @param {string} [host="0.0.0.0"] - Host to bind to
 	 * @returns {Promise<void>}
 	 */
 	async listen(port, host = "0.0.0.0") {
 		if (cluster.isPrimary) {
-			// Use fewer workers in test environment to prevent hanging
-			const numCPUs =
+			// Fork workers (1 in test, all cores in production)
+			const workerCount =
 				process.env.NODE_ENV === "test" ? 1 : availableParallelism();
 
-			// Fork workers
-			for (let i = 0; i < numCPUs; i++) {
-				cluster.fork();
-			}
-
-			// Simple worker restart on exit
+			// Auto-restart crashed workers
 			cluster.on("exit", (_worker, code, signal) => {
-				// Only restart if not intentionally killed
 				if (code !== 0 && signal !== "SIGTERM") {
 					cluster.fork();
 				}
 			});
 
-			// Wait for workers to start listening
-			await new Promise((resolve) => {
-				const checkWorkers = () => {
-					const workers = Object.values(cluster.workers || {});
-					if (workers.length > 0) {
-						// Give workers a moment to start listening
-						setTimeout(resolve, 100);
-					} else {
-						setTimeout(checkWorkers, 10);
-					}
-				};
-				checkWorkers();
-			});
+			// Fork all workers
+			for (let i = 0; i < workerCount; i++) {
+				cluster.fork();
+			}
+
+			// Wait for all workers to signal they're ready
+			await this.#waitForWorkersReady(workerCount);
 		} else {
-			// Workers actually start listening
+			// Worker process - start listening immediately
 			await super.listen(port, host);
+
+			// Signal to primary that we're ready
+			process.send("ready");
 		}
 	}
 
 	/**
-	 * Gracefully close the clustered server.
+	 * Gracefully shutdown clustered server.
 	 *
 	 * @returns {Promise<void>}
 	 */
 	async close() {
 		if (cluster.isPrimary) {
-			// Send SIGTERM to all workers
-			for (const [_id, worker] of Object.entries(cluster.workers || {})) {
+			// Signal all workers to shutdown
+			for (const worker of Object.values(cluster.workers || {})) {
 				if (worker && !worker.isDead()) {
 					worker.kill("SIGTERM");
 				}
 			}
 
-			// Wait for workers to exit gracefully
-			await new Promise((resolve) => {
-				const checkWorkers = () => {
-					const aliveWorkers = Object.values(cluster.workers || {}).filter(
-						(w) => !w.isDead(),
-					);
-					if (aliveWorkers.length === 0) {
-						resolve();
-					} else {
-						setTimeout(checkWorkers, 10);
-					}
-				};
-				checkWorkers();
-			});
-
-			// Disconnect cluster
+			// Wait for all workers to exit using events
+			await this.#waitForWorkersExit();
 			cluster.disconnect();
 		}
 
+		// Close the underlying server (handles ERR_SERVER_NOT_RUNNING)
 		try {
-			return await super.close();
+			await super.close();
 		} catch (error) {
 			if (error.code !== "ERR_SERVER_NOT_RUNNING") {
 				throw error;
 			}
 		}
+	}
+
+	/**
+	 * Wait for all workers to signal they're ready.
+	 * @param {number} expectedWorkers - Number of workers to wait for
+	 */
+	#waitForWorkersReady(expectedWorkers) {
+		return new Promise((resolve) => {
+			let readyWorkers = 0;
+
+			// Listen for ready signals from workers
+			cluster.on("message", (_worker, message) => {
+				if (message === "ready") {
+					readyWorkers++;
+					if (readyWorkers === expectedWorkers) {
+						resolve();
+					}
+				}
+			});
+		});
+	}
+
+	/**
+	 * Wait for all workers to exit gracefully using events.
+	 */
+	#waitForWorkersExit() {
+		return new Promise((resolve) => {
+			const workers = Object.values(cluster.workers || {});
+			if (workers.length === 0) {
+				resolve();
+				return;
+			}
+
+			let exitedWorkers = 0;
+			const totalWorkers = workers.length;
+
+			// Listen for each worker to exit
+			for (const worker of workers) {
+				if (worker && !worker.isDead()) {
+					worker.on("exit", () => {
+						exitedWorkers++;
+						if (exitedWorkers === totalWorkers) {
+							resolve();
+						}
+					});
+				} else {
+					exitedWorkers++;
+				}
+			}
+
+			// If all workers were already dead, resolve immediately
+			if (exitedWorkers === totalWorkers) {
+				resolve();
+			}
+		});
 	}
 }
