@@ -1,54 +1,56 @@
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
-import { Current } from "./current.js";
-import { Feather } from "./feather.js";
-import { Wings } from "./wings.js";
+import { Context } from "./context.js";
+import { Route } from "./route.js";
+import { Router } from "./router.js";
 
-describe("Wings", () => {
+describe("Router", () => {
 	it("should handle HTTP methods, routing, middleware, and core functionality", async () => {
-		const wings = new Wings();
+		const router = new Router();
 		const handler = async (ctx) => ctx.json({ success: true });
 
 		// Test all HTTP methods (first route - creates trie)
-		wings.get("/users", handler);
-		wings.post("/users", handler);
-		wings.put("/users/1", handler);
-		wings.delete("/users/1", handler);
-		wings.patch("/users/1", handler);
-		wings.head("/users", handler);
-		wings.options("/users", handler);
+		router.get("/users", handler);
+		router.post("/users", handler);
+		router.put("/users/1", handler);
+		router.delete("/users/1", handler);
+		router.patch("/users/1", handler);
+		router.head("/users", handler);
+		router.options("/users", handler);
 
 		// Test second route for each method (trie already exists)
-		wings.get("/users2", handler);
-		wings.post("/users2", handler);
-		wings.put("/users/2", handler);
-		wings.delete("/users/2", handler);
-		wings.patch("/users/2", handler);
-		wings.head("/users2", handler);
-		wings.options("/users2", handler);
+		router.get("/users2", handler);
+		router.post("/users2", handler);
+		router.put("/users/2", handler);
+		router.delete("/users/2", handler);
+		router.patch("/users/2", handler);
+		router.head("/users2", handler);
+		router.options("/users2", handler);
 
-		// Test route registration and listFeathers
-		const feathers = wings.listFeathers();
-		assert.equal(feathers.length, 14);
-		assert.equal(feathers[0].method, "GET");
-		assert.equal(feathers[13].method, "OPTIONS");
+		// Test route registration and listRoutes
+		const routes = router.listRoutes();
+		assert.equal(routes.length, 14);
+		assert.equal(routes[0].method, "GET");
+		assert.equal(routes[13].method, "OPTIONS");
 
 		// Test successful route matching
-		const current = new Current(
+		const ctx = new Context(
 			"GET",
 			new URL("https://example.com/users"),
 			new Headers(),
 			null,
 		);
-		const result = await wings.handleRequest(current);
+		const result = await router.handleRequest(ctx);
 		assert.equal(result.responseStatusCode, 200);
 		assert.equal(result.responseBody, '{"success":true}');
 
 		// Test route matching with no middleware (empty #coverts array)
-		const noMiddlewareWings = new Wings();
-		noMiddlewareWings.get("/simple", async (ctx) => ctx.json({ simple: true }));
-		const simpleResult = await noMiddlewareWings.handleRequest(
-			new Current(
+		const noMiddlewareRouter = new Router();
+		noMiddlewareRouter.get("/simple", async (ctx) =>
+			ctx.json({ simple: true }),
+		);
+		const simpleResult = await noMiddlewareRouter.handleRequest(
+			new Context(
 				"GET",
 				new URL("https://example.com/simple"),
 				new Headers(),
@@ -58,8 +60,8 @@ describe("Wings", () => {
 		assert.equal(simpleResult.responseStatusCode, 200);
 
 		// Test 404 scenarios
-		const notFoundResult = await wings.handleRequest(
-			new Current(
+		const notFoundResult = await router.handleRequest(
+			new Context(
 				"GET",
 				new URL("https://example.com/notfound"),
 				new Headers(),
@@ -67,8 +69,8 @@ describe("Wings", () => {
 			),
 		);
 		assert.equal(notFoundResult.responseStatusCode, 404);
-		const methodExistsResult = await wings.handleRequest(
-			new Current(
+		const methodExistsResult = await router.handleRequest(
+			new Context(
 				"POST",
 				new URL("https://example.com/nonexistent"),
 				new Headers(),
@@ -76,8 +78,8 @@ describe("Wings", () => {
 			),
 		);
 		assert.equal(methodExistsResult.responseStatusCode, 404);
-		const trieExistsNoMatchResult = await wings.handleRequest(
-			new Current(
+		const trieExistsNoMatchResult = await router.handleRequest(
+			new Context(
 				"GET",
 				new URL("https://example.com/users/nonexistent"),
 				new Headers(),
@@ -121,24 +123,24 @@ describe("Wings", () => {
 			ctx.data.step = 7;
 		};
 
-		wings.use(middleware1);
-		wings.use(middleware2); // Should be ignored
-		wings.useEarly(middleware3);
-		wings.useEarly(middleware4); // Should be ignored
-		wings.use(middleware5); // Should be ignored
-		wings.use(middleware6);
-		wings.useEarly(middleware7);
+		router.use(middleware1);
+		router.use(middleware2); // Should be ignored
+		router.useEarly(middleware3);
+		router.useEarly(middleware4); // Should be ignored
+		router.use(middleware5); // Should be ignored
+		router.use(middleware6);
+		router.useEarly(middleware7);
 
 		// Test middleware without identifier property
 		const noIdentifierMiddleware = async (ctx) => {
 			order.push(9);
 			ctx.data.noIdentifier = true;
 		};
-		wings.use(noIdentifierMiddleware);
-		wings.useEarly(noIdentifierMiddleware); // Should be added again since no identifier
+		router.use(noIdentifierMiddleware);
+		router.useEarly(noIdentifierMiddleware); // Should be added again since no identifier
 
 		// Test route with path parameters
-		wings.get("/users/:id/posts/:postId", async (ctx) => {
+		router.get("/users/:id/posts/:postId", async (ctx) => {
 			order.push(8);
 			assert.equal(ctx.pathParams.id, "123");
 			assert.equal(ctx.pathParams.postId, "456");
@@ -146,8 +148,8 @@ describe("Wings", () => {
 			return ctx.json({ user: ctx.pathParams.id, post: ctx.pathParams.postId });
 		});
 
-		const paramResult = await wings.handleRequest(
-			new Current(
+		const paramResult = await router.handleRequest(
+			new Context(
 				"GET",
 				new URL("https://example.com/users/123/posts/456"),
 				new Headers(),
@@ -159,35 +161,37 @@ describe("Wings", () => {
 		assert.equal(paramResult.responseBody, '{"user":"123","post":"456"}');
 	});
 
-	it("should handle addFeather, path normalization, errors, and complex scenarios", async () => {
-		const wings = new Wings();
+	it("should handle addRoute, path normalization, errors, and complex scenarios", async () => {
+		const router = new Router();
 
-		// Test addFeather with different scenarios
-		const customFeather = Feather.GET("/custom", async (ctx) =>
+		// Test addRoute with different scenarios
+		const customRoute = Route.GET("/custom", async (ctx) =>
 			ctx.json({ custom: true }),
 		);
-		wings.addFeather(customFeather);
-		const anotherFeather = Feather.GET("/another", async (ctx) =>
+		router.addRoute(customRoute);
+		const anotherRoute = Route.GET("/another", async (ctx) =>
 			ctx.json({ another: true }),
 		);
-		wings.addFeather(anotherFeather);
-		const postFeather = Feather.POST("/post-route", async (ctx) =>
+		router.addRoute(anotherRoute);
+		const postRoute = Route.POST("/post-route", async (ctx) =>
 			ctx.json({ post: true }),
 		);
-		wings.addFeather(postFeather);
+		router.addRoute(postRoute);
 
 		// Test path normalization edge cases
-		wings.get("/normalized", async (ctx) => ctx.json({ normalized: true }));
-		wings.get("no-slash", async (ctx) => ctx.json({ noSlash: true }));
-		wings.get("/start-only", async (ctx) => ctx.json({ startOnly: true }));
-		wings.get("end-only/", async (ctx) => ctx.json({ endOnly: true }));
-		wings.get("neither-slash", async (ctx) => ctx.json({ neitherSlash: true }));
-		wings.get("", async (ctx) => ctx.json({ emptyPath: true }));
-		wings.get("/root", async (ctx) => ctx.json({ rootPath: true }));
+		router.get("/normalized", async (ctx) => ctx.json({ normalized: true }));
+		router.get("no-slash", async (ctx) => ctx.json({ noSlash: true }));
+		router.get("/start-only", async (ctx) => ctx.json({ startOnly: true }));
+		router.get("end-only/", async (ctx) => ctx.json({ endOnly: true }));
+		router.get("neither-slash", async (ctx) =>
+			ctx.json({ neitherSlash: true }),
+		);
+		router.get("", async (ctx) => ctx.json({ emptyPath: true }));
+		router.get("/root", async (ctx) => ctx.json({ rootPath: true }));
 
 		// Test route matching with normalized paths
-		const customResult = await wings.handleRequest(
-			new Current(
+		const customResult = await router.handleRequest(
+			new Context(
 				"GET",
 				new URL("https://example.com/custom"),
 				new Headers(),
@@ -195,8 +199,8 @@ describe("Wings", () => {
 			),
 		);
 		assert.equal(customResult.responseStatusCode, 200);
-		const postResult = await wings.handleRequest(
-			new Current(
+		const postResult = await router.handleRequest(
+			new Context(
 				"POST",
 				new URL("https://example.com/post-route"),
 				new Headers(),
@@ -204,8 +208,8 @@ describe("Wings", () => {
 			),
 		);
 		assert.equal(postResult.responseStatusCode, 200);
-		const normalizedResult = await wings.handleRequest(
-			new Current(
+		const normalizedResult = await router.handleRequest(
+			new Context(
 				"GET",
 				new URL("https://example.com/normalized"),
 				new Headers(),
@@ -213,8 +217,8 @@ describe("Wings", () => {
 			),
 		);
 		assert.equal(normalizedResult.responseStatusCode, 200);
-		const noSlashResult = await wings.handleRequest(
-			new Current(
+		const noSlashResult = await router.handleRequest(
+			new Context(
 				"GET",
 				new URL("https://example.com/no-slash"),
 				new Headers(),
@@ -222,8 +226,8 @@ describe("Wings", () => {
 			),
 		);
 		assert.equal(noSlashResult.responseStatusCode, 200);
-		const startOnlyResult = await wings.handleRequest(
-			new Current(
+		const startOnlyResult = await router.handleRequest(
+			new Context(
 				"GET",
 				new URL("https://example.com/start-only"),
 				new Headers(),
@@ -231,8 +235,8 @@ describe("Wings", () => {
 			),
 		);
 		assert.equal(startOnlyResult.responseStatusCode, 200);
-		const endOnlyResult = await wings.handleRequest(
-			new Current(
+		const endOnlyResult = await router.handleRequest(
+			new Context(
 				"GET",
 				new URL("https://example.com/end-only"),
 				new Headers(),
@@ -240,8 +244,8 @@ describe("Wings", () => {
 			),
 		);
 		assert.equal(endOnlyResult.responseStatusCode, 200);
-		const neitherSlashResult = await wings.handleRequest(
-			new Current(
+		const neitherSlashResult = await router.handleRequest(
+			new Context(
 				"GET",
 				new URL("https://example.com/neither-slash"),
 				new Headers(),
@@ -249,12 +253,12 @@ describe("Wings", () => {
 			),
 		);
 		assert.equal(neitherSlashResult.responseStatusCode, 200);
-		const emptyPathResult = await wings.handleRequest(
-			new Current("GET", new URL("https://example.com/"), new Headers(), null),
+		const emptyPathResult = await router.handleRequest(
+			new Context("GET", new URL("https://example.com/"), new Headers(), null),
 		);
 		assert.equal(emptyPathResult.responseStatusCode, 200);
-		const rootPathResult = await wings.handleRequest(
-			new Current(
+		const rootPathResult = await router.handleRequest(
+			new Context(
 				"GET",
 				new URL("https://example.com/root"),
 				new Headers(),
@@ -263,18 +267,18 @@ describe("Wings", () => {
 		);
 		assert.equal(rootPathResult.responseStatusCode, 200);
 
-		// Test listFeathers with and without method filter
-		const getFeathers = wings.listFeathers("GET");
-		assert.equal(getFeathers.length, 9);
-		const allFeathers = wings.listFeathers();
-		assert.equal(allFeathers.length, 10);
-		assert.equal(allFeathers[0].method, "GET");
-		assert.equal(allFeathers[2].method, "POST");
+		// Test listRoutes with and without method filter
+		const getRoutes = router.listRoutes("GET");
+		assert.equal(getRoutes.length, 9);
+		const allRoutes = router.listRoutes();
+		assert.equal(allRoutes.length, 10);
+		assert.equal(allRoutes[0].method, "GET");
+		assert.equal(allRoutes[2].method, "POST");
 
 		// Test security, errors, and complex scenarios
 		const longPath = `/${"a/".repeat(101)}`;
-		const longPathResult = await wings.handleRequest(
-			new Current(
+		const longPathResult = await router.handleRequest(
+			new Context(
 				"GET",
 				new URL(`https://example.com${longPath}`),
 				new Headers(),
@@ -283,11 +287,11 @@ describe("Wings", () => {
 		);
 		assert.equal(longPathResult.responseStatusCode, 500);
 
-		wings.get("/error", async () => {
+		router.get("/error", async () => {
 			throw new Error("Handler error");
 		});
-		const errorResult = await wings.handleRequest(
-			new Current(
+		const errorResult = await router.handleRequest(
+			new Context(
 				"GET",
 				new URL("https://example.com/error"),
 				new Headers(),
@@ -296,13 +300,13 @@ describe("Wings", () => {
 		);
 		assert.equal(errorResult.responseStatusCode, 500);
 
-		wings.use(async (ctx) => {
+		router.use(async (ctx) => {
 			ctx.responseStatusCode = 403;
 			ctx.responseBody = "Forbidden";
 			ctx.responseEnded = true;
 		});
-		const earlyResult = await wings.handleRequest(
-			new Current(
+		const earlyResult = await router.handleRequest(
+			new Context(
 				"GET",
 				new URL("https://example.com/early"),
 				new Headers(),
@@ -312,12 +316,12 @@ describe("Wings", () => {
 		assert.equal(earlyResult.responseStatusCode, 403);
 		assert(earlyResult.responseEnded);
 
-		wings.get("/error-ended", async (ctx) => {
+		router.get("/error-ended", async (ctx) => {
 			ctx.responseEnded = true;
 			throw new Error("Should not set 500");
 		});
-		const errorEndedResult = await wings.handleRequest(
-			new Current(
+		const errorEndedResult = await router.handleRequest(
+			new Context(
 				"GET",
 				new URL("https://example.com/error-ended"),
 				new Headers(),
@@ -326,15 +330,15 @@ describe("Wings", () => {
 		);
 		assert(errorEndedResult.responseEnded);
 
-		const errorEndedWings = new Wings();
-		errorEndedWings.get("/error-ended-2", async (ctx) => {
+		const errorEndedRouter = new Router();
+		errorEndedRouter.get("/error-ended-2", async (ctx) => {
 			ctx.responseEnded = true;
 			ctx.responseStatusCode = 200;
 			ctx.responseBody = "OK";
 			throw new Error("Should not override response");
 		});
-		const errorEnded2Result = await errorEndedWings.handleRequest(
-			new Current(
+		const errorEnded2Result = await errorEndedRouter.handleRequest(
+			new Context(
 				"GET",
 				new URL("https://example.com/error-ended-2"),
 				new Headers(),
@@ -345,10 +349,10 @@ describe("Wings", () => {
 		assert.equal(errorEnded2Result.responseStatusCode, 200);
 
 		// Test method chaining and complex middleware chain
-		const chainingWings = new Wings();
+		const chainingRouter = new Router();
 		const steps = [];
 
-		chainingWings
+		chainingRouter
 			.get("/users", async (ctx) => ctx.json({ users: [] }))
 			.post("/users", async (ctx) => ctx.json({ created: true }))
 			.put("/users/1", async (ctx) => ctx.json({ updated: true }))
@@ -374,9 +378,9 @@ describe("Wings", () => {
 				return ctx.json({ complex: true });
 			});
 
-		assert.equal(chainingWings.listFeathers().length, 5);
-		const complexResult = await chainingWings.handleRequest(
-			new Current(
+		assert.equal(chainingRouter.listRoutes().length, 5);
+		const complexResult = await chainingRouter.handleRequest(
+			new Context(
 				"GET",
 				new URL("https://example.com/complex"),
 				new Headers(),
@@ -395,11 +399,11 @@ describe("Wings", () => {
 		assert(complexResult.data.after1);
 
 		// Test handler that doesn't end response
-		chainingWings.get("/continue", async (ctx) => {
+		chainingRouter.get("/continue", async (ctx) => {
 			ctx.data.handlerRun = true;
 		});
-		const continueResult = await chainingWings.handleRequest(
-			new Current(
+		const continueResult = await chainingRouter.handleRequest(
+			new Context(
 				"GET",
 				new URL("https://example.com/continue"),
 				new Headers(),
@@ -410,9 +414,9 @@ describe("Wings", () => {
 		assert(!continueResult.responseEnded);
 
 		// Test handler that doesn't end response and has after callbacks
-		const noResponseWings = new Wings();
+		const noResponseRouter = new Router();
 		const afterCallbackOrder = [];
-		noResponseWings.get("/no-response", async (ctx) => {
+		noResponseRouter.get("/no-response", async (ctx) => {
 			ctx.data.handlerRun = true;
 			ctx.addAfterCallback(async (ctx) => {
 				afterCallbackOrder.push("after1");
@@ -423,8 +427,8 @@ describe("Wings", () => {
 				ctx.data.after2 = true;
 			});
 		});
-		const noResponseResult = await noResponseWings.handleRequest(
-			new Current(
+		const noResponseResult = await noResponseRouter.handleRequest(
+			new Context(
 				"GET",
 				new URL("https://example.com/no-response"),
 				new Headers(),

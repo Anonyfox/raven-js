@@ -1,5 +1,5 @@
 /**
- * @typedef {((current: import('./current.js').Current) => void | Promise<void>)} Handler
+ * @typedef {((ctx: import('./context.js').Context) => void | Promise<void>)} Handler
  */
 
 /**
@@ -71,12 +71,12 @@ export class Middleware {
 	}
 
 	/**
-	 * Executes the middleware handler with the given current context.
+	 * Executes the middleware handler with the given context.
 	 *
-	 * @param {import('./current.js').Current} current - The current request/response context
+	 * @param {import('./context.js').Context} ctx - The request/response context
 	 * @returns {Promise<void>} Promise that resolves when the handler completes
 	 */
-	async execute(current) {
-		return await this.#handler(current);
+	async execute(ctx) {
+		return await this.#handler(ctx);
 	}
 }

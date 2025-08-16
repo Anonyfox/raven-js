@@ -1,5 +1,5 @@
 /**
- * The **current** context of the http request/response.
+ * The **context** of the http request/response.
  *
  * This class is a general abstraction over the HTTP lifecycle and is _isomorphic_.
  * This means it can also be used in the client/browser, not just in the server.
@@ -10,7 +10,7 @@
  * Most properties are also private and can be accessed via methods, in order to
  * ensure integrity and consistency, and to prevent common mistakes.
  */
-export class Current {
+export class Context {
 	#requestHeaders = new Headers();
 
 	/**

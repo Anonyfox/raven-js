@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
-import { Current } from "./current.js";
+import { Context } from "./context.js";
 import { Middleware } from "./middleware.js";
 
 describe("Middleware", () => {
@@ -86,53 +86,53 @@ describe("Middleware", () => {
 
 	test("execute calls the handler function", async () => {
 		let called = false;
-		const handler = (_current) => {
+		const handler = (_ctx) => {
 			called = true;
 		};
 
 		const middleware = new Middleware(handler);
 		const url = new URL("http://localhost/test");
-		const current = new Current("GET", url, new Headers());
+		const ctx = new Context("GET", url, new Headers());
 
-		await middleware.execute(current);
+		await middleware.execute(ctx);
 
 		assert.strictEqual(called, true);
 	});
 
-	test("execute passes current to handler", async () => {
-		let receivedCurrent = null;
-		const handler = (current) => {
-			receivedCurrent = current;
+	test("execute passes context to handler", async () => {
+		let receivedCtx = null;
+		const handler = (ctx) => {
+			receivedCtx = ctx;
 		};
 
 		const middleware = new Middleware(handler);
 		const url = new URL("http://localhost/api/users");
-		const current = new Current("POST", url, new Headers());
+		const ctx = new Context("POST", url, new Headers());
 
-		await middleware.execute(current);
+		await middleware.execute(ctx);
 
-		assert.strictEqual(receivedCurrent, current);
+		assert.strictEqual(receivedCtx, ctx);
 	});
 
 	test("execute handles async handler", async () => {
 		let resolved = false;
-		const handler = async (_current) => {
+		const handler = async (_ctx) => {
 			await new Promise((resolve) => setTimeout(resolve, 10));
 			resolved = true;
 		};
 
 		const middleware = new Middleware(handler);
 		const url = new URL("http://localhost/test");
-		const current = new Current("GET", url, new Headers());
+		const ctx = new Context("GET", url, new Headers());
 
-		await middleware.execute(current);
+		await middleware.execute(ctx);
 
 		assert.strictEqual(resolved, true);
 	});
 
 	test("execute handles handler that returns promise", async () => {
 		let resolved = false;
-		const handler = (_current) => {
+		const handler = (_ctx) => {
 			return new Promise((resolve) => {
 				setTimeout(() => {
 					resolved = true;
@@ -143,40 +143,40 @@ describe("Middleware", () => {
 
 		const middleware = new Middleware(handler);
 		const url = new URL("http://localhost/test");
-		const current = new Current("GET", url, new Headers());
+		const ctx = new Context("GET", url, new Headers());
 
-		await middleware.execute(current);
+		await middleware.execute(ctx);
 
 		assert.strictEqual(resolved, true);
 	});
 
 	test("execute propagates handler errors", async () => {
 		const error = new Error("Handler error");
-		const handler = (_current) => {
+		const handler = (_ctx) => {
 			throw error;
 		};
 
 		const middleware = new Middleware(handler);
 		const url = new URL("http://localhost/test");
-		const current = new Current("GET", url, new Headers());
+		const ctx = new Context("GET", url, new Headers());
 
 		await assert.rejects(async () => {
-			await middleware.execute(current);
+			await middleware.execute(ctx);
 		}, error);
 	});
 
 	test("execute propagates async handler errors", async () => {
 		const error = new Error("Async handler error");
-		const handler = async (_current) => {
+		const handler = async (_ctx) => {
 			throw error;
 		};
 
 		const middleware = new Middleware(handler);
 		const url = new URL("http://localhost/test");
-		const current = new Current("GET", url, new Headers());
+		const ctx = new Context("GET", url, new Headers());
 
 		await assert.rejects(async () => {
-			await middleware.execute(current);
+			await middleware.execute(ctx);
 		}, error);
 	});
 });
