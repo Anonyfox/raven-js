@@ -202,6 +202,7 @@ export class NodeHttp {
 	 *
 	 * @param {http.IncomingMessage} req - The incoming HTTP request
 	 * @returns {Promise<Context>} A Promise that resolves to a Context instance
+	 * @protected
 	 *
 	 * @example
 	 * ```javascript
@@ -218,7 +219,7 @@ export class NodeHttp {
 	 * // - body: null (GET requests have no body)
 	 * ```
 	 */
-	async #createContext(req) {
+	async createContext(req) {
 		// HTTP protocol is always "http" since this is an HTTP server, not HTTPS
 		const protocol = "http";
 		// Host header is always present in Node.js HTTP client requests
@@ -248,6 +249,7 @@ export class NodeHttp {
 	 *
 	 * @param {Context} context - The Wings context with response data
 	 * @param {http.ServerResponse} res - The HTTP server response object
+	 * @protected
 	 *
 	 * @example
 	 * ```javascript
@@ -265,7 +267,7 @@ export class NodeHttp {
 	 * // {"message":"Hello"}
 	 * ```
 	 */
-	#sendResponse(context, res) {
+	sendResponse(context, res) {
 		// Set response headers
 		for (const [key, value] of context.responseHeaders) {
 			res.setHeader(key, value);
@@ -296,6 +298,7 @@ export class NodeHttp {
 	 * @param {Error} err - The error that occurred
 	 * @param {http.IncomingMessage} req - The original request object
 	 * @param {http.ServerResponse} res - The response object
+	 * @protected
 	 *
 	 * @example
 	 * ```javascript
@@ -317,7 +320,7 @@ export class NodeHttp {
 	 * // - Body: "Internal Server Error"
 	 * ```
 	 */
-	#handleError(err, req, res) {
+	handleError(err, req, res) {
 		console.error(`Error handling request <${req.url}>: ${err.message}`);
 
 		res.writeHead(500, { "Content-Type": "text/plain" });
@@ -372,11 +375,11 @@ export class NodeHttp {
 	 */
 	async #handleRequest(req, res) {
 		try {
-			const context = await this.#createContext(req);
+			const context = await this.createContext(req);
 			await this.#router.handleRequest(context);
-			this.#sendResponse(context, res);
+			this.sendResponse(context, res);
 		} catch (err) {
-			this.#handleError(err, req, res);
+			this.handleError(err, req, res);
 		}
 	}
 

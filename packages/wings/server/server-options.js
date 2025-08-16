@@ -42,6 +42,7 @@
  * @property {boolean} [keepAlive=true] - Enable HTTP keep-alive connections. Reduces connection overhead for multiple requests from the same client. Disable only if clients don't support keep-alive.
  * @property {number} [keepAliveTimeout=5000] - Keep-alive timeout in milliseconds. How long to keep idle connections open. Lower values free resources faster, higher values reduce connection overhead.
  * @property {number} [maxHeadersCount=2000] - Maximum number of headers allowed per request. Protects against header-based attacks. Lower values are more secure but may break some clients.
+ * @property {number} [websocketPort=3456] - WebSocket server port for development features like live reload (DevServer only). Ignored by other server implementations.
  * @property {number} [workers] - Number of worker processes to spawn (clustering only). Defaults to available CPU cores when clustering is enabled. Ignored by single-process servers.
  * @property {number} [healthCheckInterval=30000] - Health check interval in milliseconds (clustering only). Monitors worker health and detects stuck workers. Ignored by single-process servers.
  * @property {number} [maxRestarts=5] - Maximum worker restarts before giving up (clustering only). Prevents infinite restart loops from crashing workers. Ignored by single-process servers.
@@ -56,6 +57,15 @@
  *   keepAlive: true,       // Enable keep-alive
  *   keepAliveTimeout: 5000, // 5s keep-alive timeout
  *   maxHeadersCount: 2000   // Allow 2000 headers
+ * };
+ *
+ * // Development configuration with live reload (DevServer)
+ * const devServerOptions = {
+ *   timeout: 30000,        // 30s timeout
+ *   keepAlive: true,       // Enable keep-alive
+ *   keepAliveTimeout: 5000, // 5s keep-alive timeout
+ *   maxHeadersCount: 2000,  // Allow 2000 headers
+ *   websocketPort: 3456    // WebSocket port for live reload
  * };
  *
  * // Production configuration (ClusteredServer)
