@@ -1,78 +1,78 @@
 {
-	"name": "@raven-js/wings",
-	"description": "Zero-dependency isomorphic routing library for modern JavaScript - SPA, Server, and CLI routing",
-	"version": "0.1.12",
-	"type": "module",
-	"files": [
-		"*.js",
-		"*.d.ts",
-		"core/**/*.js",
-		"spa/**/*.js",
-		"server/**/*.js",
-		"types.*.d.ts",
-		"LICENSE",
-		"README.md"
-	],
-	"exports": {
-		".": {
-			"import": "./core/index.js",
-			"types": "./types.core.d.ts"
-		},
-		"./spa": {
-			"import": "./spa/index.js",
-			"types": "./types.spa.d.ts"
-		},
-		"./server": {
-			"import": "./server/index.js",
-			"types": "./types.server.d.ts"
-		}
-	},
-	"scripts": {
-		"nest:validate": "node ../nest/bin/nest.js validate",
-		"nest:docs": "node ../nest/bin/nest.js build-docs",
-		"test": "npm run test:types && npm run test:code && npm run test:style",
-		"test:code": "node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
-		"test:style": "biome lint --error-on-warnings ./core ./spa ./server",
-		"test:types": "tsc --noEmit --project jsconfig.json"
-	},
-	"keywords": [
-		"routing",
-		"spa",
-		"server",
-		"cli",
-		"pushstate",
-		"http",
-		"isomorphic",
-		"zero-dependency",
-		"modern-javascript",
-		"esm",
-		"web-development",
-		"library",
-		"toolkit",
-		"raven"
-	],
-	"author": {
-		"name": "Anonyfox",
-		"email": "max@anonyfox.com",
-		"url": "https://anonyfox.com"
-	},
-	"license": "MIT",
-	"homepage": "https://ravenjs.dev",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/Anonyfox/raven-js.git"
-	},
-	"bugs": {
-		"url": "https://github.com/Anonyfox/raven-js/issues"
-	},
-	"engines": {
-		"node": ">=22.5.0"
-	},
-	"publishConfig": {
-		"access": "public"
-	},
-	"funding": {
-		"type": "github",
-		"url": "https://github.com/sponsors/Anonyfox"
-	}
+  "name": "@raven-js/wings",
+  "description": "Zero-dependency isomorphic routing library for modern JavaScript - SPA, Server, and CLI routing",
+  "version": "0.2.0",
+  "type": "module",
+  "files": [
+    "*.js",
+    "*.d.ts",
+    "core/**/*.js",
+    "spa/**/*.js",
+    "server/**/*.js",
+    "types.*.d.ts",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "import": "./core/index.js",
+      "types": "./types.core.d.ts"
+    },
+    "./spa": {
+      "import": "./spa/index.js",
+      "types": "./types.spa.d.ts"
+    },
+    "./server": {
+      "import": "./server/index.js",
+      "types": "./types.server.d.ts"
+    }
+  },
+  "scripts": {
+    "nest:validate": "node ../nest/bin/nest.js validate",
+    "nest:docs": "node ../nest/bin/nest.js build-docs",
+    "test": "npm run test:types && npm run test:code && npm run test:style",
+    "test:code": "node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
+    "test:style": "biome lint --error-on-warnings ./core ./spa ./server",
+    "test:types": "tsc --noEmit --project jsconfig.json"
+  },
+  "keywords": [
+    "routing",
+    "spa",
+    "server",
+    "cli",
+    "pushstate",
+    "http",
+    "isomorphic",
+    "zero-dependency",
+    "modern-javascript",
+    "esm",
+    "web-development",
+    "library",
+    "toolkit",
+    "raven"
+  ],
+  "author": {
+    "name": "Anonyfox",
+    "email": "max@anonyfox.com",
+    "url": "https://anonyfox.com"
+  },
+  "license": "MIT",
+  "homepage": "https://ravenjs.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Anonyfox/raven-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Anonyfox/raven-js/issues"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/Anonyfox"
+  }
 }
