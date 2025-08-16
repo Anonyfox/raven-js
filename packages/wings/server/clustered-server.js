@@ -162,10 +162,10 @@ export class ClusteredServer extends NodeHttp {
 	/**
 	 * Start the primary process and manage workers.
 	 *
-	 * @param {number} port - The port to listen on
-	 * @param {string} host - The host to bind to
+	 * @param {number} _port - The port to listen on
+	 * @param {string} _host - The host to bind to
 	 */
-	async #startPrimary(port, host) {
+	async #startPrimary(_port, _host) {
 		// Set up graceful shutdown handlers
 		this.#setupShutdownHandlers();
 
@@ -203,11 +203,6 @@ export class ClusteredServer extends NodeHttp {
 			{ event: "exit", listener: exitListener },
 			{ event: "disconnect", listener: disconnectListener },
 		];
-
-		// Log startup information
-		console.log(`Primary process started (PID: ${process.pid})`);
-		console.log(`Target workers: ${this.#targetWorkers}`);
-		console.log(`Listening on ${host}:${port}`);
 	}
 
 	/**
@@ -224,10 +219,10 @@ export class ClusteredServer extends NodeHttp {
 	 * Handle worker exit events.
 	 *
 	 * @param {any} worker - The exited worker
-	 * @param {number} code - Exit code
-	 * @param {string} signal - Exit signal
+	 * @param {number} _code - Exit code
+	 * @param {string} _signal - Exit signal
 	 */
-	#handleWorkerExit(worker, code, signal) {
+	#handleWorkerExit(worker, _code, _signal) {
 		this.#activeWorkers--;
 		this.#stopHealthCheck(worker);
 
@@ -252,9 +247,6 @@ export class ClusteredServer extends NodeHttp {
 			counter.count <= this.#clusterOptions.maxRestarts &&
 			!this.#shuttingDown
 		) {
-			console.log(
-				`Worker ${worker.id} exited (code: ${code}, signal: ${signal}). Restarting...`,
-			);
 			this.#forkWorker();
 		} else if (counter.count > this.#clusterOptions.maxRestarts) {
 			console.error(
@@ -272,7 +264,6 @@ export class ClusteredServer extends NodeHttp {
 	#handleWorkerDisconnect(worker) {
 		if (!worker || !worker.id) return;
 
-		console.log(`Worker ${worker.id} disconnected`);
 		this.#stopHealthCheck(worker);
 	}
 
@@ -314,15 +305,13 @@ export class ClusteredServer extends NodeHttp {
 	 * Set up graceful shutdown handlers.
 	 */
 	#setupShutdownHandlers() {
-		const shutdown = async (/** @type {string} */ signal) => {
+		const shutdown = async (/** @type {string} */ _signal) => {
 			if (this.#shuttingDown) return;
 
-			console.log(`Received ${signal}. Starting graceful shutdown...`);
 			this.#shuttingDown = true;
 
 			try {
 				await this.#shutdownPrimary();
-				console.log("Graceful shutdown completed");
 				process.exit(0);
 			} catch (_error) {
 				console.error("Error during shutdown:", _error);
@@ -370,8 +359,8 @@ export class ClusteredServer extends NodeHttp {
 			}
 		}
 
-		// Wait longer to ensure all processes are terminated
-		await new Promise((resolve) => setTimeout(resolve, 500));
+		// Wait for processes to terminate
+		await new Promise((resolve) => setTimeout(resolve, 100));
 	}
 
 	/**
