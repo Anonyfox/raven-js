@@ -66,7 +66,9 @@ export class DevServer extends NodeHttp {
 			].join("\r\n");
 
 			socket.write(headers);
-			socket.end(); // Close the socket after writing headers
+
+			// Keep the WebSocket connection alive for live reload
+			// The connection will be closed when the server is stopped
 		});
 		this.websocketServer.listen(this.websocketServerPort, () => {});
 	}
