@@ -7,90 +7,65 @@ import { NodeHttp } from "./node-http.js";
 import "./server-options.js";
 
 /**
- * Production-ready clustered server for Wings with automatic scaling and fault tolerance.
+ * Production clustered server for Wings with automatic scaling and crash recovery.
  *
- * This server is explicitly tuned for production usage with:
- * - Zero logging by default to prevent disk filling
- * - Automatic clustering to utilize all available CPUs
- * - Graceful worker restart on crashes to maintain uptime
- * - Proper shutdown handling for zero-downtime deployments
- * - Health monitoring and stuck worker detection
- * - Memory leak protection with worker recycling
+ * Uses all CPU cores for horizontal scaling. Automatically restarts crashed workers
+ * to maintain uptime. Zero logging by default to prevent disk filling.
  *
- * **Production Features:**
- * - **Horizontal Scaling**: Automatically uses all CPU cores
- * - **Fault Tolerance**: Crashed workers are automatically restarted
- * - **Graceful Shutdown**: Waits for active requests to complete
- * - **Health Monitoring**: Detects and restarts stuck workers
- * - **Memory Management**: Recycles workers to prevent memory leaks
- * - **Load Balancing**: Node.js cluster module handles request distribution
- *
- * **When to use:**
- * - Production deployments requiring high availability
- * - High-traffic applications needing horizontal scaling
- * - Services requiring automatic fault recovery
- * - Zero-downtime deployment scenarios
- *
- * **Performance characteristics:**
- * - Worker startup: ~50-200ms per worker
- * - Memory overhead: ~10-50MB per worker (depending on app size)
- * - Request distribution: Automatic round-robin by Node.js
- * - Failover time: ~100-500ms for worker restart
+ * @extends {NodeHttp}
  */
 export class ClusteredServer extends NodeHttp {
 	/**
-	 * Active worker count tracking.
+	 * Active worker count.
 	 * @type {number}
 	 */
 	#activeWorkers = 0;
 
 	/**
-	 * Target number of workers to maintain.
+	 * Target worker count.
 	 * @type {number}
 	 */
 	#targetWorkers = 0;
 
 	/**
-	 * Worker health monitoring timers.
+	 * Health monitoring timers.
 	 * @type {Map<number, NodeJS.Timeout>}
 	 */
 	#healthTimers = new Map();
 
 	/**
-	 * Graceful shutdown flag.
+	 * Shutdown flag.
 	 * @type {boolean}
 	 */
 	#shuttingDown = false;
 
 	/**
-	 * Worker restart counters for crash detection.
+	 * Worker restart counters.
 	 * @type {Map<number, { count: number, lastRestart: number }>}
 	 */
 	#restartCounters = new Map();
 
 	/**
-	 * Configuration options for clustering behavior.
+	 * Cluster configuration.
 	 * @type {import('./server-options.js').ServerOptions}
 	 */
 	#clusterOptions;
 
 	/**
-	 * Cluster event listeners for cleanup.
+	 * Cluster event listeners.
 	 * @type {Array<{event: string, listener: (...args: any[]) => void}>}
 	 */
 	#clusterListeners = [];
 
 	/**
-	 * Create a new clustered server instance.
+	 * Create clustered server instance.
 	 *
-	 * @param {Router} router - The Wings router instance
-	 * @param {import('./server-options.js').ServerOptions} [options] - Clustering configuration
+	 * @param {Router} router - Wings router
+	 * @param {import('./server-options.js').ServerOptions} [options] - Configuration
 	 */
 	constructor(router, options = {}) {
-		// Handle null/undefined options
 		const opts = options || {};
 
-		// Extract HTTP options and clustering options
 		const {
 			workers,
 			healthCheckInterval,
@@ -104,26 +79,20 @@ export class ClusteredServer extends NodeHttp {
 
 		this.#clusterOptions = {
 			workers: workers ?? availableParallelism(),
-			healthCheckInterval: healthCheckInterval ?? 30000, // 30s
+			healthCheckInterval: healthCheckInterval ?? 30000,
 			maxRestarts: maxRestarts ?? 5,
-			restartWindow: restartWindow ?? 60000, // 1 minute
-			gracefulShutdownTimeout: gracefulShutdownTimeout ?? 30000, // 30s
+			restartWindow: restartWindow ?? 60000,
+			gracefulShutdownTimeout: gracefulShutdownTimeout ?? 30000,
 		};
 
 		this.#targetWorkers = this.#clusterOptions.workers;
 	}
 
 	/**
-	 * Start the clustered server with automatic worker management.
+	 * Start clustered server with worker management.
 	 *
-	 * This method handles the complete worker lifecycle:
-	 * - Forks the specified number of workers
-	 * - Monitors worker health and restarts crashed workers
-	 * - Handles graceful shutdown when requested
-	 * - Provides fault tolerance and automatic recovery
-	 *
-	 * @param {number} port - The port to listen on
-	 * @param {string} [host] - The host to bind to (defaults to '0.0.0.0' for production)
+	 * @param {number} port - Port to listen on
+	 * @param {string} [host] - Host to bind to (default: '0.0.0.0')
 	 * @returns {Promise<void>}
 	 */
 	async listen(port, host = "0.0.0.0") {
@@ -135,21 +104,16 @@ export class ClusteredServer extends NodeHttp {
 	}
 
 	/**
-	 * Gracefully shut down the clustered server.
-	 *
-	 * Stops accepting new connections and waits for existing requests
-	 * to complete before terminating all workers.
+	 * Gracefully shut down clustered server.
 	 *
 	 * @returns {Promise<void>}
 	 */
 	async close() {
 		if (cluster.isPrimary) {
 			await this.#shutdownPrimary();
-			// Also close the base HTTP server if it's running
 			try {
 				return await super.close();
 			} catch (error) {
-				// Server might already be closed, which is fine
 				if (error.code !== "ERR_SERVER_NOT_RUNNING") {
 					throw error;
 				}
@@ -160,21 +124,18 @@ export class ClusteredServer extends NodeHttp {
 	}
 
 	/**
-	 * Start the primary process and manage workers.
+	 * Start primary process and manage workers.
 	 *
-	 * @param {number} _port - The port to listen on
-	 * @param {string} _host - The host to bind to
+	 * @param {number} _port - Port to listen on
+	 * @param {string} _host - Host to bind to
 	 */
 	async #startPrimary(_port, _host) {
-		// Set up graceful shutdown handlers
 		this.#setupShutdownHandlers();
 
-		// Fork initial workers
 		for (let i = 0; i < this.#targetWorkers; i++) {
 			this.#forkWorker();
 		}
 
-		// Set up worker event handlers
 		const listeningListener = (
 			/** @type {any} */ worker,
 			/** @type {any} */ _address,
@@ -197,7 +158,6 @@ export class ClusteredServer extends NodeHttp {
 		cluster.on("exit", exitListener);
 		cluster.on("disconnect", disconnectListener);
 
-		// Store listeners for cleanup
 		this.#clusterListeners = [
 			{ event: "listening", listener: listeningListener },
 			{ event: "exit", listener: exitListener },
@@ -206,7 +166,7 @@ export class ClusteredServer extends NodeHttp {
 	}
 
 	/**
-	 * Fork a new worker process.
+	 * Fork new worker process.
 	 */
 	#forkWorker() {
 		if (this.#shuttingDown) return;
@@ -218,7 +178,7 @@ export class ClusteredServer extends NodeHttp {
 	/**
 	 * Handle worker exit events.
 	 *
-	 * @param {any} worker - The exited worker
+	 * @param {any} worker - Exited worker
 	 * @param {number} _code - Exit code
 	 * @param {string} _signal - Exit signal
 	 */
@@ -234,7 +194,6 @@ export class ClusteredServer extends NodeHttp {
 		const now = Date.now();
 		const timeSinceLastRestart = now - counter.lastRestart;
 
-		// Reset counter if outside restart window
 		if (timeSinceLastRestart > this.#clusterOptions.restartWindow) {
 			counter.count = 0;
 		}
@@ -242,7 +201,6 @@ export class ClusteredServer extends NodeHttp {
 		counter.count++;
 		counter.lastRestart = now;
 
-		// Check if we should restart the worker
 		if (
 			counter.count <= this.#clusterOptions.maxRestarts &&
 			!this.#shuttingDown
@@ -259,7 +217,7 @@ export class ClusteredServer extends NodeHttp {
 	/**
 	 * Handle worker disconnect events.
 	 *
-	 * @param {any} worker - The disconnected worker
+	 * @param {any} worker - Disconnected worker
 	 */
 	#handleWorkerDisconnect(worker) {
 		if (!worker || !worker.id) return;
@@ -268,9 +226,9 @@ export class ClusteredServer extends NodeHttp {
 	}
 
 	/**
-	 * Start health monitoring for a worker.
+	 * Start health monitoring for worker.
 	 *
-	 * @param {any} worker - The worker to monitor
+	 * @param {any} worker - Worker to monitor
 	 */
 	#startHealthCheck(worker) {
 		const timer = setInterval(() => {
@@ -279,7 +237,6 @@ export class ClusteredServer extends NodeHttp {
 				return;
 			}
 
-			// Send health check ping
 			worker.send({ type: "health_check" });
 		}, this.#clusterOptions.healthCheckInterval);
 
@@ -287,9 +244,9 @@ export class ClusteredServer extends NodeHttp {
 	}
 
 	/**
-	 * Stop health monitoring for a worker.
+	 * Stop health monitoring for worker.
 	 *
-	 * @param {any} worker - The worker to stop monitoring
+	 * @param {any} worker - Worker to stop monitoring
 	 */
 	#stopHealthCheck(worker) {
 		if (!worker || !worker.id) return;
@@ -334,39 +291,33 @@ export class ClusteredServer extends NodeHttp {
 	}
 
 	/**
-	 * Shutdown the primary process and all workers.
+	 * Shutdown primary process and all workers.
 	 *
 	 * @returns {Promise<void>}
 	 */
 	async #shutdownPrimary() {
-		// Stop accepting new connections
 		this.#shuttingDown = true;
 
-		// Stop health checks
 		for (const [_workerId, timer] of this.#healthTimers) {
 			clearInterval(timer);
 		}
 		this.#healthTimers.clear();
 
-		// Clean up cluster event listeners
 		this.#cleanupClusterListeners();
 
-		// Force kill all workers immediately for tests
-		// In production, you might want graceful shutdown
 		for (const [_id, worker] of Object.entries(cluster.workers)) {
 			if (worker && !worker.isDead()) {
 				worker.kill("SIGKILL");
 			}
 		}
 
-		// Wait for processes to terminate
 		await new Promise((resolve) => setTimeout(resolve, 100));
 	}
 
 	/**
 	 * Get current cluster statistics.
 	 *
-	 * @returns {import('./server-options.js').ClusterStats} Current cluster status
+	 * @returns {import('./server-options.js').ClusterStats} Cluster status
 	 */
 	getClusterStats() {
 		if (!cluster.isPrimary) {
