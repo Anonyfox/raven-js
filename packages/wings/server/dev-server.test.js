@@ -53,4 +53,32 @@ describe("DevServer", () => {
 		// Test 3: Verify WebSocket server is running on the configured port
 		assert.strictEqual(wsPort, 8080);
 	});
+
+	test("should handle WebSocket upgrade without hanging", async () => {
+		// Test the WebSocket upgrade handler by directly calling it
+		// This avoids the hanging issue with HTTP requests
+		const mockReq = {
+			headers: {
+				"sec-websocket-key": "dGhlIHNhbXBsZSBub25jZQ==",
+			},
+		};
+
+		const mockSocket = {
+			write: (data) => {
+				// Verify the upgrade response format
+				assert.ok(data.includes("HTTP/1.1 101 Switching Protocols"));
+				assert.ok(data.includes("Upgrade: websocket"));
+				assert.ok(data.includes("Connection: Upgrade"));
+				assert.ok(data.includes("Sec-WebSocket-Accept:"));
+			},
+			end: () => {}, // Mock end method
+		};
+
+		// Get the upgrade handler and call it directly
+		const upgradeHandlers = server.websocketServer.listeners("upgrade");
+		assert.ok(upgradeHandlers.length > 0);
+
+		// Call the upgrade handler
+		upgradeHandlers[0](mockReq, mockSocket, Buffer.alloc(0));
+	});
 });

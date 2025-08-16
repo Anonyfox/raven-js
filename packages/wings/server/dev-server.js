@@ -66,6 +66,7 @@ export class DevServer extends NodeHttp {
 			].join("\r\n");
 
 			socket.write(headers);
+			socket.end(); // Close the socket after writing headers
 		});
 		this.websocketServer.listen(this.websocketServerPort, () => {});
 	}
