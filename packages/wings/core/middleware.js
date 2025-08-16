@@ -36,7 +36,8 @@ export class Middleware {
 		}
 
 		this.#handler = handler;
-		this.#identifier = identifier;
+		// Convert non-string identifiers to strings, but keep null as null
+		this.#identifier = identifier !== null ? String(identifier) : null;
 	}
 
 	/**
@@ -64,9 +65,16 @@ export class Middleware {
 	 * @returns {boolean} True if both middlewares have the same non-null identifier
 	 */
 	hasSameIdentifier(other) {
-		if (!this.#identifier || !other.identifier) {
+		// Validate that other is a Middleware instance
+		if (!other || typeof other !== "object" || !(other instanceof Middleware)) {
 			return false;
 		}
+
+		// If either identifier is null, they're not the same
+		if (this.#identifier === null || other.identifier === null) {
+			return false;
+		}
+
 		return this.#identifier === other.identifier;
 	}
 
@@ -77,6 +85,11 @@ export class Middleware {
 	 * @returns {Promise<void>} Promise that resolves when the handler completes
 	 */
 	async execute(ctx) {
+		// Validate that ctx is a Context instance
+		if (!ctx || typeof ctx !== "object" || ctx.constructor.name !== "Context") {
+			throw new Error("Context must be a Context instance");
+		}
+
 		return await this.#handler(ctx);
 	}
 }

@@ -25,9 +25,9 @@ export class Route {
 		route.method = HTTP_METHODS.GET;
 		route.path = path;
 		route.handler = handler;
-		route.middleware = options.middleware || [];
-		route.constraints = options.constraints || {};
-		route.description = options.description || "";
+		route.middleware = (options?.middleware || []).filter(Boolean);
+		route.constraints = options?.constraints || {};
+		route.description = options?.description || "";
 		return route;
 	}
 
@@ -44,9 +44,9 @@ export class Route {
 		route.method = HTTP_METHODS.POST;
 		route.path = path;
 		route.handler = handler;
-		route.middleware = options.middleware || [];
-		route.constraints = options.constraints || {};
-		route.description = options.description || "";
+		route.middleware = (options?.middleware || []).filter(Boolean);
+		route.constraints = options?.constraints || {};
+		route.description = options?.description || "";
 		return route;
 	}
 
@@ -63,9 +63,9 @@ export class Route {
 		route.method = HTTP_METHODS.PUT;
 		route.path = path;
 		route.handler = handler;
-		route.middleware = options.middleware || [];
-		route.constraints = options.constraints || {};
-		route.description = options.description || "";
+		route.middleware = (options?.middleware || []).filter(Boolean);
+		route.constraints = options?.constraints || {};
+		route.description = options?.description || "";
 		return route;
 	}
 
@@ -82,9 +82,9 @@ export class Route {
 		route.method = HTTP_METHODS.DELETE;
 		route.path = path;
 		route.handler = handler;
-		route.middleware = options.middleware || [];
-		route.constraints = options.constraints || {};
-		route.description = options.description || "";
+		route.middleware = (options?.middleware || []).filter(Boolean);
+		route.constraints = options?.constraints || {};
+		route.description = options?.description || "";
 		return route;
 	}
 
@@ -101,9 +101,9 @@ export class Route {
 		route.method = HTTP_METHODS.PATCH;
 		route.path = path;
 		route.handler = handler;
-		route.middleware = options.middleware || [];
-		route.constraints = options.constraints || {};
-		route.description = options.description || "";
+		route.middleware = (options?.middleware || []).filter(Boolean);
+		route.constraints = options?.constraints || {};
+		route.description = options?.description || "";
 		return route;
 	}
 
@@ -120,9 +120,9 @@ export class Route {
 		route.method = HTTP_METHODS.HEAD;
 		route.path = path;
 		route.handler = handler;
-		route.middleware = options.middleware || [];
-		route.constraints = options.constraints || {};
-		route.description = options.description || "";
+		route.middleware = (options?.middleware || []).filter(Boolean);
+		route.constraints = options?.constraints || {};
+		route.description = options?.description || "";
 		return route;
 	}
 
@@ -139,9 +139,9 @@ export class Route {
 		route.method = HTTP_METHODS.OPTIONS;
 		route.path = path;
 		route.handler = handler;
-		route.middleware = options.middleware || [];
-		route.constraints = options.constraints || {};
-		route.description = options.description || "";
+		route.middleware = (options?.middleware || []).filter(Boolean);
+		route.constraints = options?.constraints || {};
+		route.description = options?.description || "";
 		return route;
 	}
 
@@ -171,19 +171,73 @@ export class Route {
 	 *
 	 * @type {import('./middleware.js').Handler[]}
 	 */
-	middleware = [];
+	_middleware = [];
 
 	/**
 	 * Parameter constraints for validation
 	 *
 	 * @type {Object.<string, any>}
 	 */
-	constraints = {};
+	_constraints = {};
 
 	/**
 	 * Route description for documentation
 	 *
 	 * @type {string}
 	 */
-	description = "";
+	_description = "";
+
+	/**
+	 * Setter for middleware that filters out null/undefined values
+	 *
+	 * @param {import('./middleware.js').Handler[]} value
+	 */
+	set middleware(value) {
+		this._middleware = Array.isArray(value) ? value.filter(Boolean) : [];
+	}
+
+	/**
+	 * Getter for middleware
+	 *
+	 * @returns {import('./middleware.js').Handler[]}
+	 */
+	get middleware() {
+		return this._middleware || [];
+	}
+
+	/**
+	 * Setter for constraints that handles null/undefined
+	 *
+	 * @param {Object.<string, any>} value
+	 */
+	set constraints(value) {
+		this._constraints = value && typeof value === "object" ? value : {};
+	}
+
+	/**
+	 * Getter for constraints
+	 *
+	 * @returns {Object.<string, any>}
+	 */
+	get constraints() {
+		return this._constraints || {};
+	}
+
+	/**
+	 * Setter for description that handles null/undefined
+	 *
+	 * @param {string} value
+	 */
+	set description(value) {
+		this._description = typeof value === "string" ? value : "";
+	}
+
+	/**
+	 * Getter for description
+	 *
+	 * @returns {string}
+	 */
+	get description() {
+		return this._description || "";
+	}
 }

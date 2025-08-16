@@ -62,6 +62,99 @@ describe("Trie", () => {
 			trie.register(["home", ":id", "details"], 6);
 			assert.equal(trie.fixed.home.dynamic.id.fixed.details.id, 6);
 		});
+
+		// Edge cases and potential issues
+		it("should not mutate the input array", () => {
+			const segments = ["home", "about"];
+			const originalSegments = [...segments];
+			trie.register(segments, 1);
+			assert.deepEqual(segments, originalSegments);
+		});
+
+		it("should handle wildcard in middle of route (should be invalid)", () => {
+			assert.throws(() => trie.register(["home", "*", "about"], 1), {
+				message: "Wildcard must be the last segment in a route",
+			});
+		});
+
+		it("should handle wildcard followed by more segments (should be invalid)", () => {
+			assert.throws(() => trie.register(["*", "more"], 1), {
+				message: "Wildcard must be the last segment in a route",
+			});
+		});
+
+		it("should handle duplicate parameter names in same route", () => {
+			trie.register([":id", ":id"], 1);
+			const result = trie.match(["123", "456"]);
+			assert.equal(result.id, 1);
+			assert.deepEqual(result.params, { id: "456" }); // Last one wins
+		});
+
+		it("should handle very deep nesting", () => {
+			const deepSegments = Array.from({ length: 100 }, (_, i) => `level${i}`);
+			trie.register(deepSegments, 1);
+			const result = trie.match(deepSegments);
+			assert.equal(result.id, 1);
+		});
+
+		it("should handle many routes efficiently", () => {
+			// Register 1000 routes
+			for (let i = 0; i < 1000; i++) {
+				trie.register([`route${i}`, `sub${i}`], i);
+			}
+
+			// Test a few random routes
+			assert.equal(trie.match(["route0", "sub0"]).id, 0);
+			assert.equal(trie.match(["route500", "sub500"]).id, 500);
+			assert.equal(trie.match(["route999", "sub999"]).id, 999);
+		});
+
+		it("should handle routes with same prefix but different endings", () => {
+			trie.register(["api", "v1", "users"], 1);
+			trie.register(["api", "v1", "posts"], 2);
+			trie.register(["api", "v2", "users"], 3);
+
+			assert.equal(trie.match(["api", "v1", "users"]).id, 1);
+			assert.equal(trie.match(["api", "v1", "posts"]).id, 2);
+			assert.equal(trie.match(["api", "v2", "users"]).id, 3);
+		});
+
+		it("should handle empty segments", () => {
+			trie.register(["", "empty"], 1);
+			const result = trie.match(["", "empty"]);
+			assert.equal(result.id, 1);
+		});
+
+		it("should handle segments with only whitespace", () => {
+			trie.register(["   ", "whitespace"], 1);
+			const result = trie.match(["   ", "whitespace"]);
+			assert.equal(result.id, 1);
+		});
+
+		it("should handle segments with special regex characters", () => {
+			const specialChars = ".*+?^$" + "{}()|[\\]";
+			trie.register([specialChars, "regex"], 1);
+			const result = trie.match([specialChars, "regex"]);
+			assert.equal(result.id, 1);
+		});
+
+		it("should handle segments with null bytes", () => {
+			trie.register(["\0", "null"], 1);
+			const result = trie.match(["\0", "null"]);
+			assert.equal(result.id, 1);
+		});
+
+		it("should handle segments with unicode surrogate pairs", () => {
+			trie.register(["🚀", "rocket"], 1);
+			const result = trie.match(["🚀", "rocket"]);
+			assert.equal(result.id, 1);
+		});
+
+		it("should handle segments with control characters", () => {
+			trie.register(["\t\n\r", "control"], 1);
+			const result = trie.match(["\t\n\r", "control"]);
+			assert.equal(result.id, 1);
+		});
 	});
 
 	describe("match", () => {
@@ -213,6 +306,94 @@ describe("Trie", () => {
 			wildcardTrie.register(["*"], 22);
 			const result = wildcardTrie.match(["anything"]);
 			assert.equal(result.id, 22);
+		});
+
+		// Additional edge cases for match
+		it("should handle partial matches correctly", () => {
+			trie.register(["api", "v1", "users"], 1);
+			trie.register(["api", "v1"], 2);
+
+			// Should match the exact route, not the partial one
+			const result = trie.match(["api", "v1", "users"]);
+			assert.equal(result.id, 1);
+		});
+
+		it("should handle wildcard with multiple path segments", () => {
+			trie.register(["api", "*"], 1);
+			const result = trie.match(["api", "v1", "users", "123", "posts"]);
+			assert.equal(result.id, 1);
+		});
+
+		it("should handle multiple dynamic parameters with same name", () => {
+			trie.register([":id", ":id"], 1);
+			const result = trie.match(["123", "456"]);
+			assert.equal(result.id, 1);
+			assert.deepEqual(result.params, { id: "456" }); // Last one wins
+		});
+
+		it("should handle case sensitivity correctly", () => {
+			trie.register(["Home"], 1);
+			trie.register(["home"], 2);
+
+			assert.equal(trie.match(["Home"]).id, 1);
+			assert.equal(trie.match(["home"]).id, 2);
+		});
+
+		it("should handle trailing slashes correctly", () => {
+			trie.register(["home", ""], 1);
+			trie.register(["home"], 2);
+
+			assert.equal(trie.match(["home", ""]).id, 1);
+			assert.equal(trie.match(["home"]).id, 2);
+		});
+
+		it("should handle params object mutation", () => {
+			const params = { existing: "value" };
+			trie.register([":id"], 1);
+			const result = trie.match(["123"], params);
+			assert.equal(result.id, 1);
+			assert.deepEqual(result.params, { existing: "value", id: "123" });
+		});
+
+		it("should handle very deep dynamic parameter nesting", () => {
+			const deepDynamic = Array.from({ length: 50 }, (_, i) => `:param${i}`);
+			trie.register(deepDynamic, 1);
+			const deepValues = Array.from({ length: 50 }, (_, i) => `value${i}`);
+			const result = trie.match(deepValues);
+			assert.equal(result.id, 1);
+
+			// Check that all parameters are captured
+			for (let i = 0; i < 50; i++) {
+				assert.equal(result.params[`param${i}`], `value${i}`);
+			}
+		});
+
+		it("should handle performance with many dynamic routes", () => {
+			// Create a fresh trie for this test to avoid conflicts
+			const freshTrie = new Trie();
+
+			// Register many dynamic routes
+			for (let i = 0; i < 100; i++) {
+				freshTrie.register([`:param${i}`], i);
+			}
+
+			// Test matching
+			const result = freshTrie.match(["testvalue"]);
+			assert.equal(result.id, 0); // Should match the first dynamic route
+			assert.deepEqual(result.params, { param0: "testvalue" });
+		});
+
+		it("should handle mixed priority correctly", () => {
+			trie.register(["users", "profile"], 1); // Fixed
+			trie.register(["users", ":id"], 2); // Dynamic
+			trie.register(["users", "*"], 3); // Wildcard
+
+			// Fixed should take priority
+			assert.equal(trie.match(["users", "profile"]).id, 1);
+			// Dynamic should match when fixed doesn't
+			assert.equal(trie.match(["users", "123"]).id, 2);
+			// Wildcard should match multiple segments
+			assert.equal(trie.match(["users", "123", "posts"]).id, 3);
 		});
 	});
 });

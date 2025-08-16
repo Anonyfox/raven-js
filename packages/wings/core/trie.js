@@ -72,19 +72,26 @@ export class Trie {
 	 * @param {number} id
 	 */
 	register(pathSegments, id) {
+		// Create a copy to avoid mutating the input array
+		const segments = [...pathSegments];
+
 		// stop recursion if there are no more path segments, this is a leaf node then
-		if (pathSegments.length === 0) {
+		if (segments.length === 0) {
 			this.id = id;
 			return;
 		}
 
 		// handle the next path segment
-		const segment = pathSegments.shift();
+		const segment = segments.shift();
 
-		// handle wildcard segment if it is the last segment
-		if (segment === "*" && pathSegments.length === 0) {
-			if (this.wildcard >= 0)
+		// handle wildcard segment - validate it's the last segment
+		if (segment === "*") {
+			if (segments.length > 0) {
+				throw new Error("Wildcard must be the last segment in a route");
+			}
+			if (this.wildcard >= 0) {
 				throw new Error("Only one wildcard per route segment is allowed");
+			}
 			this.wildcard = id;
 			return;
 		}
@@ -93,13 +100,13 @@ export class Trie {
 		if (segment.startsWith(":") || segment.startsWith("*")) {
 			const name = segment.slice(1); // empty string for wildcards suffices here
 			if (!this.dynamic[name]) this.dynamic[name] = new Trie(name);
-			this.dynamic[name].register(pathSegments, id);
+			this.dynamic[name].register(segments, id);
 			return;
 		}
 
 		// handle normal "static" segment
 		if (!this.fixed[segment]) this.fixed[segment] = new Trie(segment);
-		this.fixed[segment].register(pathSegments, id);
+		this.fixed[segment].register(segments, id);
 	}
 
 	/**

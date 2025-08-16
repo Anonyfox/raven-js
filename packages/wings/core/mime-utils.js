@@ -8,6 +8,7 @@ const mimeTypes = {
 	".json": "application/json",
 	".png": "image/png",
 	".jpg": "image/jpeg",
+	".jpeg": "image/jpeg", // Add jpeg extension
 	".gif": "image/gif",
 	".svg": "image/svg+xml",
 	".wav": "audio/wav",
@@ -42,11 +43,20 @@ export function getMimeType(filename) {
 		return "application/octet-stream";
 	}
 
-	const parts = filename.split(".");
+	// Trim whitespace from the filename
+	const trimmedFilename = filename.trim();
+
+	// Handle edge cases where trimming results in empty string
+	if (!trimmedFilename) {
+		return "application/octet-stream";
+	}
+
+	const parts = trimmedFilename.split(".");
 	if (parts.length < 2) {
 		return "application/octet-stream";
 	}
 
-	const ext = `.${parts.pop().toLowerCase()}`;
+	// Get the last part and trim any whitespace, then convert to lowercase
+	const ext = `.${parts.pop().trim().toLowerCase()}`;
 	return mimeTypes[ext] || "application/octet-stream";
 }
