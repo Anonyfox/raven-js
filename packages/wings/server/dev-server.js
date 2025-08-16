@@ -156,8 +156,6 @@ export class DevServer extends NodeHttp {
 		this.server.on("request", this.#handleRequest.bind(this));
 
 		return super.listen(port, host, () => {
-			console.log(`Dev server running at http://localhost:${port}`);
-			console.log("Use Ctrl+C to stop the server");
 			callback();
 		});
 	}
@@ -170,9 +168,13 @@ export class DevServer extends NodeHttp {
 	async close() {
 		// Close WebSocket server first
 		if (this.websocketServer) {
-			await new Promise((resolve) => {
-				this.websocketServer.close(() => resolve());
-			});
+			await Promise.race([
+				new Promise((resolve) => {
+					this.websocketServer.close(() => resolve());
+				}),
+				new Promise((resolve) => setTimeout(resolve, 500)),
+			]);
+			this.websocketServer = null;
 		}
 
 		// Then close main server
