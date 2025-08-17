@@ -98,8 +98,9 @@
  */
 
 export { ClusteredServer } from "./clustered-server.js";
+export { Compression } from "./compression.js";
 export { DevServer } from "./dev-server.js";
-export { Logger } from "./logger.js";
 export { generateSSLCert } from "./generate-ssl-cert.js";
+export { Logger } from "./logger.js";
 export * from "./node-http.js";
 export * from "./server-options.js";
