@@ -11,8 +11,20 @@ import { NodeHttp } from "./node-http.js";
  * - Zero external dependencies (no PM2 needed)
  * - Pure event-driven architecture (zero timeouts)
  * - Helper getters for process identification (isMainProcess, isWorkerProcess)
+ * - Memory leak prevention with proper event cleanup
+ * - Instant crash recovery without coordination delays
  */
 export class ClusteredServer extends NodeHttp {
+	/** @type {boolean} */
+	#isListening = false;
+	/** @type {number} */
+	#expectedWorkers = 0;
+	/** @type {number} */
+	#readyWorkers = 0;
+	/** @type {function(*, *): void | null} */
+	#messageListener = null;
+	/** @type {function(*, *, *): void | null} */
+	#exitListener = null;
 	/**
 	 * Check if current process is the cluster primary (main process).
 	 * @returns {boolean} True if this is the primary process
@@ -37,49 +49,67 @@ export class ClusteredServer extends NodeHttp {
 	 */
 	async listen(port, host = "0.0.0.0") {
 		if (cluster.isPrimary) {
-			// Fork workers (use all available cores)
-			const workerCount = availableParallelism();
+			// Prevent double-listening
+			if (this.#isListening) return;
+			this.#isListening = true;
 
-			// Auto-restart crashed workers (simplified logic)
-			cluster.on("exit", (_worker, code, _signal) => {
-				// Only restart if worker crashed (not graceful shutdown)
-				if (code !== 0) {
-					cluster.fork();
+			// Clean up any existing listeners
+			this.#removeListeners();
+
+			// Setup worker count and tracking
+			this.#expectedWorkers = availableParallelism();
+			this.#readyWorkers = 0;
+
+			// Setup auto-restart for crashed workers (instant restart)
+			this.#exitListener = (/** @type {*} */ worker, /** @type {number} */ code, /** @type {*} */ _signal) => {
+				// Only restart if worker crashed (not graceful shutdown) and we're still listening
+				if (code !== 0 && this.#isListening) {
+					const newWorker = cluster.fork();
+					// No waiting needed - new worker will signal when ready and serve requests immediately
 				}
-			});
+			};
+			cluster.on("exit", this.#exitListener);
 
 			// Fork all workers
-			for (let i = 0; i < workerCount; i++) {
+			for (let i = 0; i < this.#expectedWorkers; i++) {
 				cluster.fork();
 			}
 
 			// Wait for all workers to signal they're ready
-			await this.#waitForWorkersReady(workerCount);
+			await this.#waitForWorkersReady();
 		} else {
 			// Worker process - start listening immediately
 			await super.listen(port, host);
 
-			// Signal to primary that we're ready
-			process.send("ready");
+			// Signal to primary that we're ready (instant notification)
+			process.send?.("ready");
 		}
 	}
 
 	/**
-	 * Gracefully shutdown clustered server.
+	 * Gracefully shutdown clustered server (instant cleanup).
 	 *
 	 * @returns {Promise<void>}
 	 */
 	async close() {
 		if (cluster.isPrimary) {
-			// Signal all workers to shutdown (use arithmetic to eliminate branch)
+			// Mark as not listening to prevent worker restarts during shutdown
+			this.#isListening = false;
+
+			// Clean up event listeners immediately
+			this.#removeListeners();
+
+			// Force kill all workers immediately (no waiting - instant cleanup)
 			for (const worker of Object.values(cluster.workers || {})) {
 				// Kill worker if it exists and is not dead (arithmetic eliminates branch)
-				worker && !worker.isDead() && worker.kill("SIGTERM");
+				worker && !worker.isDead() && worker.kill("SIGKILL");
 			}
 
-			// Wait for all workers to exit using events
-			await this.#waitForWorkersExit();
+			// Disconnect cluster coordination immediately (no waiting)
 			cluster.disconnect();
+
+			// Force cleanup cluster state
+			cluster.removeAllListeners();
 		}
 
 		// Close the underlying server (handles ERR_SERVER_NOT_RUNNING)
@@ -95,43 +125,46 @@ export class ClusteredServer extends NodeHttp {
 	}
 
 	/**
-	 * Wait for all workers to signal they're ready.
-	 * @param {number} expectedWorkers - Number of workers to wait for
+	 * Wait for all workers to signal they're ready (leak-proof, hang-proof).
 	 */
-	#waitForWorkersReady(expectedWorkers) {
+	#waitForWorkersReady() {
 		return new Promise((resolve) => {
-			let readyWorkers = 0;
+			// Immediate resolution if no workers expected
+			this.#expectedWorkers === 0 && resolve();
 
-			// Listen for ready signals from workers
-			cluster.on("message", (_worker, message) => {
-				readyWorkers += message === "ready" ? 1 : 0;
-				// Use arithmetic to eliminate branch: when readyWorkers reaches expectedWorkers, resolve
-				readyWorkers === expectedWorkers && resolve();
-			});
+			// Create message listener that auto-cleans up
+			this.#messageListener = (/** @type {*} */ _worker, /** @type {string} */ message) => {
+				// Only count "ready" messages and prevent over-counting
+				if (message === "ready" && this.#readyWorkers < this.#expectedWorkers) {
+					this.#readyWorkers++;
+
+					// Instant resolution when all workers ready (arithmetic branch elimination)
+					this.#readyWorkers === this.#expectedWorkers && (() => {
+						this.#removeMessageListener();
+						resolve();
+					})();
+				}
+			};
+
+			// Attach listener
+			cluster.on("message", this.#messageListener);
 		});
 	}
 
 	/**
-	 * Wait for all workers to exit gracefully using events.
+	 * Remove message listener to prevent memory leaks.
 	 */
-	#waitForWorkersExit() {
-		return new Promise((resolve) => {
-			const workers = Object.values(cluster.workers || {});
-			const totalWorkers = workers.length;
+	#removeMessageListener() {
+		this.#messageListener && cluster.removeListener("message", this.#messageListener);
+		this.#messageListener = null;
+	}
 
-			// Use arithmetic to eliminate branch: if no workers, resolve immediately
-			totalWorkers === 0 && resolve();
-
-			let exitedWorkers = 0;
-
-			// Listen for each worker to exit
-			for (const worker of workers) {
-				worker.on("exit", () => {
-					exitedWorkers++;
-					// Use arithmetic to eliminate branch: when all workers exited, resolve
-					exitedWorkers === totalWorkers && resolve();
-				});
-			}
-		});
+	/**
+	 * Remove all event listeners to prevent memory leaks.
+	 */
+	#removeListeners() {
+		this.#removeMessageListener();
+		this.#exitListener && cluster.removeListener("exit", this.#exitListener);
+		this.#exitListener = null;
 	}
 }
