@@ -81,7 +81,7 @@ export class ClusteredServer extends NodeHttp {
 			await super.listen(port, host);
 
 			// Signal to primary that we're ready (instant notification)
-			process.send?.("ready");
+			process.send("ready");
 		}
 	}
 
@@ -99,9 +99,9 @@ export class ClusteredServer extends NodeHttp {
 			this.#removeListeners();
 
 			// Force kill all workers immediately (no waiting - instant cleanup)
-			for (const worker of Object.values(cluster.workers || {})) {
-				// Kill worker if it exists and is not dead (arithmetic eliminates branch)
-				worker && !worker.isDead() && worker.kill("SIGKILL");
+			for (const worker of Object.values(cluster.workers)) {
+				// Force kill worker immediately
+				worker.kill("SIGKILL");
 			}
 
 			// Disconnect cluster coordination immediately (no waiting)
@@ -128,12 +128,6 @@ export class ClusteredServer extends NodeHttp {
 	 */
 	#waitForWorkersReady() {
 		return new Promise((resolve) => {
-			// Immediate resolution if no workers expected (arithmetic branch elimination)
-			this.#expectedWorkers === 0 && (() => {
-				resolve();
-				return;
-			})();
-
 			// Create message listener that auto-cleans up
 			this.#messageListener = (/** @type {*} */ _worker, /** @type {string} */ message) => {
 				// Only count "ready" messages and prevent over-counting
