@@ -138,8 +138,18 @@ export async function createSelfSignedCertificate(keyPair, subject, validityDays
 	const now = new Date();
 	const notAfter = new Date(now.getTime() + (validityDays * 24 * 60 * 60 * 1000));
 
-	// Generate random serial number
-	const serialNumber = crypto.getRandomValues(new Uint8Array(16));
+	// Generate random serial number (use smaller size to avoid encoding issues)
+	const serialNumber = crypto.getRandomValues(new Uint8Array(8));
+
+
+
+	// Export public key to SPKI format
+	const spki = await crypto.subtle.exportKey('spki', keyPair.publicKey);
+
+	// Debug: Check SPKI algorithm
+	const spkiBytes = new Uint8Array(spki);
+	console.log("SPKI total length:", spki.byteLength);
+	console.log("SPKI bytes:", Array.from(spkiBytes).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
 
 	// Create TBS (To-Be-Signed) certificate structure
 	const tbs = createTBSCertificate(
@@ -148,7 +158,7 @@ export async function createSelfSignedCertificate(keyPair, subject, validityDays
 		subject, // issuer same as subject for self-signed
 		now,
 		notAfter,
-		await crypto.subtle.exportKey('spki', keyPair.publicKey)
+		spki
 	);
 
 	// Sign the TBS with private key
@@ -157,6 +167,8 @@ export async function createSelfSignedCertificate(keyPair, subject, validityDays
 		keyPair.privateKey,
 		tbs
 	);
+
+
 
 	// Create final certificate structure
 	const certificate = createCertificateStructure(tbs, signature);
@@ -186,21 +198,21 @@ export async function createSelfSignedCertificate(keyPair, subject, validityDays
  * @returns {ArrayBuffer} DER encoded TBS certificate
  */
 function createTBSCertificate(serialNumber, subject, issuer, notBefore, notAfter, publicKey) {
-	// This is a simplified ASN.1 encoding - in production you'd use a proper ASN.1 library
-	// For now, we'll create a basic X.509 v3 certificate structure
-
+	// X.509 v3 certificate structure
+	const version = encodeVersion();
 	const subjectName = encodeName(subject);
 	const issuerName = encodeName(issuer);
 	const validity = encodeValidity(notBefore, notAfter);
 	const subjectPublicKeyInfo = encodeSubjectPublicKeyInfo(publicKey);
 
 	// Combine all components into TBS structure
-	// This is a simplified version - proper ASN.1 encoding would be more complex
 	const tbsComponents = [
+		version,
 		encodeInteger(serialNumber),
-		subjectName,
+		encodeSequence([encodeObjectIdentifier('1.2.840.113549.1.1.11'), encodeNull()]), // sha256WithRSAEncryption
 		issuerName,
 		validity,
+		subjectName,
 		subjectPublicKeyInfo
 	];
 
@@ -218,12 +230,13 @@ function createTBSCertificate(serialNumber, subject, issuer, notBefore, notAfter
  * @returns {ArrayBuffer} DER encoded name
  */
 function encodeName(name) {
+	// X.509 name components should be in reverse order (most specific to least specific)
 	const components = [
 		{ type: 'CN', value: name.commonName },
 		{ type: 'O', value: name.organization },
-		{ type: 'C', value: name.country },
+		{ type: 'L', value: name.locality },
 		{ type: 'ST', value: name.state },
-		{ type: 'L', value: name.locality }
+		{ type: 'C', value: name.country }
 	];
 
 	const encodedComponents = components.map(comp =>
@@ -272,13 +285,63 @@ function encodeValidity(notBefore, notAfter) {
  * @returns {ArrayBuffer} DER encoded subject public key info
  */
 function encodeSubjectPublicKeyInfo(publicKey) {
-	// For RSA, the algorithm is rsaEncryption (1.2.840.113549.1.1.1)
+	// According to RFC 3279 Section 2.3.1, we need to extract the raw RSA public key
+	// and encode it as RSAPublicKey structure, then wrap it in BIT_STRING
+
+	// Parse the SPKI to extract the raw RSA public key
+	const spkiBytes = new Uint8Array(publicKey);
+
+	// Find the BIT_STRING containing the RSA public key
+	let offset = 0;
+
+	// Skip outer SEQUENCE
+	if (spkiBytes[offset] !== 0x30) throw new Error('Invalid SPKI structure');
+	offset++;
+
+	// Skip length
+	if (spkiBytes[offset] & 0x80) {
+		const numBytes = spkiBytes[offset] & 0x7F;
+		offset += numBytes + 1;
+	} else {
+		offset++;
+	}
+
+	// Skip algorithm SEQUENCE
+	if (spkiBytes[offset] !== 0x30) throw new Error('Invalid SPKI structure');
+	offset++;
+
+	// Skip algorithm length
+	if (spkiBytes[offset] & 0x80) {
+		const numBytes = spkiBytes[offset] & 0x7F;
+		offset += numBytes + 1;
+	} else {
+		offset++;
+	}
+
+	// Skip algorithm OID and NULL
+	while (offset < spkiBytes.length && spkiBytes[offset] !== 0x03) {
+		offset++;
+	}
+
+	// Extract the BIT_STRING containing the RSA public key
+	const bitStringBytes = spkiBytes.slice(offset);
+
+	// The BIT_STRING contains the DER-encoded RSAPublicKey
+	// We need to extract the actual RSA public key data (skip unused bits byte)
+	const rsaPublicKeyData = bitStringBytes.slice(1); // Skip unused bits byte
+
+	// The rsaPublicKeyData is already the RSAPublicKey structure that RFC 3279 requires
+	// We can use it directly as the subjectPublicKey in a BIT_STRING
+
+	// Create new subject public key info with correct algorithm
 	const algorithm = encodeSequence([
-		encodeObjectIdentifier('1.2.840.113549.1.1.1'),
+		encodeObjectIdentifier('1.2.840.113549.1.1.1'), // rsaEncryption
 		encodeNull()
 	]);
 
-	const subjectPublicKey = encodeBitString(publicKey);
+	// The rsaPublicKeyData is already the correct RSAPublicKey structure
+	// We need to wrap it in a BIT_STRING with 0 unused bits
+	const subjectPublicKey = encodeBitString(rsaPublicKeyData.buffer);
 
 	return encodeSequence([algorithm, subjectPublicKey]);
 }
@@ -295,10 +358,11 @@ function createCertificateStructure(tbs, signature) {
 		encodeNull()
 	]);
 
+	// Signature should be encoded as BIT STRING with 0 unused bits
 	const signatureValue = encodeBitString(signature);
 
 	return encodeSequence([
-		encodeSequence([tbs]), // TBS certificate
+		tbs, // TBS certificate (no extra wrapper)
 		signatureAlgorithm,
 		signatureValue
 	]);
@@ -324,7 +388,18 @@ export function encodeSequence(components) {
  * @returns {ArrayBuffer}
  */
 export function encodeInteger(value) {
-	const bytes = new Uint8Array(value);
+	// Handle sign bit correctly for DER encoding
+	let bytes = new Uint8Array(value);
+
+	// If the first bit is 1, we need to add a leading zero byte
+	// to ensure the integer is interpreted as positive
+	if (bytes.length > 0 && (bytes[0] & 0x80) !== 0) {
+		const newBytes = new Uint8Array(bytes.length + 1);
+		newBytes[0] = 0;
+		newBytes.set(bytes, 1);
+		bytes = newBytes;
+	}
+
 	return encodeTLV(0x02, bytes); // INTEGER tag
 }
 
@@ -343,11 +418,20 @@ export function encodeObjectIdentifier(oid) {
 			newBytes[bytes.length] = part;
 			bytes = newBytes;
 		} else {
-			// Handle larger numbers (simplified)
-			const newBytes = new Uint8Array(bytes.length + 2);
+			// Proper base-128 encoding for large numbers
+			const encoded = [];
+			let remaining = part;
+			while (remaining > 0) {
+				encoded.unshift(remaining & 0x7F);
+				remaining = remaining >>> 7;
+			}
+			// Set continuation bit on all but last byte
+			for (let j = 0; j < encoded.length - 1; j++) {
+				encoded[j] |= 0x80;
+			}
+			const newBytes = new Uint8Array(bytes.length + encoded.length);
 			newBytes.set(bytes);
-			newBytes[bytes.length] = 0x80 | (part >> 7);
-			newBytes[bytes.length + 1] = part & 0x7F;
+			newBytes.set(encoded, bytes.length);
 			bytes = newBytes;
 		}
 	}
@@ -368,7 +452,15 @@ export function encodePrintableString(value) {
  * @returns {ArrayBuffer}
  */
 export function encodeUTCTime(date) {
-	const str = `${date.toISOString().slice(0, -5)}Z`;
+	// UTCTime format: YYMMDDHHMMSSZ
+	const year = date.getUTCFullYear() % 100; // Last 2 digits
+	const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+	const day = String(date.getUTCDate()).padStart(2, '0');
+	const hour = String(date.getUTCHours()).padStart(2, '0');
+	const minute = String(date.getUTCMinutes()).padStart(2, '0');
+	const second = String(date.getUTCSeconds()).padStart(2, '0');
+
+	const str = `${year.toString().padStart(2, '0')}${month}${day}${hour}${minute}${second}Z`;
 	const bytes = new TextEncoder().encode(str);
 	return encodeTLV(0x17, bytes); // UTCTime tag
 }
@@ -378,6 +470,16 @@ export function encodeUTCTime(date) {
  */
 export function encodeNull() {
 	return encodeTLV(0x05, new Uint8Array(0)); // NULL tag
+}
+
+/**
+ * Encode certificate version (v3 = version 2)
+ * @returns {ArrayBuffer} DER encoded version
+ */
+export function encodeVersion() {
+	// X.509 v3 = version 2 (0-based)
+	const version = new Uint8Array([0x02]);
+	return encodeTLV(0xA0, version); // Context-specific tag 0
 }
 
 /**
@@ -392,6 +494,36 @@ export function encodeBitString(data) {
 }
 
 /**
+ * @param {ArrayBuffer} data
+ * @returns {ArrayBuffer}
+ */
+export function encodeOctetString(data) {
+	const bytes = new Uint8Array(data);
+	return encodeTLV(0x04, bytes); // OCTET STRING tag
+}
+
+/**
+ * Encode basic certificate extensions
+ * @returns {ArrayBuffer} DER encoded extensions
+ */
+export function encodeExtensions() {
+	// Basic extensions: key usage and subject key identifier
+	const keyUsage = encodeSequence([
+		encodeObjectIdentifier('2.5.29.15'), // keyUsage
+		encodeOctetString(encodeSequence([
+			encodeBitString(new Uint8Array([0x03, 0x02, 0x05, 0xA0]).buffer) // digitalSignature, keyEncipherment
+		]))
+	]);
+
+	const subjectKeyIdentifier = encodeSequence([
+		encodeObjectIdentifier('2.5.29.14'), // subjectKeyIdentifier
+		encodeOctetString(encodeOctetString(new Uint8Array([0x04, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]).buffer))
+	]);
+
+	return encodeSequence([keyUsage, subjectKeyIdentifier]);
+}
+
+/**
  * @param {number} tag
  * @param {Uint8Array} value
  * @returns {ArrayBuffer}
@@ -403,16 +535,18 @@ export function encodeTLV(tag, value) {
 	if (length < 128) {
 		lengthBytes = new Uint8Array([length]);
 	} else {
-		const lengthHex = length.toString(16);
-		const numBytes = Math.ceil(lengthHex.length / 2);
-		lengthBytes = new Uint8Array(numBytes + 1);
-		lengthBytes[0] = 0x80 | numBytes;
-		for (let i = 0; i < numBytes; i++) {
-			const start = Math.max(0, lengthHex.length - (numBytes - i) * 2);
-			const end = start + 2;
-			lengthBytes[i + 1] = parseInt(lengthHex.slice(start, end), 16);
+		// Convert length to big-endian bytes
+		const bytes = [];
+		let remaining = length;
+		while (remaining > 0) {
+			bytes.unshift(remaining & 0xFF);
+			remaining = remaining >>> 8;
 		}
+		// Add length-of-length byte
+		lengthBytes = new Uint8Array([0x80 | bytes.length, ...bytes]);
 	}
+
+
 
 	const result = new Uint8Array(1 + lengthBytes.length + value.length);
 	result[0] = tag;
