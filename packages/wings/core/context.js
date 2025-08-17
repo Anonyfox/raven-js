@@ -559,6 +559,53 @@ export class Context {
 	errors = [];
 
 	/**
+	 * Checks if the current response represents a "not found" condition.
+	 *
+	 * This helper method determines if the request resulted in a 404 Not Found
+	 * response, which is useful for conditional logic in middleware (like logging)
+	 * that needs to handle 404s differently from other responses.
+	 *
+	 * **Use Cases**:
+	 * - Logging middleware formatting 404s differently (e.g., yellow vs red)
+	 * - Analytics middleware tracking 404 patterns
+	 * - Custom error pages or redirect logic
+	 * - Conditional response transformation
+	 *
+	 * @returns {boolean} True if the response status code is 404
+	 *
+	 * @example
+	 * ```javascript
+	 * // In logging middleware
+	 * const loggingMiddleware = new Middleware((ctx) => {
+	 *   if (ctx.isNotFound()) {
+	 *     console.log(`⚠️  404 Not Found: ${ctx.method} ${ctx.path}`);
+	 *   } else if (ctx.errors.length > 0) {
+	 *     console.log(`❌ Error: ${ctx.method} ${ctx.path}`);
+	 *   } else {
+	 *     console.log(`✅ Success: ${ctx.method} ${ctx.path}`);
+	 *   }
+	 * });
+	 *
+	 * // In analytics middleware
+	 * const analyticsMiddleware = new Middleware((ctx) => {
+	 *   if (ctx.isNotFound()) {
+	 *     trackMissingRoute(ctx.path);
+	 *   }
+	 * });
+	 *
+	 * // In custom error page middleware
+	 * const errorPageMiddleware = new Middleware((ctx) => {
+	 *   if (ctx.isNotFound()) {
+	 *     ctx.html('<h1>Page Not Found</h1><p>The requested page does not exist.</p>');
+	 *   }
+	 * });
+	 * ```
+	 */
+	isNotFound() {
+		return this.responseStatusCode === 404;
+	}
+
+	/**
 	 * Internal list of middleware instances to execute before the main handler.
 	 *
 	 * These middleware are executed in FIFO order (first added, first executed).

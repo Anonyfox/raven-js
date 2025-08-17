@@ -7,6 +7,7 @@ import {
 	createDevelopmentLogLine,
 	createStructuredLog,
 	formatDuration,
+	formatErrorForDevelopment,
 	formatRequestId,
 	formatTimestamp,
 	generateRequestId,
@@ -153,6 +154,26 @@ describe("Logger Helper Functions", () => {
 			ip: null, userIdentity: null,
 		});
 		assert.strictEqual(microLog.result.duration, "500µs");
+
+		// Test with actual errors array
+		const errors = [
+			new Error("First error"),
+			new Error("Second error"),
+		];
+		const logWithErrors = createStructuredLog({
+			method: "GET", path: "/test", statusCode: 500, duration: 10,
+			userAgent: null, referrer: null, requestId: "test", timestamp: new Date(),
+			ip: "127.0.0.1", userIdentity: null, errors,
+		});
+
+		assert.strictEqual(logWithErrors.level, "error");
+		assert.strictEqual(logWithErrors.result.success, false);
+		assert.strictEqual(logWithErrors.errorCount, 2);
+		assert.strictEqual(logWithErrors.errors.length, 2);
+		assert.strictEqual(logWithErrors.errors[0].index, 1);
+		assert.strictEqual(logWithErrors.errors[0].message, "First error");
+		assert.strictEqual(logWithErrors.errors[1].index, 2);
+		assert.strictEqual(logWithErrors.errors[1].message, "Second error");
 	});
 
 	test("createDevelopmentLogLine formats output correctly", () => {
@@ -213,6 +234,48 @@ describe("Logger Helper Functions", () => {
 		} finally {
 			console.log = originalLog;
 		}
+	});
+
+	test("logDevelopment outputs errors with formatting", () => {
+		const logs = [];
+		const originalLog = console.log;
+		console.log = (...args) => logs.push(args.join(" "));
+
+		try {
+			const errors = [
+				new Error("First error"),
+				new Error("Second error"),
+			];
+
+			logDevelopment({
+				method: "GET", path: "/test", statusCode: 500, duration: 10,
+				userAgent: null, referrer: null, requestId: "test", timestamp: new Date(),
+				ip: "127.0.0.1", userIdentity: null,
+			}, false, errors);
+
+			assert.strictEqual(logs.length, 3); // 1 main line + 2 error lines
+			assert.match(logs[0], /\[500\]/); // Status code in main line
+			assert.match(logs[1], /\[Error 1\/2\]/); // First error with index
+			assert.match(logs[1], /First error/); // First error message
+			assert.match(logs[2], /\[Error 2\/2\]/); // Second error with index
+			assert.match(logs[2], /Second error/); // Second error message
+		} finally {
+			console.log = originalLog;
+		}
+	});
+
+	test("formatErrorForDevelopment formats errors correctly", () => {
+		const error = new Error("Test error message");
+
+		// Test single error
+		const singleErrorOutput = formatErrorForDevelopment(error, 0, 1);
+		assert.match(singleErrorOutput, /\[Error\]/); // No index for single error
+		assert.match(singleErrorOutput, /Test error message/);
+
+		// Test multiple errors
+		const multipleErrorOutput = formatErrorForDevelopment(error, 0, 3);
+		assert.match(multipleErrorOutput, /\[Error 1\/3\]/); // With index for multiple errors
+		assert.match(multipleErrorOutput, /Test error message/);
 	});
 });
 

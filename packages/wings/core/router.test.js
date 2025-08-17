@@ -774,5 +774,29 @@ describe("Router", () => {
 
 			assert.strictEqual(ctx.responseBody, "test");
 		});
+
+		it("should handle errors in after callbacks", async () => {
+			const handler = async (ctx) => {
+				ctx.responseBody = "test";
+			};
+
+			router.get("/test", handler);
+
+			const url = new URL("http://localhost/test");
+			const ctx = new Context(HTTP_METHODS.GET, url, new Headers());
+
+			// Add an after callback that throws an error
+			ctx.addAfterCallback(
+				new Middleware(async (_ctx) => {
+					throw new Error("After callback error");
+				}, "error-after"),
+			);
+
+			const result = await router.handleRequest(ctx);
+
+			assert.strictEqual(result, ctx);
+			assert.strictEqual(ctx.responseStatusCode, 500); // Should be 500 due to after callback error
+			assert.strictEqual(ctx.errors.length, 0); // Errors should be cleared after printing
+		});
 	});
 });

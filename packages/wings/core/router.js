@@ -739,15 +739,20 @@ export class Router {
 
 		// try to find a route that matches the request
 		const { route, params } = this.#match(ctx.method, ctx.path);
-		if (!route) return ctx.notFound();
 
-		// run the handler with the extracted pathParams
-		ctx.pathParams = params;
-		try {
-			await route.handler(ctx);
-		} catch (error) {
-			ctx.errors.push(error);
+		if (route) {
+			// run the handler with the extracted pathParams
+			ctx.pathParams = params;
+			try {
+				await route.handler(ctx);
+			} catch (error) {
+				ctx.errors.push(error);
+			}
+		} else {
+			// no route found - set 404 but don't return early
+			ctx.notFound();
 		}
+
 		if (ctx.responseEnded) return ctx;
 
 		// set 500 status if errors occurred, before running after callbacks

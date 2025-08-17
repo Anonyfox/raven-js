@@ -383,7 +383,7 @@ export function logDevelopment(logData, _includeHeaders, errors = []) {
 	const logLine = createDevelopmentLogLine(logData);
 	console.log(logLine);
 
-	// Log errors after the main request line for visibility
+	// Log errors after the main request line for visibility (red)
 	if (errors.length > 0) {
 		errors.forEach((error, index) => {
 			const errorLine = formatErrorForDevelopment(error, index, errors.length);
