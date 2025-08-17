@@ -269,9 +269,9 @@ export function collectLogData(ctx, startTime, requestId, timestamp) {
  *   user: {identity: string, ipAddress: string|null, userAgent: string|null},
  *   action: {method: string, path: string, referrer: string|null},
  *   result: {success: boolean, statusCode: number, duration: string, performance: string},
- *   audit: {requestId: string, source: string, environment: string},
+ *   audit: {requestId: string, source: string},
  *   compliance: Object,
- *   metadata: Object,
+ *   metadata: {service: string, version: string, environment: string, complianceReady: boolean},
  *   errors?: Array<{index: number, message: string, stack: string, name: string}>,
  *   errorCount?: number
  * }} Structured log entry
@@ -325,7 +325,6 @@ export function createStructuredLog({
 		audit: {
 			requestId,
 			source: "wings-server",
-			environment: process.env.NODE_ENV || "development",
 		},
 
 		// Compliance standard mappings
@@ -347,6 +346,7 @@ export function createStructuredLog({
 		metadata: {
 			service: "wings-server",
 			version: "1.0.0",
+			environment: process.env.NODE_ENV || "development",
 			complianceReady: true,
 		},
 	};
@@ -401,7 +401,7 @@ export function createDevelopmentLogLine(logData) {
 	const timeStr = formatTimestamp(logData.timestamp);
 
 	// Extract the performance color to apply to parentheses
-	const perfColor = durationStr.match(/\x1b\[\d+m\x1b\[\d+m/)?.[0] || "";
+	const perfColor = durationStr.match(/\x1b\[\d+m\x1b\[\d+m/)[0];
 	const resetColor = COLORS.reset;
 
 	return [
@@ -570,30 +570,28 @@ export function formatErrorForDevelopment(error, index, total) {
 			lines.push(`  ${COLORS.dim}Stack trace:${COLORS.reset}`);
 			relevantStack.forEach((line, i) => {
 				const trimmedLine = line.trim();
-				if (trimmedLine) {
-					const { formattedLine, isExternal } = formatStackTraceLine(trimmedLine, cwd);
+				const { formattedLine, isExternal } = formatStackTraceLine(trimmedLine, cwd);
 
-					// Determine if this is user code (not node_modules, not node:internal)
-					const isUserCode = !trimmedLine.includes('node_modules') && !trimmedLine.includes('node:internal');
+				// Determine if this is user code (not node_modules, not node:internal)
+				const isUserCode = !trimmedLine.includes('node_modules') && !trimmedLine.includes('node:internal');
 
-					// Choose colors and prefix
-					let color, prefix;
-					if (isExternal) {
-						// External packages: dimmed red
-						color = `${COLORS.dim}${COLORS.statusServerError}`;
-						prefix = '  ';
-					} else if (isUserCode) {
-						// User code: bright red with arrow
-						color = COLORS.statusServerError;
-						prefix = i === 0 ? '→ ' : '  ';
-					} else {
-						// Framework/internal code: dimmed
-						color = COLORS.dim;
-						prefix = '  ';
-					}
-
-					lines.push(`    ${color}${prefix}${formattedLine}${COLORS.reset}`);
+				// Choose colors and prefix
+				let color, prefix;
+				if (isExternal) {
+					// External packages: dimmed red
+					color = `${COLORS.dim}${COLORS.statusServerError}`;
+					prefix = '  ';
+				} else if (isUserCode) {
+					// User code: bright red with arrow
+					color = COLORS.statusServerError;
+					prefix = i === 0 ? '→ ' : '  ';
+				} else {
+					// Framework/internal code: dimmed
+					color = COLORS.dim;
+					prefix = '  ';
 				}
+
+				lines.push(`    ${color}${prefix}${formattedLine}${COLORS.reset}`);
 			});
 		}
 	}
