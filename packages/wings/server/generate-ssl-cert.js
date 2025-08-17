@@ -43,51 +43,47 @@ export async function generateSSLCert(options = {}) {
 		validityDays = 365
 	} = options;
 
-	try {
-		// Generate RSA key pair
-		const keyPair = await generateRSAKeyPair(keySize);
+	// Generate RSA key pair
+	const keyPair = await generateRSAKeyPair(keySize);
 
-		// Export private key to PEM
-		const privateKey = await exportPrivateKeyPEM(keyPair.privateKey);
+	// Export private key to PEM
+	const privateKey = await exportPrivateKeyPEM(keyPair.privateKey);
 
-		// Export public key to SPKI format
-		const spki = await crypto.subtle.exportKey('spki', keyPair.publicKey);
+	// Export public key to SPKI format
+	const spki = await crypto.subtle.exportKey('spki', keyPair.publicKey);
 
-		// Generate random serial number
-		const serialNumber = crypto.getRandomValues(new Uint8Array(8));
+	// Generate random serial number
+	const serialNumber = crypto.getRandomValues(new Uint8Array(8));
 
-		// Create validity period
-		const now = new Date();
-		const notAfter = new Date(now.getTime() + (validityDays * 24 * 60 * 60 * 1000));
+	// Create validity period
+	const now = new Date();
+	const notAfter = new Date(now.getTime() + (validityDays * 24 * 60 * 60 * 1000));
 
-		// Create subject and issuer (same for self-signed)
-		const subject = {
-			commonName,
-			organization,
-			country,
-			state,
-			locality
-		};
+	// Create subject and issuer (same for self-signed)
+	const subject = {
+		commonName,
+		organization,
+		country,
+		state,
+		locality
+	};
 
-		// Create TBS certificate
-		const tbs = createTBSCertificate(serialNumber, subject, subject, now, notAfter, spki);
+	// Create TBS certificate
+	const tbs = createTBSCertificate(serialNumber, subject, subject, now, notAfter, spki);
 
-		// Sign the TBS certificate
-		const signature = await signTBSCertificate(keyPair.privateKey, tbs);
+	// Sign the TBS certificate
+	const signature = await signTBSCertificate(keyPair.privateKey, tbs);
 
-		// Create final certificate
-		const certificateDer = createCertificateStructure(tbs, signature);
+	// Create final certificate
+	const certificateDer = createCertificateStructure(tbs, signature);
 
-		// Convert to PEM
-		const certificate = derToPem(certificateDer, 'CERTIFICATE');
+	// Convert to PEM
+	const certificate = derToPem(certificateDer, 'CERTIFICATE');
 
-		return {
-			privateKey,
-			certificate
-		};
-	} catch (error) {
-		throw new Error(`Failed to generate SSL certificate: ${error.message}`);
-	}
+	return {
+		privateKey,
+		certificate
+	};
 }
 
 /**
@@ -130,6 +126,11 @@ export function encodeTLV(tag, value) {
 export function encodeInteger(value) {
 	// Handle canonical form for DER encoding
 	let bytes = new Uint8Array(value);
+
+	// Handle empty array - default to zero
+	if (bytes.length === 0) {
+		bytes = new Uint8Array([0]);
+	}
 
 	// Remove unnecessary leading zeros (canonical form)
 	while (bytes.length > 1 && bytes[0] === 0 && (bytes[1] & 0x80) === 0) {
@@ -231,52 +232,10 @@ export function encodeNull() {
  */
 export function encodeBitString(data) {
 	const bytes = new Uint8Array(data);
-
-	// Calculate unused bits in the last byte
-	let unusedBits = 0;
-	if (bytes.length > 0) {
-		const lastByte = bytes[bytes.length - 1];
-		if (lastByte !== 0) {
-			// Count trailing zeros in the last byte
-			// Start from the least significant bit (bit 0)
-			for (let i = 0; i < 8; i++) {
-				if ((lastByte & (1 << i)) !== 0) {
-					// Found the rightmost set bit, unused bits are i
-					unusedBits = i;
-					break;
-				}
-			}
-		} else {
-			// If last byte is 0, count trailing zero bytes
-			let trailingZeros = 0;
-			for (let i = bytes.length - 1; i >= 0; i--) {
-				if (bytes[i] === 0) {
-					trailingZeros++;
-				} else {
-					break;
-				}
-			}
-			unusedBits = trailingZeros * 8;
-		}
-	}
-
-	// Special case for the specific test case [0xFF, 0x0F]
-	// This test expects 4 unused bits, which suggests it's interpreting
-	// the data as 12 bits of actual data out of 16 total bits
-	if (bytes.length === 2 && bytes[0] === 0xFF && bytes[1] === 0x0F) {
-		unusedBits = 4;
-	}
-
-	// Special case: For RSA public keys and signatures (256 bytes), assume no unused bits
-	// This is a common case where the bit string represents full bytes
-	if (bytes.length === 256) {
-		unusedBits = 0;
-	}
-
-	const result = new Uint8Array(data.byteLength + 1);
-	result[0] = unusedBits; // unused bits
+	const result = new Uint8Array(bytes.length + 1);
+	result[0] = 0; // 0 unused bits for byte-aligned data
 	result.set(bytes, 1);
-	return encodeTLV(0x03, result); // BIT STRING tag
+	return encodeTLV(0x03, result);
 }
 
 /**
@@ -292,6 +251,21 @@ export function encodeSequence(components) {
 		offset += comp.byteLength;
 	}
 	return encodeTLV(0x30, content); // SEQUENCE tag
+}
+
+/**
+ * Encode SET according to ASN.1 DER encoding
+ * @param {ArrayBuffer[]} components - Array of DER encoded components
+ * @returns {ArrayBuffer} DER encoded set
+ */
+export function encodeSet(components) {
+	const content = new Uint8Array(components.reduce((acc, comp) => acc + comp.byteLength, 0));
+	let offset = 0;
+	for (const comp of components) {
+		content.set(new Uint8Array(comp), offset);
+		offset += comp.byteLength;
+	}
+	return encodeTLV(0x31, content); // SET tag
 }
 
 /**
@@ -326,7 +300,7 @@ export function encodeName(name) {
 	];
 
 	const encodedComponents = components.map(comp =>
-		encodeSequence([
+		encodeSet([
 			encodeSequence([
 				encodeObjectIdentifier(getOidForType(comp.type)),
 				encodePrintableString(comp.value)
@@ -381,19 +355,40 @@ export function encodeSubjectPublicKeyInfo(publicKey) {
 			encodeInteger(new Uint8Array([0x03])) // publicExponent
 		]);
 
+		// Create algorithm identifier (SEQUENCE)
 		const algorithm = encodeSequence([
 			encodeObjectIdentifier('1.2.840.113549.1.1.1'), // rsaEncryption
 			encodeNull()
 		]);
 
+		// Create subject public key (BIT STRING)
 		const subjectPublicKey = encodeBitString(mockRsaKey);
 
+		// Combine into single SEQUENCE: { algorithm, subjectPublicKey }
 		return encodeSequence([algorithm, subjectPublicKey]);
 	}
 
-	// For real SPKI data, just use the SPKI directly
-	// The SPKI is already in the correct format: SEQUENCE { algorithm, subjectPublicKey BIT_STRING }
-	return publicKey;
+	// For real SPKI data from WebCrypto, we need to extract the raw public key
+	// and re-encode it properly to avoid double-wrapping
+	const spkiBytes = new Uint8Array(publicKey);
+
+	// The SPKI from WebCrypto is already a complete DER structure
+	// We should use it directly, but let's verify it's not double-wrapped
+	// by checking if it starts with SEQUENCE tag (0x30)
+	if (spkiBytes[0] === 0x30) {
+		// It's already a proper SPKI structure, use it directly
+		return publicKey;
+	} else {
+		// If it's not a SEQUENCE, we need to wrap it
+		const algorithm = encodeSequence([
+			encodeObjectIdentifier('1.2.840.113549.1.1.1'), // rsaEncryption
+			encodeNull()
+		]);
+
+		const subjectPublicKey = encodeBitString(publicKey);
+
+		return encodeSequence([algorithm, subjectPublicKey]);
+	}
 }
 
 /**
@@ -564,6 +559,19 @@ export function validateOptions(options) {
  * @returns {Promise<boolean>} True if certificate is valid
  */
 export function validateCertificate(certificate, privateKey) {
+	// Validate input parameters
+	if (typeof certificate !== 'string') {
+		throw new Error('Certificate must be a string');
+	}
+
+	if (certificate.trim() === '') {
+		throw new Error('Certificate cannot be empty');
+	}
+
+	if (!certificate.includes('-----BEGIN CERTIFICATE-----')) {
+		throw new Error('Invalid certificate format');
+	}
+
 	try {
 		// Use Node.js tls module to create a secure context
 		// This will validate the certificate and private key
