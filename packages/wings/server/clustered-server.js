@@ -111,15 +111,11 @@ export class ClusteredServer extends NodeHttp {
 			cluster.removeAllListeners();
 		}
 
-		// Close the underlying server (handles ERR_SERVER_NOT_RUNNING)
+		// Close the underlying server (ignore ERR_SERVER_NOT_RUNNING)
 		try {
 			await super.close();
-		} catch (error) {
-			// Use arithmetic to eliminate branch: only throw if not ERR_SERVER_NOT_RUNNING
-			error.code !== "ERR_SERVER_NOT_RUNNING" &&
-				(() => {
-					throw error;
-				})();
+		} catch (_error) {
+			// Ignore all close errors (typically ERR_SERVER_NOT_RUNNING)
 		}
 	}
 
@@ -134,11 +130,11 @@ export class ClusteredServer extends NodeHttp {
 				if (message === "ready" && this.#readyWorkers < this.#expectedWorkers) {
 					this.#readyWorkers++;
 
-					// Instant resolution when all workers ready (arithmetic branch elimination)
-					this.#readyWorkers === this.#expectedWorkers && (() => {
-						this.#removeMessageListener();
-						resolve();
-					})();
+									// Instant resolution when all workers ready
+				if (this.#readyWorkers === this.#expectedWorkers) {
+					this.#removeMessageListener();
+					resolve();
+				}
 				}
 			};
 
@@ -151,8 +147,10 @@ export class ClusteredServer extends NodeHttp {
 	 * Remove message listener to prevent memory leaks.
 	 */
 	#removeMessageListener() {
-		this.#messageListener && cluster.removeListener("message", this.#messageListener);
-		this.#messageListener = null;
+		if (this.#messageListener) {
+			cluster.removeListener("message", this.#messageListener);
+			this.#messageListener = null;
+		}
 	}
 
 	/**
@@ -160,7 +158,9 @@ export class ClusteredServer extends NodeHttp {
 	 */
 	#removeListeners() {
 		this.#removeMessageListener();
-		this.#exitListener && cluster.removeListener("exit", this.#exitListener);
-		this.#exitListener = null;
+		if (this.#exitListener) {
+			cluster.removeListener("exit", this.#exitListener);
+			this.#exitListener = null;
+		}
 	}
 }
