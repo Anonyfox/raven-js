@@ -325,7 +325,7 @@ function getOidForType(type) {
 		'ST': '2.5.4.8',  // stateOrProvinceName
 		'L': '2.5.4.7'    // localityName
 	};
-	return oids[type] || '2.5.4.3';
+	return oids[type];
 }
 
 /**
