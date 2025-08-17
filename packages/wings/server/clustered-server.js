@@ -10,8 +10,24 @@ import { NodeHttp } from "./node-http.js";
  * - Automatic worker restart on crashes
  * - Zero external dependencies (no PM2 needed)
  * - Pure event-driven architecture (zero timeouts)
+ * - Helper getters for process identification (isMainProcess, isWorkerProcess)
  */
 export class ClusteredServer extends NodeHttp {
+	/**
+	 * Check if current process is the cluster primary (main process).
+	 * @returns {boolean} True if this is the primary process
+	 */
+	get isMainProcess() {
+		return cluster.isPrimary;
+	}
+
+	/**
+	 * Check if current process is a worker process (child process).
+	 * @returns {boolean} True if this is a worker process
+	 */
+	get isWorkerProcess() {
+		return !cluster.isPrimary;
+	}
 	/**
 	 * Start clustered server with automatic worker management.
 	 *

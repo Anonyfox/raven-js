@@ -147,6 +147,8 @@ await server.listen(3000);
 
 **Logger Middleware**: Request logging with colored terminal output (development) or structured JSON (production). Includes performance indicators (⚡🚀🐌), request tracing, and compliance standards (SOC2, ISO 27001, GDPR).
 
+**ClusteredServer Helpers**: `isMainProcess` and `isWorkerProcess` getters for process identification in clustered environments.
+
 ### CLI Module
 
 ```javascript
