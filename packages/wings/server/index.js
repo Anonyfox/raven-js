@@ -29,11 +29,18 @@
  * - Production: Structured JSON logging (SOC2, ISO 27001, GDPR compliant)
  * - Use with `router.useEarly(new Logger())` when using server adapters
  *
+ * ## Utilities
+ *
+ * **generateSSLCert** - Self-signed SSL certificate generator
+ * - Creates RSA key pairs and X.509 certificates for HTTPS development
+ * - Uses native Node.js WebCrypto API and ASN.1 encoding
+ * - Returns PEM-formatted private key and certificate
+ *
  * ## Quick Start
  *
  * ```javascript
  * import { Router } from '@ravenjs/wings/core';
- * import { DevServer, ClusteredServer, Logger } from '@ravenjs/wings/server';
+ * import { DevServer, ClusteredServer, Logger, generateSSLCert } from '@ravenjs/wings/server';
  *
  * const router = new Router();
  *
@@ -48,9 +55,10 @@
  * const devServer = new DevServer(router);
  * await devServer.listen(3000);
  *
- * // Production
+ * // Production with HTTPS
+ * const { privateKey, certificate } = await generateSSLCert();
  * const server = new ClusteredServer(router);
- * await server.listen(3000);
+ * await server.listen(3000, { key: privateKey, cert: certificate });
  * ```
  *
  * ## Environment-Specific Setup
@@ -65,5 +73,6 @@
 export { ClusteredServer } from "./clustered-server.js";
 export { DevServer } from "./dev-server.js";
 export { Logger } from "./logger.js";
+export { generateSSLCert } from "./generate-ssl-cert.js";
 export * from "./node-http.js";
 export * from "./server-options.js";
