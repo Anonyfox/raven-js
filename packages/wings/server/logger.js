@@ -1,20 +1,43 @@
 import { Middleware } from "../core/middleware.js";
 
 /**
- * ANSI color codes for terminal output
+ * RavenJS color palette for terminal output
+ * Designed for readability with black backgrounds and proper contrast
  */
 const COLORS = {
 	reset: "\x1b[0m",
+
+	// Text colors
 	bright: "\x1b[1m",
 	dim: "\x1b[2m",
-	red: "\x1b[31m",
-	green: "\x1b[32m",
-	yellow: "\x1b[33m",
-	blue: "\x1b[34m",
-	magenta: "\x1b[35m",
-	cyan: "\x1b[36m",
 	white: "\x1b[37m",
-	gray: "\x1b[90m",
+	black: "\x1b[30m",
+
+	// Method with black backgrounds for perfect readability
+	methodGet: "\x1b[92m\x1b[40m",    // Bright green on black
+	methodPost: "\x1b[94m\x1b[40m",   // Bright blue on black
+	methodPut: "\x1b[93m\x1b[40m",    // Bright yellow on black
+	methodDelete: "\x1b[91m\x1b[40m", // Bright red on black
+	methodPatch: "\x1b[95m\x1b[40m",  // Bright magenta on black
+	methodOther: "\x1b[97m\x1b[40m",  // Bright white on black
+
+	// Status with black backgrounds and colored text
+	statusSuccess: "\x1b[92m\x1b[40m",     // Bright green on black
+	statusRedirect: "\x1b[96m\x1b[40m",    // Bright cyan on black
+	statusClientError: "\x1b[93m\x1b[40m", // Bright yellow on black
+	statusServerError: "\x1b[91m\x1b[40m", // Bright red on black
+	statusOther: "\x1b[97m\x1b[40m",       // Bright white on black
+
+	// Performance highlighting (black background, bright colors)
+	perfExcellent: "\x1b[92m\x1b[40m",     // Bright green on black
+	perfGood: "\x1b[96m\x1b[40m",          // Bright cyan on black
+	perfSlow: "\x1b[93m\x1b[40m",          // Bright yellow on black
+	perfVerySlow: "\x1b[91m\x1b[40m",      // Bright red on black
+
+	// Path and other elements
+	path: "\x1b[96m",        // Bright cyan
+	time: "\x1b[90m",        // Gray
+	requestId: "\x1b[90m",   // Gray
 };
 
 /**
@@ -25,60 +48,82 @@ export function generateRequestId() {
 	return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
+
+
 /**
- * Get status code color for terminal output
+ * Get status code color with background for terminal output
  * @param {number} statusCode - HTTP status code
- * @returns {string} ANSI color code
+ * @returns {string} ANSI color code with background
  */
 export function getStatusColor(statusCode) {
-	if (statusCode >= 200 && statusCode < 300) return COLORS.green;
-	if (statusCode >= 300 && statusCode < 400) return COLORS.blue;
-	if (statusCode >= 400 && statusCode < 500) return COLORS.yellow;
-	if (statusCode >= 500 && statusCode < 600) return COLORS.red;
-	return COLORS.white;
+	if (statusCode >= 200 && statusCode < 300) return COLORS.statusSuccess;
+	if (statusCode >= 300 && statusCode < 400) return COLORS.statusRedirect;
+	if (statusCode >= 400 && statusCode < 500) return COLORS.statusClientError;
+	if (statusCode >= 500 && statusCode < 600) return COLORS.statusServerError;
+	return COLORS.statusOther;
 }
 
 /**
- * Get HTTP method color for terminal output
+ * Get HTTP method color with background for terminal output
  * @param {string} method - HTTP method
- * @returns {string} ANSI color code
+ * @returns {string} ANSI color code with background
  */
 export function getMethodColor(method) {
 	switch (method.toUpperCase()) {
 		case "GET":
-			return COLORS.green;
+			return COLORS.methodGet;
 		case "POST":
-			return COLORS.blue;
+			return COLORS.methodPost;
 		case "PUT":
-			return COLORS.yellow;
+			return COLORS.methodPut;
 		case "DELETE":
-			return COLORS.red;
+			return COLORS.methodDelete;
 		case "PATCH":
-			return COLORS.magenta;
+			return COLORS.methodPatch;
 		default:
-			return COLORS.white;
+			return COLORS.methodOther;
 	}
 }
 
 /**
- * Format duration with performance indicators for modern dev experience
+ * Format duration with performance indicators that POP visually
  * @param {number} duration - Duration in milliseconds
- * @returns {string} Colored duration string with performance indicator
+ * @returns {string} High-contrast duration string with performance indicator
  */
 export function formatDuration(duration) {
+	let value, unit, icon, color;
+
 	if (duration < 1) {
-		return `${COLORS.bright}${COLORS.green}${duration.toFixed(3)}ms${COLORS.reset} ${COLORS.dim}⚡${COLORS.reset}`;
+		// Microseconds
+		value = Math.round(duration * 1000);
+		unit = "µs";
+		icon = "⚡";
+		color = COLORS.perfExcellent;
+	} else if (duration < 1000) {
+		// Milliseconds
+		value = Math.round(duration);
+		unit = "ms";
+		if (duration < 10) {
+			icon = "⚡";
+			color = COLORS.perfExcellent;
+		} else if (duration < 100) {
+			icon = "✓";
+			color = COLORS.perfGood;
+		} else {
+			icon = "⚠";
+			color = COLORS.perfSlow;
+		}
+	} else {
+		// Seconds
+		value = Math.round(duration / 1000);
+		unit = "s ";  // Extra space for visual alignment with µs/ms
+		icon = "⚠";
+		color = COLORS.perfVerySlow;
 	}
-	if (duration < 10) {
-		return `${COLORS.green}${duration}ms${COLORS.reset} ${COLORS.dim}🚀${COLORS.reset}`;
-	}
-	if (duration < 100) {
-		return `${COLORS.cyan}${duration}ms${COLORS.reset} ${COLORS.dim}⚡${COLORS.reset}`;
-	}
-	if (duration < 500) {
-		return `${COLORS.yellow}${duration}ms${COLORS.reset} ${COLORS.dim}🐌${COLORS.reset}`;
-	}
-	return `${COLORS.red}${duration}ms${COLORS.reset} ${COLORS.dim}🐌${COLORS.reset}`;
+
+	// Format: icon + space + right-aligned 3-digit number + space + unit
+	const formattedValue = value.toString().padStart(3);
+	return `${color}${icon} ${formattedValue} ${unit}${COLORS.reset}`;
 }
 
 /**
@@ -102,7 +147,7 @@ export function formatDuration(duration) {
  */
 export function collectLogData(ctx, startTime, requestId, timestamp) {
 	const endTime = performance.now();
-	const duration = Math.round(endTime - startTime);
+	const duration = endTime - startTime;
 
 	return {
 		method: ctx.method,
@@ -175,7 +220,7 @@ export function createStructuredLog({
 		result: {
 			success: isSuccess,
 			statusCode,
-			duration: `${duration}ms`,
+			duration: duration < 1 ? `${Math.round(duration * 1000)}µs` : `${Math.round(duration)}ms`,
 			performance:
 				duration < 10 ? "excellent" : duration < 100 ? "good" : "slow",
 		},
@@ -223,14 +268,14 @@ export function formatTimestamp(timestamp) {
 /**
  * Format request ID for development log output
  * @param {string} requestId - Full request ID
- * @returns {string} Short request ID (without timestamp)
+ * @returns {string} Clean, short request ID
  */
 export function formatRequestId(requestId) {
 	return requestId.split("-")[1];
 }
 
 /**
- * Create development log line with colors and formatting
+ * Create clean development log line with RavenJS styling
  * @param {Object} logData - Log data object
  * @param {string} logData.method - HTTP method
  * @param {string} logData.path - Request path
@@ -238,22 +283,24 @@ export function formatRequestId(requestId) {
  * @param {number} logData.duration - Request duration
  * @param {string} logData.requestId - Request ID
  * @param {Date} logData.timestamp - Request timestamp
- * @returns {string} Formatted log line
+ * @returns {string} Clean, readable log line
  */
 export function createDevelopmentLogLine(logData) {
 	const methodColor = getMethodColor(logData.method);
 	const statusColor = getStatusColor(logData.statusCode);
 	const durationStr = formatDuration(logData.duration);
 	const timeStr = formatTimestamp(logData.timestamp);
-	const shortRequestId = formatRequestId(logData.requestId);
+
+	// Extract the performance color to apply to parentheses
+	const perfColor = durationStr.match(/\x1b\[\d+m\x1b\[\d+m/)?.[0] || "";
+	const resetColor = COLORS.reset;
 
 	return [
-		`${COLORS.dim}${COLORS.gray}${timeStr}${COLORS.reset}`,
-		`${methodColor}${logData.method.padEnd(6)}${COLORS.reset}`,
-		`${COLORS.cyan}${logData.path}${COLORS.reset}`,
-		`${statusColor}${logData.statusCode}${COLORS.reset}`,
-		`${durationStr}`,
-		`${COLORS.dim}${COLORS.gray}#${shortRequestId}${COLORS.reset}`,
+		`${COLORS.time}${timeStr}${COLORS.reset}`,
+		`${statusColor}[${logData.statusCode}]${COLORS.reset}`,
+		`${perfColor}(${resetColor}${durationStr}${perfColor})${COLORS.reset}`,
+		`${methodColor}${logData.method}${COLORS.reset}`,
+		`${COLORS.path}${logData.path}${COLORS.reset}`,
 	].join(" ");
 }
 
@@ -277,7 +324,7 @@ export function logProduction(logData) {
 }
 
 /**
- * Log development colored output
+ * Log clean development output (no clutter)
  * @param {Object} logData - Log data object
  * @param {string} logData.method - HTTP method
  * @param {string} logData.path - Request path
@@ -289,21 +336,14 @@ export function logProduction(logData) {
  * @param {Date} logData.timestamp - Request timestamp
  * @param {string} logData.ip - Client IP address
  * @param {string|null} logData.userIdentity - User identity
- * @param {boolean} includeHeaders - Whether to include header information
+ * @param {boolean} _includeHeaders - Whether to include header information (unused - keeping for compatibility)
  */
-export function logDevelopment(logData, includeHeaders) {
+export function logDevelopment(logData, _includeHeaders) {
 	const logLine = createDevelopmentLogLine(logData);
 	console.log(logLine);
 
-	// Additional debug info in development
-	if (includeHeaders && logData.userAgent) {
-		console.log(
-			`${COLORS.dim}  User-Agent: ${logData.userAgent}${COLORS.reset}`,
-		);
-	}
-	if (includeHeaders && logData.referrer) {
-		console.log(`${COLORS.dim}  Referrer: ${logData.referrer}${COLORS.reset}`);
-	}
+	// No additional clutter - clean RavenJS style
+	// User-Agent and Referrer are typically not useful in development
 }
 
 /**
