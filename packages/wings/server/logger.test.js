@@ -300,6 +300,9 @@ describe("Logger Helper Functions", () => {
 		assert.match(joinedCustomOutput, /Additional properties:/);
 		assert.match(joinedCustomOutput, /code:.*CUSTOM_CODE/);
 		assert.match(joinedCustomOutput, /statusCode:.*400/);
+
+		// Test that paths are formatted nicely (should contain relative paths)
+		assert.match(joinedOutput, /\.\//); // Should contain relative path formatting
 	});
 });
 

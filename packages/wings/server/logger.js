@@ -352,6 +352,76 @@ export function logProduction(logData, errors = []) {
 }
 
 /**
+ * Format a stack trace line with intelligent path formatting
+ * @param {string} line - Raw stack trace line
+ * @param {string} cwd - Current working directory
+ * @returns {{formattedLine: string, isExternal: boolean}} Formatted line with smart path handling
+ */
+function formatStackTraceLine(line, cwd) {
+	// Handle lines with parentheses (e.g., "at function (file:///path/to/file.js:10:5)")
+	const parenthesesMatch = line.match(/\((file:\/\/\/[^)]+)\)/);
+	if (parenthesesMatch) {
+		return formatFileUrl(line, parenthesesMatch[1], parenthesesMatch[0], cwd, true);
+	}
+
+	// Handle lines without parentheses (e.g., "at async file:///path/to/file.js:10:5")
+	const directMatch = line.match(/(file:\/\/\/\S+)/);
+	if (directMatch) {
+		return formatFileUrl(line, directMatch[1], directMatch[1], cwd, false);
+	}
+
+	return { formattedLine: line, isExternal: false };
+}
+
+function formatFileUrl(line, fileUrl, replaceTarget, cwd, hasParentheses) {
+	const pathAndNumbers = fileUrl.replace('file:///', '');
+
+	// Extract line and column numbers
+	const lineColMatch = pathAndNumbers.match(/^(.+):(\d+):(\d+)$/);
+	if (!lineColMatch) return { formattedLine: line, isExternal: false };
+
+	const [, fullPath, lineNumber] = lineColMatch;
+	let formattedPath = fullPath;
+	let isExternal = false;
+
+	// Check if it's a relative path from current working directory
+	// Ensure we have proper path comparison with leading slash
+	const normalizedFullPath = fullPath.startsWith('/') ? fullPath : `/${fullPath}`;
+	if (normalizedFullPath.startsWith(cwd)) {
+		const relativePath = normalizedFullPath.slice(cwd.length + 1); // +1 to remove leading slash
+		formattedPath = `./${relativePath}`;
+	}
+	// Check if it's from node_modules
+	else if (normalizedFullPath.includes('/node_modules/')) {
+		const nodeModulesIndex = normalizedFullPath.lastIndexOf('/node_modules/');
+		const packagePath = normalizedFullPath.slice(nodeModulesIndex + 14); // 14 = '/node_modules/'.length
+		const packageParts = packagePath.split('/');
+
+		// Handle scoped packages (e.g., @org/package)
+		let packageName, relativePath;
+		if (packageParts[0].startsWith('@')) {
+			packageName = `${packageParts[0]}/${packageParts[1]}`;
+			relativePath = packageParts.slice(2).join('/');
+		} else {
+			packageName = packageParts[0];
+			relativePath = packageParts.slice(1).join('/');
+		}
+
+		formattedPath = `[${packageName}] ${relativePath}`;
+		isExternal = true;
+	}
+
+	// Create the new formatted section: "path line:XX"
+	const formattedSection = `${formattedPath} line:${lineNumber}`;
+
+	// Replace based on whether it has parentheses or not
+	const replacement = hasParentheses ? `(${formattedSection})` : formattedSection;
+	const formattedLine = line.replace(replaceTarget, replacement);
+
+	return { formattedLine, isExternal };
+}
+
+/**
  * Format error message for development output with red color and full details
  * @param {Error} error - Error object to format
  * @param {number} index - Error index (for multiple errors)
@@ -361,6 +431,7 @@ export function logProduction(logData, errors = []) {
 export function formatErrorForDevelopment(error, index, total) {
 	const errorPrefix = total > 1 ? `[Error ${index + 1}/${total}]` : '[Error]';
 	const lines = [];
+	const cwd = process.cwd();
 
 	// Main error line with type and message
 	const errorType = error.name || 'Error';
@@ -378,11 +449,28 @@ export function formatErrorForDevelopment(error, index, total) {
 			relevantStack.forEach((line, i) => {
 				const trimmedLine = line.trim();
 				if (trimmedLine) {
-					// Highlight the actual error location (usually the first non-node_modules line)
+					const { formattedLine, isExternal } = formatStackTraceLine(trimmedLine, cwd);
+
+					// Determine if this is user code (not node_modules, not node:internal)
 					const isUserCode = !trimmedLine.includes('node_modules') && !trimmedLine.includes('node:internal');
-					const color = isUserCode ? COLORS.statusServerError : COLORS.dim;
-					const prefix = i === 0 && isUserCode ? '→ ' : '  ';
-					lines.push(`    ${color}${prefix}${trimmedLine}${COLORS.reset}`);
+
+					// Choose colors and prefix
+					let color, prefix;
+					if (isExternal) {
+						// External packages: dimmed red
+						color = `${COLORS.dim}${COLORS.statusServerError}`;
+						prefix = '  ';
+					} else if (isUserCode) {
+						// User code: bright red with arrow
+						color = COLORS.statusServerError;
+						prefix = i === 0 ? '→ ' : '  ';
+					} else {
+						// Framework/internal code: dimmed
+						color = COLORS.dim;
+						prefix = '  ';
+					}
+
+					lines.push(`    ${color}${prefix}${formattedLine}${COLORS.reset}`);
 				}
 			});
 		}
