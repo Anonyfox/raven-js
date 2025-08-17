@@ -52,6 +52,12 @@
  * - Production: Structured JSON logging (SOC2, ISO 27001, GDPR compliant)
  * - Use with `router.useEarly(new Logger())` when using server adapters
  *
+ * **CORS** - Cross-Origin Resource Sharing made simple
+ * - Standards-compliant CORS implementation (RFC 6454, WHATWG CORS)
+ * - Automatic preflight OPTIONS request handling
+ * - Flexible origin configuration (strings, arrays, regexes, functions)
+ * - Security-first design with credential validation
+ *
  * ## Utilities
  *
  * **generateSSLCert** - Self-signed SSL certificate generator
@@ -64,12 +70,13 @@
  *
  * ```javascript
  * import { Router } from '@ravenjs/wings/core';
- * import { DevServer, ClusteredServer, Logger, generateSSLCert } from '@ravenjs/wings/server';
+ * import { DevServer, ClusteredServer, Logger, CORS, generateSSLCert } from '@ravenjs/wings/server';
  *
  * const router = new Router();
  *
- * // Add logging middleware
+ * // Add middleware
  * router.useEarly(new Logger());
+ * router.use(new CORS());
  *
  * router.get('/api/users', (ctx) => {
  *   ctx.json({ users: [] });
@@ -99,6 +106,7 @@
 
 export { ClusteredServer } from "./clustered-server.js";
 export { Compression } from "./compression.js";
+export { CORS } from "./cors.js";
 export { DevServer } from "./dev-server.js";
 export { generateSSLCert } from "./generate-ssl-cert.js";
 export { Logger } from "./logger.js";
