@@ -1,4 +1,5 @@
 import http from "node:http";
+import https from "node:https";
 import { Context, Router } from "../core/index.js";
 import { readBody } from "./read-body.js";
 
@@ -15,8 +16,8 @@ import "./server-options.js";
  */
 export class NodeHttp {
 	/**
-	 * NodeJS http server instance.
-	 * @type {import('node:http').Server}
+	 * NodeJS http/https server instance.
+	 * @type {import('node:http').Server | import('node:https').Server}
 	 * @readonly
 	 */
 	#server;
@@ -36,6 +37,13 @@ export class NodeHttp {
 	#options;
 
 	/**
+	 * Whether SSL/HTTPS mode is enabled.
+	 * @type {boolean}
+	 * @readonly
+	 */
+	#isSSL;
+
+	/**
 	 * Create a new NodeJS HTTP server instance.
 	 *
 	 * @param {Router} router - Wings router to handle requests
@@ -52,7 +60,19 @@ export class NodeHttp {
 			...options,
 		};
 
-		this.#server = http.createServer(this.#handleRequest.bind(this));
+		// Detect SSL mode - both certificate and private key must be provided
+		this.#isSSL = Boolean(this.#options.sslCertificate && this.#options.sslPrivateKey);
+
+		// Create server based on SSL detection
+		if (this.#isSSL) {
+			const sslOptions = {
+				key: this.#options.sslPrivateKey,
+				cert: this.#options.sslCertificate,
+			};
+			this.#server = https.createServer(sslOptions, this.#handleRequest.bind(this));
+		} else {
+			this.#server = http.createServer(this.#handleRequest.bind(this));
+		}
 
 		// Apply configuration options
 		this.#server.timeout = this.#options.timeout;
@@ -61,15 +81,15 @@ export class NodeHttp {
 	}
 
 	/**
-	 * Convert HTTP request to Wings Context.
+	 * Convert HTTP/HTTPS request to Wings Context.
 	 *
-	 * @param {http.IncomingMessage} req - HTTP request
+	 * @param {http.IncomingMessage} req - HTTP/HTTPS request
 	 * @returns {Promise<Context>} Wings context
 	 * @protected
 	 */
 	async createContext(req) {
-		// HTTP protocol is always "http" since this is an HTTP server, not HTTPS
-		const protocol = "http";
+		// Dynamically detect protocol based on SSL mode
+		const protocol = this.#isSSL ? "https" : "http";
 		// Host header is always present in Node.js HTTP client requests
 		const host = req.headers.host;
 		const url = new URL(`${protocol}://${host}${req.url}`);
@@ -189,5 +209,14 @@ export class NodeHttp {
 	 */
 	get options() {
 		return { ...this.#options };
+	}
+
+	/**
+	 * Check if SSL/HTTPS mode is enabled.
+	 *
+	 * @returns {boolean} True if server is running in HTTPS mode
+	 */
+	get isSSL() {
+		return this.#isSSL;
 	}
 }

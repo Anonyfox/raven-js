@@ -1,4 +1,4 @@
-import { ClusteredServer, DevServer, Logger } from "@ravenjs/wings/server";
+import { ClusteredServer, DevServer, Logger, generateSSLCert } from "@ravenjs/wings/server";
 import { router } from "./src/index.js";
 
 const port = 3000;
@@ -15,7 +15,7 @@ function isProduction() {
 /**
  * Setup development environment
  */
-function setupDevelopment() {
+async function setupDevelopment() {
 	// Development: Colored terminal output with performance indicators
 	router.useEarly(new Logger());
 
@@ -30,17 +30,27 @@ function setupDevelopment() {
 }
 
 /**
- * Setup production environment
+ * Setup production environment with HTTPS
  */
-function setupProduction() {
+async function setupProduction() {
 	// Production: Structured JSON logging for compliance
 	router.useEarly(new Logger({ production: true, includeHeaders: false }));
 
-	const server = new ClusteredServer(router);
+	// Generate SSL certificate on demand - Raven philosophy: it just works
+	const { privateKey, certificate } = await generateSSLCert({
+		commonName: 'localhost',
+		organization: 'Hello World Production'
+	});
+
+	const server = new ClusteredServer(router, {
+		sslCertificate: certificate,
+		sslPrivateKey: privateKey
+	});
 
 	// Only log from the main process to avoid duplicate messages
 	if (server.isMainProcess) {
-		console.log(`🚀 Hello World server running at http://localhost:${port}`);
+		console.log(`🚀 Hello World server running at https://localhost:${port}`);
+		console.log(`🔒 HTTPS enabled with auto-generated certificate`);
 		console.log(`📊 Structured JSON logging enabled for compliance`);
 		console.log(`🔧 Environment: Production`);
 	}
@@ -48,6 +58,5 @@ function setupProduction() {
 	return server;
 }
 
-// Start the appropriate server based on environment
-const server = isProduction() ? setupProduction() : setupDevelopment();
+const server = isProduction() ? await setupProduction() : await setupDevelopment();
 server.listen(port).catch(console.error);

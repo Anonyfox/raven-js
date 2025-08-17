@@ -12,7 +12,7 @@
  * @param {string} [options.locality='Development'] - City/locality
  * @param {number} [options.keySize=2048] - RSA key size in bits (must be 2048 or 4096)
  * @param {number} [options.validityDays=365] - Certificate validity in days
- * @returns {Promise<Object>} Object containing private key and certificate as PEM strings
+ * @returns {Promise<{privateKey: string, certificate: string}>} Object containing private key and certificate as PEM strings
  * @throws {TypeError} When options are invalid
  * @throws {Error} When certificate generation fails
  *

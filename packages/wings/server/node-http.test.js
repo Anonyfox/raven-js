@@ -1,9 +1,11 @@
 import assert from "node:assert";
 import http from "node:http";
+import https from "node:https";
 import net from "node:net";
 import { describe, test } from "node:test";
 import { Router } from "../core/index.js";
 import { NodeHttp } from "./node-http.js";
+import { generateSSLCert } from "./generate-ssl-cert.js";
 
 describe("NodeHttp", () => {
 	test("should create server with options", () => {
@@ -539,7 +541,145 @@ describe("NodeHttp", () => {
 			process.env.HOST = originalHost;
 		}
 	});
+
+	describe("SSL/HTTPS support", () => {
+		test("should create HTTP server when no SSL options provided", () => {
+			const router = new Router();
+			const server = new NodeHttp(router);
+
+			assert.strictEqual(server.isSSL, false);
+			assert.ok(server.server instanceof http.Server);
+		});
+
+		test("should create HTTP server when only one SSL option provided", () => {
+			const router = new Router();
+
+			// Only certificate provided
+			const server1 = new NodeHttp(router, { sslCertificate: "cert" });
+			assert.strictEqual(server1.isSSL, false);
+
+			// Only private key provided
+			const server2 = new NodeHttp(router, { sslPrivateKey: "key" });
+			assert.strictEqual(server2.isSSL, false);
+		});
+
+		test("should create HTTPS server when both SSL options provided", async () => {
+			const router = new Router();
+			const { privateKey, certificate } = await generateSSLCert();
+
+			const server = new NodeHttp(router, {
+				sslCertificate: certificate,
+				sslPrivateKey: privateKey,
+			});
+
+			assert.strictEqual(server.isSSL, true);
+			assert.ok(server.server instanceof https.Server);
+		});
+
+		test("should handle HTTPS requests correctly", async () => {
+			const router = new Router();
+			router.get("/test", (ctx) => {
+				// Simple test to verify HTTPS server works
+				ctx.json({ message: "HTTPS working", isSSL: true });
+			});
+
+			const { privateKey, certificate } = await generateSSLCert();
+			const server = new NodeHttp(router, {
+				sslCertificate: certificate,
+				sslPrivateKey: privateKey,
+			});
+
+			const port = await getAvailablePort();
+			await server.listen(port);
+
+			try {
+				const response = await makeHTTPSRequest("GET", `https://localhost:${port}/test`, null, {
+					rejectUnauthorized: false // Accept self-signed certificates for testing
+				});
+
+				assert.strictEqual(response.statusCode, 200);
+				const data = JSON.parse(response.body);
+				assert.strictEqual(data.message, "HTTPS working");
+				assert.strictEqual(data.isSSL, true);
+			} finally {
+				await server.close();
+			}
+		});
+
+		test("should include SSL options in options getter", async () => {
+			const router = new Router();
+			const { privateKey, certificate } = await generateSSLCert();
+
+			const server = new NodeHttp(router, {
+				sslCertificate: certificate,
+				sslPrivateKey: privateKey,
+				timeout: 45000,
+			});
+
+			const options = server.options;
+			assert.strictEqual(options.sslCertificate, certificate);
+			assert.strictEqual(options.sslPrivateKey, privateKey);
+			assert.strictEqual(options.timeout, 45000);
+		});
+	});
 });
+
+/**
+ * Helper function to get an available port
+ * @returns {Promise<number>} Available port number
+ */
+async function getAvailablePort() {
+	return new Promise((resolve) => {
+		const server = net.createServer();
+		server.listen(0, () => {
+			const port = server.address().port;
+			server.close(() => resolve(port));
+		});
+	});
+}
+
+/**
+ * Helper function to make HTTPS requests
+ * @param {string} method - HTTP method
+ * @param {string} url - Full URL (including protocol)
+ * @param {string|null} body - Request body
+ * @param {object} options - Additional options for https.request
+ * @returns {Promise<{statusCode: number, headers: object, body: string}>}
+ */
+async function makeHTTPSRequest(method, url, body, options = {}) {
+	return new Promise((resolve, reject) => {
+		const parsedUrl = new URL(url);
+		const requestOptions = {
+			hostname: parsedUrl.hostname,
+			port: parsedUrl.port,
+			path: parsedUrl.pathname + parsedUrl.search,
+			method,
+			...options,
+		};
+
+		const req = https.request(requestOptions, (res) => {
+			let responseBody = "";
+			res.on("data", (chunk) => {
+				responseBody += chunk;
+			});
+			res.on("end", () => {
+				resolve({
+					statusCode: res.statusCode,
+					headers: res.headers,
+					body: responseBody,
+				});
+			});
+		});
+
+		req.on("error", reject);
+
+		if (body) {
+			req.write(body);
+		}
+
+		req.end();
+	});
+}
 
 /**
  * Helper function to make HTTP requests to the test server.

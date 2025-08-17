@@ -43,6 +43,8 @@
  * @property {number} [keepAliveTimeout=5000] - Keep-alive timeout in milliseconds. How long to keep idle connections open. Lower values free resources faster, higher values reduce connection overhead.
  * @property {number} [maxHeadersCount=2000] - Maximum number of headers allowed per request. Protects against header-based attacks. Lower values are more secure but may break some clients.
  * @property {number} [websocketPort=3456] - WebSocket server port for development features like live reload (DevServer only). Ignored by other server implementations.
+ * @property {string} [sslCertificate] - SSL certificate in PEM format. When provided with sslPrivateKey, enables HTTPS mode. Server will use https.createServer() instead of http.createServer().
+ * @property {string} [sslPrivateKey] - SSL private key in PEM format. When provided with sslCertificate, enables HTTPS mode. Server will use https.createServer() instead of http.createServer().
  * @property {number} [workers] - Number of worker processes to spawn (clustering only). Defaults to available CPU cores when clustering is enabled. Ignored by single-process servers.
  * @property {number} [healthCheckInterval=30000] - Health check interval in milliseconds (clustering only). Monitors worker health and detects stuck workers. Ignored by single-process servers.
  * @property {number} [maxRestarts=5] - Maximum worker restarts before giving up (clustering only). Prevents infinite restart loops from crashing workers. Ignored by single-process servers.
@@ -114,6 +116,19 @@
  *   maxRestarts: 3,               // Fewer restart attempts
  *   restartWindow: 300000,        // 5 minute restart window
  *   gracefulShutdownTimeout: 120000 // 2 minute graceful shutdown
+ * };
+ *
+ * // HTTPS configuration (requires both certificate and private key)
+ * const httpsOptions = {
+ *   // HTTP options
+ *   timeout: 30000,         // Standard timeout
+ *   keepAlive: true,        // Enable keep-alive
+ *   keepAliveTimeout: 5000, // Standard keep-alive timeout
+ *   maxHeadersCount: 2000,  // Standard header limits
+ *
+ *   // SSL options
+ *   sslCertificate: '-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----',
+ *   sslPrivateKey: '-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----'
  * };
  * ```
  */

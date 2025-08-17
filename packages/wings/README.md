@@ -32,7 +32,12 @@ npm install @raven-js/wings
 
 ```javascript
 import { Router } from "@raven-js/wings/core";
-import { DevServer, ClusteredServer, Logger } from "@raven-js/wings/server";
+import {
+  DevServer,
+  ClusteredServer,
+  Logger,
+  generateSSLCert,
+} from "@raven-js/wings/server";
 
 // Define routes once
 const router = new Router();
@@ -54,11 +59,38 @@ await server.listen(3000);
 
 ## Server Implementations
 
-**DevServer** - Development with live-reload. WebSocket-based browser reload. For file watching: `node --watch-path=./src boot.js`. Server restart triggers browser reload automatically.
+**DevServer** - Development with live-reload and HTTPS support. WebSocket-based browser reload that actually works. For file watching: `node --watch-path=./src boot.js`. Server restart triggers browser reload automatically. Built-in HTTPS support for testing real-world scenarios.
 
-**ClusteredServer** - Production with scaling. Uses all CPU cores for horizontal scaling. Automatically restarts crashed workers. Zero logging by default to prevent disk filling.
+**ClusteredServer** - Production scaling without the complexity. Uses all CPU cores for horizontal scaling. Automatically restarts crashed workers (no PM2 needed). Zero logging by default to prevent disk filling. HTTPS support with same simple API as HTTP.
 
-**NodeHttp** - Base class (extend for custom implementations). NOT meant for direct use. Lightweight with zero dependencies.
+**NodeHttp** - Base class that gets out of your way. NOT meant for direct use (extend for custom implementations). Lightweight with zero dependencies. HTTP/HTTPS detection built-in, no special configuration.
+
+## HTTPS Support
+
+Every server supports HTTPS with two simple options. No certificates? Generate them in one line. Need custom certificates? Just pass them in. It's that simple.
+
+```javascript
+import {
+  DevServer,
+  ClusteredServer,
+  generateSSLCert,
+} from "@raven-js/wings/server";
+
+// Generate certificates (development)
+const { privateKey, certificate } = await generateSSLCert();
+const server = new DevServer(router, {
+  sslCertificate: certificate,
+  sslPrivateKey: privateKey,
+});
+await server.listen(3000); // https://localhost:3000
+
+// Production with your certificates
+const prodServer = new ClusteredServer(router, {
+  sslCertificate: fs.readFileSync("cert.pem", "utf8"),
+  sslPrivateKey: fs.readFileSync("key.pem", "utf8"),
+});
+await prodServer.listen(443);
+```
 
 ## CLI Routing
 
@@ -127,7 +159,12 @@ router.get("/api/users/:id", (ctx) => ctx.json({ id: ctx.params.id }));
 
 ```javascript
 import { Router } from "@raven-js/wings/core";
-import { DevServer, ClusteredServer, Logger } from "@raven-js/wings/server";
+import {
+  DevServer,
+  ClusteredServer,
+  Logger,
+  generateSSLCert,
+} from "@raven-js/wings/server";
 
 const router = new Router();
 
@@ -136,9 +173,17 @@ router.useEarly(new Logger());
 
 router.get("/api/users", (ctx) => ctx.json({ users: [] }));
 
-// Development
+// Development (HTTP)
 const devServer = new DevServer(router);
 await devServer.listen(3000);
+
+// Development (HTTPS)
+const { privateKey, certificate } = await generateSSLCert();
+const httpsServer = new DevServer(router, {
+  sslCertificate: certificate,
+  sslPrivateKey: privateKey,
+});
+await httpsServer.listen(3000);
 
 // Production
 const server = new ClusteredServer(router);
