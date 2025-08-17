@@ -253,12 +253,21 @@ describe("Logger Helper Functions", () => {
 				ip: "127.0.0.1", userIdentity: null,
 			}, false, errors);
 
-			assert.strictEqual(logs.length, 3); // 1 main line + 2 error lines
+			// Should have 1 main line + multiple error detail lines
+			assert.ok(logs.length > 3); // More lines due to detailed error formatting
 			assert.match(logs[0], /\[500\]/); // Status code in main line
-			assert.match(logs[1], /\[Error 1\/2\]/); // First error with index
-			assert.match(logs[1], /First error/); // First error message
-			assert.match(logs[2], /\[Error 2\/2\]/); // Second error with index
-			assert.match(logs[2], /Second error/); // Second error message
+
+			// Find error lines (they start with 2 spaces for indentation)
+			const errorLines = logs.filter(line => line.startsWith('  '));
+			assert.ok(errorLines.length > 0); // Should have indented error lines
+
+			// Check that error details are included
+			const allErrorOutput = logs.join('\n');
+			assert.match(allErrorOutput, /\[Error 1\/2\]/); // First error with index
+			assert.match(allErrorOutput, /First error/); // First error message
+			assert.match(allErrorOutput, /\[Error 2\/2\]/); // Second error with index
+			assert.match(allErrorOutput, /Second error/); // Second error message
+			assert.match(allErrorOutput, /Stack trace:/); // Should include stack traces
 		} finally {
 			console.log = originalLog;
 		}
@@ -269,13 +278,28 @@ describe("Logger Helper Functions", () => {
 
 		// Test single error
 		const singleErrorOutput = formatErrorForDevelopment(error, 0, 1);
-		assert.match(singleErrorOutput, /\[Error\]/); // No index for single error
-		assert.match(singleErrorOutput, /Test error message/);
+		assert.ok(Array.isArray(singleErrorOutput)); // Returns array of lines
+		const joinedOutput = singleErrorOutput.join('\n');
+		assert.match(joinedOutput, /\[Error\]/); // No index for single error
+		assert.match(joinedOutput, /Test error message/);
+		assert.match(joinedOutput, /Stack trace:/); // Should include stack trace
 
 		// Test multiple errors
 		const multipleErrorOutput = formatErrorForDevelopment(error, 0, 3);
-		assert.match(multipleErrorOutput, /\[Error 1\/3\]/); // With index for multiple errors
-		assert.match(multipleErrorOutput, /Test error message/);
+		assert.ok(Array.isArray(multipleErrorOutput)); // Returns array of lines
+		const joinedMultipleOutput = multipleErrorOutput.join('\n');
+		assert.match(joinedMultipleOutput, /\[Error 1\/3\]/); // With index for multiple errors
+		assert.match(joinedMultipleOutput, /Test error message/);
+
+		// Test error with custom properties
+		const customError = new Error("Custom error");
+		customError.code = 'CUSTOM_CODE';
+		customError.statusCode = 400;
+		const customErrorOutput = formatErrorForDevelopment(customError, 0, 1);
+		const joinedCustomOutput = customErrorOutput.join('\n');
+		assert.match(joinedCustomOutput, /Additional properties:/);
+		assert.match(joinedCustomOutput, /code:.*CUSTOM_CODE/);
+		assert.match(joinedCustomOutput, /statusCode:.*400/);
 	});
 });
 

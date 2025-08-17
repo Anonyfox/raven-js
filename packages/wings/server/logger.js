@@ -352,15 +352,56 @@ export function logProduction(logData, errors = []) {
 }
 
 /**
- * Format error message for development output with red color
+ * Format error message for development output with red color and full details
  * @param {Error} error - Error object to format
  * @param {number} index - Error index (for multiple errors)
  * @param {number} total - Total number of errors
- * @returns {string} Formatted error message with red color
+ * @returns {string[]} Array of formatted error lines with indentation
  */
 export function formatErrorForDevelopment(error, index, total) {
 	const errorPrefix = total > 1 ? `[Error ${index + 1}/${total}]` : '[Error]';
-	return `${COLORS.statusServerError}${errorPrefix}${COLORS.reset} ${error.message}`;
+	const lines = [];
+
+	// Main error line with type and message
+	const errorType = error.name || 'Error';
+	const errorMessage = error.message || 'Unknown error';
+	lines.push(`  ${COLORS.statusServerError}${errorPrefix} ${errorType}${COLORS.reset}: ${errorMessage}`);
+
+	// Stack trace (formatted for readability)
+	if (error.stack) {
+		const stackLines = error.stack.split('\n');
+		// Skip the first line as it's usually just the error message we already showed
+		const relevantStack = stackLines.slice(1).filter(line => line.trim());
+
+		if (relevantStack.length > 0) {
+			lines.push(`  ${COLORS.dim}Stack trace:${COLORS.reset}`);
+			relevantStack.forEach((line, i) => {
+				const trimmedLine = line.trim();
+				if (trimmedLine) {
+					// Highlight the actual error location (usually the first non-node_modules line)
+					const isUserCode = !trimmedLine.includes('node_modules') && !trimmedLine.includes('node:internal');
+					const color = isUserCode ? COLORS.statusServerError : COLORS.dim;
+					const prefix = i === 0 && isUserCode ? '→ ' : '  ';
+					lines.push(`    ${color}${prefix}${trimmedLine}${COLORS.reset}`);
+				}
+			});
+		}
+	}
+
+	// Additional error properties (if any)
+	const errorProps = Object.getOwnPropertyNames(error).filter(
+		prop => !['name', 'message', 'stack'].includes(prop)
+	);
+	if (errorProps.length > 0) {
+		lines.push(`  ${COLORS.dim}Additional properties:${COLORS.reset}`);
+		errorProps.forEach(prop => {
+			/** @type {any} */ const errorObj = error;
+			const value = errorObj[prop];
+			lines.push(`    ${COLORS.dim}${prop}:${COLORS.reset} ${String(value)}`);
+		});
+	}
+
+	return lines;
 }
 
 /**
@@ -386,8 +427,10 @@ export function logDevelopment(logData, _includeHeaders, errors = []) {
 	// Log errors after the main request line for visibility (red)
 	if (errors.length > 0) {
 		errors.forEach((error, index) => {
-			const errorLine = formatErrorForDevelopment(error, index, errors.length);
-			console.log(errorLine);
+			const errorLines = formatErrorForDevelopment(error, index, errors.length);
+			for (const line of errorLines) {
+				console.log(line);
+			}
 		});
 	}
 
