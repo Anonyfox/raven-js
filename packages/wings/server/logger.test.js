@@ -197,6 +197,9 @@ describe("Logger Helper Functions", () => {
 				"    at malformedLine (file:///invalid-path-no-numbers)",
 				// Path without leading slash (to test normalization ternary)
 				"    at testFunc (file:///relative/path/file.js:10:5)",
+				// Absolute path that's neither CWD nor node_modules (should remain as fullPath)
+				"    at someLib (file:///usr/local/lib/somelib.js:20:3)",
+
 			].join('\n'),
 			code: 'VALIDATION_ERROR',
 			field: 'email'
@@ -225,6 +228,9 @@ describe("Logger Helper Functions", () => {
 
 		// Check path normalization (relative path without leading slash)
 		assert.match(joinedOutput, /file\.js line:10/);
+
+		// Check absolute path that's neither CWD nor node_modules (should keep full path without leading slash)
+		assert.match(joinedOutput, /usr\/local\/lib\/somelib\.js line:20/);
 
 		// Check custom properties (accounting for ANSI color codes and reset sequences)
 		assert.match(joinedOutput, /Additional properties:/);
