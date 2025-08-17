@@ -659,22 +659,28 @@ export class Router {
 	/**
 	 * Handles an incoming HTTP request through the complete middleware and routing pipeline.
 	 *
-	 * This method orchestrates the entire request processing flow:
+	 * This method orchestrates the entire request processing flow with enhanced error collection:
 	 * 1. Executes all registered middleware (before callbacks)
 	 * 2. Matches the request against registered routes
 	 * 3. Executes the matched route handler
-	 * 4. Executes any after callbacks
-	 * 5. Handles errors gracefully
+	 * 4. Executes any after callbacks (always runs, even if errors occurred)
+	 * 5. Handles errors gracefully by collecting them and throwing the first one
 	 *
 	 * **Request Flow**:
-	 * - Middleware execution (before)
+	 * - Middleware execution (before) [errors collected]
 	 * - Route matching and parameter extraction
-	 * - Route handler execution
-	 * - Middleware execution (after)
-	 * - Error handling (if needed)
+	 * - Route handler execution [errors collected]
+	 * - Middleware execution (after) [errors collected, always runs]
+	 * - Error throwing (if any errors were collected)
 	 *
-	 * **Error Handling**: If any step throws an error, the method catches it,
-	 * logs the error, and returns a 500 Internal Server Error response.
+	 * **Error Collection**: Errors from any step are collected in `ctx.errors` instead
+	 * of immediately throwing. This ensures that after callbacks (like logging) always
+	 * run, providing complete request lifecycle tracking even when errors occur.
+	 *
+	 * **Error Handling**: If any errors are collected during the request lifecycle,
+	 * a 500 response is set but no errors are thrown. Middleware (like logger) can
+	 * consume errors from `ctx.errors` for formatting. Any remaining unconsumed
+	 * errors are printed to console.error as a fallback.
 	 *
 	 * **Context Mutation**: This method modifies the provided Context instance
 	 * directly and returns it for convenience.
@@ -702,6 +708,7 @@ export class Router {
 	 * // Check the response
 	 * console.log(result.responseStatusCode); // 200
 	 * console.log(result.responseBody); // JSON string with user data
+	 * console.log(result.errors); // [] (empty array, no errors)
 	 *
 	 * // Handle a non-existent route
 	 * const notFoundUrl = new URL('http://localhost/nonexistent');
@@ -715,31 +722,60 @@ export class Router {
 	 * const errorCtx = new Context('GET', errorUrl, new Headers());
 	 *
 	 * const errorResult = await router.handleRequest(errorCtx);
-	 * console.log(errorResult.responseStatusCode); // 500 (if handler throws)
+	 * console.log(errorResult.responseStatusCode); // 500 (error response set)
+	 * console.log(errorResult.errors.length); // 0 (if logger consumed the errors)
+	 * // Error would be logged in formatted output and then consumed by logger
 	 * ```
 	 */
 	async handleRequest(ctx) {
+		// run all before hooks first on the context instance
+		ctx.addBeforeCallbacks(this.#middlewares);
 		try {
-			// run all before hooks first on the context instance
-			ctx.addBeforeCallbacks(this.#middlewares);
 			await ctx.runBeforeCallbacks();
-			if (ctx.responseEnded) return ctx;
+		} catch (error) {
+			ctx.errors.push(error);
+		}
+		if (ctx.responseEnded) return ctx;
 
-			// try to find a route that matches the request
-			const { route, params } = this.#match(ctx.method, ctx.path);
-			if (!route) return ctx.notFound();
+		// try to find a route that matches the request
+		const { route, params } = this.#match(ctx.method, ctx.path);
+		if (!route) return ctx.notFound();
 
-			// run the handler with the extracted pathParams
-			ctx.pathParams = params;
+		// run the handler with the extracted pathParams
+		ctx.pathParams = params;
+		try {
 			await route.handler(ctx);
-			if (ctx.responseEnded) return ctx;
+		} catch (error) {
+			ctx.errors.push(error);
+		}
+		if (ctx.responseEnded) return ctx;
 
-			// run all after hooks
+		// set 500 status if errors occurred, before running after callbacks
+		// so logger middleware sees the correct status code
+		if (ctx.errors.length > 0 && !ctx.responseEnded) {
+			ctx.error();
+		}
+
+		// run all after hooks regardless of previous errors
+		try {
 			await ctx.runAfterCallbacks();
 		} catch (error) {
-			console.error("Handler error:", error);
-			if (!ctx.responseEnded) return ctx.error();
+			ctx.errors.push(error);
+			// Set 500 status if new errors occurred during after callbacks
+			if (!ctx.responseEnded) {
+				ctx.error();
+			}
 		}
+
+		// print any remaining errors that weren't consumed by middleware (like logger)
+		if (ctx.errors.length > 0) {
+			ctx.errors.forEach((error) => {
+				console.error(error);
+			});
+			// Clear the errors array after printing them
+			ctx.errors.length = 0;
+		}
+
 		return ctx;
 	}
 

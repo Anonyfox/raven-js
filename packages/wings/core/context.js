@@ -508,6 +508,57 @@ export class Context {
 	data = {};
 
 	/**
+	 * Collection of errors that occurred during the request lifecycle.
+	 *
+	 * This array stores any errors that occur during middleware execution,
+	 * route handler execution, or after-callback execution. Errors are
+	 * collected instead of immediately thrown, allowing the complete
+	 * request lifecycle (including after callbacks like logging) to run.
+	 *
+	 * **Error Collection Flow**:
+	 * 1. Errors from before callbacks are collected here
+	 * 2. Errors from route handlers are collected here
+	 * 3. After callbacks always run (for logging, cleanup, etc.)
+	 * 4. Middleware (like logger) can consume errors by clearing this array
+	 * 5. Any remaining errors are printed to console.error as fallback
+	 *
+	 * **Use Cases**:
+	 * - Logging errors via after-callback middleware
+	 * - Collecting multiple validation errors
+	 * - Ensuring cleanup code runs even when handlers fail
+	 * - Providing detailed error context for debugging
+	 *
+	 * @type {Error[]}
+	 *
+	 * @example
+	 * ```javascript
+	 * // Middleware can check for and consume errors
+	 * const loggingMiddleware = new Middleware((ctx) => {
+	 *   if (ctx.errors.length > 0) {
+	 *     console.error(`Request failed with ${ctx.errors.length} error(s):`);
+	 *     ctx.errors.forEach((error, index) => {
+	 *       console.error(`Error ${index + 1}:`, error.message);
+	 *     });
+	 *     // Consume the errors after logging them
+	 *     ctx.errors.length = 0;
+	 *   }
+	 * });
+	 *
+	 * // Handlers can add custom errors
+	 * const validationHandler = (ctx) => {
+	 *   const data = ctx.requestBody();
+	 *   if (!data.email) {
+	 *     ctx.errors.push(new Error('Email is required'));
+	 *   }
+	 *   if (!data.password) {
+	 *     ctx.errors.push(new Error('Password is required'));
+	 *   }
+	 * };
+	 * ```
+	 */
+	errors = [];
+
+	/**
 	 * Internal list of middleware instances to execute before the main handler.
 	 *
 	 * These middleware are executed in FIFO order (first added, first executed).

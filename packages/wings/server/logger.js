@@ -179,7 +179,20 @@ export function collectLogData(ctx, startTime, requestId, timestamp) {
  * @param {Date} params.timestamp - Request timestamp
  * @param {string} params.ip - Client IP address
  * @param {string|null} params.userIdentity - User identity (from auth headers)
- * @returns {Object} Structured log entry
+ * @param {Error[]} [params.errors] - Array of errors that occurred during request processing
+ * @returns {{
+ *   timestamp: string,
+ *   level: string,
+ *   message: string,
+ *   user: {identity: string, ipAddress: string|null, userAgent: string|null},
+ *   action: {method: string, path: string, referrer: string|null},
+ *   result: {success: boolean, statusCode: number, duration: string, performance: string},
+ *   audit: {requestId: string, source: string, environment: string},
+ *   compliance: Object,
+ *   metadata: Object,
+ *   errors?: Array<{index: number, message: string, stack: string, name: string}>,
+ *   errorCount?: number
+ * }} Structured log entry
  */
 export function createStructuredLog({
 	method,
@@ -192,10 +205,11 @@ export function createStructuredLog({
 	timestamp,
 	ip,
 	userIdentity,
+	errors = [],
 }) {
-	const isSuccess = statusCode >= 200 && statusCode < 400;
+	const isSuccess = statusCode >= 200 && statusCode < 400 && errors.length === 0;
 
-	return {
+	const logEntry = {
 		// SOC2 CC5.1: Control Activities - Timestamp in UTC/ISO format
 		// GDPR Art. 30: Records of processing activities
 		timestamp: timestamp.toISOString(),
@@ -254,6 +268,19 @@ export function createStructuredLog({
 			complianceReady: true,
 		},
 	};
+
+	// Add error information if any errors occurred
+	if (errors.length > 0) {
+		/** @type {any} */ (logEntry).errors = errors.map((error, index) => ({
+			index: index + 1,
+			message: error.message,
+			stack: error.stack,
+			name: error.name,
+		}));
+		/** @type {any} */ (logEntry).errorCount = errors.length;
+	}
+
+	return logEntry;
 }
 
 /**
@@ -317,10 +344,23 @@ export function createDevelopmentLogLine(logData) {
  * @param {Date} logData.timestamp - Request timestamp
  * @param {string} logData.ip - Client IP address
  * @param {string|null} logData.userIdentity - User identity
+ * @param {Error[]} [errors] - Array of errors that occurred during request processing
  */
-export function logProduction(logData) {
-	const logEntry = createStructuredLog(logData);
+export function logProduction(logData, errors = []) {
+	const logEntry = createStructuredLog({ ...logData, errors });
 	console.log(JSON.stringify(logEntry));
+}
+
+/**
+ * Format error message for development output with red color
+ * @param {Error} error - Error object to format
+ * @param {number} index - Error index (for multiple errors)
+ * @param {number} total - Total number of errors
+ * @returns {string} Formatted error message with red color
+ */
+export function formatErrorForDevelopment(error, index, total) {
+	const errorPrefix = total > 1 ? `[Error ${index + 1}/${total}]` : '[Error]';
+	return `${COLORS.statusServerError}${errorPrefix}${COLORS.reset} ${error.message}`;
 }
 
 /**
@@ -337,10 +377,19 @@ export function logProduction(logData) {
  * @param {string} logData.ip - Client IP address
  * @param {string|null} logData.userIdentity - User identity
  * @param {boolean} _includeHeaders - Whether to include header information (unused - keeping for compatibility)
+ * @param {Error[]} [errors] - Array of errors that occurred during request processing
  */
-export function logDevelopment(logData, _includeHeaders) {
+export function logDevelopment(logData, _includeHeaders, errors = []) {
 	const logLine = createDevelopmentLogLine(logData);
 	console.log(logLine);
+
+	// Log errors after the main request line for visibility
+	if (errors.length > 0) {
+		errors.forEach((error, index) => {
+			const errorLine = formatErrorForDevelopment(error, index, errors.length);
+			console.log(errorLine);
+		});
+	}
 
 	// No additional clutter - clean RavenJS style
 	// User-Agent and Referrer are typically not useful in development
@@ -412,10 +461,14 @@ export class Logger extends Middleware {
 				new Middleware((ctx) => {
 					const logData = collectLogData(ctx, startTime, requestId, timestamp);
 
+					// Consume errors from the context (make a copy then clear the array)
+					const errors = [...ctx.errors];
+					ctx.errors.length = 0; // Clear the errors array after consuming
+
 					if (production) {
-						logProduction(logData);
+						logProduction(logData, errors);
 					} else {
-						logDevelopment(logData, includeHeaders);
+						logDevelopment(logData, includeHeaders, errors);
 					}
 				}),
 			);
