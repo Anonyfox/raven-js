@@ -7,7 +7,7 @@
  * production-ready HTML with proper Open Graph, Twitter Cards, and basic SEO tags.
  *
  * @example
- * import { general, social, robots, author, canonical } from '@raven-js/beak/seo';
+ * import { general, social, robots, author, canonical, sitemap } from '@raven-js/beak/seo';
  *
  * // Basic SEO tags (title, description, canonical)
  * const basicTags = general({
@@ -79,7 +79,24 @@
  * // Output:
  * // <link rel="canonical" href="https://example.com/awesome-page" />
  *
- * // Result: Clean, properly formatted meta tags ready for your <head>
+ * // XML Sitemap (search engine discovery)
+ * const sitemapXml = sitemap({
+ *   domain: 'example.com',
+ *   pages: ['/', '/about', '/contact', '/blog']
+ * });
+ * // Output:
+ * // <?xml version="1.0" encoding="UTF-8"?>
+ * // <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+ * //   <url>
+ * //     <loc>https://example.com/</loc>
+ * //     <lastmod>2024-01-15T10:30:00.000Z</lastmod>
+ * //     <changefreq>weekly</changefreq>
+ * //     <priority>0.8</priority>
+ * //   </url>
+ * //   ...
+ * // </urlset>
+ *
+ * // Result: Clean, properly formatted meta tags and XML ready for your <head> and sitemap.xml
  */
 
 export { author } from "./author.js";
@@ -90,5 +107,6 @@ export { linkedin } from "./linkedin.js";
 export { openGraph } from "./open-graph.js";
 export { pinterest } from "./pinterest.js";
 export { robots } from "./robots.js";
+export { sitemap } from "./sitemap.js";
 export { social } from "./social.js";
 export { twitter } from "./twitter.js";
