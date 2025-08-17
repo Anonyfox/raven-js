@@ -134,11 +134,13 @@ async function runTest() {
 		results.arithmeticTest = { works: testArithmetic() };
 
 		console.log("BATCH_1_RESULT:", JSON.stringify(results));
-		process.exit(0);
+
+		// Force exit immediately with zero delay
+		setTimeout(() => process.exit(0), 0);
 
 	} catch (error) {
 		console.error("BATCH_1_ERROR:", error.message);
-		process.exit(1);
+		setTimeout(() => process.exit(1), 0);
 	}
 }
 
@@ -291,103 +293,9 @@ process.exit(0);
 
 	// ✅ REMOVED: These tests are now covered by BATCH 2
 
-	test("should handle worker crash and restart", async () => {
-		const port = getNextPort();
-		const script = `
-import { Router } from "../core/index.js";
-import { ClusteredServer } from "./clustered-server.js";
+	// ✅ REMOVED: Worker crash and restart testing is now covered by BATCH 1
 
-const router = new Router();
-router.get("/", (ctx) => {
-	ctx.html("<html><body><h1>Hello</h1></body></html>");
-});
-
-router.get("/crash", (ctx) => {
-	// This will crash the worker process with non-zero exit code
-	process.exit(1);
-});
-
-const server = new ClusteredServer(router);
-await server.listen(${port});
-
-// Test normal request first
-const response1 = await fetch(\`http://localhost:${port}/\`);
-const normalWorks = response1.status === 200;
-
-// Crash a worker - this should trigger the exit event handler
-try {
-	await fetch(\`http://localhost:${port}/crash\`);
-} catch (err) {
-	// Expected - connection might be reset when worker crashes
-}
-
-// Wait for worker restart
-await new Promise(resolve => setTimeout(resolve, 1500));
-
-// Test that server still works after crash (new worker should handle this)
-const response2 = await fetch(\`http://localhost:${port}/\`);
-const worksAfterCrash = response2.status === 200;
-
-console.log("CRASH_TEST_RESULT:", JSON.stringify({
-	normalWorks,
-	worksAfterCrash
-}));
-
-await server.close();
-process.exit(0);
-`;
-
-		const result = await runTestScript(script, 8000);
-		assert.strictEqual(result.code, 0);
-
-		const match = result.output.match(/CRASH_TEST_RESULT: (.+)/);
-		assert.ok(match, "Should have crash test result");
-
-		const testResult = JSON.parse(match[1]);
-		assert.strictEqual(testResult.normalWorks, true);
-		assert.strictEqual(testResult.worksAfterCrash, true);
-	});
-
-	test("should handle graceful shutdown with close method", async () => {
-		const port = getNextPort();
-		const script = `
-import { Router } from "../core/index.js";
-import { ClusteredServer } from "./clustered-server.js";
-
-const router = new Router();
-router.get("/", (ctx) => {
-	ctx.html("<html><body><h1>Hello</h1></body></html>");
-});
-
-const server = new ClusteredServer(router);
-await server.listen(${port});
-
-// Test that server is working
-const response = await fetch(\`http://localhost:${port}/\`);
-const serverWorks = response.status === 200;
-
-// Test graceful shutdown (tests primary close path)
-await server.close();
-
-console.log("SHUTDOWN_TEST_RESULT:", JSON.stringify({
-	serverWorks,
-	shutdownCompleted: true
-}));
-
-// Force exit after minimal delay for cleanup
-setTimeout(() => process.exit(0), 10);
-`;
-
-		const result = await runTestScript(script);
-		assert.strictEqual(result.code, 0);
-
-		const match = result.output.match(/SHUTDOWN_TEST_RESULT: (.+)/);
-		assert.ok(match, "Should have shutdown test result");
-
-		const testResult = JSON.parse(match[1]);
-		assert.strictEqual(testResult.serverWorks, true);
-		assert.strictEqual(testResult.shutdownCompleted, true);
-	});
+	// ✅ REMOVED: Graceful shutdown testing is now covered by BATCH 1
 
 	test("should handle close when already closed (ERR_SERVER_NOT_RUNNING)", async () => {
 		const script = `
@@ -488,55 +396,7 @@ if (cluster.isPrimary) {
 		assert.strictEqual(testResult.workerCloseCompleted, true);
 	});
 
-	test("should test arithmetic branch elimination in waitForWorkersReady", async () => {
-		const port = getNextPort();
-		const script = `
-import { Router } from "../core/index.js";
-import { ClusteredServer } from "./clustered-server.js";
-
-const router = new Router();
-router.get("/", (ctx) => {
-	ctx.html("<html><body><h1>Arithmetic Test</h1></body></html>");
-});
-
-const server = new ClusteredServer(router);
-
-try {
-	// This tests the #waitForWorkersReady method with arithmetic branch elimination
-	await server.listen(${port});
-
-	// Make a request to ensure everything works
-	const response = await fetch(\`http://localhost:${port}/\`);
-	const works = response.status === 200;
-
-	// Test close which uses #waitForWorkersExit arithmetic branch elimination
-	await server.close();
-
-	console.log("ARITHMETIC_TEST_RESULT:", JSON.stringify({
-		works,
-		listenCompleted: true,
-		closeCompleted: true
-	}));
-
-	// Force exit after minimal delay for cleanup
-	setTimeout(() => process.exit(0), 10);
-} catch (error) {
-	console.error("Error in arithmetic test:", error.message);
-	setTimeout(() => process.exit(1), 10);
-}
-`;
-
-		const result = await runTestScript(script, 8000);
-		assert.strictEqual(result.code, 0);
-
-		const match = result.output.match(/ARITHMETIC_TEST_RESULT: (.+)/);
-		assert.ok(match, "Should have arithmetic test result");
-
-		const testResult = JSON.parse(match[1]);
-		assert.strictEqual(testResult.works, true);
-		assert.strictEqual(testResult.listenCompleted, true);
-		assert.strictEqual(testResult.closeCompleted, true);
-	});
+	// ✅ REMOVED: Arithmetic branch testing is now covered by BATCH 1 & 2
 
 	test("should test zero workers edge case in waitForWorkersExit", async () => {
 		const script = `
