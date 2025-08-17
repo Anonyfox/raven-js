@@ -32,10 +32,14 @@ npm install @raven-js/wings
 
 ```javascript
 import { Router } from "@raven-js/wings/core";
-import { DevServer, ClusteredServer } from "@raven-js/wings/server";
+import { DevServer, ClusteredServer, Logger } from "@raven-js/wings/server";
 
 // Define routes once
 const router = new Router();
+
+// Add logging middleware (use with server adapters)
+router.useEarly(new Logger());
+
 router.get("/", (ctx) => ctx.html("<h1>Hello World!</h1>"));
 router.get("/api/users/:id", (ctx) => ctx.json({ id: ctx.params.id }));
 
@@ -123,9 +127,13 @@ router.get("/api/users/:id", (ctx) => ctx.json({ id: ctx.params.id }));
 
 ```javascript
 import { Router } from "@raven-js/wings/core";
-import { DevServer, ClusteredServer } from "@raven-js/wings/server";
+import { DevServer, ClusteredServer, Logger } from "@raven-js/wings/server";
 
 const router = new Router();
+
+// Add logging middleware (use with server adapters)
+router.useEarly(new Logger());
+
 router.get("/api/users", (ctx) => ctx.json({ users: [] }));
 
 // Development
@@ -136,6 +144,8 @@ await devServer.listen(3000);
 const server = new ClusteredServer(router);
 await server.listen(3000);
 ```
+
+**Logger Middleware**: Request logging with colored terminal output (development) or structured JSON (production). Includes performance indicators (⚡🚀🐌), request tracing, and compliance standards (SOC2, ISO 27001, GDPR).
 
 ### CLI Module
 

@@ -22,13 +22,24 @@
  * - Lightweight with zero dependencies
  * - Extend when building custom server implementations
  *
+ * ## Middleware
+ *
+ * **Logger** - Request logging middleware for server adapters
+ * - Development: Colored terminal output with performance indicators
+ * - Production: Structured JSON logging (SOC2, ISO 27001, GDPR compliant)
+ * - Use with `router.useEarly(new Logger())` when using server adapters
+ *
  * ## Quick Start
  *
  * ```javascript
  * import { Router } from '@ravenjs/wings/core';
- * import { DevServer, ClusteredServer } from '@ravenjs/wings/server';
+ * import { DevServer, ClusteredServer, Logger } from '@ravenjs/wings/server';
  *
  * const router = new Router();
+ *
+ * // Add logging middleware (use with server adapters)
+ * router.useEarly(new Logger());
+ *
  * router.get('/api/users', (ctx) => {
  *   ctx.json({ users: [] });
  * });
@@ -53,5 +64,6 @@
 
 export { ClusteredServer } from "./clustered-server.js";
 export { DevServer } from "./dev-server.js";
+export { Logger } from "./logger.js";
 export * from "./node-http.js";
 export * from "./server-options.js";
