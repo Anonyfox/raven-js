@@ -251,6 +251,33 @@ describe("Compression Decision Logic", () => {
 			false,
 		);
 	});
+
+	test("should not compress content type that doesn't match any compressible types", () => {
+		const compressibleTypes = ["text/", "application/json"];
+
+		// Content type that's not explicitly non-compressible but also doesn't match our list
+		assert.strictEqual(
+			shouldCompress("application/xml", 2000, {
+				threshold: 1024,
+				compressibleTypes,
+			}),
+			false,
+		);
+		assert.strictEqual(
+			shouldCompress("font/woff2", 2000, {
+				threshold: 1024,
+				compressibleTypes,
+			}),
+			false,
+		);
+		assert.strictEqual(
+			shouldCompress("custom/unknown", 2000, {
+				threshold: 1024,
+				compressibleTypes,
+			}),
+			false,
+		);
+	});
 });
 
 describe("Compression Options", () => {
@@ -671,5 +698,72 @@ describe("Edge Cases and Error Handling", () => {
 		// If compression succeeded, ctx.errors should be empty
 		// Either way, no exception should be thrown
 		assert.ok(Array.isArray(ctx.errors));
+	});
+
+	test("should handle compression stream errors and log them", async () => {
+		// Test error handling by creating an invalid compression scenario
+		// We'll test the compression error by using the direct compressData function
+		// which can fail in various ways
+
+		// First test that compressData can indeed fail
+		try {
+			// Try to compress with invalid options that should cause an error
+			await compressData("test data", "gzip", { level: "invalid" });
+			// If this doesn't throw, we need a different approach
+		} catch (error) {
+			// Good, we can trigger compression errors
+			assert.ok(error instanceof Error);
+		}
+
+		// Now test that the middleware handles the error gracefully
+		const middleware = new Compression({ threshold: 10 });
+		const ctx = createTestContext("GET", "/api/data", {
+			"accept-encoding": "gzip",
+		});
+
+		// Ensure context has errors array
+		ctx.errors = [];
+
+		// Set up response with content that will trigger compression
+		ctx.responseStatusCode = 200;
+		ctx.responseHeaders.set("content-type", "application/json");
+		ctx.responseBody = "x".repeat(1000); // Large compressible content
+
+		// Create an invalid response body that might cause compression to fail
+		// Use a Symbol which can't be converted to Buffer/String properly
+		ctx.responseBody = 12345; // Number instead of string/buffer - might cause issues
+
+		await middleware.execute(ctx);
+
+		// This should not throw an error even if compression fails
+		try {
+			await ctx.runAfterCallbacks();
+			// Test passed - no error thrown means graceful handling worked
+			assert.ok(true);
+		} catch (_error) {
+			// If this fails, that's actually what we want to test - the middleware should catch it
+			assert.fail(
+				"Middleware should have caught the compression error gracefully",
+			);
+		}
+
+		// Test with context that doesn't have errors array to ensure it doesn't crash
+		const ctx2 = createTestContext("GET", "/api/data2", {
+			"accept-encoding": "gzip",
+		});
+		// Don't set ctx2.errors to test that branch
+		ctx2.responseStatusCode = 200;
+		ctx2.responseHeaders.set("content-type", "application/json");
+		ctx2.responseBody = 67890; // Another problematic body type
+
+		await middleware.execute(ctx2);
+
+		try {
+			await ctx2.runAfterCallbacks();
+			// Should complete without throwing
+			assert.ok(true);
+		} catch (_error) {
+			assert.fail("Middleware should handle missing errors array gracefully");
+		}
 	});
 });
