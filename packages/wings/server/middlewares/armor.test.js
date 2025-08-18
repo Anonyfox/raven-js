@@ -308,7 +308,7 @@ test("validateRequest - Valid request", () => {
 });
 
 test("validateRequest - Path too long", () => {
-	const longPath = "/test/" + "a".repeat(2000);
+	const longPath = `/test/${"a".repeat(2000)}`;
 	const ctx = createMockContext("GET", `http://localhost${longPath}`);
 
 	const config = { maxPathLength: 100 };
@@ -633,7 +633,7 @@ test("Armor - Request validation blocks oversized requests", async () => {
 		},
 	});
 
-	const longPath = "/test/" + "a".repeat(100);
+	const longPath = `/test/${"a".repeat(100)}`;
 	const ctx = createMockContext("GET", `http://localhost${longPath}`);
 
 	await executeMiddleware(armor, ctx);
