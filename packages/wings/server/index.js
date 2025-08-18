@@ -115,6 +115,7 @@ export { ClusteredServer } from "./adapters/clustered-server.js";
 export { DevServer } from "./adapters/dev-server.js";
 export * from "./adapters/node-http.js";
 export { generateSSLCert } from "./generate-ssl-cert.js";
+export { Armor } from "./middlewares/armor.js";
 export { Assets } from "./middlewares/assets.js";
 export { Compression } from "./middlewares/compression.js";
 export { CORS } from "./middlewares/cors.js";
