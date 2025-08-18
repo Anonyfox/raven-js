@@ -54,11 +54,10 @@ describe("parseCIDR", () => {
 
 	it("should return null for invalid prefix lengths", () => {
 		assert.strictEqual(parseCIDR("192.168.1.0/33"), null);
-		// Note: current implementation doesn't reject negative prefixes - this is a known issue
-		// assert.strictEqual(parseCIDR("192.168.1.0/-1"), null);
+		assert.strictEqual(parseCIDR("192.168.1.0/-1"), null); // Test negative prefix
 		assert.strictEqual(parseCIDR("192.168.1.0/abc"), null);
 		assert.strictEqual(parseCIDR("2001:db8::/129"), null);
-		// assert.strictEqual(parseCIDR("2001:db8::/-1"), null);
+		assert.strictEqual(parseCIDR("2001:db8::/-1"), null); // Test negative prefix for IPv6
 	});
 });
 
@@ -495,8 +494,11 @@ describe("isIPAllowed", () => {
 			); // Max valid
 			assert.strictEqual(isIPInCIDR("10000:db8::1", "2001:db8::/32"), false); // Just over max (0x10000 = 65536 > 0xffff)
 
-			// Test negative values (though parseInt might not create these, test for completeness)
+			// Test negative values - these will trigger early isIP validation
 			assert.strictEqual(isIPInCIDR("2001:db8::-1:1", "2001:db8::/32"), false); // Negative hex
+			assert.strictEqual(isIPInCIDR("-1:db8::1", "2001:db8::/32"), false); // Negative first segment
+			assert.strictEqual(isIPInCIDR("2001:-1::1", "2001:db8::/32"), false); // Negative second segment
+			assert.strictEqual(isIPInCIDR("2001:db8::1:-1", "2001:db8::/32"), false); // Negative last segment
 		});
 
 		it("should test the exact edge case where bitsInLastByte > 0 AND bytesToCheck >= 16", () => {
@@ -536,6 +538,12 @@ describe("isIPAllowed", () => {
 			assert.strictEqual(isIPInCIDR("192.abc.1.1", "192.168.1.0/24"), false); // Second octet NaN
 			assert.strictEqual(isIPInCIDR("192.168.abc.1", "192.168.1.0/24"), false); // Third octet NaN
 			assert.strictEqual(isIPInCIDR("192.168.1.abc", "192.168.1.0/24"), false); // Fourth octet NaN
+
+			// Test cases where ONLY the second condition is true (< 0) - using parseInt edge cases
+			assert.strictEqual(isIPInCIDR("192.168.1.0x-1", "192.168.1.0/24"), false); // Negative hex interpreted as decimal
+			assert.strictEqual(isIPInCIDR("-1.168.1.1", "192.168.1.0/24"), false); // Explicit negative
+			assert.strictEqual(isIPInCIDR("192.-1.1.1", "192.168.1.0/24"), false); // Negative in second octet
+			assert.strictEqual(isIPInCIDR("192.168.-1.1", "192.168.1.0/24"), false); // Negative in third octet
 
 			// Test cases where ONLY the third condition is true (> 255)
 			assert.strictEqual(isIPInCIDR("300.168.1.1", "192.168.1.0/24"), false); // First octet > 255
@@ -638,6 +646,17 @@ describe("isIPAllowed", () => {
 			// This tests both ternary operators where parts[0] and parts[1] are empty
 			assert.strictEqual(isIPInCIDR("::", "::/0"), true); // All zeros in any range
 			assert.strictEqual(isIPInCIDR("::", "2001:db8::/32"), false); // All zeros not in specific range
+		});
+
+		it("should handle IPv6 ternary edge cases for parts[0] and parts[1] being empty", () => {
+			// Test cases where parts[0] is empty string (hit ternary false branch line 182)
+			assert.strictEqual(isIPInCIDR("::1:2:3:4", "::/0"), true); // parts[0] = "" (empty), should use []
+
+			// Test cases where parts[1] is empty string (hit ternary false branch line 183)
+			assert.strictEqual(isIPInCIDR("1:2:3:4::", "::/0"), true); // parts[1] = "" (empty), should use []
+
+			// Test case to ensure maxPrefix ternary for IPv4 is hit (line 33 false branch)
+			assert.strictEqual(parseCIDR("192.168.1.0/32").prefix, 32); // IPv4 should use maxPrefix = 32
 		});
 
 		it("should handle IPv6 prefixes that are multiples of 8 bits", () => {

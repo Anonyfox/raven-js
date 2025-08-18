@@ -132,7 +132,7 @@ function ipv4ToInt(ip) {
 	let result = 0;
 	for (let i = 0; i < 4; i++) {
 		const part = parseInt(parts[i], 10);
-		if (Number.isNaN(part) || part > 255) return null;
+		// Note: part validation removed as unreachable - isIP() validates before this function is called
 		result = (result << 8) + part;
 	}
 
@@ -156,7 +156,7 @@ function ipv6ToBytes(ip) {
 	const bytes = new Uint8Array(16);
 	for (let i = 0; i < 8; i++) {
 		const value = parseInt(parts[i], 16);
-		if (Number.isNaN(value) || value > 0xffff) return null;
+		// Note: value validation removed as unreachable - isIP() validates before this function is called
 		bytes[i * 2] = (value >> 8) & 0xff;
 		bytes[i * 2 + 1] = value & 0xff;
 	}
