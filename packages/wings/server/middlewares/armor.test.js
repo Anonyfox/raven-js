@@ -111,6 +111,36 @@ test("isIPInCIDR - Invalid inputs", () => {
 	assert.equal(isIPInCIDR("", "192.168.1.0/24"), false);
 });
 
+test("isIPInCIDR - IPv4 edge cases", () => {
+	// Test edge cases in IPv4 parsing that should trigger error paths
+	assert.equal(isIPInCIDR("192.168.1.256", "192.168.1.0/24"), false); // Invalid octet
+	assert.equal(isIPInCIDR("192.168.1.-1", "192.168.1.0/24"), false); // Negative octet
+	assert.equal(isIPInCIDR("192.168.1", "192.168.1.0/24"), false); // Too few octets
+	assert.equal(isIPInCIDR("192.168.1.1.1", "192.168.1.0/24"), false); // Too many octets
+	assert.equal(isIPInCIDR("192.168.1.abc", "192.168.1.0/24"), false); // Non-numeric octet
+
+	// Test CIDR with invalid network
+	assert.equal(isIPInCIDR("192.168.1.1", "192.168.1.256/24"), false);
+	assert.equal(isIPInCIDR("192.168.1.1", "192.168.1/24"), false);
+});
+
+test("expandIPv6 edge cases via isIPInCIDR", () => {
+	// Test various edge cases in IPv6 expansion
+	assert.equal(isIPInCIDR("2001:db8::1::2", "2001:db8::/32"), false); // Multiple ::
+	assert.equal(isIPInCIDR("2001:db8::1:2:3:4:5:6:7:8", "2001:db8::/32"), false); // Too many parts after ::
+	assert.equal(
+		isIPInCIDR("2001:db8:1:2:3:4:5:6:7:8:9", "2001:db8::/32"),
+		false,
+	); // Too many total parts
+
+	// Test malformed CIDR networks
+	assert.equal(isIPInCIDR("2001:db8::1", "2001:db8::1::2/32"), false); // Invalid network
+	assert.equal(
+		isIPInCIDR("2001:db8::1", "2001:db8:1:2:3:4:5:6:7:8:9/32"),
+		false,
+	); // Invalid network
+});
+
 test("getClientIP - Direct connection", () => {
 	const ctx = createMockContext("GET", "http://localhost/test");
 	ctx.requestHeaders.set("remote-addr", "192.168.1.100");
@@ -370,6 +400,27 @@ test("validateRequest - Body too large", () => {
 	const config = { maxBodySize: 1000000 }; // 1MB limit
 	const result = validateRequest(ctx, config);
 	assert(result?.includes("Request body too large"));
+});
+
+test("validateRequest - Query param key too long", () => {
+	const longKey = "a".repeat(2000);
+	const ctx = createMockContext(
+		"GET",
+		`http://localhost/test?${longKey}=value`,
+	);
+
+	const config = { maxQueryParamLength: 1000 };
+	const result = validateRequest(ctx, config);
+	assert(result?.includes("Query parameter key too long"));
+});
+
+test("validateRequest - Invalid content-length header", () => {
+	const ctx = createMockContext("GET", "http://localhost/test");
+	ctx.requestHeaders.set("content-length", "not-a-number");
+
+	const config = { maxBodySize: 1000 };
+	const result = validateRequest(ctx, config);
+	assert.equal(result, null); // Should pass when content-length is NaN
 });
 
 // ===== RateLimitStore Tests =====
@@ -826,6 +877,24 @@ test("Armor - Error handling in processing", async () => {
 	ctx.requestHeaders.get = originalMethod;
 });
 
+// Note: Pattern detection error handling is difficult to test as the error paths
+// are well-protected. The actual error handling code exists but requires very
+// specific conditions to trigger that are hard to simulate in tests.
+test("Armor - Pattern detection graceful handling", async () => {
+	const armor = new Armor({
+		protection: {
+			sqlInjectionCheck: true,
+			suspiciousPatterns: true,
+		},
+	});
+	const ctx = createMockContext("GET", "http://localhost/test?param=value");
+
+	await executeMiddleware(armor, ctx);
+
+	// Pattern detection should work normally without errors
+	assert.equal(ctx.responseEnded, false);
+});
+
 test("Armor - getStats method", () => {
 	const armor = new Armor({
 		rateLimit: { maxRequests: 10 },
@@ -959,6 +1028,123 @@ test("IPv6 CIDR parsing and matching", () => {
 	// Test compressed IPv6
 	assert.equal(isIPInCIDR("::1", "::/0"), true);
 	assert.equal(isIPInCIDR("2001:db8::1", "2001:db8::/64"), true);
+});
+
+test("IPv6 CIDR partial byte matching", () => {
+	// Test partial byte boundaries (not multiples of 8) to hit lines 287-294
+	// /36 = 4 full bytes + 4 bits of the 5th byte
+	assert.equal(isIPInCIDR("2001:db8:1000::1", "2001:db8:1000::/36"), true);
+	assert.equal(isIPInCIDR("2001:db8:1f00::1", "2001:db8:1000::/36"), true); // Within same /36 block
+
+	// /44 = 5 full bytes + 4 bits of the 6th byte
+	assert.equal(isIPInCIDR("2001:db8:1:100::1", "2001:db8:1:100::/44"), true);
+	assert.equal(isIPInCIDR("2001:db8:1:10f::1", "2001:db8:1:100::/44"), true); // Within same /44 block
+
+	// /60 = 7 full bytes + 4 bits of the 8th byte
+	assert.equal(
+		isIPInCIDR("2001:db8:1:2:3:4:5:1000", "2001:db8:1:2:3:4:5:1000/60"),
+		true,
+	);
+	assert.equal(
+		isIPInCIDR("2001:db8:1:2:3:4:5:1f00", "2001:db8:1:2:3:4:5:1000/60"),
+		true,
+	); // Within same /60 block
+
+	// Edge case: /124 = 15 full bytes + 4 bits of the 16th byte
+	assert.equal(
+		isIPInCIDR("2001:db8:1:2:3:4:5:61f0", "2001:db8:1:2:3:4:5:61f0/124"),
+		true,
+	);
+	assert.equal(
+		isIPInCIDR("2001:db8:1:2:3:4:5:61f8", "2001:db8:1:2:3:4:5:61f0/124"),
+		true,
+	); // Within same /124 block
+});
+
+test("IPv6 parsing error handling", () => {
+	// Test malformed IPv6 addresses that should trigger catch block in ipv6ToBytes
+	// These should all return false due to internal parsing errors
+	assert.equal(
+		isIPInCIDR("invalid::format::too::many::colons", "2001:db8::/32"),
+		false,
+	);
+	assert.equal(isIPInCIDR("2001:db8::gggg", "2001:db8::/32"), false); // Invalid hex
+	assert.equal(isIPInCIDR("2001:db8::10000", "2001:db8::/32"), false); // Value too large
+	assert.equal(isIPInCIDR("", "2001:db8::/32"), false);
+	assert.equal(isIPInCIDR(":::", "2001:db8::/32"), false);
+
+	// Test edge cases in expandIPv6 and CIDR parsing
+	assert.equal(isIPInCIDR("malformed::ipv6::address", "2001:db8::/32"), false);
+	assert.equal(isIPInCIDR("2001:db8::1", "malformed::cidr::/32"), false);
+
+	// Test IPv6 addresses that could cause parsing errors in expandIPv6
+	assert.equal(isIPInCIDR("2001:db8:::1", "2001:db8::/32"), false); // Multiple :: sections
+	assert.equal(isIPInCIDR("2001:db8::1:2:3:4:5:6:7", "2001:db8::/32"), false); // Too many sections after ::
+
+	// Test edge cases in expandIPv6 that should hit uncovered lines
+	assert.equal(
+		isIPInCIDR("2001:db8:1:2:3:4:5:6:7:8:9:a", "2001:db8::/32"),
+		false,
+	); // Already expanded, too many parts
+	assert.equal(isIPInCIDR("2001:db8::1:2:3:4:5:6:7:8", "2001:db8::/32"), false); // Too many parts after expansion
+
+	// Test uncompressed IPv6 addresses (no ::) to hit lines 356-359
+	assert.equal(
+		isIPInCIDR("2001:0db8:0001:0002:0003:0004:0005:0006", "2001:db8:1:2::/64"),
+		true,
+	); // Full format, valid
+	assert.equal(
+		isIPInCIDR("2001:0db8:0001:0002:0003:0004:0005", "2001:db8::/32"),
+		false,
+	); // Too few parts
+	assert.equal(
+		isIPInCIDR("2001:0db8:0001:0002:0003:0004:0005:0006:0007", "2001:db8::/32"),
+		false,
+	); // Too many parts
+});
+
+test("RateLimitStore - Cleanup edge cases", () => {
+	const store = new RateLimitStore(50);
+
+	// Create entries with different timestamps
+	store.isAllowed("key1", 5, 60000);
+	store.isAllowed("key2", 5, 60000);
+
+	// Manually call cleanup with future cutoff to trigger empty entry removal
+	const futureCutoff = Date.now() + 100000;
+	store.cleanup(futureCutoff);
+
+	// Store should be empty after cleanup removes all expired entries
+	assert.equal(store.store.size, 0);
+});
+
+test("Armor - Additional validation edge cases", () => {
+	// Test string entries in IP lists
+	assert.throws(() => {
+		new Armor({
+			ipControl: {
+				mode: "whitelist",
+				whitelist: [123], // Non-string entry
+			},
+		});
+	}, /IP whitelist entries must be strings/);
+
+	// Test validation limits edge cases
+	assert.throws(() => {
+		new Armor({
+			validation: {
+				maxBodySize: 0, // Zero or negative
+			},
+		});
+	}, /Max body size must be positive/);
+
+	assert.throws(() => {
+		new Armor({
+			validation: {
+				maxHeaderSize: -1, // Negative
+			},
+		});
+	}, /Max header size must be positive/);
 });
 
 test("Armor - Complex security scenario", async () => {
