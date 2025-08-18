@@ -52,6 +52,12 @@
  * - Production: Structured JSON logging (SOC2, ISO 27001, GDPR compliant)
  * - Use with `router.useEarly(new Logger())` when using server adapters
  *
+ * **Assets** - Static file serving with transparent multi-source support
+ * - Automatic source detection (SEA, Global Variables, File System)
+ * - Security-first design with path validation and traversal prevention
+ * - Zero external dependencies with built-in MIME type detection
+ * - Seamless integration with modern deployment patterns
+ *
  * **CORS** - Cross-Origin Resource Sharing made simple
  * - Standards-compliant CORS implementation (RFC 6454, WHATWG CORS)
  * - Automatic preflight OPTIONS request handling
@@ -70,11 +76,12 @@
  *
  * ```javascript
  * import { Router } from '@ravenjs/wings/core';
- * import { DevServer, ClusteredServer, Logger, CORS, generateSSLCert } from '@ravenjs/wings/server';
+ * import { DevServer, ClusteredServer, Assets, Logger, CORS, generateSSLCert } from '@ravenjs/wings/server';
  *
  * const router = new Router();
  *
- * // Add middleware
+ * // Add middleware (order matters for proper logging)
+ * router.useEarly(new Assets());  // Assets before Logger for correct status codes
  * router.useEarly(new Logger());
  * router.use(new CORS());
  *
@@ -104,6 +111,7 @@
  * ```
  */
 
+export { Assets } from "./assets.js";
 export { ClusteredServer } from "./clustered-server.js";
 export { Compression } from "./compression.js";
 export { CORS } from "./cors.js";

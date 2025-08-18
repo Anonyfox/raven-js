@@ -1,7 +1,15 @@
-import { ClusteredServer, DevServer, Logger, generateSSLCert } from "@ravenjs/wings/server";
+import {
+	Assets,
+	ClusteredServer,
+	DevServer,
+	generateSSLCert,
+	Logger,
+} from "@ravenjs/wings/server";
 import { router } from "./src/index.js";
 
 const port = 3000;
+
+router.use(new Assets({ assetsDir: "public" }));
 
 /**
  * Check if we're running in production environment
@@ -23,7 +31,9 @@ async function setupDevelopment() {
 
 	console.log(`🚀 Hello World server running at http://localhost:${port}`);
 	console.log(`📝 Edit examples/helloworld/src/index.js to see changes live`);
-	console.log(`📊 Request logging enabled with performance indicators (⚡🚀🐌)`);
+	console.log(
+		`📊 Request logging enabled with performance indicators (⚡🚀🐌)`,
+	);
 	console.log(`🔧 Environment: Development`);
 
 	return server;
@@ -38,13 +48,13 @@ async function setupProduction() {
 
 	// Generate SSL certificate on demand - Raven philosophy: it just works
 	const { privateKey, certificate } = await generateSSLCert({
-		commonName: 'localhost',
-		organization: 'Hello World Production'
+		commonName: "localhost",
+		organization: "Hello World Production",
 	});
 
 	const server = new ClusteredServer(router, {
 		sslCertificate: certificate,
-		sslPrivateKey: privateKey
+		sslPrivateKey: privateKey,
 	});
 
 	// Only log from the main process to avoid duplicate messages
@@ -58,5 +68,7 @@ async function setupProduction() {
 	return server;
 }
 
-const server = isProduction() ? await setupProduction() : await setupDevelopment();
+const server = isProduction()
+	? await setupProduction()
+	: await setupDevelopment();
 server.listen(port).catch(console.error);
