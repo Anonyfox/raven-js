@@ -28,6 +28,13 @@ export class DevServer extends NodeHttp {
 	websocketServerPort;
 
 	/**
+	 * Set of active WebSocket connections to track for cleanup.
+	 * @type {Set<import('node:stream').Duplex>}
+	 * @protected
+	 */
+	websocketConnections = new Set();
+
+	/**
 	 * Create development server instance.
 	 *
 	 * @param {Router} router - Wings router to handle requests
@@ -67,8 +74,17 @@ export class DevServer extends NodeHttp {
 
 			socket.write(headers);
 
-			// Keep the WebSocket connection alive for live reload
-			// The connection will be closed when the server is stopped
+			// Track the WebSocket connection for proper cleanup
+			this.websocketConnections.add(socket);
+
+			// Remove connection from tracking when it closes naturally
+			socket.on("close", () => {
+				this.websocketConnections.delete(socket);
+			});
+
+			socket.on("error", () => {
+				this.websocketConnections.delete(socket);
+			});
 		});
 		this.websocketServer.listen(this.websocketServerPort, () => {});
 	}
@@ -169,14 +185,24 @@ export class DevServer extends NodeHttp {
 	 * @returns {Promise<void>} Resolves when both servers are closed
 	 */
 	async close() {
-		// Close WebSocket server first
+		// Close WebSocket server and connections
 		if (this.websocketServer) {
-			await Promise.race([
-				new Promise((resolve) => {
-					this.websocketServer.close(() => resolve());
-				}),
-				new Promise((resolve) => setTimeout(resolve, 500)),
-			]);
+			// Force close all active WebSocket connections
+			for (const socket of this.websocketConnections) {
+				socket.destroy();
+			}
+			this.websocketConnections.clear();
+
+			// Close WebSocket server properly without timeout race
+			await new Promise((resolve, reject) => {
+				this.websocketServer.close((err) => {
+					if (err) {
+						reject(err);
+					} else {
+						resolve();
+					}
+				});
+			});
 			this.websocketServer = null;
 		}
 

@@ -137,7 +137,7 @@ describe("DevServer", () => {
 		}
 	});
 
-	test("should handle constructor edge cases and server lifecycle", () => {
+	test("should handle constructor edge cases and server lifecycle", async () => {
 		// Test constructor with undefined websocketPort (should use default)
 		const router1 = new Router();
 		const server1 = new DevServer(router1, { websocketPort: undefined });
@@ -152,6 +152,103 @@ describe("DevServer", () => {
 		const router3 = new Router();
 		const server3 = new DevServer(router3);
 		assert.strictEqual(server3.websocketServerPort, 3456);
+
+		// Test that websocketServer is undefined before listen() is called
+		// This tests the branch where !this.websocketServer is true in close()
+		const router4 = new Router();
+		const server4 = new DevServer(router4);
+		assert.strictEqual(server4.websocketServer, undefined);
+
+		// The if (!this.websocketServer) branch is already covered
+		// by the server close happening in other tests when no WebSocket server exists
+	});
+
+	test("should properly clean up WebSocket connections", async () => {
+		// Test that WebSocket connections are tracked and cleaned up
+		const router = new Router();
+		router.get("/", (ctx) => {
+			ctx.html("<html><body>Test</body></html>");
+		});
+
+		const testServer = new DevServer(router, { websocketPort: 8087 });
+		await testServer.listen(3007);
+
+		try {
+			// Verify connections set exists and is initially empty
+			assert.strictEqual(testServer.websocketConnections.size, 0);
+
+			// Test 1: Socket close event handler coverage
+			let closeHandler = null;
+			let errorHandler = null;
+			const mockSocketWithHandlers = {
+				write: () => {},
+				destroy: () => {},
+				on: (event, handler) => {
+					if (event === "close") closeHandler = handler;
+					if (event === "error") errorHandler = handler;
+				},
+			};
+
+			// Simulate WebSocket connection and capture event handlers
+			const mockReq = {
+				headers: {
+					"sec-websocket-key": "dGhlIHNhbXBsZSBub25jZQ==",
+				},
+			};
+
+			const upgradeHandlers = testServer.websocketServer.listeners("upgrade");
+			upgradeHandlers[0](mockReq, mockSocketWithHandlers, Buffer.alloc(0));
+
+			// Verify connection was tracked
+			assert.strictEqual(testServer.websocketConnections.size, 1);
+			assert.ok(testServer.websocketConnections.has(mockSocketWithHandlers));
+
+			// Test socket close event handler (line 82)
+			assert.ok(closeHandler, "Close handler should be registered");
+			closeHandler(); // Trigger close event
+			assert.strictEqual(testServer.websocketConnections.size, 0);
+
+			// Re-add the socket for error test
+			testServer.websocketConnections.add(mockSocketWithHandlers);
+			assert.strictEqual(testServer.websocketConnections.size, 1);
+
+			// Test socket error event handler (line 86)
+			assert.ok(errorHandler, "Error handler should be registered");
+			errorHandler(); // Trigger error event
+			assert.strictEqual(testServer.websocketConnections.size, 0);
+
+			// Test 2: Normal destruction during close
+			let mockSocketDestroyed = false;
+			const mockSocket = {
+				write: () => {},
+				destroy: () => {
+					mockSocketDestroyed = true;
+				},
+				on: (_event, _handler) => {
+					// Store event handlers but don't auto-trigger them for this test
+				},
+			};
+
+			// Add another connection for destruction test
+			upgradeHandlers[0](mockReq, mockSocket, Buffer.alloc(0));
+			assert.strictEqual(testServer.websocketConnections.size, 1);
+
+			// Close server and verify connections are destroyed
+			await testServer.close();
+
+			// Verify connection was destroyed and tracking cleared
+			assert.ok(
+				mockSocketDestroyed,
+				"WebSocket connection should be destroyed",
+			);
+			assert.strictEqual(testServer.websocketConnections.size, 0);
+			assert.strictEqual(testServer.websocketServer, null);
+		} finally {
+			// Ensure cleanup even if test fails
+			if (testServer.websocketServer) {
+				await testServer.close();
+			}
+		}
 	});
 
 	test("should handle WebSocket upgrade and various error scenarios", async () => {
@@ -171,6 +268,8 @@ describe("DevServer", () => {
 				assert.ok(data.includes("Sec-WebSocket-Accept:"));
 			},
 			end: () => {}, // Mock end method
+			on: () => {}, // Mock event handler method for tracking
+			destroy: () => {}, // Mock destroy method for cleanup
 		};
 
 		// Get the upgrade handler and call it directly
@@ -228,6 +327,42 @@ describe("DevServer", () => {
 			);
 		} finally {
 			await injectionErrorServer.close();
+		}
+	});
+
+	test("should handle WebSocket server close errors", async () => {
+		// Test WebSocket server close error path (line 200)
+		const router = new Router();
+		router.get("/", (ctx) => {
+			ctx.html("<html><body>Test</body></html>");
+		});
+
+		const errorServer = new DevServer(router, { websocketPort: 8088 });
+		await errorServer.listen(3008);
+
+		try {
+			// Mock the WebSocket server's close method to simulate an error
+			const originalClose = errorServer.websocketServer.close;
+			errorServer.websocketServer.close = (callback) => {
+				// Simulate an error during close
+				callback(new Error("WebSocket server close error"));
+			};
+
+			// This should trigger the error path in line 200
+			try {
+				await errorServer.close();
+				assert.fail("Expected close to throw an error");
+			} catch (err) {
+				assert.strictEqual(err.message, "WebSocket server close error");
+			}
+
+			// Restore original close method for cleanup
+			errorServer.websocketServer.close = originalClose;
+		} finally {
+			// Ensure proper cleanup
+			if (errorServer.websocketServer) {
+				await errorServer.close();
+			}
 		}
 	});
 });
