@@ -318,13 +318,9 @@ export class CORS extends Middleware {
 		// Create configuration object (clone arrays to prevent external mutation)
 		const config = {
 			origin,
-			methods: Array.isArray(methods) ? [...methods] : methods,
-			allowedHeaders: Array.isArray(allowedHeaders)
-				? [...allowedHeaders]
-				: allowedHeaders,
-			exposedHeaders: Array.isArray(exposedHeaders)
-				? [...exposedHeaders]
-				: exposedHeaders,
+			methods: [...methods],
+			allowedHeaders: [...allowedHeaders],
+			exposedHeaders: [...exposedHeaders],
 			credentials,
 			maxAge,
 		};
@@ -427,12 +423,10 @@ export class CORS extends Middleware {
 			ctx.responseEnded = true;
 		} catch (error) {
 			// Handle any errors during preflight processing
-			if (ctx.errors) {
-				const corsError = new Error(`CORS preflight failed: ${error.message}`);
-				corsError.name = "CORSError";
-				/** @type {any} */ (corsError).originalError = error;
-				ctx.errors.push(corsError);
-			}
+			const corsError = new Error(`CORS preflight failed: ${error.message}`);
+			corsError.name = "CORSError";
+			/** @type {any} */ (corsError).originalError = error;
+			ctx.errors.push(corsError);
 
 			// Return 500 for unexpected errors
 			ctx.responseStatusCode = 500;
@@ -493,14 +487,12 @@ export class CORS extends Middleware {
 			ctx.responseHeaders.set("Vary", varyValue);
 		} catch (error) {
 			// Log error but don't break the response
-			if (ctx.errors) {
-				const corsError = new Error(
-					`CORS header setting failed: ${error.message}`,
-				);
-				corsError.name = "CORSError";
-				/** @type {any} */ (corsError).originalError = error;
-				ctx.errors.push(corsError);
-			}
+			const corsError = new Error(
+				`CORS header setting failed: ${error.message}`,
+			);
+			corsError.name = "CORSError";
+			/** @type {any} */ (corsError).originalError = error;
+			ctx.errors.push(corsError);
 		}
 	}
 

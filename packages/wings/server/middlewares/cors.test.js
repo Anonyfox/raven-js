@@ -423,6 +423,71 @@ test("CORS Middleware - Preflight OPTIONS Requests", async (t) => {
 		},
 	);
 
+	await t.test("should handle preflight with allowed method", async () => {
+		const cors = new CORS({
+			origin: "https://example.com",
+			methods: ["GET", "POST", "PUT"],
+		});
+
+		const ctx = createMockContext("OPTIONS", "http://localhost/test", {
+			origin: "https://example.com",
+			"access-control-request-method": "POST", // Method IS allowed
+		});
+
+		await executeMiddleware(cors, ctx);
+
+		assert.equal(ctx.responseStatusCode, 204);
+		assert.equal(ctx.responseEnded, true);
+	});
+
+	await t.test("should handle preflight with allowed headers", async () => {
+		const cors = new CORS({
+			origin: "https://example.com",
+			allowedHeaders: ["Content-Type", "Authorization", "X-API-Key"],
+		});
+
+		const ctx = createMockContext("OPTIONS", "http://localhost/test", {
+			origin: "https://example.com",
+			"access-control-request-method": "POST",
+			"access-control-request-headers": "Content-Type, Authorization", // Headers ARE allowed
+		});
+
+		await executeMiddleware(cors, ctx);
+
+		assert.equal(ctx.responseStatusCode, 204);
+		assert.equal(ctx.responseEnded, true);
+	});
+
+	await t.test(
+		"should handle preflight with method that causes toUpperCase error",
+		async () => {
+			const cors = new CORS({ origin: "https://example.com" });
+
+			const ctx = createMockContext("OPTIONS", "http://localhost/test", {
+				origin: "https://example.com",
+			});
+
+			// Mock requestHeaders.get to return an object that will error on toUpperCase
+			const originalGet = ctx.requestHeaders.get;
+			ctx.requestHeaders.get = (name) => {
+				if (name === "access-control-request-method") {
+					return {
+						toString: () => {
+							throw new Error("toString error");
+						},
+					}; // Will error on string conversion
+				}
+				return originalGet.call(ctx.requestHeaders, name);
+			};
+
+			await executeMiddleware(cors, ctx);
+
+			assert.equal(ctx.responseStatusCode, 500);
+			assert.equal(ctx.responseBody, "CORS: Internal error during preflight");
+			assert.equal(ctx.responseEnded, true);
+		},
+	);
+
 	await t.test("should handle preflight errors gracefully", async () => {
 		// Create a CORS instance that will throw an error during processing
 		const cors = new CORS({
@@ -442,6 +507,202 @@ test("CORS Middleware - Preflight OPTIONS Requests", async (t) => {
 		assert.equal(ctx.responseBody, "CORS: Internal error during preflight");
 		assert.equal(ctx.responseEnded, true);
 	});
+
+	await t.test("should handle preflight without origin header", async () => {
+		const cors = new CORS({ origin: "https://example.com" });
+
+		const ctx = createMockContext("OPTIONS", "http://localhost/test", {
+			"access-control-request-method": "POST",
+			// No origin header (same-origin request)
+		});
+
+		await executeMiddleware(cors, ctx);
+
+		assert.equal(ctx.responseStatusCode, 403);
+		assert.equal(ctx.responseBody, "CORS: Origin not allowed");
+		assert.equal(ctx.responseEnded, true);
+	});
+
+	await t.test(
+		"should handle wildcard origin security constraint in preflight",
+		async () => {
+			// Create CORS with wildcard but manually enable credentials to test runtime check
+			const cors = new CORS({ origin: "*", credentials: false });
+			cors.credentials = true; // Enable credentials after creation
+
+			const ctx = createMockContext("OPTIONS", "http://localhost/test", {
+				origin: "https://example.com",
+				"access-control-request-method": "POST",
+			});
+
+			await executeMiddleware(cors, ctx);
+
+			assert.equal(ctx.responseStatusCode, 500);
+			assert.equal(ctx.responseBody, "CORS: Internal error during preflight");
+			assert.equal(ctx.responseEnded, true);
+			assert.equal(ctx.errors.length, 1);
+			assert.equal(ctx.errors[0].name, "CORSError");
+			assert.equal(
+				ctx.errors[0].message.includes("wildcard origin with credentials"),
+				true,
+			);
+		},
+	);
+
+	await t.test("should handle wildcard origin in preflight", async () => {
+		const cors = new CORS({ origin: "*", credentials: false });
+
+		const ctx = createMockContext("OPTIONS", "http://localhost/test", {
+			origin: "https://example.com",
+			"access-control-request-method": "POST",
+		});
+
+		await executeMiddleware(cors, ctx);
+
+		assert.equal(ctx.responseStatusCode, 204);
+		assert.equal(ctx.responseEnded, true);
+		assert.equal(ctx.responseHeaders.get("access-control-allow-origin"), "*");
+	});
+
+	await t.test("should handle disabled CORS in preflight", async () => {
+		const cors = new CORS({ origin: false });
+
+		const ctx = createMockContext("OPTIONS", "http://localhost/test", {
+			origin: "https://example.com",
+			"access-control-request-method": "POST",
+		});
+
+		await executeMiddleware(cors, ctx);
+
+		assert.equal(ctx.responseStatusCode, 403);
+		assert.equal(ctx.responseBody, "CORS: Origin not allowed");
+		assert.equal(ctx.responseEnded, true);
+	});
+
+	await t.test("should handle array origin in preflight", async () => {
+		const cors = new CORS({ origin: ["https://app1.com", "https://app2.com"] });
+
+		const ctx = createMockContext("OPTIONS", "http://localhost/test", {
+			origin: "https://app1.com",
+			"access-control-request-method": "POST",
+		});
+
+		await executeMiddleware(cors, ctx);
+
+		assert.equal(ctx.responseStatusCode, 204);
+		assert.equal(ctx.responseEnded, true);
+		assert.equal(
+			ctx.responseHeaders.get("access-control-allow-origin"),
+			"https://app1.com",
+		);
+	});
+
+	await t.test("should handle regex origin in preflight", async () => {
+		const cors = new CORS({ origin: /^https:\/\/.*\.example\.com$/ });
+
+		const ctx = createMockContext("OPTIONS", "http://localhost/test", {
+			origin: "https://api.example.com",
+			"access-control-request-method": "POST",
+		});
+
+		await executeMiddleware(cors, ctx);
+
+		assert.equal(ctx.responseStatusCode, 204);
+		assert.equal(ctx.responseEnded, true);
+		assert.equal(
+			ctx.responseHeaders.get("access-control-allow-origin"),
+			"https://api.example.com",
+		);
+	});
+
+	await t.test("should handle unknown origin type in preflight", async () => {
+		const cors = new CORS({ origin: "https://example.com" });
+		// Manually set origin to an unknown type
+		cors.origin = 123; // Number type, not supported
+
+		const ctx = createMockContext("OPTIONS", "http://localhost/test", {
+			origin: "https://example.com",
+			"access-control-request-method": "POST",
+		});
+
+		await executeMiddleware(cors, ctx);
+
+		assert.equal(ctx.responseStatusCode, 403);
+		assert.equal(ctx.responseBody, "CORS: Origin not allowed");
+		assert.equal(ctx.responseEnded, true);
+	});
+
+	await t.test(
+		"should handle string origin mismatch in preflight",
+		async () => {
+			const cors = new CORS({ origin: "https://allowed.com" });
+
+			const ctx = createMockContext("OPTIONS", "http://localhost/test", {
+				origin: "https://disallowed.com",
+				"access-control-request-method": "POST",
+			});
+
+			await executeMiddleware(cors, ctx);
+
+			assert.equal(ctx.responseStatusCode, 403);
+			assert.equal(ctx.responseBody, "CORS: Origin not allowed");
+			assert.equal(ctx.responseEnded, true);
+		},
+	);
+
+	await t.test("should handle array origin mismatch in preflight", async () => {
+		const cors = new CORS({ origin: ["https://app1.com", "https://app2.com"] });
+
+		const ctx = createMockContext("OPTIONS", "http://localhost/test", {
+			origin: "https://disallowed.com",
+			"access-control-request-method": "POST",
+		});
+
+		await executeMiddleware(cors, ctx);
+
+		assert.equal(ctx.responseStatusCode, 403);
+		assert.equal(ctx.responseBody, "CORS: Origin not allowed");
+		assert.equal(ctx.responseEnded, true);
+	});
+
+	await t.test("should handle regex origin mismatch in preflight", async () => {
+		const cors = new CORS({ origin: /^https:\/\/.*\.example\.com$/ });
+
+		const ctx = createMockContext("OPTIONS", "http://localhost/test", {
+			origin: "https://malicious.com",
+			"access-control-request-method": "POST",
+		});
+
+		await executeMiddleware(cors, ctx);
+
+		assert.equal(ctx.responseStatusCode, 403);
+		assert.equal(ctx.responseBody, "CORS: Origin not allowed");
+		assert.equal(ctx.responseEnded, true);
+	});
+
+	await t.test(
+		"should handle function origin returning false in preflight",
+		async () => {
+			const cors = new CORS({
+				origin: (origin) => {
+					// Explicitly return false for this test case
+					if (origin === "https://disallowed.com") return false;
+					return true;
+				},
+			});
+
+			const ctx = createMockContext("OPTIONS", "http://localhost/test", {
+				origin: "https://disallowed.com",
+				"access-control-request-method": "POST",
+			});
+
+			await executeMiddleware(cors, ctx);
+
+			assert.equal(ctx.responseStatusCode, 403);
+			assert.equal(ctx.responseBody, "CORS: Origin not allowed");
+			assert.equal(ctx.responseEnded, true);
+		},
+	);
 });
 
 test("CORS Middleware - Regular Request Headers", async (t) => {
@@ -510,6 +771,54 @@ test("CORS Middleware - Regular Request Headers", async (t) => {
 		assert.equal(ctx.responseHeaders.get("vary"), "Accept-Encoding, Origin");
 	});
 
+	await t.test(
+		"should set headers when no exposed headers configured",
+		async () => {
+			const cors = new CORS({
+				origin: "https://example.com",
+				exposedHeaders: [], // Explicitly empty array
+			});
+
+			const ctx = createMockContext("GET", "http://localhost/test", {
+				origin: "https://example.com",
+			});
+
+			await executeMiddleware(cors, ctx);
+
+			assert.equal(
+				ctx.responseHeaders.get("access-control-allow-origin"),
+				"https://example.com",
+			);
+			// Should not set exposed headers when length is 0
+			assert.equal(
+				ctx.responseHeaders.get("access-control-expose-headers"),
+				null,
+			);
+			assert.equal(ctx.responseHeaders.get("vary"), "Origin");
+		},
+	);
+
+	await t.test(
+		"should handle response body with truthy non-string value",
+		async () => {
+			const cors = new CORS({ origin: "https://example.com" });
+
+			const ctx = createMockContext("GET", "http://localhost/test", {
+				origin: "https://example.com",
+			});
+			ctx.responseBody = 42; // Truthy non-falsy value
+			ctx.responseEnded = false;
+
+			await executeMiddleware(cors, ctx);
+
+			assert.equal(
+				ctx.responseHeaders.get("access-control-allow-origin"),
+				"https://example.com",
+			);
+			assert.equal(ctx.responseHeaders.get("vary"), "Origin");
+		},
+	);
+
 	await t.test("should not set headers for disallowed origin", async () => {
 		const cors = new CORS({ origin: "https://example.com" });
 
@@ -541,6 +850,130 @@ test("CORS Middleware - Regular Request Headers", async (t) => {
 		assert.equal(ctx.errors.length, 1);
 		assert.equal(ctx.errors[0].name, "CORSError");
 	});
+
+	await t.test(
+		"should handle unknown origin type in regular requests",
+		async () => {
+			const cors = new CORS({ origin: "https://example.com" });
+			// Manually set origin to an unknown type
+			cors.origin = Symbol("unknown"); // Symbol type, not supported
+
+			const ctx = createMockContext("GET", "http://localhost/test", {
+				origin: "https://example.com",
+			});
+
+			await executeMiddleware(cors, ctx);
+
+			// Should not set CORS headers for unknown origin type
+			assert.equal(
+				ctx.responseHeaders.get("access-control-allow-origin"),
+				null,
+			);
+		},
+	);
+
+	await t.test(
+		"should handle string origin mismatch in regular requests",
+		async () => {
+			const cors = new CORS({ origin: "https://allowed.com" });
+
+			const ctx = createMockContext("GET", "http://localhost/test", {
+				origin: "https://disallowed.com",
+			});
+
+			await executeMiddleware(cors, ctx);
+
+			// Should not set CORS headers for disallowed string origin
+			assert.equal(
+				ctx.responseHeaders.get("access-control-allow-origin"),
+				null,
+			);
+		},
+	);
+
+	await t.test(
+		"should handle array origin mismatch in regular requests",
+		async () => {
+			const cors = new CORS({
+				origin: ["https://app1.com", "https://app2.com"],
+			});
+
+			const ctx = createMockContext("GET", "http://localhost/test", {
+				origin: "https://disallowed.com",
+			});
+
+			await executeMiddleware(cors, ctx);
+
+			// Should not set CORS headers for disallowed array origin
+			assert.equal(
+				ctx.responseHeaders.get("access-control-allow-origin"),
+				null,
+			);
+		},
+	);
+
+	await t.test(
+		"should handle regex origin mismatch in regular requests",
+		async () => {
+			const cors = new CORS({ origin: /^https:\/\/.*\.example\.com$/ });
+
+			const ctx = createMockContext("GET", "http://localhost/test", {
+				origin: "https://malicious.com",
+			});
+
+			await executeMiddleware(cors, ctx);
+
+			// Should not set CORS headers for disallowed regex origin
+			assert.equal(
+				ctx.responseHeaders.get("access-control-allow-origin"),
+				null,
+			);
+		},
+	);
+
+	await t.test(
+		"should handle function origin returning false in regular requests",
+		async () => {
+			const cors = new CORS({
+				origin: (origin) => {
+					// Explicitly return false for this test case
+					if (origin === "https://disallowed.com") return false;
+					return true;
+				},
+			});
+
+			const ctx = createMockContext("GET", "http://localhost/test", {
+				origin: "https://disallowed.com",
+			});
+
+			await executeMiddleware(cors, ctx);
+
+			// Should not set CORS headers when function returns false
+			assert.equal(
+				ctx.responseHeaders.get("access-control-allow-origin"),
+				null,
+			);
+		},
+	);
+
+	await t.test(
+		"should handle boolean origin false in regular requests",
+		async () => {
+			const cors = new CORS({ origin: false });
+
+			const ctx = createMockContext("GET", "http://localhost/test", {
+				origin: "https://example.com",
+			});
+
+			await executeMiddleware(cors, ctx);
+
+			// Should not set CORS headers when origin is false
+			assert.equal(
+				ctx.responseHeaders.get("access-control-allow-origin"),
+				null,
+			);
+		},
+	);
 });
 
 test("CORS Middleware - Security Constraints", async (t) => {
@@ -624,6 +1057,29 @@ test("CORS Middleware - Header Parsing", async (t) => {
 		assert.equal(ctx.responseEnded, true);
 	});
 
+	await t.test("should handle falsy header values", async () => {
+		const cors = new CORS({ origin: "https://example.com" });
+
+		const ctx = createMockContext("OPTIONS", "http://localhost/test", {
+			origin: "https://example.com",
+			"access-control-request-method": "POST",
+		});
+
+		// Mock the get method to return undefined
+		const originalGet = ctx.requestHeaders.get;
+		ctx.requestHeaders.get = (name) => {
+			if (name === "access-control-request-headers") {
+				return undefined; // Falsy value
+			}
+			return originalGet.call(ctx.requestHeaders, name);
+		};
+
+		await executeMiddleware(cors, ctx);
+
+		assert.equal(ctx.responseStatusCode, 204);
+		assert.equal(ctx.responseEnded, true);
+	});
+
 	await t.test("should handle null header values", async () => {
 		const cors = new CORS({ origin: "https://example.com" });
 
@@ -632,6 +1088,29 @@ test("CORS Middleware - Header Parsing", async (t) => {
 			"access-control-request-method": "POST",
 			// No access-control-request-headers header (null)
 		});
+
+		await executeMiddleware(cors, ctx);
+
+		assert.equal(ctx.responseStatusCode, 204);
+		assert.equal(ctx.responseEnded, true);
+	});
+
+	await t.test("should handle non-string header values", async () => {
+		const cors = new CORS({ origin: "https://example.com" });
+
+		const ctx = createMockContext("OPTIONS", "http://localhost/test", {
+			origin: "https://example.com",
+			"access-control-request-method": "POST",
+		});
+
+		// Mock the get method to return a non-string value
+		const originalGet = ctx.requestHeaders.get;
+		ctx.requestHeaders.get = (name) => {
+			if (name === "access-control-request-headers") {
+				return 123; // Non-string value
+			}
+			return originalGet.call(ctx.requestHeaders, name);
+		};
 
 		await executeMiddleware(cors, ctx);
 
@@ -676,6 +1155,27 @@ test("CORS Middleware - Edge Cases", async (t) => {
 		assert.equal(ctx.responseEnded, true);
 	});
 
+	await t.test(
+		"should handle empty requested headers array in validation",
+		async () => {
+			const cors = new CORS({
+				origin: "https://example.com",
+				allowedHeaders: ["Content-Type", "Authorization"],
+			});
+
+			const ctx = createMockContext("OPTIONS", "http://localhost/test", {
+				origin: "https://example.com",
+				"access-control-request-method": "POST",
+				"access-control-request-headers": ",,,", // This should parse to empty array
+			});
+
+			await executeMiddleware(cors, ctx);
+
+			assert.equal(ctx.responseStatusCode, 204);
+			assert.equal(ctx.responseEnded, true);
+		},
+	);
+
 	await t.test("should skip CORS for already ended responses", async () => {
 		const cors = new CORS({ origin: "https://example.com" });
 
@@ -701,6 +1201,82 @@ test("CORS Middleware - Edge Cases", async (t) => {
 		await executeMiddleware(cors, ctx);
 
 		// Should not set CORS headers on responses without body
+		assert.equal(ctx.responseHeaders.get("access-control-allow-origin"), null);
+	});
+
+	await t.test("should skip CORS for responses with empty body", async () => {
+		const cors = new CORS({ origin: "https://example.com" });
+
+		const ctx = createMockContext("GET", "http://localhost/test", {
+			origin: "https://example.com",
+		});
+		ctx.responseBody = ""; // Empty response body
+
+		await executeMiddleware(cors, ctx);
+
+		// Should not set CORS headers on responses with empty body
+		assert.equal(ctx.responseHeaders.get("access-control-allow-origin"), null);
+	});
+
+	await t.test(
+		"should skip CORS for responses with undefined body",
+		async () => {
+			const cors = new CORS({ origin: "https://example.com" });
+
+			const ctx = createMockContext("GET", "http://localhost/test", {
+				origin: "https://example.com",
+			});
+			ctx.responseBody = undefined; // Undefined response body
+
+			await executeMiddleware(cors, ctx);
+
+			// Should not set CORS headers on responses with undefined body
+			assert.equal(
+				ctx.responseHeaders.get("access-control-allow-origin"),
+				null,
+			);
+		},
+	);
+
+	await t.test("should skip CORS for responses with 0 body", async () => {
+		const cors = new CORS({ origin: "https://example.com" });
+
+		const ctx = createMockContext("GET", "http://localhost/test", {
+			origin: "https://example.com",
+		});
+		ctx.responseBody = 0; // Zero response body
+
+		await executeMiddleware(cors, ctx);
+
+		// Should not set CORS headers on responses with 0 body
+		assert.equal(ctx.responseHeaders.get("access-control-allow-origin"), null);
+	});
+
+	await t.test("should skip CORS for responses with false body", async () => {
+		const cors = new CORS({ origin: "https://example.com" });
+
+		const ctx = createMockContext("GET", "http://localhost/test", {
+			origin: "https://example.com",
+		});
+		ctx.responseBody = false; // False response body
+
+		await executeMiddleware(cors, ctx);
+
+		// Should not set CORS headers on responses with false body
+		assert.equal(ctx.responseHeaders.get("access-control-allow-origin"), null);
+	});
+
+	await t.test("should skip CORS for responses with NaN body", async () => {
+		const cors = new CORS({ origin: "https://example.com" });
+
+		const ctx = createMockContext("GET", "http://localhost/test", {
+			origin: "https://example.com",
+		});
+		ctx.responseBody = NaN; // NaN response body
+
+		await executeMiddleware(cors, ctx);
+
+		// Should not set CORS headers on responses with NaN body
 		assert.equal(ctx.responseHeaders.get("access-control-allow-origin"), null);
 	});
 
