@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
-import { Context } from "../core/context.js";
-import { Middleware } from "../core/middleware.js";
+import { Context } from "../../core/context.js";
+import { Middleware } from "../../core/middleware.js";
 import {
 	collectLogData,
 	createDevelopmentLogLine,
@@ -44,26 +44,38 @@ describe("Logger Helper Functions", () => {
 
 		// formatDuration - test all performance ranges
 		assert.match(formatDuration(0.5), /⚡ 500 µs/); // microseconds
-		assert.match(formatDuration(5), /⚡ {3}5 ms/);  // excellent (<10ms)
+		assert.match(formatDuration(5), /⚡ {3}5 ms/); // excellent (<10ms)
 		assert.match(formatDuration(50), /✓ {2}50 ms/); // good (10-100ms)
 		assert.match(formatDuration(200), /⚠ 200 ms/); // slow (>100ms)
 		assert.match(formatDuration(1500), /⚠ {3}2 s /); // seconds
 
 		// formatTimestamp and formatRequestId
-		assert.strictEqual(formatTimestamp(new Date("2024-01-15T14:30:45.123Z")), "14:30:45");
+		assert.strictEqual(
+			formatTimestamp(new Date("2024-01-15T14:30:45.123Z")),
+			"14:30:45",
+		);
 		assert.strictEqual(formatRequestId("1234567890-abc123def"), "abc123def");
 	});
 
 	test("collectLogData extracts context information", () => {
 		// Test with full headers
-		const fullCtx = new Context("POST", new URL("http://localhost/api/users"), new Headers({
-			"user-agent": "TestAgent/1.0",
-			"referer": "http://localhost/",
-			"x-forwarded-for": "192.168.1.1",
-			"authorization": "Bearer user123",
-		}));
+		const fullCtx = new Context(
+			"POST",
+			new URL("http://localhost/api/users"),
+			new Headers({
+				"user-agent": "TestAgent/1.0",
+				referer: "http://localhost/",
+				"x-forwarded-for": "192.168.1.1",
+				authorization: "Bearer user123",
+			}),
+		);
 		fullCtx.responseStatusCode = 201;
-		const fullLog = collectLogData(fullCtx, performance.now(), "test-id", new Date());
+		const fullLog = collectLogData(
+			fullCtx,
+			performance.now(),
+			"test-id",
+			new Date(),
+		);
 
 		assert.strictEqual(fullLog.method, "POST");
 		assert.strictEqual(fullLog.statusCode, 201);
@@ -72,17 +84,35 @@ describe("Logger Helper Functions", () => {
 		assert.strictEqual(fullLog.userIdentity, "Bearer user123");
 
 		// Test with missing headers
-		const emptyCtx = new Context("GET", new URL("http://localhost/test"), new Headers());
-		const emptyLog = collectLogData(emptyCtx, performance.now(), "test-id", new Date());
+		const emptyCtx = new Context(
+			"GET",
+			new URL("http://localhost/test"),
+			new Headers(),
+		);
+		const emptyLog = collectLogData(
+			emptyCtx,
+			performance.now(),
+			"test-id",
+			new Date(),
+		);
 		assert.strictEqual(emptyLog.userAgent, null);
 		assert.strictEqual(emptyLog.ip, "unknown");
 		assert.strictEqual(emptyLog.userIdentity, null);
 
 		// Test x-real-ip fallback (when x-forwarded-for is missing)
-		const realIpCtx = new Context("GET", new URL("http://localhost/test"), new Headers({
-			"x-real-ip": "10.0.0.1"
-		}));
-		const realIpLog = collectLogData(realIpCtx, performance.now(), "test-id", new Date());
+		const realIpCtx = new Context(
+			"GET",
+			new URL("http://localhost/test"),
+			new Headers({
+				"x-real-ip": "10.0.0.1",
+			}),
+		);
+		const realIpLog = collectLogData(
+			realIpCtx,
+			performance.now(),
+			"test-id",
+			new Date(),
+		);
 		assert.strictEqual(realIpLog.ip, "10.0.0.1");
 	});
 
@@ -91,9 +121,15 @@ describe("Logger Helper Functions", () => {
 		const originalNodeEnv = process.env.NODE_ENV;
 
 		const logData = {
-			method: "GET", path: "/api/users", statusCode: 200, duration: 15,
-			userAgent: "TestAgent", requestId: "test-id", timestamp: new Date(),
-			ip: "192.168.1.1", userIdentity: "Bearer user123",
+			method: "GET",
+			path: "/api/users",
+			statusCode: 200,
+			duration: 15,
+			userAgent: "TestAgent",
+			requestId: "test-id",
+			timestamp: new Date(),
+			ip: "192.168.1.1",
+			userIdentity: "Bearer user123",
 		};
 
 		// Test with NODE_ENV set
@@ -108,7 +144,11 @@ describe("Logger Helper Functions", () => {
 		// Test errors and edge cases
 		const errors = [new Error("Test error")];
 		const errorLog = createStructuredLog({
-			...logData, statusCode: 500, duration: 0.5, userIdentity: "", errors
+			...logData,
+			statusCode: 500,
+			duration: 0.5,
+			userIdentity: "",
+			errors,
 		});
 		assert.strictEqual(errorLog.level, "error");
 		assert.strictEqual(errorLog.user.identity, "anonymous");
@@ -117,7 +157,9 @@ describe("Logger Helper Functions", () => {
 
 		// Test success status code but with errors (should be level: "error" due to errors)
 		const successWithErrorsLog = createStructuredLog({
-			...logData, statusCode: 200, errors
+			...logData,
+			statusCode: 200,
+			errors,
 		});
 		assert.strictEqual(successWithErrorsLog.level, "error");
 		assert.strictEqual(successWithErrorsLog.result.success, false);
@@ -135,8 +177,12 @@ describe("Logger Helper Functions", () => {
 
 	test("development output functions", () => {
 		const logData = {
-			method: "GET", path: "/test", statusCode: 200, duration: 15,
-			requestId: "1234567890-abc123def", timestamp: new Date("2024-01-15T14:30:45.123Z"),
+			method: "GET",
+			path: "/test",
+			statusCode: 200,
+			duration: 15,
+			requestId: "1234567890-abc123def",
+			timestamp: new Date("2024-01-15T14:30:45.123Z"),
 		};
 
 		// createDevelopmentLogLine
@@ -166,7 +212,7 @@ describe("Logger Helper Functions", () => {
 			// logDevelopment with errors
 			logs.length = 0;
 			const errors = [new Error("Test error")];
-			logDevelopment({...logData, statusCode: 500}, false, errors);
+			logDevelopment({ ...logData, statusCode: 500 }, false, errors);
 			assert.ok(logs.length > 2); // Main line + error details
 			assert.match(logs[0], /\[500\]/);
 		} finally {
@@ -199,25 +245,30 @@ describe("Logger Helper Functions", () => {
 				"    at testFunc (file:///relative/path/file.js:10:5)",
 				// Absolute path that's neither CWD nor node_modules (should remain as fullPath)
 				"    at someLib (file:///usr/local/lib/somelib.js:20:3)",
-
-			].join('\n'),
-			code: 'VALIDATION_ERROR',
-			field: 'email'
+			].join("\n"),
+			code: "VALIDATION_ERROR",
+			field: "email",
 		};
 
 		// Test single error
 		const singleOutput = formatErrorForDevelopment(mockError, 0, 1);
 		assert.ok(Array.isArray(singleOutput));
-		const joinedOutput = singleOutput.join('\n');
+		const joinedOutput = singleOutput.join("\n");
 
 		// Check main error formatting (accounting for ANSI color codes)
-		assert.match(joinedOutput, /\[Error\] ValidationError.*: Test validation failed/);
+		assert.match(
+			joinedOutput,
+			/\[Error\] ValidationError.*: Test validation failed/,
+		);
 		assert.match(joinedOutput, /Stack trace:/);
 
 		// Check relative path formatting for user code (first line should have arrow)
 		assert.match(joinedOutput, /→.*\.\/src\/validators\/input\.js line:42/);
 		// Check second user code line (should not have arrow)
-		assert.match(joinedOutput, / {2}at checkInput.*\.\/src\/utils\/checker\.js line:15/);
+		assert.match(
+			joinedOutput,
+			/ {2}at checkInput.*\.\/src\/utils\/checker\.js line:15/,
+		);
 
 		// Check external package formatting (regular and scoped)
 		assert.match(joinedOutput, /\[express\] lib\/router\/index\.js line:123/);
@@ -239,18 +290,18 @@ describe("Logger Helper Functions", () => {
 
 		// Test multiple errors (to get index formatting)
 		const multipleOutput = formatErrorForDevelopment(mockError, 1, 3);
-		assert.match(multipleOutput.join('\n'), /\[Error 2\/3\]/);
+		assert.match(multipleOutput.join("\n"), /\[Error 2\/3\]/);
 
 		// Test error without custom properties (should not show "Additional properties" section)
 		const simpleError = new Error("Simple error");
 		const simpleOutput = formatErrorForDevelopment(simpleError, 0, 1);
-		const simpleJoined = simpleOutput.join('\n');
+		const simpleJoined = simpleOutput.join("\n");
 		assert.doesNotMatch(simpleJoined, /Additional properties:/);
 
 		// Test error without stack trace (to hit the no-stack branch)
 		const noStackError = { name: "CustomError", message: "No stack available" };
 		const noStackOutput = formatErrorForDevelopment(noStackError, 0, 1);
-		const noStackJoined = noStackOutput.join('\n');
+		const noStackJoined = noStackOutput.join("\n");
 		assert.match(noStackJoined, /\[Error\] CustomError.*: No stack available/);
 		assert.doesNotMatch(noStackJoined, /Stack trace:/);
 		assert.doesNotMatch(noStackJoined, /Additional properties:/);
@@ -259,23 +310,23 @@ describe("Logger Helper Functions", () => {
 		const emptyStackError = {
 			name: "EmptyStackError",
 			message: "Empty stack",
-			stack: "EmptyStackError: Empty stack"
+			stack: "EmptyStackError: Empty stack",
 		};
 		const emptyStackOutput = formatErrorForDevelopment(emptyStackError, 0, 1);
-		const emptyStackJoined = emptyStackOutput.join('\n');
+		const emptyStackJoined = emptyStackOutput.join("\n");
 		assert.match(emptyStackJoined, /\[Error\] EmptyStackError.*: Empty stack/);
 		assert.doesNotMatch(emptyStackJoined, /Stack trace:/);
 
 		// Test error with missing name (to hit error.name || 'Error' branch)
 		const noNameError = { message: "No name error" };
 		const noNameOutput = formatErrorForDevelopment(noNameError, 0, 1);
-		const noNameJoined = noNameOutput.join('\n');
+		const noNameJoined = noNameOutput.join("\n");
 		assert.match(noNameJoined, /\[Error\] Error.*: No name error/);
 
 		// Test error with missing message (to hit error.message || 'Unknown error' branch)
 		const noMessageError = { name: "TestError" };
 		const noMessageOutput = formatErrorForDevelopment(noMessageError, 0, 1);
-		const noMessageJoined = noMessageOutput.join('\n');
+		const noMessageJoined = noMessageOutput.join("\n");
 		assert.match(noMessageJoined, /\[Error\] TestError.*: Unknown error/);
 	});
 });
@@ -293,7 +344,7 @@ describe("Logger Middleware", () => {
 			production: true,
 			includeHeaders: false,
 			includeBody: true,
-			identifier: "custom"
+			identifier: "custom",
 		});
 		assert.strictEqual(customLogger.production, true);
 		assert.strictEqual(customLogger.includeHeaders, false);
@@ -303,7 +354,11 @@ describe("Logger Middleware", () => {
 
 	test("complete request lifecycle with error collection", async () => {
 		const logger = new Logger({ production: false });
-		const ctx = new Context("GET", new URL("http://localhost/test"), new Headers());
+		const ctx = new Context(
+			"GET",
+			new URL("http://localhost/test"),
+			new Headers(),
+		);
 
 		// Add some errors to context to test error consumption
 		ctx.errors.push(new Error("Test error 1"));
@@ -324,7 +379,7 @@ describe("Logger Middleware", () => {
 			// Check that error details were logged
 			assert.ok(logs.length > 2); // Main line + error details
 			assert.match(logs[0], /\[500\]/);
-			const allOutput = logs.join('\n');
+			const allOutput = logs.join("\n");
 			assert.match(allOutput, /Test error 1/);
 			assert.match(allOutput, /Test error 2/);
 		} finally {
@@ -334,9 +389,13 @@ describe("Logger Middleware", () => {
 
 	test("production mode structured logging", async () => {
 		const logger = new Logger({ production: true });
-		const ctx = new Context("POST", new URL("http://localhost/api/data"), new Headers({
-			"authorization": "Bearer token123"
-		}));
+		const ctx = new Context(
+			"POST",
+			new URL("http://localhost/api/data"),
+			new Headers({
+				authorization: "Bearer token123",
+			}),
+		);
 
 		const logs = [];
 		const originalLog = console.log;

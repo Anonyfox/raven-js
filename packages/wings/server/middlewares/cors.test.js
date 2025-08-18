@@ -8,7 +8,7 @@
 
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { Context } from "../core/context.js";
+import { Context } from "../../core/context.js";
 import { CORS } from "./cors.js";
 
 /**

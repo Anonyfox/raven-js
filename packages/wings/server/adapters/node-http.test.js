@@ -3,9 +3,9 @@ import http from "node:http";
 import https from "node:https";
 import net from "node:net";
 import { describe, test } from "node:test";
-import { Router } from "../core/index.js";
+import { Router } from "../../core/index.js";
+import { generateSSLCert } from "../generate-ssl-cert.js";
 import { NodeHttp } from "./node-http.js";
-import { generateSSLCert } from "./generate-ssl-cert.js";
 
 describe("NodeHttp", () => {
 	test("should create server with options", () => {
@@ -593,9 +593,14 @@ describe("NodeHttp", () => {
 			await server.listen(port);
 
 			try {
-				const response = await makeHTTPSRequest("GET", `https://localhost:${port}/test`, null, {
-					rejectUnauthorized: false // Accept self-signed certificates for testing
-				});
+				const response = await makeHTTPSRequest(
+					"GET",
+					`https://localhost:${port}/test`,
+					null,
+					{
+						rejectUnauthorized: false, // Accept self-signed certificates for testing
+					},
+				);
 
 				assert.strictEqual(response.statusCode, 200);
 				const data = JSON.parse(response.body);

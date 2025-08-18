@@ -9,8 +9,8 @@ import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, mock, test } from "node:test";
-import { Context } from "../core/context.js";
-import { Middleware } from "../core/middleware.js";
+import { Context } from "../../core/context.js";
+import { Middleware } from "../../core/middleware.js";
 import { Assets } from "./assets.js";
 
 /**

@@ -45,7 +45,7 @@
  * @since 0.2.5
  */
 
-import { Middleware } from "../core/middleware.js";
+import { Middleware } from "../../core/middleware.js";
 
 /**
  * RavenJS color palette for terminal output
@@ -61,30 +61,30 @@ const COLORS = {
 	black: "\x1b[30m",
 
 	// Method with black backgrounds for perfect readability
-	methodGet: "\x1b[92m\x1b[40m",    // Bright green on black
-	methodPost: "\x1b[94m\x1b[40m",   // Bright blue on black
-	methodPut: "\x1b[93m\x1b[40m",    // Bright yellow on black
+	methodGet: "\x1b[92m\x1b[40m", // Bright green on black
+	methodPost: "\x1b[94m\x1b[40m", // Bright blue on black
+	methodPut: "\x1b[93m\x1b[40m", // Bright yellow on black
 	methodDelete: "\x1b[91m\x1b[40m", // Bright red on black
-	methodPatch: "\x1b[95m\x1b[40m",  // Bright magenta on black
-	methodOther: "\x1b[97m\x1b[40m",  // Bright white on black
+	methodPatch: "\x1b[95m\x1b[40m", // Bright magenta on black
+	methodOther: "\x1b[97m\x1b[40m", // Bright white on black
 
 	// Status with black backgrounds and colored text
-	statusSuccess: "\x1b[92m\x1b[40m",     // Bright green on black
-	statusRedirect: "\x1b[96m\x1b[40m",    // Bright cyan on black
+	statusSuccess: "\x1b[92m\x1b[40m", // Bright green on black
+	statusRedirect: "\x1b[96m\x1b[40m", // Bright cyan on black
 	statusClientError: "\x1b[93m\x1b[40m", // Bright yellow on black
 	statusServerError: "\x1b[91m\x1b[40m", // Bright red on black
-	statusOther: "\x1b[97m\x1b[40m",       // Bright white on black
+	statusOther: "\x1b[97m\x1b[40m", // Bright white on black
 
 	// Performance highlighting (black background, bright colors)
-	perfExcellent: "\x1b[92m\x1b[40m",     // Bright green on black
-	perfGood: "\x1b[96m\x1b[40m",          // Bright cyan on black
-	perfSlow: "\x1b[93m\x1b[40m",          // Bright yellow on black
-	perfVerySlow: "\x1b[91m\x1b[40m",      // Bright red on black
+	perfExcellent: "\x1b[92m\x1b[40m", // Bright green on black
+	perfGood: "\x1b[96m\x1b[40m", // Bright cyan on black
+	perfSlow: "\x1b[93m\x1b[40m", // Bright yellow on black
+	perfVerySlow: "\x1b[91m\x1b[40m", // Bright red on black
 
 	// Path and other elements
-	path: "\x1b[96m",        // Bright cyan
-	time: "\x1b[90m",        // Gray
-	requestId: "\x1b[90m",   // Gray
+	path: "\x1b[96m", // Bright cyan
+	time: "\x1b[90m", // Gray
+	requestId: "\x1b[90m", // Gray
 };
 
 /**
@@ -94,8 +94,6 @@ const COLORS = {
 export function generateRequestId() {
 	return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
-
-
 
 /**
  * Get status code color with background for terminal output
@@ -163,7 +161,7 @@ export function formatDuration(duration) {
 	} else {
 		// Seconds
 		value = Math.round(duration / 1000);
-		unit = "s ";  // Extra space for visual alignment with µs/ms
+		unit = "s "; // Extra space for visual alignment with µs/ms
 		icon = "⚠";
 		color = COLORS.perfVerySlow;
 	}
@@ -188,7 +186,7 @@ export function formatDuration(duration) {
  * - Network details (IP address, User-Agent, Referrer)
  * - Request tracking (unique ID, timestamp)
  *
- * @param {import('../core/context.js').Context} ctx - Wings request context (contains all request/response data)
+ * @param {import('../../core/context.js').Context} ctx - Wings request context (contains all request/response data)
  * @param {number} startTime - Request start time from performance.now()
  * @param {string} requestId - Unique request identifier for tracing
  * @param {Date} timestamp - Request timestamp for logging
@@ -289,7 +287,8 @@ export function createStructuredLog({
 	userIdentity,
 	errors = [],
 }) {
-	const isSuccess = statusCode >= 200 && statusCode < 400 && errors.length === 0;
+	const isSuccess =
+		statusCode >= 200 && statusCode < 400 && errors.length === 0;
 
 	const logEntry = {
 		// SOC2 CC5.1: Control Activities - Timestamp in UTC/ISO format
@@ -316,7 +315,10 @@ export function createStructuredLog({
 		result: {
 			success: isSuccess,
 			statusCode,
-			duration: duration < 1 ? `${Math.round(duration * 1000)}µs` : `${Math.round(duration)}ms`,
+			duration:
+				duration < 1
+					? `${Math.round(duration * 1000)}µs`
+					: `${Math.round(duration)}ms`,
 			performance:
 				duration < 10 ? "excellent" : duration < 100 ? "good" : "slow",
 		},
@@ -443,7 +445,13 @@ function formatStackTraceLine(line, cwd) {
 	// Handle lines with parentheses (e.g., "at function (file:///path/to/file.js:10:5)")
 	const parenthesesMatch = line.match(/\((file:\/\/\/[^)]+)\)/);
 	if (parenthesesMatch) {
-		return formatFileUrl(line, parenthesesMatch[1], parenthesesMatch[0], cwd, true);
+		return formatFileUrl(
+			line,
+			parenthesesMatch[1],
+			parenthesesMatch[0],
+			cwd,
+			true,
+		);
 	}
 
 	// Handle lines without parentheses (e.g., "at async file:///path/to/file.js:10:5")
@@ -465,7 +473,7 @@ function formatStackTraceLine(line, cwd) {
  * @returns {{formattedLine: string, isExternal: boolean}} Formatted line and external flag
  */
 function formatFileUrl(line, fileUrl, replaceTarget, cwd, hasParentheses) {
-	const pathAndNumbers = fileUrl.replace('file:///', '');
+	const pathAndNumbers = fileUrl.replace("file:///", "");
 
 	// Extract line and column numbers
 	const lineColMatch = pathAndNumbers.match(/^(.+):(\d+):(\d+)$/);
@@ -477,25 +485,27 @@ function formatFileUrl(line, fileUrl, replaceTarget, cwd, hasParentheses) {
 
 	// Check if it's a relative path from current working directory
 	// Ensure we have proper path comparison with leading slash
-	const normalizedFullPath = fullPath.startsWith('/') ? fullPath : `/${fullPath}`;
+	const normalizedFullPath = fullPath.startsWith("/")
+		? fullPath
+		: `/${fullPath}`;
 	if (normalizedFullPath.startsWith(cwd)) {
 		const relativePath = normalizedFullPath.slice(cwd.length + 1); // +1 to remove leading slash
 		formattedPath = `./${relativePath}`;
 	}
 	// Check if it's from node_modules
-	else if (normalizedFullPath.includes('/node_modules/')) {
-		const nodeModulesIndex = normalizedFullPath.lastIndexOf('/node_modules/');
+	else if (normalizedFullPath.includes("/node_modules/")) {
+		const nodeModulesIndex = normalizedFullPath.lastIndexOf("/node_modules/");
 		const packagePath = normalizedFullPath.slice(nodeModulesIndex + 14); // 14 = '/node_modules/'.length
-		const packageParts = packagePath.split('/');
+		const packageParts = packagePath.split("/");
 
 		// Handle scoped packages (e.g., @org/package)
 		let packageName, relativePath;
-		if (packageParts[0].startsWith('@')) {
+		if (packageParts[0].startsWith("@")) {
 			packageName = `${packageParts[0]}/${packageParts[1]}`;
-			relativePath = packageParts.slice(2).join('/');
+			relativePath = packageParts.slice(2).join("/");
 		} else {
 			packageName = packageParts[0];
-			relativePath = packageParts.slice(1).join('/');
+			relativePath = packageParts.slice(1).join("/");
 		}
 
 		formattedPath = `[${packageName}] ${relativePath}`;
@@ -506,7 +516,9 @@ function formatFileUrl(line, fileUrl, replaceTarget, cwd, hasParentheses) {
 	const formattedSection = `${formattedPath} line:${lineNumber}`;
 
 	// Replace based on whether it has parentheses or not
-	const replacement = hasParentheses ? `(${formattedSection})` : formattedSection;
+	const replacement = hasParentheses
+		? `(${formattedSection})`
+		: formattedSection;
 	const formattedLine = line.replace(replaceTarget, replacement);
 
 	return { formattedLine, isExternal };
@@ -551,44 +563,51 @@ function formatFileUrl(line, fileUrl, replaceTarget, cwd, hasParentheses) {
  * ```
  */
 export function formatErrorForDevelopment(error, index, total) {
-	const errorPrefix = total > 1 ? `[Error ${index + 1}/${total}]` : '[Error]';
+	const errorPrefix = total > 1 ? `[Error ${index + 1}/${total}]` : "[Error]";
 	const lines = [];
 	const cwd = process.cwd();
 
 	// Main error line with type and message
-	const errorType = error.name || 'Error';
-	const errorMessage = error.message || 'Unknown error';
-	lines.push(`  ${COLORS.statusServerError}${errorPrefix} ${errorType}${COLORS.reset}: ${errorMessage}`);
+	const errorType = error.name || "Error";
+	const errorMessage = error.message || "Unknown error";
+	lines.push(
+		`  ${COLORS.statusServerError}${errorPrefix} ${errorType}${COLORS.reset}: ${errorMessage}`,
+	);
 
 	// Stack trace (formatted for readability)
 	if (error.stack) {
-		const stackLines = error.stack.split('\n');
+		const stackLines = error.stack.split("\n");
 		// Skip the first line as it's usually just the error message we already showed
-		const relevantStack = stackLines.slice(1).filter(line => line.trim());
+		const relevantStack = stackLines.slice(1).filter((line) => line.trim());
 
 		if (relevantStack.length > 0) {
 			lines.push(`  ${COLORS.dim}Stack trace:${COLORS.reset}`);
 			relevantStack.forEach((line, i) => {
 				const trimmedLine = line.trim();
-				const { formattedLine, isExternal } = formatStackTraceLine(trimmedLine, cwd);
+				const { formattedLine, isExternal } = formatStackTraceLine(
+					trimmedLine,
+					cwd,
+				);
 
 				// Determine if this is user code (not node_modules, not node:internal)
-				const isUserCode = !trimmedLine.includes('node_modules') && !trimmedLine.includes('node:internal');
+				const isUserCode =
+					!trimmedLine.includes("node_modules") &&
+					!trimmedLine.includes("node:internal");
 
 				// Choose colors and prefix
 				let color, prefix;
 				if (isExternal) {
 					// External packages: dimmed red
 					color = `${COLORS.dim}${COLORS.statusServerError}`;
-					prefix = '  ';
+					prefix = "  ";
 				} else if (isUserCode) {
 					// User code: bright red with arrow
 					color = COLORS.statusServerError;
-					prefix = i === 0 ? '→ ' : '  ';
+					prefix = i === 0 ? "→ " : "  ";
 				} else {
 					// Framework/internal code: dimmed
 					color = COLORS.dim;
-					prefix = '  ';
+					prefix = "  ";
 				}
 
 				lines.push(`    ${color}${prefix}${formattedLine}${COLORS.reset}`);
@@ -598,11 +617,11 @@ export function formatErrorForDevelopment(error, index, total) {
 
 	// Additional error properties (if any)
 	const errorProps = Object.getOwnPropertyNames(error).filter(
-		prop => !['name', 'message', 'stack'].includes(prop)
+		(prop) => !["name", "message", "stack"].includes(prop),
 	);
 	if (errorProps.length > 0) {
 		lines.push(`  ${COLORS.dim}Additional properties:${COLORS.reset}`);
-		errorProps.forEach(prop => {
+		errorProps.forEach((prop) => {
 			/** @type {any} */ const errorObj = error;
 			const value = errorObj[prop];
 			lines.push(`    ${COLORS.dim}${prop}:${COLORS.reset} ${String(value)}`);

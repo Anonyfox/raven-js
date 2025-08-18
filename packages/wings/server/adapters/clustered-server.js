@@ -61,7 +61,11 @@ export class ClusteredServer extends NodeHttp {
 			this.#readyWorkers = 0;
 
 			// Setup auto-restart for crashed workers (instant restart)
-			this.#exitListener = (/** @type {*} */ _worker, /** @type {number} */ code, /** @type {*} */ _signal) => {
+			this.#exitListener = (
+				/** @type {*} */ _worker,
+				/** @type {number} */ code,
+				/** @type {*} */ _signal,
+			) => {
 				// Only restart if worker crashed (not graceful shutdown) and we're still listening
 				if (code !== 0 && this.#isListening) {
 					cluster.fork(); // Instant restart - new worker serves requests immediately
@@ -125,16 +129,19 @@ export class ClusteredServer extends NodeHttp {
 	#waitForWorkersReady() {
 		return new Promise((resolve) => {
 			// Create message listener that auto-cleans up
-			this.#messageListener = (/** @type {*} */ _worker, /** @type {string} */ message) => {
+			this.#messageListener = (
+				/** @type {*} */ _worker,
+				/** @type {string} */ message,
+			) => {
 				// Only count "ready" messages and prevent over-counting
 				if (message === "ready" && this.#readyWorkers < this.#expectedWorkers) {
 					this.#readyWorkers++;
 
-									// Instant resolution when all workers ready
-				if (this.#readyWorkers === this.#expectedWorkers) {
-					this.#removeMessageListener();
-					resolve();
-				}
+					// Instant resolution when all workers ready
+					if (this.#readyWorkers === this.#expectedWorkers) {
+						this.#removeMessageListener();
+						resolve();
+					}
 				}
 			};
 

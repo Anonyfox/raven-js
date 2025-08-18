@@ -111,12 +111,12 @@
  * ```
  */
 
-export { Assets } from "./assets.js";
-export { ClusteredServer } from "./clustered-server.js";
-export { Compression } from "./compression.js";
-export { CORS } from "./cors.js";
-export { DevServer } from "./dev-server.js";
+export { ClusteredServer } from "./adapters/clustered-server.js";
+export { DevServer } from "./adapters/dev-server.js";
+export * from "./adapters/node-http.js";
 export { generateSSLCert } from "./generate-ssl-cert.js";
-export { Logger } from "./logger.js";
-export * from "./node-http.js";
+export { Assets } from "./middlewares/assets.js";
+export { Compression } from "./middlewares/compression.js";
+export { CORS } from "./middlewares/cors.js";
+export { Logger } from "./middlewares/logger.js";
 export * from "./server-options.js";

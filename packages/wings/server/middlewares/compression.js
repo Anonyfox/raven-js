@@ -59,7 +59,7 @@ import {
 	createDeflate,
 	createGzip,
 } from "node:zlib";
-import { Middleware } from "../core/middleware.js";
+import { Middleware } from "../../core/middleware.js";
 
 /**
  * Default compressible MIME types
@@ -436,7 +436,7 @@ export class Compression extends Middleware {
 	 * 4. Compress response data
 	 * 5. Update response headers
 	 *
-	 * @param {import('../core/context.js').Context} ctx - Request context
+	 * @param {import('../../core/context.js').Context} ctx - Request context
 	 */
 	async #compressResponse(ctx) {
 		try {

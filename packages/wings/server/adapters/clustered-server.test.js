@@ -11,7 +11,7 @@ describe("ClusteredServer", () => {
 	const basePort = 3457;
 	let portCounter = 0;
 
-	const getNextPort = () => basePort + (portCounter++);
+	const getNextPort = () => basePort + portCounter++;
 
 	beforeEach(async () => {
 		tempScriptPath = null;
@@ -40,7 +40,10 @@ describe("ClusteredServer", () => {
 	 * Helper to create and run a test script
 	 */
 	const runTestScript = async (scriptContent, timeout = 5000) => {
-		const scriptPath = join(tmpdir(), `clustered-server-test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.mjs`);
+		const scriptPath = join(
+			tmpdir(),
+			`clustered-server-test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.mjs`,
+		);
 		tempScriptPath = scriptPath;
 
 		writeFileSync(scriptPath, scriptContent);
@@ -63,15 +66,19 @@ describe("ClusteredServer", () => {
 
 		return new Promise((resolve, reject) => {
 			const timer = setTimeout(() => {
-				reject(new Error(`Test script timeout. Output: ${output.join('')}, Errors: ${errors.join('')}`));
+				reject(
+					new Error(
+						`Test script timeout. Output: ${output.join("")}, Errors: ${errors.join("")}`,
+					),
+				);
 			}, timeout);
 
 			childProcess.on("exit", (code) => {
 				clearTimeout(timer);
 				resolve({
 					code,
-					output: output.join(''),
-					errors: errors.join('')
+					output: output.join(""),
+					errors: errors.join(""),
 				});
 			});
 
@@ -82,12 +89,12 @@ describe("ClusteredServer", () => {
 		});
 	};
 
-		test("🚀 ULTIMATE: Single Server Boot - Complete Coverage", async () => {
+	test("🚀 ULTIMATE: Single Server Boot - Complete Coverage", async () => {
 		const port = getNextPort();
 		const script = `
 import cluster from "node:cluster";
 import { Router } from "file://${process.cwd()}/core/index.js";
-import { ClusteredServer } from "file://${process.cwd()}/server/clustered-server.js";
+import { ClusteredServer } from "file://${process.cwd()}/server/adapters/clustered-server.js";
 
 const results = { http: {}, doubleListen: {}, crash: {}, unit: {}, surgical: {}, worker: {} };
 
@@ -256,48 +263,124 @@ if (cluster.isPrimary) {
 `;
 
 		const result = await runTestScript(script, 12000);
-		assert.strictEqual(result.code, 0, `Ultimate test should exit cleanly. Output: ${result.output}`);
+		assert.strictEqual(
+			result.code,
+			0,
+			`Ultimate test should exit cleanly. Output: ${result.output}`,
+		);
 
 		const match = result.output.match(/ULTIMATE_RESULT: (.+)/);
 		assert.ok(match, "Should have ultimate test result");
 
 		const ultimateResult = JSON.parse(match[1]);
-		assert.ok(!ultimateResult.error, `Should not have error: ${ultimateResult.error}`);
+		assert.ok(
+			!ultimateResult.error,
+			`Should not have error: ${ultimateResult.error}`,
+		);
 
 		// Verify HTTP functionality
-		assert.strictEqual(ultimateResult.http.status, 200, "HTTP should return 200");
-		assert.strictEqual(ultimateResult.http.contentType, "text/html", "HTTP should return HTML");
-		assert.ok(ultimateResult.http.hasExpectedContent, "HTTP should return expected content");
+		assert.strictEqual(
+			ultimateResult.http.status,
+			200,
+			"HTTP should return 200",
+		);
+		assert.strictEqual(
+			ultimateResult.http.contentType,
+			"text/html",
+			"HTTP should return HTML",
+		);
+		assert.ok(
+			ultimateResult.http.hasExpectedContent,
+			"HTTP should return expected content",
+		);
 
 		// Verify double-listen prevention
-		assert.strictEqual(ultimateResult.doubleListen.preventionWorked, true, "Double-listen should be prevented");
-		assert.ok(ultimateResult.doubleListen.timeElapsed < 100, "Double-listen should be fast");
+		assert.strictEqual(
+			ultimateResult.doubleListen.preventionWorked,
+			true,
+			"Double-listen should be prevented",
+		);
+		assert.ok(
+			ultimateResult.doubleListen.timeElapsed < 100,
+			"Double-listen should be fast",
+		);
 
 		// Verify crash recovery
-		assert.ok(ultimateResult.crash.initialWorkers > 0, "Should have initial workers");
-		assert.strictEqual(ultimateResult.crash.serverStillWorks, true, "Server should work after crash");
+		assert.ok(
+			ultimateResult.crash.initialWorkers > 0,
+			"Should have initial workers",
+		);
+		assert.strictEqual(
+			ultimateResult.crash.serverStillWorks,
+			true,
+			"Server should work after crash",
+		);
 
 		// Verify unit tests
-		assert.strictEqual(ultimateResult.unit.primaryGetters.isMainProcess, true, "Primary should be main process");
-		assert.strictEqual(ultimateResult.unit.primaryGetters.isWorkerProcess, false, "Primary should not be worker");
-		assert.strictEqual(ultimateResult.unit.workerGetters.isMainProcess, false, "Worker should not be main process");
-		assert.strictEqual(ultimateResult.unit.workerGetters.isWorkerProcess, true, "Worker should be worker process");
-		assert.strictEqual(ultimateResult.unit.arithmetic.errorBranch.errorThrown, true, "Custom error should be thrown");
-		assert.strictEqual(ultimateResult.unit.arithmetic.errorBranch.errorCode, "DIFFERENT_ERROR", "Error code should match");
-		assert.strictEqual(ultimateResult.unit.arithmetic.serverNotRunning.errorIgnored, true, "ERR_SERVER_NOT_RUNNING should be ignored");
+		assert.strictEqual(
+			ultimateResult.unit.primaryGetters.isMainProcess,
+			true,
+			"Primary should be main process",
+		);
+		assert.strictEqual(
+			ultimateResult.unit.primaryGetters.isWorkerProcess,
+			false,
+			"Primary should not be worker",
+		);
+		assert.strictEqual(
+			ultimateResult.unit.workerGetters.isMainProcess,
+			false,
+			"Worker should not be main process",
+		);
+		assert.strictEqual(
+			ultimateResult.unit.workerGetters.isWorkerProcess,
+			true,
+			"Worker should be worker process",
+		);
+		assert.strictEqual(
+			ultimateResult.unit.arithmetic.errorBranch.errorThrown,
+			true,
+			"Custom error should be thrown",
+		);
+		assert.strictEqual(
+			ultimateResult.unit.arithmetic.errorBranch.errorCode,
+			"DIFFERENT_ERROR",
+			"Error code should match",
+		);
+		assert.strictEqual(
+			ultimateResult.unit.arithmetic.serverNotRunning.errorIgnored,
+			true,
+			"ERR_SERVER_NOT_RUNNING should be ignored",
+		);
 
 		// Verify surgical tests
-		assert.strictEqual(ultimateResult.surgical.messageFiltering.acceptedMessages, 2, "Should accept 2 ready messages");
-		assert.strictEqual(ultimateResult.surgical.messageFiltering.overCountingPrevented, true, "Should prevent over-counting");
-		assert.strictEqual(ultimateResult.surgical.exitListener.gracefulExit, false, "Graceful exit should not restart");
-		assert.strictEqual(ultimateResult.surgical.exitListener.crashWhileListening, true, "Crash while listening should restart");
+		assert.strictEqual(
+			ultimateResult.surgical.messageFiltering.acceptedMessages,
+			2,
+			"Should accept 2 ready messages",
+		);
+		assert.strictEqual(
+			ultimateResult.surgical.messageFiltering.overCountingPrevented,
+			true,
+			"Should prevent over-counting",
+		);
+		assert.strictEqual(
+			ultimateResult.surgical.exitListener.gracefulExit,
+			false,
+			"Graceful exit should not restart",
+		);
+		assert.strictEqual(
+			ultimateResult.surgical.exitListener.crashWhileListening,
+			true,
+			"Crash while listening should restart",
+		);
 	});
 
 	test("⚡ LEAN: Worker Close Edge Case", async () => {
 		const script = `
 import cluster from "node:cluster";
 import { Router } from "file://${process.cwd()}/core/index.js";
-import { ClusteredServer } from "file://${process.cwd()}/server/clustered-server.js";
+import { ClusteredServer } from "file://${process.cwd()}/server/adapters/clustered-server.js";
 
 // Force worker process mode to test line 94 else branch
 Object.defineProperty(cluster, 'isPrimary', { value: false, configurable: true });
@@ -316,13 +399,21 @@ process.exit(0);
 `;
 
 		const result = await runTestScript(script, 3000);
-		assert.strictEqual(result.code, 0, `Worker close test should exit cleanly. Output: ${result.output}`);
+		assert.strictEqual(
+			result.code,
+			0,
+			`Worker close test should exit cleanly. Output: ${result.output}`,
+		);
 
 		const match = result.output.match(/WORKER_CLOSE_RESULT: (.+)/);
 		assert.ok(match, "Should have worker close test result");
 
 		const workerResult = JSON.parse(match[1]);
-		assert.strictEqual(workerResult.success, true, "Worker close should succeed");
+		assert.strictEqual(
+			workerResult.success,
+			true,
+			"Worker close should succeed",
+		);
 	});
 
 	// 🏆 ULTIMATE OPTIMIZATION: 2 SUPER-LEAN TESTS (down from 10+ individual tests) 🏆

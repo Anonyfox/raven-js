@@ -1,10 +1,10 @@
 import http from "node:http";
 import https from "node:https";
-import { Context, Router } from "../core/index.js";
-import { readBody } from "./read-body.js";
+import { Context, Router } from "../../core/index.js";
+import { readBody } from "../read-body.js";
 
 // Import shared types
-import "./server-options.js";
+import "../server-options.js";
 
 /**
  * Base HTTP server class for Wings - NOT meant for direct use.
@@ -31,7 +31,7 @@ export class NodeHttp {
 
 	/**
 	 * Server configuration options.
-	 * @type {import("./server-options.js").ServerOptions}
+	 * @type {import("../server-options.js").ServerOptions}
 	 * @readonly
 	 */
 	#options;
@@ -47,7 +47,7 @@ export class NodeHttp {
 	 * Create a new NodeJS HTTP server instance.
 	 *
 	 * @param {Router} router - Wings router to handle requests
-	 * @param {import('./server-options.js').ServerOptions} [options] - Server options
+	 * @param {import('../server-options.js').ServerOptions} [options] - Server options
 	 * @throws {TypeError} When router is invalid
 	 */
 	constructor(router, options = {}) {
@@ -61,7 +61,9 @@ export class NodeHttp {
 		};
 
 		// Detect SSL mode - both certificate and private key must be provided
-		this.#isSSL = Boolean(this.#options.sslCertificate && this.#options.sslPrivateKey);
+		this.#isSSL = Boolean(
+			this.#options.sslCertificate && this.#options.sslPrivateKey,
+		);
 
 		// Create server based on SSL detection
 		if (this.#isSSL) {
@@ -69,7 +71,10 @@ export class NodeHttp {
 				key: this.#options.sslPrivateKey,
 				cert: this.#options.sslCertificate,
 			};
-			this.#server = https.createServer(sslOptions, this.#handleRequest.bind(this));
+			this.#server = https.createServer(
+				sslOptions,
+				this.#handleRequest.bind(this),
+			);
 		} else {
 			this.#server = http.createServer(this.#handleRequest.bind(this));
 		}
@@ -205,7 +210,7 @@ export class NodeHttp {
 	/**
 	 * Get current configuration options.
 	 *
-	 * @returns {import("./server-options.js").ServerOptions} Configuration options
+	 * @returns {import("../server-options.js").ServerOptions} Configuration options
 	 */
 	get options() {
 		return { ...this.#options };

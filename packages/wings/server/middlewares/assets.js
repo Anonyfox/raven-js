@@ -89,8 +89,8 @@
 
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { Middleware } from "../core/middleware.js";
-import { getMimeType } from "../core/mime-utils.js";
+import { Middleware } from "../../core/middleware.js";
+import { getMimeType } from "../../core/mime-utils.js";
 
 /**
  * Magic filename for SEA asset manifests.
@@ -460,7 +460,7 @@ export class Assets extends Middleware {
 	 * Handle an asset request using the current mode.
 	 * This is the main entry point for asset serving.
 	 *
-	 * @param {import('../core/context.js').Context} ctx - Request context
+	 * @param {import('../../core/context.js').Context} ctx - Request context
 	 */
 	async #handleAssetRequest(ctx) {
 		try {
@@ -511,7 +511,7 @@ export class Assets extends Middleware {
 	/**
 	 * Serve an asset from SEA embedded resources.
 	 *
-	 * @param {import('../core/context.js').Context} ctx - Request context
+	 * @param {import('../../core/context.js').Context} ctx - Request context
 	 * @param {string} assetPath - Decoded asset path to serve
 	 */
 	async #serveAssetSEA(ctx, assetPath) {
@@ -530,7 +530,7 @@ export class Assets extends Middleware {
 	/**
 	 * Serve an asset from global variables.
 	 *
-	 * @param {import('../core/context.js').Context} ctx - Request context
+	 * @param {import('../../core/context.js').Context} ctx - Request context
 	 * @param {string} assetPath - Decoded asset path to serve
 	 */
 	async #serveAssetGlobal(ctx, assetPath) {
@@ -548,7 +548,7 @@ export class Assets extends Middleware {
 	/**
 	 * Serve an asset from the file system.
 	 *
-	 * @param {import('../core/context.js').Context} ctx - Request context
+	 * @param {import('../../core/context.js').Context} ctx - Request context
 	 * @param {string} assetPath - Decoded asset path to serve
 	 */
 	async #serveAssetFileSystem(ctx, assetPath) {
@@ -576,7 +576,7 @@ export class Assets extends Middleware {
 	 * Set the response for a successfully found asset.
 	 * Configures all necessary headers and response body.
 	 *
-	 * @param {import('../core/context.js').Context} ctx - Request context
+	 * @param {import('../../core/context.js').Context} ctx - Request context
 	 * @param {Buffer} buffer - Asset content as Buffer
 	 * @param {string} assetPath - Decoded asset path for MIME type detection
 	 */

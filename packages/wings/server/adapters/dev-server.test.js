@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { afterEach, beforeEach, describe, test } from "node:test";
-import { Router } from "../core/index.js";
+import { Router } from "../../core/index.js";
 import { DevServer } from "./dev-server.js";
 
 describe("DevServer", () => {

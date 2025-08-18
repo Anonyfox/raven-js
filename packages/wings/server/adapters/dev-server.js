@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import http from "node:http";
-import { Router } from "../core/index.js";
+import { Router } from "../../core/index.js";
 import { NodeHttp } from "./node-http.js";
 
 /**
@@ -31,7 +31,7 @@ export class DevServer extends NodeHttp {
 	 * Create development server instance.
 	 *
 	 * @param {Router} router - Wings router to handle requests
-	 * @param {import('./server-options.js').ServerOptions} [options] - Server options
+	 * @param {import('../server-options.js').ServerOptions} [options] - Server options
 	 * @throws {TypeError} When router is invalid
 	 * @throws {RangeError} When websocketPort is invalid
 	 */

@@ -55,7 +55,7 @@
  * @since 0.2.7
  */
 
-import { Middleware } from "../core/middleware.js";
+import { Middleware } from "../../core/middleware.js";
 
 /**
  * Default HTTP methods allowed for CORS requests
@@ -366,7 +366,7 @@ export class CORS extends Middleware {
 	 * 4. Set CORS response headers
 	 * 5. End response with 204 No Content
 	 *
-	 * @param {import('../core/context.js').Context} ctx - Request context
+	 * @param {import('../../core/context.js').Context} ctx - Request context
 	 */
 	async #handlePreflight(ctx) {
 		try {
@@ -454,7 +454,7 @@ export class CORS extends Middleware {
 	 * - Access-Control-Expose-Headers: Exposed headers list
 	 * - Vary: 'Origin' for proper caching
 	 *
-	 * @param {import('../core/context.js').Context} ctx - Request context
+	 * @param {import('../../core/context.js').Context} ctx - Request context
 	 */
 	#setCorsHeaders(ctx) {
 		try {
