@@ -501,4 +501,109 @@ describe("Attack Detection", () => {
 			assert.ok(result);
 		});
 	});
+
+	describe("Error Handling Coverage", () => {
+		it("should handle queryParams.entries() errors in checkSQLInjection", () => {
+			const ctx = createMockContext({
+				queryParams: {
+					entries: () => {
+						throw new Error("Malformed queryParams");
+					},
+				},
+			});
+			// Should not throw, should return null
+			const result = checkSQLInjection(ctx);
+			assert.strictEqual(result, null);
+		});
+
+		it("should handle requestHeaders.get() errors in checkSQLInjection", () => {
+			const ctx = createMockContext({
+				requestHeaders: {
+					get: (header) => {
+						if (header === "user-agent") {
+							throw new Error("Malformed header");
+						}
+						return null;
+					},
+				},
+			});
+			// Should not throw, should return null
+			const result = checkSQLInjection(ctx);
+			assert.strictEqual(result, null);
+		});
+
+		it("should handle queryParams.entries() errors in checkXSSAttempt", () => {
+			const ctx = createMockContext({
+				queryParams: {
+					entries: () => {
+						throw new Error("Malformed queryParams");
+					},
+				},
+			});
+			// Should not throw, should return null
+			const result = checkXSSAttempt(ctx);
+			assert.strictEqual(result, null);
+		});
+
+		it("should handle queryParams.entries() errors in checkPathTraversal", () => {
+			const ctx = createMockContext({
+				queryParams: {
+					entries: () => {
+						throw new Error("Malformed queryParams");
+					},
+				},
+			});
+			// Should not throw, should return null
+			const result = checkPathTraversal(ctx);
+			assert.strictEqual(result, null);
+		});
+
+		it("should handle queryParams.entries() errors in checkSuspiciousPatterns", () => {
+			const ctx = createMockContext({
+				queryParams: {
+					entries: () => {
+						throw new Error("Malformed queryParams");
+					},
+				},
+			});
+			// Should not throw, should return null
+			const result = checkSuspiciousPatterns(ctx);
+			assert.strictEqual(result, null);
+		});
+
+		it("should handle multiple header errors in checkSQLInjection", () => {
+			const ctx = createMockContext({
+				requestHeaders: {
+					get: (header) => {
+						// Throw errors for all suspicious headers
+						if (["user-agent", "referer", "x-forwarded-for"].includes(header)) {
+							throw new Error(`Malformed ${header} header`);
+						}
+						return null;
+					},
+				},
+			});
+			// Should not throw, should return null
+			const result = checkSQLInjection(ctx);
+			assert.strictEqual(result, null);
+		});
+
+		it("should still detect attacks even with some header errors", () => {
+			const ctx = createMockContext({
+				path: "/test?id=1' OR 1=1",
+				requestHeaders: {
+					get: (header) => {
+						if (header === "user-agent") {
+							throw new Error("Malformed header");
+						}
+						return null;
+					},
+				},
+			});
+			// Should still detect SQL injection in path despite header errors
+			const result = checkSQLInjection(ctx);
+			assert.ok(result);
+			assert.ok(result.includes("SQL injection"));
+		});
+	});
 });

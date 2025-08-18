@@ -106,7 +106,7 @@ function isIPv6InCIDR(ip, network, prefix) {
 	}
 
 	// Check partial byte if needed
-	if (bitsInLastByte > 0 && bytesToCheck < 16) {
+	if (bitsInLastByte > 0) {
 		const mask = (0xff << (8 - bitsInLastByte)) & 0xff;
 		if (
 			(ipBytes[bytesToCheck] & mask) !==
@@ -132,7 +132,7 @@ function ipv4ToInt(ip) {
 	let result = 0;
 	for (let i = 0; i < 4; i++) {
 		const part = parseInt(parts[i], 10);
-		if (Number.isNaN(part) || part < 0 || part > 255) return null;
+		if (Number.isNaN(part) || part > 255) return null;
 		result = (result << 8) + part;
 	}
 
@@ -146,26 +146,22 @@ function ipv4ToInt(ip) {
  * @returns {Uint8Array | null} Byte array or null if invalid
  */
 function ipv6ToBytes(ip) {
-	try {
-		// Expand compressed IPv6 addresses
-		const expanded = expandIPv6(ip);
-		if (!expanded) return null;
+	// Expand compressed IPv6 addresses
+	const expanded = expandIPv6(ip);
+	if (!expanded) return null;
 
-		const parts = expanded.split(":");
-		if (parts.length !== 8) return null;
+	const parts = expanded.split(":");
+	if (parts.length !== 8) return null;
 
-		const bytes = new Uint8Array(16);
-		for (let i = 0; i < 8; i++) {
-			const value = parseInt(parts[i], 16);
-			if (Number.isNaN(value) || value < 0 || value > 0xffff) return null;
-			bytes[i * 2] = (value >> 8) & 0xff;
-			bytes[i * 2 + 1] = value & 0xff;
-		}
-
-		return bytes;
-	} catch {
-		return null;
+	const bytes = new Uint8Array(16);
+	for (let i = 0; i < 8; i++) {
+		const value = parseInt(parts[i], 16);
+		if (Number.isNaN(value) || value > 0xffff) return null;
+		bytes[i * 2] = (value >> 8) & 0xff;
+		bytes[i * 2 + 1] = value & 0xff;
 	}
+
+	return bytes;
 }
 
 /**
@@ -176,9 +172,8 @@ function ipv6ToBytes(ip) {
  */
 function expandIPv6(ip) {
 	if (!ip.includes("::")) {
-		// Already expanded
-		const parts = ip.split(":");
-		return parts.length === 8 ? ip : null;
+		// Already expanded - just return as-is, validation happens in caller
+		return ip;
 	}
 
 	const parts = ip.split("::");

@@ -4,175 +4,211 @@
 
 # RavenJS 🦅
 
-_A swift web dev toolkit - soar above the JavaScript chaos with zero dependencies and modern elegance._
+_Zero-dependency JavaScript libraries for modern web development. Built by developers who've learned that survival comes from platform mastery, not framework dependency._
 
-[![Website](https://img.shields.io/badge/Website-ravenjs.dev-blue.svg)](https://ravenjs.dev)
-[![Documentation](https://img.shields.io/badge/Documentation-Online-blue.svg)](https://docs.ravenjs.dev)
-[![Zero Dependencies](https://img.shields.io/badge/Zero-Dependencies-brightgreen.svg)](https://github.com/Anonyfox/ravenjs)
-[![ESM](https://img.shields.io/badge/ESM-Only-blue.svg)](https://nodejs.org/api/esm.html)
+[![Website](https://img.shields.io/badge/🌐_Website-ravenjs.dev-blue.svg)](https://ravenjs.dev)
+[![Documentation](https://img.shields.io/badge/📚_Docs-Online-blue.svg)](https://docs.ravenjs.dev)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Zero Dependencies](https://img.shields.io/badge/Dependencies-Zero-brightgreen.svg)](https://github.com/Anonyfox/ravenjs)
+[![ESM Only](https://img.shields.io/badge/Modules-ESM_Only-blue.svg)](https://nodejs.org/api/esm.html)
 [![Node.js](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
-[![WIP](https://img.shields.io/badge/Status-WIP-orange.svg)](https://github.com/Anonyfox/ravenjs)
 
-## What is RavenJS?
+## How Ravens Hunt
 
-RavenJS is a **swift web dev toolkit** - a collection of focused, zero-dependency JavaScript libraries designed for developers who've had enough of framework fatigue. Each library is lightweight, versatile, and can be used independently.
+```javascript
+import { html, css } from "@raven-js/beak";
+import { Router, DevServer, Logger, Assets } from "@raven-js/wings";
 
-**No dependencies. No transpilation. No bullshit.**
+// Template with zero dependencies
+const styles = css`
+  .app {
+    padding: 2rem;
+    color: #333;
+  }
+  .title {
+    font-size: 2rem;
+    font-weight: bold;
+  }
+  .features {
+    list-style: none;
+    padding: 0;
+  }
+  .feature {
+    padding: 0.5rem 0;
+  }
+`;
 
-## The Raven Philosophy
+const HomePage = () => {
+  const advantages = [
+    "Zero dependencies",
+    "Platform primitives",
+    "AI-native design",
+  ];
 
-We believe in:
+  return html`
+    <style>
+      ${styles}
+    </style>
+    <div class="app">
+      <h1 class="title">Ravens build. Others talk.</h1>
+      <ul class="features">
+        ${advantages.map(
+          (feature) => html`<li class="feature">✓ ${feature}</li>`
+        )}
+      </ul>
+    </div>
+  `;
+};
 
-- **Zero dependencies** - Every package is self-contained. No more security vulnerabilities from code you didn't write.
-- **Modern JavaScript only** - ESNext features without transpilation. Target modern browsers and Node.js 22.5+.
-- **Perfect tree-shaking** - Import only what you use. No more "all-or-nothing" framework bloat.
-- **JSDoc-powered types** - Full IntelliSense support without TypeScript compilation overhead.
-- **Self-documenting APIs** - Every package teaches both humans and AI how to use it correctly.
+// Routing with production-ready middlewares
+const router = new Router();
+router.useEarly(new Logger()); // Request logging
+router.use(new Assets({ assetsDir: "public" })); // Static files
+router.get("/", (ctx) => ctx.html(HomePage()));
 
-📖 **Want to dive deeper?** Read about [The Raven Developer Persona](PHILOSOPHY.md) and [How the Flock is Organized](packages/README.md).
-
-## The Raven Toolkit
-
-Each library is designed to work independently or together seamlessly:
-
-- **🦜 Beak** - Lightweight templating and rendering (HTML, SQL, and more)
-
-_More libraries coming soon - being crafted with care._
-
-## Quick Start
-
-```bash
-# Clone the repository
-git clone https://github.com/Anonyfox/raven-js.git
-cd raven-js
-
-# Install dependencies (for development only)
-npm install
-
-# Explore the libraries
-ls packages/
+// Server in milliseconds, not minutes
+const server = new DevServer(router);
+await server.listen(3000);
 ```
 
-## Why RavenJS?
+> **Pro tip:** Install the [RavenJS VS Code extension](plugins/vscode/) for intelligent syntax highlighting and IntelliSense in your templates.
 
-### For Developers Who Are Tired Of:
+<details>
+<summary>🚀 <strong>Advanced Production Setup</strong> — Full-scale deployment with clustering, SSL, and complex rendering</summary>
 
-- **Dependency hell** - Security vulnerabilities from transitive dependencies
-- **Configuration fatigue** - Build configs longer than your actual code
-- **Framework lock-in** - Being forced into specific paradigms and toolchains
-- **Bundle bloat** - Importing entire frameworks when you only need one function
-- **Legacy support** - Holding back modern development for outdated browsers
+```javascript
+import { html, css } from "@raven-js/beak";
+import {
+  Router,
+  ClusteredServer,
+  Logger,
+  Assets,
+  generateSSLCert,
+} from "@raven-js/wings";
 
-### RavenJS Offers:
+// Advanced templating with complex data structures
+const todos = [
+  { id: 1, task: "Master platform primitives", done: true },
+  { id: 2, task: "Eliminate dependency vulnerabilities", done: true },
+  { id: 3, task: "Achieve apex performance", done: false },
+];
 
-- **Instant setup** - Zero configuration required
-- **Modern development** - Use the latest JavaScript features without transpilation
-- **Optimal bundles** - Only what you import gets included
-- **Type safety** - Full IntelliSense without TypeScript compilation
-- **AI-friendly** - Self-documenting APIs that work seamlessly with AI tools
-- **Future-proof** - Built for modern environments, not legacy constraints
-- **Versatile toolkit** - Mix and match libraries as needed
+const styles = css`
+  .todo-app {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  .todo {
+    display: flex;
+    gap: 1rem;
+    padding: 0.5rem 0;
+  }
+  .done {
+    opacity: 0.6;
+    text-decoration: line-through;
+  }
+`;
 
-## Perfect For
+const TodoApp = () => html`
+  <style>
+    ${styles}
+  </style>
+  <div class="todo-app">
+    <h2>🦅 Raven Task Manager</h2>
+    ${todos.map(
+      (todo) => html`
+        <div class="todo ${todo.done ? "done" : "pending"}">
+          <span>${todo.done ? "✅" : "⭕"}</span>
+          <span>${todo.task}</span>
+        </div>
+      `
+    )}
+  </div>
+`;
 
-- **🚀 Rapid prototyping** - Get from idea to working demo in hours, not days
-- **📱 Small to medium web apps** - Content sites, dashboards, admin panels
-- **🏢 Internal tools** - Applications that need to work reliably for your team
-- **💡 MVPs and startups** - Where speed to market beats perfect architecture
-- **🔄 Legacy modernization** - Gradual migration paths without complete rewrites
+// Production-grade router with full middleware stack
+const router = new Router();
+router.useEarly(new Logger({ production: true, includeHeaders: false }));
+router.use(new Assets({ assetsDir: "public", maxAge: "1y" }));
+router.get("/", (ctx) => ctx.html(TodoApp()));
 
-## Architecture Decisions
+// Clustered HTTPS server with auto-generated certificates
+const { privateKey, certificate } = await generateSSLCert({
+  commonName: "ravenjs.app",
+  organization: "Apex Productions",
+});
 
-### Zero Dependencies
+const server = new ClusteredServer(router, {
+  sslCertificate: certificate,
+  sslPrivateKey: privateKey,
+});
 
-Every RavenJS package is completely self-contained. No external dependencies means:
+await server.listen(443);
+```
 
-- No security vulnerabilities from transitive dependencies
-- No breaking changes from library updates you didn't ask for
-- No bundle bloat from code you don't use
-- No "dependency rot" over time
+</details>
 
-### Modern JavaScript Only
+**Next in the hunt:** Three key tools complete the predator's arsenal — **Hatch** (CLI to bootstrap new apps instantly), **Fledge** (package apps into various deliverables), and **Soar** (ship directly to cloud platforms).
 
-Targeting modern environments (Node.js 22.5+, modern browsers) means:
+<div align="center">
 
-- No transpilation complexity
-- Smaller, faster builds
-- Better debugging experience
-- Access to the latest language features
+🦅 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 🦅
 
-### ESM-First Design
+</div>
 
-Native ES modules with perfect tree-shaking:
+## Raven Intelligence
 
-- Import only the functions you need
-- Optimal bundle sizes
-- Better caching and performance
-- Native browser support
+| 🛡️ **Zero-Dependency Security**                                                                     | ⚡ **Native-Speed Performance**                                                               | 🧠 **AI-Native Intelligence**                                                                           |
+| --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Every package is fortress-isolated with no external attack vectors or supply chain vulnerabilities. | Platform primitives deliver millisecond builds and runtime speed without transpilation taxes. | Self-documenting APIs teach both humans and machines, designed for AI collaboration from the ground up. |
 
-### JSDoc-Powered Types
+## The Flock
 
-Full TypeScript IntelliSense without the compilation step:
+### 🦜 [Beak](packages/beak/README.md) — _Templating & Rendering_
 
-- Type safety without TypeScript overhead
-- Self-documenting code
-- Better IDE support
-- No build step required
+Zero-dependency templating for HTML, CSS, SQL, Markdown, and JavaScript. XSS protection built-in. Component architecture without framework overhead.
 
-## Status: Work in Progress
+### 🦅 [Wings](packages/wings/README.md) — _Isomorphic Routing_
 
-RavenJS is currently in active development. We're crafting each package with care, ensuring they meet our high standards for:
+Universal routing that works in server, browser, and CLI environments. Same route definitions everywhere. No framework lock-in, no configuration cancer.
 
-- Zero dependencies
-- Modern JavaScript compatibility
-- Comprehensive documentation
-- AI-friendly APIs
-- Real-world usability
+<div align="center">
 
-**Not ready for production use yet, but getting closer every day.**
+⚡ ─────────────────────── ⚡
 
-## Contributing
+</div>
 
-RavenJS is built by developers, for developers. We welcome contributions that align with our philosophy:
+## Territory Expansion
 
-- Keep it simple and focused
-- Zero dependencies
-- Modern JavaScript only
-- Self-documenting APIs
-- AI-friendly design
+Ravens coordinate through collective intelligence. More packages emerge as the murder grows stronger.
 
-## Community
-
-Join the murder (of crows, that is):
-
-- 🌐 [Website](https://ravenjs.dev) _(coming soon)_
-- 💬 [Discord](https://discord.gg/ravenjs) _(coming soon)_
-- 🐦 [Twitter](https://twitter.com/ravenjs) _(coming soon)_
-
-## License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
-Copyright (c) 2025 Anonyfox e.K.
-
----
-
-_RavenJS: Because sometimes the best way to soar is to keep things simple._
+📖 **Read the [RavenJS Codex](CODEX.md)** - The witnessed wisdom of framework wars and survival strategies
+🏠 **Explore [the full ecosystem](packages/README.md)** - Complete roadmap of planned territories
 
 ---
 
 <div align="center">
 
-## 🦅 Support RavenJS Development
+## 🔗 Quick Access
 
-If you find RavenJS helpful, consider supporting its development:
-
-[![GitHub Sponsors](https://img.shields.io/badge/Sponsor%20on%20GitHub-%23EA4AAA?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sponsors/Anonyfox)
-
-Your sponsorship helps keep RavenJS **zero-dependency**, **modern**, and **developer-friendly**.
+**📚 [Documentation](https://docs.ravenjs.dev)** • **🐦 [Codex](CODEX.md)** • **🏠 [Packages](packages/README.md)** • **⚡ [Examples](examples/)**
 
 ---
 
-**Built with ❤️ by [Anonyfox](https://anonyfox.com)**
+## 🦅 Support Raven Intelligence
+
+If RavenJS sharpens your hunt, consider supporting its evolution:
+
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor_on_GitHub-EA4AAA?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sponsors/Anonyfox)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/anonyfox)
+
+**Your sponsorship keeps RavenJS zero-dependency, platform-native, and AI-ready.**
+
+---
+
+**Crafted with predatory precision by [Anonyfox](https://anonyfox.com) • Licensed under [MIT](LICENSE)**
+
+_"In a world obsessed with the next shiny framework, ravens build what endures."_
 
 </div>

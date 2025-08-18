@@ -32,27 +32,36 @@ export const DEFAULT_VALIDATION = {
  * @param {number} config.maxHeaders - Maximum headers count
  * @param {number} config.maxHeaderSize - Maximum headers size
  * @param {number} config.maxBodySize - Maximum body size
- * @returns {string | null} Error message if validation fails, null if OK
+ * @returns {string[]} Array of error messages, empty array if all validations pass
  */
 export function validateRequest(ctx, config) {
+	/** @type {string[]} */
+	const errors = [];
+
 	// Check path length
 	if (ctx.path.length > config.maxPathLength) {
-		return `Path too long: ${ctx.path.length} > ${config.maxPathLength}`;
+		errors.push(`Path too long: ${ctx.path.length} > ${config.maxPathLength}`);
 	}
 
 	// Check query parameters
 	const paramCount = Array.from(ctx.queryParams.entries()).length;
 	if (paramCount > config.maxQueryParams) {
-		return `Too many query parameters: ${paramCount} > ${config.maxQueryParams}`;
+		errors.push(
+			`Too many query parameters: ${paramCount} > ${config.maxQueryParams}`,
+		);
 	}
 
 	// Check query parameter lengths
 	for (const [key, value] of ctx.queryParams.entries()) {
 		if (key.length > config.maxQueryParamLength) {
-			return `Query parameter key too long: ${key.length} > ${config.maxQueryParamLength}`;
+			errors.push(
+				`Query parameter key too long: ${key.length} > ${config.maxQueryParamLength}`,
+			);
 		}
 		if (value.length > config.maxQueryParamLength) {
-			return `Query parameter value too long: ${value.length} > ${config.maxQueryParamLength}`;
+			errors.push(
+				`Query parameter value too long: ${value.length} > ${config.maxQueryParamLength}`,
+			);
 		}
 	}
 
@@ -66,11 +75,13 @@ export function validateRequest(ctx, config) {
 	}
 
 	if (headerCount > config.maxHeaders) {
-		return `Too many headers: ${headerCount} > ${config.maxHeaders}`;
+		errors.push(`Too many headers: ${headerCount} > ${config.maxHeaders}`);
 	}
 
 	if (totalHeaderSize > config.maxHeaderSize) {
-		return `Headers too large: ${totalHeaderSize} > ${config.maxHeaderSize}`;
+		errors.push(
+			`Headers too large: ${totalHeaderSize} > ${config.maxHeaderSize}`,
+		);
 	}
 
 	// Check content length if present
@@ -78,9 +89,9 @@ export function validateRequest(ctx, config) {
 	if (contentLength) {
 		const size = parseInt(contentLength, 10);
 		if (!Number.isNaN(size) && size > config.maxBodySize) {
-			return `Request body too large: ${size} > ${config.maxBodySize}`;
+			errors.push(`Request body too large: ${size} > ${config.maxBodySize}`);
 		}
 	}
 
-	return null; // All validations passed
+	return errors; // Return array of validation errors
 }

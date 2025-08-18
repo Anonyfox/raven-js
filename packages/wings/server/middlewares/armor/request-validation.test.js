@@ -34,16 +34,19 @@ describe("validateRequest", () => {
 		it("should accept paths within length limit", () => {
 			const ctx = createMockContext({ path: "/short/path" });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 
 		it("should reject paths exceeding length limit", () => {
 			const longPath = `/${"a".repeat(200)}`;
 			const ctx = createMockContext({ path: longPath });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.ok(result.includes("Path too long"));
+			assert.strictEqual(result.length, 1);
+			assert.ok(result[0].includes("Path too long"));
 			assert.ok(
-				result.includes(`${longPath.length} > ${defaultConfig.maxPathLength}`),
+				result[0].includes(
+					`${longPath.length} > ${defaultConfig.maxPathLength}`,
+				),
 			);
 		});
 
@@ -51,19 +54,19 @@ describe("validateRequest", () => {
 			const exactPath = `/${"a".repeat(99)}`; // Total length = 100
 			const ctx = createMockContext({ path: exactPath });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 
 		it("should handle empty path", () => {
 			const ctx = createMockContext({ path: "" });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 
 		it("should handle root path", () => {
 			const ctx = createMockContext({ path: "/" });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 	});
 
@@ -75,7 +78,7 @@ describe("validateRequest", () => {
 			]);
 			const ctx = createMockContext({ queryParams });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 
 		it("should reject too many query parameters", () => {
@@ -89,8 +92,9 @@ describe("validateRequest", () => {
 			]);
 			const ctx = createMockContext({ queryParams });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.ok(result.includes("Too many query parameters"));
-			assert.ok(result.includes(`6 > ${defaultConfig.maxQueryParams}`));
+			assert.strictEqual(result.length, 1);
+			assert.ok(result[0].includes("Too many query parameters"));
+			assert.ok(result[0].includes(`6 > ${defaultConfig.maxQueryParams}`));
 		});
 
 		it("should accept exact query parameter count limit", () => {
@@ -103,7 +107,7 @@ describe("validateRequest", () => {
 			]);
 			const ctx = createMockContext({ queryParams });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 
 		it("should reject query parameter key too long", () => {
@@ -111,9 +115,10 @@ describe("validateRequest", () => {
 			const queryParams = new Map([[longKey, "value"]]);
 			const ctx = createMockContext({ queryParams });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.ok(result.includes("Query parameter key too long"));
+			assert.strictEqual(result.length, 1);
+			assert.ok(result[0].includes("Query parameter key too long"));
 			assert.ok(
-				result.includes(
+				result[0].includes(
 					`${longKey.length} > ${defaultConfig.maxQueryParamLength}`,
 				),
 			);
@@ -124,9 +129,10 @@ describe("validateRequest", () => {
 			const queryParams = new Map([["key", longValue]]);
 			const ctx = createMockContext({ queryParams });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.ok(result.includes("Query parameter value too long"));
+			assert.strictEqual(result.length, 1);
+			assert.ok(result[0].includes("Query parameter value too long"));
 			assert.ok(
-				result.includes(
+				result[0].includes(
 					`${longValue.length} > ${defaultConfig.maxQueryParamLength}`,
 				),
 			);
@@ -138,14 +144,14 @@ describe("validateRequest", () => {
 			const queryParams = new Map([[exactKey, exactValue]]);
 			const ctx = createMockContext({ queryParams });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 
 		it("should handle empty query parameters", () => {
 			const queryParams = new Map();
 			const ctx = createMockContext({ queryParams });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 
 		it("should handle empty query parameter keys and values", () => {
@@ -156,7 +162,7 @@ describe("validateRequest", () => {
 			]);
 			const ctx = createMockContext({ queryParams });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 	});
 
@@ -168,7 +174,7 @@ describe("validateRequest", () => {
 			]);
 			const ctx = createMockContext({ requestHeaders });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 
 		it("should reject too many headers", () => {
@@ -179,8 +185,9 @@ describe("validateRequest", () => {
 			}
 			const ctx = createMockContext({ requestHeaders });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.ok(result.includes("Too many headers"));
-			assert.ok(result.includes(`12 > ${defaultConfig.maxHeaders}`));
+			assert.strictEqual(result.length, 1);
+			assert.ok(result[0].includes("Too many headers"));
+			assert.ok(result[0].includes(`12 > ${defaultConfig.maxHeaders}`));
 		});
 
 		it("should accept exact header count limit", () => {
@@ -191,7 +198,7 @@ describe("validateRequest", () => {
 			}
 			const ctx = createMockContext({ requestHeaders });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 
 		it("should reject headers too large in total size", () => {
@@ -209,8 +216,9 @@ describe("validateRequest", () => {
 			]);
 			const ctx = createMockContext({ requestHeaders });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.ok(result.includes("Headers too large"));
-			assert.ok(result.includes(`> ${defaultConfig.maxHeaderSize}`));
+			assert.strictEqual(result.length, 1);
+			assert.ok(result[0].includes("Headers too large"));
+			assert.ok(result[0].includes(`> ${defaultConfig.maxHeaderSize}`));
 		});
 
 		it("should calculate total header size correctly", () => {
@@ -221,14 +229,14 @@ describe("validateRequest", () => {
 			const ctx = createMockContext({ requestHeaders });
 			// Total size should be 20 bytes, well under the 200 byte limit
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 
 		it("should handle empty headers", () => {
 			const requestHeaders = new Map();
 			const ctx = createMockContext({ requestHeaders });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 
 		it("should handle headers with empty keys or values", () => {
@@ -239,7 +247,7 @@ describe("validateRequest", () => {
 			]);
 			const ctx = createMockContext({ requestHeaders });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 	});
 
@@ -248,57 +256,58 @@ describe("validateRequest", () => {
 			const requestHeaders = new Map([["content-length", "512"]]);
 			const ctx = createMockContext({ requestHeaders });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 
 		it("should reject body size exceeding limit", () => {
 			const requestHeaders = new Map([["content-length", "2048"]]); // Exceeds 1024 limit
 			const ctx = createMockContext({ requestHeaders });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.ok(result.includes("Request body too large"));
-			assert.ok(result.includes(`2048 > ${defaultConfig.maxBodySize}`));
+			assert.strictEqual(result.length, 1);
+			assert.ok(result[0].includes("Request body too large"));
+			assert.ok(result[0].includes(`2048 > ${defaultConfig.maxBodySize}`));
 		});
 
 		it("should accept body size at exact limit", () => {
 			const requestHeaders = new Map([["content-length", "1024"]]); // Exactly at limit
 			const ctx = createMockContext({ requestHeaders });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 
 		it("should handle missing content-length header", () => {
 			const requestHeaders = new Map([["other-header", "value"]]);
 			const ctx = createMockContext({ requestHeaders });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 
 		it("should handle invalid content-length header", () => {
 			const requestHeaders = new Map([["content-length", "invalid"]]);
 			const ctx = createMockContext({ requestHeaders });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null); // Should not fail on invalid content-length
+			assert.strictEqual(result.length, 0); // Should not fail on invalid content-length
 		});
 
 		it("should handle zero content-length", () => {
 			const requestHeaders = new Map([["content-length", "0"]]);
 			const ctx = createMockContext({ requestHeaders });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 
 		it("should handle negative content-length", () => {
 			const requestHeaders = new Map([["content-length", "-1"]]);
 			const ctx = createMockContext({ requestHeaders });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null); // Should not fail on negative values
+			assert.strictEqual(result.length, 0); // Should not fail on negative values
 		});
 
 		it("should handle floating point content-length", () => {
 			const requestHeaders = new Map([["content-length", "512.5"]]);
 			const ctx = createMockContext({ requestHeaders });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null); // parseInt will handle this
+			assert.strictEqual(result.length, 0); // parseInt will handle this
 		});
 	});
 
@@ -319,7 +328,7 @@ describe("validateRequest", () => {
 				requestHeaders,
 			});
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 
 		it("should return first validation error encountered", () => {
@@ -335,8 +344,9 @@ describe("validateRequest", () => {
 				queryParams,
 			});
 			const result = validateRequest(ctx, defaultConfig);
-			// Should return path error first (since it's checked first)
-			assert.ok(result.includes("Path too long"));
+			// Should return both path error and query param errors
+			assert.ok(result.length >= 1);
+			assert.ok(result.some((err) => err.includes("Path too long")));
 		});
 
 		it("should handle unicode characters in validation", () => {
@@ -351,7 +361,7 @@ describe("validateRequest", () => {
 				requestHeaders,
 			});
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 
 		it("should handle special characters and encoding", () => {
@@ -361,7 +371,7 @@ describe("validateRequest", () => {
 			]);
 			const ctx = createMockContext({ queryParams });
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 	});
 
@@ -379,7 +389,8 @@ describe("validateRequest", () => {
 			// Non-empty path should fail with zero limit
 			const ctx = createMockContext({ path: "/test" });
 			const result = validateRequest(ctx, zeroConfig);
-			assert.ok(result.includes("Path too long"));
+			assert.strictEqual(result.length, 1);
+			assert.ok(result[0].includes("Path too long"));
 		});
 
 		it("should handle very large limits", () => {
@@ -398,7 +409,7 @@ describe("validateRequest", () => {
 				requestHeaders: new Map([["header", "value"]]),
 			});
 			const result = validateRequest(ctx, largeConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 
 		it("should handle malformed context gracefully", () => {
@@ -409,7 +420,7 @@ describe("validateRequest", () => {
 				requestHeaders: new Map(),
 			};
 			const result = validateRequest(ctx, defaultConfig);
-			assert.strictEqual(result, null);
+			assert.strictEqual(result.length, 0);
 		});
 	});
 });
@@ -431,7 +442,7 @@ describe("DEFAULT_VALIDATION", () => {
 			requestHeaders: new Map([["header", "value"]]),
 		};
 		const result = validateRequest(ctx, DEFAULT_VALIDATION);
-		assert.strictEqual(result, null);
+		assert.strictEqual(result.length, 0);
 	});
 
 	it("should have positive values for all limits", () => {

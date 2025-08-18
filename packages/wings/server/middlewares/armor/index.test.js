@@ -452,16 +452,20 @@ describe("Armor Middleware", () => {
 				},
 			});
 
-			// Create context that might cause detection error
+			// Create context that might cause detection error by making queryParams.entries throw
 			const ctx = createMockContext({
-				queryParams: null, // This should cause an error
+				queryParams: {
+					entries: () => {
+						throw new Error("Simulated queryParams error");
+					},
+				},
 			});
 
 			await armor.handler(ctx);
 
 			// Request should continue despite detection error
 			assert.strictEqual(ctx.responseStatusCode, 200);
-			assert.ok(ctx.errors.some((e) => e.name === "PatternDetectionError"));
+			assert.ok(ctx.errors.some((e) => e.name === "ArmorError"));
 		});
 	});
 
@@ -470,7 +474,7 @@ describe("Armor Middleware", () => {
 			const armor = new Armor({
 				securityHeaders: {
 					enabled: true,
-					hsts: { maxAge: 31536000 },
+					httpStrictTransportSecurity: { maxAge: 31536000 },
 					noSniff: true,
 				},
 			});
@@ -492,7 +496,7 @@ describe("Armor Middleware", () => {
 			const armor = new Armor({
 				securityHeaders: {
 					enabled: true,
-					hsts: { maxAge: 31536000 },
+					httpStrictTransportSecurity: { maxAge: 31536000 },
 				},
 			});
 
@@ -520,7 +524,7 @@ describe("Armor Middleware", () => {
 			const armor = new Armor({
 				securityHeaders: {
 					enabled: true,
-					hsts: { maxAge: 31536000 },
+					httpStrictTransportSecurity: { maxAge: 31536000 },
 				},
 			});
 
@@ -536,6 +540,27 @@ describe("Armor Middleware", () => {
 			}
 
 			// No headers should be set
+			assert.strictEqual(ctx.responseHeaders.size, 0);
+		});
+
+		test("should skip header setting when security headers disabled", async () => {
+			const armor = new Armor({
+				securityHeaders: {
+					enabled: false, // This should hit the early return on line 427
+					httpStrictTransportSecurity: { maxAge: 31536000 },
+				},
+			});
+
+			const ctx = createMockContext();
+
+			await armor.handler(ctx);
+
+			// Execute after callbacks (but headers should be skipped)
+			for (const callback of ctx.afterCallbacks) {
+				await callback.handler(ctx);
+			}
+
+			// No headers should be set because security headers are disabled
 			assert.strictEqual(ctx.responseHeaders.size, 0);
 		});
 	});

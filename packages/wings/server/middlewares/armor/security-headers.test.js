@@ -247,12 +247,10 @@ describe("setSecurityHeaders", () => {
 		const ctx = createMockContext();
 		const config = {
 			contentSecurityPolicy: {
-				directives: {
-					"default-src": ["'self'"],
-					"script-src": ["'self'", "'unsafe-inline'"],
-				},
-				reportOnly: false,
+				"default-src": ["'self'"],
+				"script-src": ["'self'", "'unsafe-inline'"],
 			},
+			contentSecurityPolicyReportOnly: false,
 		};
 
 		const errors = setSecurityHeaders(ctx, config);
@@ -268,11 +266,9 @@ describe("setSecurityHeaders", () => {
 		const ctx = createMockContext();
 		const config = {
 			contentSecurityPolicy: {
-				directives: {
-					"default-src": ["'self'"],
-				},
-				reportOnly: true,
+				"default-src": ["'self'"],
 			},
+			contentSecurityPolicyReportOnly: true,
 		};
 
 		const errors = setSecurityHeaders(ctx, config);
@@ -291,7 +287,7 @@ describe("setSecurityHeaders", () => {
 	it("should set HSTS header with all options", () => {
 		const ctx = createMockContext();
 		const config = {
-			hsts: {
+			httpStrictTransportSecurity: {
 				maxAge: 86400,
 				includeSubDomains: true,
 				preload: true,
@@ -310,7 +306,7 @@ describe("setSecurityHeaders", () => {
 	it("should set HSTS header with minimal options", () => {
 		const ctx = createMockContext();
 		const config = {
-			hsts: {
+			httpStrictTransportSecurity: {
 				maxAge: 3600,
 				includeSubDomains: false,
 				preload: false,
@@ -368,11 +364,9 @@ describe("setSecurityHeaders", () => {
 		const config = {
 			frameOptions: "DENY",
 			contentSecurityPolicy: {
-				directives: {
-					"default-src": ["'self'"],
-				},
-				reportOnly: false,
+				"default-src": ["'self'"],
 			},
+			contentSecurityPolicyReportOnly: false,
 		};
 
 		const errors = setSecurityHeaders(ctx, config);
@@ -454,7 +448,7 @@ describe("setSecurityHeaders", () => {
 			frameOptions: null,
 			noSniff: false,
 			xssProtection: undefined,
-			hsts: null,
+			httpStrictTransportSecurity: null,
 			referrerPolicy: "",
 			permissionsPolicy: null,
 			contentSecurityPolicy: false,
@@ -516,9 +510,9 @@ describe("DEFAULT_CSP_DIRECTIVES", () => {
 describe("DEFAULT_HEADERS", () => {
 	it("should have correct structure and values", () => {
 		assert.ok(DEFAULT_HEADERS.contentSecurityPolicy);
-		assert.strictEqual(DEFAULT_HEADERS.contentSecurityPolicy.reportOnly, false);
+		assert.strictEqual(DEFAULT_HEADERS.contentSecurityPolicyReportOnly, false);
 		assert.deepStrictEqual(
-			DEFAULT_HEADERS.contentSecurityPolicy.directives,
+			DEFAULT_HEADERS.contentSecurityPolicy,
 			DEFAULT_CSP_DIRECTIVES,
 		);
 
@@ -535,10 +529,19 @@ describe("DEFAULT_HEADERS", () => {
 		);
 		assert.strictEqual(DEFAULT_HEADERS.crossOriginOpenerPolicy, "same-origin");
 
-		assert.ok(DEFAULT_HEADERS.hsts);
-		assert.strictEqual(DEFAULT_HEADERS.hsts.maxAge, 31536000);
-		assert.strictEqual(DEFAULT_HEADERS.hsts.includeSubDomains, true);
-		assert.strictEqual(DEFAULT_HEADERS.hsts.preload, false);
+		assert.ok(DEFAULT_HEADERS.httpStrictTransportSecurity);
+		assert.strictEqual(
+			DEFAULT_HEADERS.httpStrictTransportSecurity.maxAge,
+			31536000,
+		);
+		assert.strictEqual(
+			DEFAULT_HEADERS.httpStrictTransportSecurity.includeSubDomains,
+			true,
+		);
+		assert.strictEqual(
+			DEFAULT_HEADERS.httpStrictTransportSecurity.preload,
+			false,
+		);
 
 		assert.ok(DEFAULT_HEADERS.permissionsPolicy);
 		assert.deepStrictEqual(DEFAULT_HEADERS.permissionsPolicy.geolocation, []);
@@ -552,6 +555,94 @@ describe("DEFAULT_HEADERS", () => {
 
 		assert.strictEqual(errors.length, 0);
 		assert.ok(ctx.responseHeaders.size > 0);
+	});
+
+	describe("Branch Coverage Edge Cases", () => {
+		it("should handle CSP with string directive sources", () => {
+			const directives = {
+				"default-src": "'self'", // String instead of array
+				"script-src": ["'self'", "'unsafe-inline'"], // Array
+			};
+
+			const result = formatCSP(directives);
+			assert.ok(result.includes("default-src 'self'"));
+			assert.ok(result.includes("script-src 'self' 'unsafe-inline'"));
+		});
+
+		it("should handle HSTS without optional flags", () => {
+			const ctx = createMockContext();
+			const config = {
+				httpStrictTransportSecurity: {
+					maxAge: 86400,
+					// No includeSubDomains or preload
+				},
+			};
+
+			const errors = setSecurityHeaders(ctx, config);
+			assert.strictEqual(errors.length, 0);
+			assert.strictEqual(
+				ctx.responseHeaders.get("strict-transport-security"),
+				"max-age=86400",
+			);
+		});
+
+		it("should handle HSTS with all optional flags", () => {
+			const ctx = createMockContext();
+			const config = {
+				httpStrictTransportSecurity: {
+					maxAge: 31536000,
+					includeSubDomains: true,
+					preload: true,
+				},
+			};
+
+			const errors = setSecurityHeaders(ctx, config);
+			assert.strictEqual(errors.length, 0);
+			assert.strictEqual(
+				ctx.responseHeaders.get("strict-transport-security"),
+				"max-age=31536000; includeSubDomains; preload",
+			);
+		});
+
+		it("should handle Permissions Policy with empty allowlists", () => {
+			const permissions = {
+				geolocation: [], // Empty array
+				microphone: ["self"], // Non-empty array
+			};
+
+			const result = formatPermissionsPolicy(permissions);
+			assert.ok(result.includes("geolocation=()"));
+			assert.ok(result.includes('microphone=("self")'));
+		});
+
+		it("should skip Permissions Policy when result is empty", () => {
+			const ctx = createMockContext();
+			const config = {
+				permissionsPolicy: {}, // Empty object
+			};
+
+			const errors = setSecurityHeaders(ctx, config);
+			assert.strictEqual(errors.length, 0);
+			assert.strictEqual(
+				ctx.responseHeaders.get("permissions-policy"),
+				undefined,
+			);
+		});
+
+		it("should handle CSP report-only mode", () => {
+			const ctx = createMockContext();
+			const config = {
+				contentSecurityPolicy: {
+					"default-src": ["'self'"],
+				},
+				contentSecurityPolicyReportOnly: true,
+			};
+
+			const errors = setSecurityHeaders(ctx, config);
+			assert.strictEqual(errors.length, 0);
+			assert.ok(ctx.responseHeaders.has("content-security-policy-report-only"));
+			assert.ok(!ctx.responseHeaders.has("content-security-policy"));
+		});
 	});
 });
 

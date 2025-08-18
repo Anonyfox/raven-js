@@ -683,4 +683,128 @@ describe("Armor Configuration", () => {
 			assert.strictEqual(config.ipAccess, DEFAULT_CONFIG.ipAccess);
 		});
 	});
+
+	describe("Validation Error Coverage", () => {
+		it("should throw ConfigValidationError when rateLimiting config is not an object", () => {
+			assert.throws(() => {
+				validateConfig({
+					rateLimiting: "not an object",
+				});
+			}, ConfigValidationError);
+
+			assert.throws(() => {
+				validateConfig({
+					rateLimiting: null,
+				});
+			}, ConfigValidationError);
+
+			assert.throws(() => {
+				validateConfig({
+					rateLimiting: 123,
+				});
+			}, ConfigValidationError);
+		});
+
+		it("should throw ConfigValidationError when routes is not an object", () => {
+			assert.throws(() => {
+				validateConfig({
+					rateLimiting: {
+						routes: "not an object",
+					},
+				});
+			}, ConfigValidationError);
+		});
+
+		it("should throw ConfigValidationError when requestValidation config is not an object", () => {
+			assert.throws(() => {
+				validateConfig({
+					requestValidation: "not an object",
+				});
+			}, ConfigValidationError);
+
+			assert.throws(() => {
+				validateConfig({
+					requestValidation: null,
+				});
+			}, ConfigValidationError);
+
+			assert.throws(() => {
+				validateConfig({
+					requestValidation: 789,
+				});
+			}, ConfigValidationError);
+		});
+
+		it("should throw ConfigValidationError when attackDetection config is not an object", () => {
+			assert.throws(() => {
+				validateConfig({
+					attackDetection: "not an object",
+				});
+			}, ConfigValidationError);
+
+			assert.throws(() => {
+				validateConfig({
+					attackDetection: null,
+				});
+			}, ConfigValidationError);
+
+			assert.throws(() => {
+				validateConfig({
+					attackDetection: 456,
+				});
+			}, ConfigValidationError);
+		});
+
+		it("should throw ConfigValidationError when securityHeaders config is not an object", () => {
+			assert.throws(() => {
+				validateConfig({
+					securityHeaders: "not an object",
+				});
+			}, ConfigValidationError);
+
+			assert.throws(() => {
+				validateConfig({
+					securityHeaders: null,
+				});
+			}, ConfigValidationError);
+
+			assert.throws(() => {
+				validateConfig({
+					securityHeaders: true,
+				});
+			}, ConfigValidationError);
+		});
+
+		it("should provide meaningful error messages with paths", () => {
+			try {
+				validateConfig({
+					rateLimiting: "invalid",
+				});
+				assert.fail("Should have thrown");
+			} catch (error) {
+				assert.ok(error instanceof ConfigValidationError);
+				assert.ok(
+					error.message.includes(
+						"Rate limiting configuration must be an object",
+					),
+				);
+				assert.strictEqual(error.path, "rateLimiting");
+			}
+
+			try {
+				validateConfig({
+					requestValidation: "invalid",
+				});
+				assert.fail("Should have thrown");
+			} catch (error) {
+				assert.ok(error instanceof ConfigValidationError);
+				assert.ok(
+					error.message.includes(
+						"Request validation configuration must be an object",
+					),
+				);
+				assert.strictEqual(error.path, "requestValidation");
+			}
+		});
+	});
 });

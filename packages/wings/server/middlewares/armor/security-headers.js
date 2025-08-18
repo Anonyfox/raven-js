@@ -31,14 +31,12 @@ export const DEFAULT_CSP_DIRECTIVES = {
  * Enterprise-grade defaults that work for most applications
  */
 export const DEFAULT_HEADERS = {
-	contentSecurityPolicy: {
-		directives: DEFAULT_CSP_DIRECTIVES,
-		reportOnly: false,
-	},
+	contentSecurityPolicy: DEFAULT_CSP_DIRECTIVES,
+	contentSecurityPolicyReportOnly: false,
 	frameOptions: "DENY",
 	noSniff: true,
 	xssProtection: true,
-	hsts: {
+	httpStrictTransportSecurity: {
 		maxAge: 31536000, // 1 year
 		includeSubDomains: true,
 		preload: false,
@@ -122,10 +120,10 @@ export function setSecurityHeaders(ctx, headersConfig) {
 			!ctx.responseHeaders.has("content-security-policy")
 		) {
 			const csp = headers.contentSecurityPolicy;
-			const headerName = csp.reportOnly
+			const headerName = headers.contentSecurityPolicyReportOnly
 				? "content-security-policy-report-only"
 				: "content-security-policy";
-			const headerValue = formatCSP(csp.directives);
+			const headerValue = formatCSP(csp);
 			ctx.responseHeaders.set(headerName, headerValue);
 		}
 
@@ -145,8 +143,11 @@ export function setSecurityHeaders(ctx, headersConfig) {
 		}
 
 		// Strict-Transport-Security
-		if (headers.hsts && !ctx.responseHeaders.has("strict-transport-security")) {
-			const hsts = headers.hsts;
+		if (
+			headers.httpStrictTransportSecurity &&
+			!ctx.responseHeaders.has("strict-transport-security")
+		) {
+			const hsts = headers.httpStrictTransportSecurity;
 			let hstsValue = `max-age=${hsts.maxAge}`;
 			if (hsts.includeSubDomains) hstsValue += "; includeSubDomains";
 			if (hsts.preload) hstsValue += "; preload";

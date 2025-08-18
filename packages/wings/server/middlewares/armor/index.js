@@ -405,25 +405,15 @@ export class Armor extends Middleware {
 	#detectAttackPatterns(ctx) {
 		if (!this.config.enabled) return;
 
-		try {
-			const attack = detectAttacks(ctx, this.config.attackDetection);
+		const attack = detectAttacks(ctx, this.config.attackDetection);
 
-			if (attack) {
-				const attackError = new Error(`Attack pattern detected: ${attack}`);
-				attackError.name = "AttackPatternDetected";
-				/** @type {any} */ (attackError).attackDescription = attack;
-				/** @type {any} */ (attackError).path = ctx.path;
-				/** @type {any} */ (attackError).method = ctx.method;
-				ctx.errors.push(attackError);
-			}
-		} catch (error) {
-			// Pattern detection failed - log but don't affect request
-			const detectionError = new Error(
-				`Attack pattern detection failed: ${error.message}`,
-			);
-			detectionError.name = "PatternDetectionError";
-			/** @type {any} */ (detectionError).originalError = error;
-			ctx.errors.push(detectionError);
+		if (attack) {
+			const attackError = new Error(`Attack pattern detected: ${attack}`);
+			attackError.name = "AttackPatternDetected";
+			/** @type {any} */ (attackError).attackDescription = attack;
+			/** @type {any} */ (attackError).path = ctx.path;
+			/** @type {any} */ (attackError).method = ctx.method;
+			ctx.errors.push(attackError);
 		}
 	}
 
@@ -437,25 +427,10 @@ export class Armor extends Middleware {
 			return;
 		}
 
-		try {
-			// Skip if response already ended
-			if (ctx.responseEnded) return;
+		// Skip if response already ended
+		if (ctx.responseEnded) return;
 
-			const errors = setSecurityHeaders(ctx, this.config.securityHeaders);
-
-			// Add any header setting errors to context
-			for (const error of errors) {
-				ctx.errors.push(error);
-			}
-		} catch (error) {
-			// Header setting failed - log error but don't break response
-			const headerError = new Error(
-				`Security header setting failed: ${error.message}`,
-			);
-			headerError.name = "SecurityHeaderError";
-			/** @type {any} */ (headerError).originalError = error;
-			ctx.errors.push(headerError);
-		}
+		setSecurityHeaders(ctx, this.config.securityHeaders);
 	}
 
 	/**
