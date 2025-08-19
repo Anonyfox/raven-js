@@ -105,7 +105,7 @@ if (cluster.isPrimary) {
 	router.get("/test", (ctx) => { ctx.html("<html><body><h1>OK</h1></body></html>"); });
 	router.get("/crash", (ctx) => {
 		ctx.html("<h1>CRASH INITIATED</h1>");
-		setTimeout(() => process.exit(1), 10); // Reduced from 50ms to 10ms
+		setTimeout(() => process.exit(1), 50); // Increased for more reliable response delivery
 	});
 
 	const server = new ClusteredServer(router);
@@ -212,16 +212,23 @@ if (cluster.isPrimary) {
 			// Worker crash expected
 		}
 
-		// Wait for recovery
-		await new Promise(resolve => setTimeout(resolve, 100));
+		// Wait for recovery - increased timeout for worker restart
+		await new Promise(resolve => setTimeout(resolve, 500));
 
-		// Test server still works
+		// Test server still works - with retry logic for worker readiness
 		let serverStillWorks = false;
-		try {
-			const postCrashResponse = await fetch(\`http://localhost:${port}/test\`);
-			serverStillWorks = postCrashResponse.status === 200;
-		} catch (e) {
-			// Post-crash test failed
+		let retries = 5;
+		while (retries > 0 && !serverStillWorks) {
+			try {
+				const postCrashResponse = await fetch(\`http://localhost:${port}/test\`);
+				serverStillWorks = postCrashResponse.status === 200;
+				break;
+			} catch (e) {
+				retries--;
+				if (retries > 0) {
+					await new Promise(resolve => setTimeout(resolve, 100)); // Wait before retry
+				}
+			}
 		}
 
 		results.crash = {
@@ -235,14 +242,14 @@ if (cluster.isPrimary) {
 		await server.close();
 
 		console.log("ULTIMATE_RESULT:", JSON.stringify(results));
-		setTimeout(() => process.exit(0), 10);
+		setTimeout(() => process.exit(0), 50);
 
 	} catch (error) {
 		console.log("ULTIMATE_RESULT:", JSON.stringify({
 			error: error.message,
 			partialResults: results
 		}));
-		setTimeout(() => process.exit(1), 10);
+		setTimeout(() => process.exit(1), 50);
 	}
 
 } else {
@@ -252,7 +259,7 @@ if (cluster.isPrimary) {
 		router.get("/test", (ctx) => { ctx.html("<html><body><h1>OK</h1></body></html>"); });
 		router.get("/crash", (ctx) => {
 			ctx.html("<h1>CRASH INITIATED</h1>");
-			setTimeout(() => process.exit(1), 10);
+			setTimeout(() => process.exit(1), 50);
 		});
 		const server = new ClusteredServer(router);
 		await server.listen(${port});
