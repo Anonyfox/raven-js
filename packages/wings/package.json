@@ -1,7 +1,7 @@
 {
   "name": "@raven-js/wings",
   "description": "Zero-dependency isomorphic routing library for modern JavaScript - Server and CLI routing",
-  "version": "0.2.6",
+  "version": "0.3.0",
   "type": "module",
   "files": [
     "*.js",
