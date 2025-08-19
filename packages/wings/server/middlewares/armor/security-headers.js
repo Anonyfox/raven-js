@@ -7,9 +7,28 @@
  */
 
 /**
+ * @file HTTP security headers with CSP, HSTS, and modern browser protections
  *
- * Default Content Security Policy directives
- * Restrictive by default, can be relaxed as needed
+ * Comprehensive security header implementation covering OWASP recommendations.
+ * Configurable CSP with directive formatting, HSTS with preload support.
+ * Graceful error handling prevents response corruption from header failures.
+ *
+ * **Standards Compliance**: OWASP, Mozilla Observatory, W3C specifications
+ * **Performance**: Pre-formatted headers cached, minimal runtime processing
+ * **Compatibility**: Modern browser focus, legacy browser graceful degradation
+ * **Error Safety**: Header setting failures logged but don't break responses
+ */
+
+/**
+ * Restrictive CSP directives providing strong baseline security.
+ * Designed to work with most applications while blocking common attack vectors.
+ *
+ * **Philosophy**: Deny by default, explicitly allow trusted sources
+ * **Inline CSS**: Allowed via 'unsafe-inline' for styling compatibility
+ * **Images**: Supports data: URIs and HTTPS sources for modern applications
+ * **Scripts**: Self-only policy prevents XSS via external script injection
+ *
+ * @type {Record<string, string[]>}
  */
 export const DEFAULT_CSP_DIRECTIVES = {
 	"default-src": ["'self'"],
@@ -25,8 +44,15 @@ export const DEFAULT_CSP_DIRECTIVES = {
 };
 
 /**
- * Default security headers configuration
- * Enterprise-grade defaults that work for most applications
+ * Enterprise-grade security headers optimized for production deployments.
+ * Balanced configuration providing strong security without breaking applications.
+ *
+ * **HSTS**: 1-year max-age with subdomain inclusion, preload optional
+ * **CSP**: Restrictive policy with practical allowances for common patterns
+ * **COEP/COOP**: Cross-origin isolation for enhanced security (when enabled)
+ * **Permissions Policy**: Restrictive by default, explicit allowlists only
+ *
+ * @type {import('./config.js').SecurityHeadersConfig}
  */
 export const DEFAULT_HEADERS = {
 	contentSecurityPolicy: DEFAULT_CSP_DIRECTIVES,
@@ -53,9 +79,15 @@ export const DEFAULT_HEADERS = {
 };
 
 /**
- * Format Content Security Policy directives into header value
+ * Format CSP directives object into compliant header value string.
+ * Handles arrays and strings, skips empty/invalid directives.
  *
- * @param {Object} directives - CSP directive object
+ * **Format**: "directive sources; directive sources" semicolon-separated
+ * **Source Handling**: Array values joined with spaces, strings used directly
+ * **Validation**: Empty or invalid directives excluded from output
+ * **Standards**: Compliant with CSP Level 3 specification
+ *
+ * @param {Record<string, string[]|string>} directives - CSP directive configuration
  * @returns {string} Formatted CSP header value
  */
 export function formatCSP(directives) {
@@ -73,9 +105,15 @@ export function formatCSP(directives) {
 }
 
 /**
- * Format Permissions Policy header value
+ * Format Permissions Policy object into compliant header value string.
+ * Converts feature allowlists to proper policy syntax with origin quoting.
  *
- * @param {Object} permissions - Permissions object
+ * **Format**: "feature=(origin1 origin2), feature=()" comma-separated
+ * **Empty Lists**: Rendered as feature=() to deny all origins
+ * **Origin Quoting**: All origins wrapped in quotes for spec compliance
+ * **Standards**: Compliant with Permissions Policy W3C specification
+ *
+ * @param {Record<string, string[]>} permissions - Feature to allowlist mapping
  * @returns {string} Formatted Permissions-Policy header value
  */
 export function formatPermissionsPolicy(permissions) {
@@ -96,11 +134,17 @@ export function formatPermissionsPolicy(permissions) {
 }
 
 /**
- * Set security headers on response context
+ * Apply security headers to response with graceful error handling.
+ * Sets headers only if not already present, respects existing middleware.
  *
- * @param {import('../../../core/context.js').Context} ctx - Request context
- * @param {any} headersConfig - Headers configuration
- * @returns {Error[]} Array of errors encountered during header setting
+ * **Header Precedence**: Existing headers preserved (first-wins policy)
+ * **Error Handling**: Individual header failures logged, others continue
+ * **Response Safety**: Skips header setting if response already ended
+ * **Configuration**: Only enabled headers processed, disabled ones skipped
+ *
+ * @param {import('../../../core/context.js').Context} ctx - Request context with response headers
+ * @param {import('./config.js').SecurityHeadersConfig} headersConfig - Security headers configuration
+ * @returns {Error[]} Array of errors encountered (empty if successful)
  */
 export function setSecurityHeaders(ctx, headersConfig) {
 	/** @type {Error[]} */

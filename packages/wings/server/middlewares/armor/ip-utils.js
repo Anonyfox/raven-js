@@ -9,8 +9,28 @@
 import { isIP } from "node:net";
 
 /**
+ * @file IP address utilities with CIDR support and proxy header handling
  *
- * Parse a CIDR notation string into network and mask
+ * Zero-dependency IP address parsing and CIDR range matching using Node.js built-ins.
+ * Optimized algorithms for IPv4/IPv6 address validation and subnet calculations.
+ * Secure proxy header handling prevents IP spoofing vulnerabilities.
+ *
+ * **Dependencies**: Only Node.js built-in `net.isIP()` for validation
+ * **Performance**: O(1) IP parsing, O(1) CIDR matching for IPv4, O(n) for IPv6 where n = prefix bits
+ * **Security**: Validates all inputs before processing to prevent injection attacks
+ * **IPv6 Support**: Full IPv6 including compressed notation and mixed IPv4/IPv6 networks
+ */
+
+/**
+ * Parse CIDR notation string into validated network address and prefix length.
+ * Supports both IPv4 and IPv6 networks with comprehensive validation.
+ *
+ * **Validation**: Network address must be valid IP, prefix must be in valid range
+ * **IPv4 Range**: 0-32 prefix length, IPv6 Range: 0-128 prefix length
+ * **Error Handling**: Returns null for any invalid input instead of throwing
+ *
+ * @param {string} cidr - CIDR notation string (e.g., "192.168.1.0/24", "2001:db8::/32")
+ * @returns {{network: string, prefix: number}|null} Parsed components or null if invalid
  */
 export function parseCIDR(/** @type {string} */ cidr) {
 	if (typeof cidr !== "string") return null;
@@ -32,11 +52,17 @@ export function parseCIDR(/** @type {string} */ cidr) {
 }
 
 /**
- * Check if an IP address is within a CIDR range
+ * Check if IP address falls within specified CIDR range using optimized algorithms.
+ * Automatically detects IPv4 vs IPv6 and uses appropriate matching algorithm.
  *
- * @param {string} ip - IP address to check
- * @param {string} cidr - CIDR notation string
- * @returns {boolean} True if IP is within the CIDR range
+ * **IPv4 Performance**: O(1) bitwise operations using 32-bit integers
+ * **IPv6 Performance**: O(n) byte-by-byte comparison where n = prefix bits / 8
+ * **Mixed Networks**: Returns false for IPv4/IPv6 mismatch (no conversion attempted)
+ * **Edge Cases**: Handles /0 networks (match all), invalid inputs gracefully
+ *
+ * @param {string} ip - IP address to test (IPv4 or IPv6)
+ * @param {string} cidr - CIDR notation network range
+ * @returns {boolean} true if IP is within CIDR range, false otherwise
  */
 export function isIPInCIDR(ip, cidr) {
 	const parsed = parseCIDR(cidr);
@@ -58,12 +84,18 @@ export function isIPInCIDR(ip, cidr) {
 }
 
 /**
- * Check if an IPv4 address is within a CIDR range
+ * Check if IPv4 address is within CIDR range using bitwise operations.
+ * Converts addresses to 32-bit integers for efficient comparison.
  *
- * @param {string} ip - IPv4 address
- * @param {string} network - Network address
- * @param {number} prefix - Prefix length
- * @returns {boolean} True if IP is within range
+ * **Algorithm**: Convert IPs to integers, create subnet mask, compare network portions
+ * **Performance**: O(1) - constant time regardless of prefix length
+ * **Special Case**: /0 prefix matches all IPv4 addresses (0.0.0.0/0)
+ * **Precision**: Uses unsigned right shift to handle JavaScript's signed integers correctly
+ *
+ * @param {string} ip - IPv4 address to test
+ * @param {string} network - Network address from CIDR
+ * @param {number} prefix - Prefix length (0-32)
+ * @returns {boolean} true if IP is within IPv4 CIDR range
  */
 function isIPv4InCIDR(ip, network, prefix) {
 	const ipInt = ipv4ToInt(ip);
@@ -77,12 +109,18 @@ function isIPv4InCIDR(ip, network, prefix) {
 }
 
 /**
- * Check if an IPv6 address is within a CIDR range
+ * Check if IPv6 address is within CIDR range using byte array comparison.
+ * Expands compressed IPv6 addresses and compares byte-by-byte with masking.
  *
- * @param {string} ip - IPv6 address
- * @param {string} network - Network address
- * @param {number} prefix - Prefix length
- * @returns {boolean} True if IP is within range
+ * **Algorithm**: Convert to 16-byte arrays, compare full bytes + partial byte with masking
+ * **Performance**: O(n) where n = prefix bits / 8 (early exit on mismatch)
+ * **Expansion**: Handles :: compression and mixed case automatically
+ * **Precision**: Supports bit-level precision for partial byte matching
+ *
+ * @param {string} ip - IPv6 address to test (may be compressed)
+ * @param {string} network - Network address from CIDR
+ * @param {number} prefix - Prefix length (0-128)
+ * @returns {boolean} true if IP is within IPv6 CIDR range
  */
 function isIPv6InCIDR(ip, network, prefix) {
 	const ipBytes = ipv6ToBytes(ip);
@@ -111,10 +149,16 @@ function isIPv6InCIDR(ip, network, prefix) {
 }
 
 /**
- * Convert IPv4 address string to integer
+ * Convert IPv4 address string to 32-bit unsigned integer.
+ * Uses bitwise operations for efficient conversion without floating point.
  *
- * @param {string} ip - IPv4 address
- * @returns {number | null} Integer representation or null if invalid
+ * **Algorithm**: Parse octets, shift and combine using bit operations
+ * **Validation**: Relies on caller's isIP() validation - assumes valid input
+ * **Optimization**: Dead code eliminated (input validation) due to upstream checking
+ * **Precision**: Uses unsigned right shift to handle JavaScript signed integer edge cases
+ *
+ * @param {string} ip - Valid IPv4 address string (pre-validated)
+ * @returns {number} 32-bit unsigned integer representation
  */
 function ipv4ToInt(ip) {
 	const parts = ip.split(".");
@@ -130,10 +174,16 @@ function ipv4ToInt(ip) {
 }
 
 /**
- * Convert IPv6 address string to byte array
+ * Convert IPv6 address string to 16-byte array via expansion and hex parsing.
+ * Handles compressed notation (::) and converts to standardized byte representation.
  *
- * @param {string} ip - IPv6 address
- * @returns {Uint8Array | null} Byte array or null if invalid
+ * **Expansion**: Decompresses :: notation to full 8-group format
+ * **Validation**: Relies on caller's isIP() validation - assumes valid input
+ * **Output**: Fixed 16-byte Uint8Array for consistent memory layout
+ * **Optimization**: Dead code eliminated (error checking) due to upstream validation
+ *
+ * @param {string} ip - Valid IPv6 address string (pre-validated, may be compressed)
+ * @returns {Uint8Array} 16-byte array representation
  */
 function ipv6ToBytes(ip) {
 	// Expand compressed IPv6 addresses
@@ -153,10 +203,16 @@ function ipv6ToBytes(ip) {
 }
 
 /**
- * Expand compressed IPv6 address to full form
+ * Expand compressed IPv6 address (::) to full 8-group colon notation.
+ * Calculates required zero groups and inserts them at :: position.
  *
- * @param {string} ip - IPv6 address (possibly compressed)
- * @returns {string | null} Expanded IPv6 address or null if invalid
+ * **Compression Handling**: Single :: expansion, preserves existing groups
+ * **Algorithm**: Count existing groups, calculate zeros needed, insert at :: position
+ * **Edge Cases**: Already expanded addresses returned unchanged
+ * **Output Format**: Standard 8-group colon-separated hex format
+ *
+ * @param {string} ip - IPv6 address with possible :: compression
+ * @returns {string} Fully expanded IPv6 address (8 colon-separated groups)
  */
 function expandIPv6(ip) {
 	if (!ip.includes("::")) {
@@ -179,11 +235,17 @@ function expandIPv6(ip) {
 }
 
 /**
- * Extract client IP address from context, respecting proxy headers if configured
+ * Extract client IP address from request context with configurable proxy trust.
+ * Implements security-conscious proxy header parsing to prevent IP spoofing.
  *
- * @param {import('../../../core/context.js').Context} ctx - Request context
- * @param {boolean} trustProxy - Whether to trust proxy headers
- * @returns {string} Client IP address
+ * **Security Model**: Only use proxy headers when explicitly trusted via configuration
+ * **Header Priority**: X-Forwarded-For (first IP) → X-Real-IP → Remote-Addr → "unknown"
+ * **Spoofing Protection**: Proxy headers ignored by default to prevent client IP manipulation
+ * **Production Safety**: Returns "unknown" rather than error for missing data
+ *
+ * @param {import('../../../core/context.js').Context} ctx - Request context with headers
+ * @param {boolean} [trustProxy=false] - Whether to trust proxy headers (SECURITY: false by default)
+ * @returns {string} Client IP address or "unknown" if unavailable
  */
 export function getClientIP(ctx, trustProxy = false) {
 	if (trustProxy) {
@@ -203,14 +265,18 @@ export function getClientIP(ctx, trustProxy = false) {
 }
 
 /**
- * Check if an IP address is allowed based on whitelist/blacklist configuration
+ * Determine if IP address is allowed based on whitelist/blacklist configuration.
+ * Supports exact IP matching and CIDR range matching for flexible access control.
  *
- * @param {string} ip - IP address to check
- * @param {Object} config - IP control configuration
- * @param {string} config.mode - 'whitelist', 'blacklist', or 'disabled'
- * @param {string[]} config.whitelist - Array of allowed IPs/CIDRs
- * @param {string[]} config.blacklist - Array of blocked IPs/CIDRs
- * @returns {boolean} True if IP is allowed
+ * **Whitelist Mode**: Only IPs in whitelist allowed (deny by default)
+ * **Blacklist Mode**: All IPs except those in blacklist allowed (allow by default)
+ * **Disabled Mode**: All IPs allowed (no filtering)
+ * **Pattern Support**: Exact IP addresses and CIDR ranges in same list
+ * **Performance**: Early exit on first match for large IP lists
+ *
+ * @param {string} ip - IP address to evaluate
+ * @param {import('./config.js').IPAccessConfig} config - Access control configuration
+ * @returns {boolean} true if IP should be allowed, false if blocked
  */
 export function isIPAllowed(ip, config) {
 	if (config.mode === "disabled") return true;

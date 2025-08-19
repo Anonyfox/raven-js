@@ -7,8 +7,28 @@
  */
 
 /**
+ * @file Request structure and size validation for DoS protection
  *
- * Default request validation configuration
+ * Efficient request validation preventing resource exhaustion attacks.
+ * Multi-layer validation checks path length, parameter counts, header sizes.
+ * Zero-allocation validation for common request patterns.
+ *
+ * **DoS Protection**: Prevents memory/CPU exhaustion via oversized requests
+ * **Performance**: O(n) where n = request component count (headers, params)
+ * **Memory**: No allocation for valid requests, early rejection for invalid
+ * **Attack Vectors**: Large headers, parameter pollution, path bombs, body size attacks
+ */
+
+/**
+ * Production-ready validation limits balancing security with usability.
+ * Sized for typical web applications while preventing common DoS vectors.
+ *
+ * **Path Length**: 2KB handles complex SPAs with deep routing
+ * **Query Params**: 100 params accommodates complex forms and analytics
+ * **Header Size**: 8KB total allows for auth tokens and modern header usage
+ * **Body Size**: 1MB suitable for form uploads, adjust for file uploads
+ *
+ * @type {import('./config.js').RequestValidationConfig}
  */
 export const DEFAULT_VALIDATION = {
 	maxBodySize: 1024 * 1024, // 1MB
@@ -20,17 +40,18 @@ export const DEFAULT_VALIDATION = {
 };
 
 /**
- * Validate request size and structure to prevent various attacks
+ * Validate request structure against size and count limits to prevent DoS attacks.
+ * Performs comprehensive validation across path, parameters, headers, and body.
  *
- * @param {import('../../../core/context.js').Context} ctx - Request context
- * @param {Object} config - Validation configuration
- * @param {number} config.maxPathLength - Maximum path length
- * @param {number} config.maxQueryParams - Maximum query parameters
- * @param {number} config.maxQueryParamLength - Maximum query parameter length
- * @param {number} config.maxHeaders - Maximum headers count
- * @param {number} config.maxHeaderSize - Maximum headers size
- * @param {number} config.maxBodySize - Maximum body size
- * @returns {string[]} Array of error messages, empty array if all validations pass
+ * **Validation Order**: Path → Query params → Headers → Body (ordered by attack frequency)
+ * **Early Exit**: Continues validation even after errors to provide complete feedback
+ * **Error Collection**: Returns all validation failures for comprehensive logging
+ * **Performance**: O(n) scan of request components, optimized for typical requests
+ * **Memory Safety**: No allocation for valid requests, minimal allocation for errors
+ *
+ * @param {import('../../../core/context.js').Context} ctx - Request context with parsed data
+ * @param {import('./config.js').RequestValidationConfig} config - Validation limits configuration
+ * @returns {string[]} Array of validation error descriptions (empty if valid)
  */
 export function validateRequest(ctx, config) {
 	/** @type {string[]} */

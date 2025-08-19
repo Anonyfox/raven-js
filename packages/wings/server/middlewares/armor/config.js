@@ -7,48 +7,120 @@
  */
 
 /**
+ * @file Security configuration for Armor middleware with enterprise-grade defaults
  *
- * Default armor configuration with sensible security defaults
+ * Default armor configuration with production-ready security settings.
+ * Zero-dependency validation prevents misconfiguration vulnerabilities.
+ * Memory-efficient deep merging preserves user customizations while ensuring type safety.
+ *
+ * **Performance**: O(1) validation for most settings, O(n) for IP list validation where n = list size
+ * **Memory**: Deep merge creates shallow copies only for modified nested objects
+ * **Security**: Validation prevents runtime injection through configuration objects
+ */
+/**
+ * @typedef {Object} IPAccessConfig
+ * @property {'disabled'|'whitelist'|'blacklist'} mode - Access control mode
+ * @property {string[]} whitelist - CIDR ranges and IPs to allow (mode: whitelist)
+ * @property {string[]} blacklist - CIDR ranges and IPs to block (mode: blacklist)
+ * @property {boolean} trustProxy - Trust X-Forwarded-For headers
+ */
+
+/**
+ * @typedef {Object} RateLimitConfig
+ * @property {boolean} enabled - Enable rate limiting
+ * @property {{windowMs: number, max: number}} global - Global rate limits
+ * @property {Record<string, {windowMs: number, max: number}>} routes - Route-specific limits
+ * @property {((ctx: import('../../../core/context.js').Context) => string)|null} keyGenerator - Custom key function
+ * @property {number} cleanupInterval - Memory cleanup interval (ms)
+ */
+
+/**
+ * @typedef {Object} RequestValidationConfig
+ * @property {boolean} enabled - Enable request validation
+ * @property {number} maxPathLength - Maximum URL path length
+ * @property {number} maxQueryParams - Maximum query parameter count
+ * @property {number} maxQueryParamLength - Maximum query parameter value length
+ * @property {number} maxHeaders - Maximum header count
+ * @property {number} maxHeaderSize - Maximum total header size (bytes)
+ * @property {number} maxBodySize - Maximum request body size (bytes)
+ */
+
+/**
+ * @typedef {Object} AttackDetectionConfig
+ * @property {boolean} sqlInjection - Detect SQL injection patterns
+ * @property {boolean} xss - Detect XSS patterns
+ * @property {boolean} pathTraversal - Detect path traversal patterns
+ * @property {boolean} suspiciousPatterns - Detect misc attack patterns
+ */
+
+/**
+ * @typedef {Object} SecurityHeadersConfig
+ * @property {boolean} enabled - Enable security headers
+ * @property {Record<string, string[]>|false} contentSecurityPolicy - CSP directives or false to disable
+ * @property {boolean} contentSecurityPolicyReportOnly - Use CSP report-only mode
+ * @property {{maxAge: number, includeSubDomains: boolean, preload: boolean}|false} httpStrictTransportSecurity - HSTS config or false
+ * @property {Record<string, string[]>} permissionsPolicy - Permissions policy features
+ * @property {'DENY'|'SAMEORIGIN'|string|false} frameOptions - X-Frame-Options value or false
+ * @property {boolean} noSniff - Set X-Content-Type-Options: nosniff
+ * @property {string|boolean} xssProtection - X-XSS-Protection value or false
+ * @property {string|false} referrerPolicy - Referrer-Policy value or false
+ * @property {string|null} crossOriginEmbedderPolicy - COEP value
+ * @property {string|null} crossOriginOpenerPolicy - COOP value
+ * @property {string|null} crossOriginResourcePolicy - CORP value
+ */
+
+/**
+ * @typedef {Object} ArmorConfig
+ * @property {boolean} enabled - Enable all armor protection
+ * @property {IPAccessConfig} ipAccess - IP access control configuration
+ * @property {RateLimitConfig} rateLimiting - Rate limiting configuration
+ * @property {RequestValidationConfig} requestValidation - Request validation configuration
+ * @property {AttackDetectionConfig} attackDetection - Attack detection configuration
+ * @property {SecurityHeadersConfig} securityHeaders - Security headers configuration
+ */
+
+/**
+ * Production-ready security defaults optimized for modern web applications.
+ * Conservative settings prevent common attacks while maintaining compatibility.
+ *
+ * **Rate Limiting**: Disabled by default - enable with production values
+ * **IP Access**: Disabled by default - configure whitelist/blacklist as needed
+ * **CSP**: Restrictive policy allows self + common safe sources
+ * **HSTS**: 1-year max-age without preload (prevents HTTPS requirement removal)
+ *
+ * @type {ArmorConfig}
  */
 export const DEFAULT_CONFIG = {
-	// General options
 	enabled: true,
 
-	// IP-based access control
 	ipAccess: {
-		mode: "disabled", // "disabled", "whitelist", "blacklist"
-		/** @type {string[]} */
+		mode: "disabled",
 		whitelist: [],
-		/** @type {string[]} */
 		blacklist: [],
 		trustProxy: false,
 	},
 
-	// Rate limiting
 	rateLimiting: {
 		enabled: false,
 		global: {
 			windowMs: 15 * 60 * 1000, // 15 minutes
-			max: 100, // Limit each IP to 100 requests per window
+			max: 100, // 100 requests per window per IP
 		},
-		routes: {}, // Route-specific limits
-		/** @type {Function|null} */
-		keyGenerator: null, // Custom key generator function
+		routes: {},
+		keyGenerator: null,
 		cleanupInterval: 5 * 60 * 1000, // 5 minutes
 	},
 
-	// Request validation
 	requestValidation: {
 		enabled: true,
 		maxPathLength: 2048,
 		maxQueryParams: 100,
 		maxQueryParamLength: 1000,
 		maxHeaders: 100,
-		maxHeaderSize: 8192, // 8KB
+		maxHeaderSize: 8192, // 8KB total
 		maxBodySize: 1024 * 1024, // 1MB
 	},
 
-	// Attack pattern detection
 	attackDetection: {
 		sqlInjection: true,
 		xss: true,
@@ -56,14 +128,13 @@ export const DEFAULT_CONFIG = {
 		suspiciousPatterns: true,
 	},
 
-	// Security headers
 	securityHeaders: {
 		enabled: true,
 		contentSecurityPolicy: {
 			"default-src": ["'self'"],
 			"script-src": ["'self'"],
-			"style-src": ["'self'", "'unsafe-inline'"],
-			"img-src": ["'self'", "data:", "https:"],
+			"style-src": ["'self'", "'unsafe-inline'"], // Allows inline CSS for compatibility
+			"img-src": ["'self'", "data:", "https:"], // Allows data URIs and HTTPS images
 			"font-src": ["'self'"],
 			"connect-src": ["'self'"],
 			"frame-src": ["'none'"],
@@ -75,25 +146,19 @@ export const DEFAULT_CONFIG = {
 		httpStrictTransportSecurity: {
 			maxAge: 31536000, // 1 year
 			includeSubDomains: true,
-			preload: false,
+			preload: false, // Prevents accidental HSTS preload list inclusion
 		},
 		permissionsPolicy: {
-			/** @type {string[]} */
 			geolocation: [],
-			/** @type {string[]} */
 			microphone: [],
-			/** @type {string[]} */
 			camera: [],
 		},
 		frameOptions: "DENY",
 		noSniff: true,
 		xssProtection: "1; mode=block",
 		referrerPolicy: "strict-origin-when-cross-origin",
-		/** @type {string|null} */
 		crossOriginEmbedderPolicy: null,
-		/** @type {string|null} */
 		crossOriginOpenerPolicy: null,
-		/** @type {string|null} */
 		crossOriginResourcePolicy: null,
 	},
 };
