@@ -78,6 +78,7 @@ const parseReferenceLine = (line) => {
 
 	// Extract URL and optional title
 	const parsed = parseUrlAndTitle(urlAndTitle);
+	if (!parsed) return null;
 
 	return {
 		id,
@@ -112,6 +113,8 @@ const parseUrlAndTitle = (text) => {
 	// This regex uses \S+ which matches any non-whitespace character sequence
 	// Since we've already trimmed the input, this should always match non-empty strings
 	match = text.match(/^(\S+)(?:\s+["']([^"']+)["'])?$/);
+	if (!match) return null;
+
 	return {
 		url: match[1],
 		title: match[2] || undefined,

@@ -7,37 +7,31 @@
  */
 
 /**
+ * @file Zero-dependency template literal engine for modern JavaScript
  *
- * This module leverages JavaScript's tagged template literals to provide
- * a powerful and flexible templating engine, similar to JSX. It is the root
- * export of the `@raven-js/beak` package.
- * It includes functions for creating HTML, CSS, JavaScript, SQL and Markdown strings.
- * Each function may perform some lightweight processing on the input string to
- * improve DX a bit, but in general `@raven-js/beak` is nearly as fast as
- * string concatenation.
- * Plus, when using the RavenJS vscode plugin, you get syntax highlighting and
- * autocompletion for these template literals by leveraging the editor
- * capabilities instead of needing to execute code at runtime.
- * // using the `html` function for demonstration, but works with all functions
- * import { html } from '@raven-js/beak';
- * // conditional rendering: use ternary operator
- * const isLoggedIn = true;
- * const greeting = html`
- * <div>
- * ${isLoggedIn ? html`<p>Welcome back!</p>` : html`<p>Please log in.</p>`}
- * </div>
- * `;
- * // looping like react: use map() to create a list of elements
+ * Tagged template literals for HTML, CSS, JavaScript, SQL, and Markdown generation.
+ * Near string-concatenation performance with intelligent value processing,
+ * array flattening, and whitespace optimization.
+ *
+ * **VSCode Integration:** Syntax highlighting and autocompletion via RavenJS plugin.
+ * **Performance:** Optimized execution paths based on interpolation count.
+ * **Security:** Optional XSS protection for untrusted content.
+ *
+ * @example
+ * // Conditional rendering with ternary operators
+ * const greeting = html`<div>
+ *   ${isLoggedIn ? html`<p>Welcome back!</p>` : html`<p>Please log in.</p>`}
+ * </div>`;
+ *
+ * @example
+ * // Array mapping for list generation
  * const colors = ['red', 'green', 'blue'];
- * const list = html`
- * <ul>
- * ${colors.map(color => html`<li>${color}</li>`)}
- * </ul>
- * `;
- * // components: use functions to create reusable components
+ * const list = html`<ul>${colors.map(color => html`<li>${color}</li>`)}</ul>`;
+ *
+ * @example
+ * // Component pattern with function factories
  * const Button = ({ text }) => html`<button>${text}</button>`;
- * const button = Button({ text: 'Click me' });
- * // Result: "<button>Click me</button>"
+ * const button = Button({ text: 'Click me' }); // "<button>Click me</button>"
  */
 
 export { css, style } from "./css/index.js";

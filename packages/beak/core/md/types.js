@@ -7,8 +7,11 @@
  */
 
 /**
+ * @file AST node types and validation for markdown parsing
  *
- * AST node types for markdown parsing
+ * Foundational type definitions for the markdown parser AST. Includes node type
+ * constants, regex patterns, HTML tag mappings, and validation functions.
+ * Core types enable type-safe markdown processing and HTML generation.
  */
 export const NODE_TYPES = {
 	PARAGRAPH: "paragraph",
