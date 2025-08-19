@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Default armor configuration with sensible security defaults
  */

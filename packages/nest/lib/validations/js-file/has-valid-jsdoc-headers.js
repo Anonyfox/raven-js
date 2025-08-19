@@ -9,7 +9,6 @@
 import { readFileSync } from "node:fs";
 
 /**
- * @packageDocumentation
  *
  * Validates that a JavaScript file has a proper JSDoc header with required metadata
  */
@@ -139,17 +138,8 @@ function validateTwoBlockFormat(
 		}
 	}
 
-	// First block should NOT contain documentation tags
-	const documentationTags = ["@packageDocumentation"];
-	for (const tag of documentationTags) {
-		if (firstBlockTags[tag]) {
-			errors.push(
-				`First JSDoc block should not contain ${tag} - documentation belongs in second block`,
-			);
-		}
-	}
+	// First block should only contain metadata (no documentation tags)
 
-	// Second block: documentation content (@packageDocumentation, etc.)
 	const secondBlockContent = jsdocBlocks[1].replace(/^\/\*\*\s*|\s*\*\/$/g, "");
 	const secondBlockTags = parseJSDocTags(secondBlockContent);
 

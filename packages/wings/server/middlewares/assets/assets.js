@@ -20,7 +20,6 @@ import {
 import { handleAssetRequest } from "./request-handler.js";
 
 /**
- * @packageDocumentation
  *
  * Assets - Static file serving middleware with transparent multi-source support
  * This middleware automatically detects the best available asset source and serves

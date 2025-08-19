@@ -7,7 +7,6 @@
  */
 export class Trie {
 	/**
- * @packageDocumentation
  *
  * Unique identifier for the route, -1 (or < 0 actually) means no route.
  * So if this is set, this is a leaf node representing a route.

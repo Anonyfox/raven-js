@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation JavaScript file-level validation functions
  */
 
 export {

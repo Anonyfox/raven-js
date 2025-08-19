@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * CSS template literal processing with optimization and style tag generation
  */

@@ -16,7 +16,6 @@ import { Route } from "./route.js";
 import { Trie } from "./trie.js";
 
 /**
- * @packageDocumentation
  *
  * **Router** - High-performance HTTP request router for the Wings framework.
  * The Router class provides a lean, fast, and isomorphic HTTP router that can handle

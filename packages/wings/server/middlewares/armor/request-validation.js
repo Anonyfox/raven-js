@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Default request validation configuration
  */

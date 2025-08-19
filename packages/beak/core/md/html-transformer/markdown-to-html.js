@@ -11,7 +11,6 @@ import { splitIntoLines } from "../block-parser/utils.js";
 import { transformToHTML } from "./index.js";
 
 /**
- * @packageDocumentation
  *
  * Transforms markdown text directly to HTML
  * This is a convenience function that combines parsing and transformation

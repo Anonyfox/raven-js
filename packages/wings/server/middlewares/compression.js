@@ -15,7 +15,6 @@ import {
 import { Middleware } from "../../core/middleware.js";
 
 /**
- * @packageDocumentation
  *
  * Default compressible MIME types
  * These content types benefit from compression and are safe to compress

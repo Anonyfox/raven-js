@@ -9,7 +9,6 @@
 import { escapeSql } from "./escape-sql.js";
 
 /**
- * @packageDocumentation
  *
  * Processes SQL template literals by interpolating and escaping dynamic values.
  * This function takes the static parts of a template literal and the dynamic values,

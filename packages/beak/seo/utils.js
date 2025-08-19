@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Constructs an absolute URL given a relative URL and a domain.
  * import { absoluteUrl } from '@raven-js/beak/seo/utils';

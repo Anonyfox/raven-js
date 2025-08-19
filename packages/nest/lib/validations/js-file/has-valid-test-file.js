@@ -10,7 +10,6 @@ import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 /**
- * @packageDocumentation
  *
  * Validates that a JavaScript file has an accompanying test file
  */

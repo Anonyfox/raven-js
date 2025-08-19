@@ -19,7 +19,6 @@ import {
 } from "./utils.js";
 
 /**
- * @packageDocumentation
  *
  * Parses inline markdown elements from text (recursive version)
  */

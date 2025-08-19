@@ -10,7 +10,6 @@ import { Context } from "../core/index.js";
 import { ArgsToUrl } from "./transform-pattern.js";
 
 /**
- * @packageDocumentation
  *
  * **Terminal** - CLI command execution runtime for Wings.
  * The Terminal class provides a lean, fast runtime that executes CLI commands

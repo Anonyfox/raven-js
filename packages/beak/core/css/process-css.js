@@ -16,7 +16,6 @@ const SEMICOLON_SPACE_REGEX = /;(?!$|\s)/g;
 const CLOSE_BRACE_SPACE_REGEX = /\}(?!$|\s)/g;
 
 /**
- * @packageDocumentation
  *
  * Processes a CSS string to ensure single-line output with minimal whitespace.
  * This function performs the following transformations:

@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Recursively flattens an array and joins all elements with empty string.
  * Uses a WeakSet to detect circular references and prevent infinite recursion.

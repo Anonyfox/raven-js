@@ -12,7 +12,6 @@ import { join } from "node:path";
 import { build } from "esbuild";
 
 /**
- * @packageDocumentation
  *
  * Get entry point for a package
  */

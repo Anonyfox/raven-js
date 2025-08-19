@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation Terminal actions module exports
  *
  * Exports all terminal UI action functions for easy import.
  * These are pure functions for building interactive CLI applications.

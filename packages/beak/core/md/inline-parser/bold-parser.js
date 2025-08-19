@@ -10,7 +10,6 @@ import { NODE_TYPES } from "../types.js";
 import { parseInlineRecursive } from "./recursive-parser.js";
 
 /**
- * @packageDocumentation
  *
  * Tries to parse bold text (**text**)
  */

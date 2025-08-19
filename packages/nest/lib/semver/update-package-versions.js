@@ -11,7 +11,6 @@ import { join } from "node:path";
 import { PackageJsonListWorkspacePackages } from "../queries/index.js";
 
 /**
- * @packageDocumentation
  *
  * Update version in all package.json files in a workspace
  */

@@ -9,7 +9,6 @@
 import { NODE_TYPES } from "../types.js";
 
 /**
- * @packageDocumentation
  *
  * Flattens nested inline nodes into a single string
  */

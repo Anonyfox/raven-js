@@ -10,7 +10,6 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * @packageDocumentation
  *
  * Get entry points for TypeDoc generation
  */

@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation Module exports and main entry point
  */
 
 export { parseInline } from "./main-parser.js";

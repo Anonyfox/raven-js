@@ -7,7 +7,6 @@
  */
 export const SECURITY_DEFAULTS = {
 	/**
- * @packageDocumentation
  *
  * Maximum request body size in bytes (10MB)
  */

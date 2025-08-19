@@ -9,7 +9,6 @@
 import { HTTP_METHODS } from "./http-methods.js";
 
 /**
- * @packageDocumentation
  *
  * **Route** - HTTP route definition and configuration.
  * The Route class represents a single HTTP route in the Wings framework.

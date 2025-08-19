@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Transforms CLI arguments into a URL-like string
  * ArgsToUrl(['git', 'commit', '--message', 'Initial commit', '--amend'])

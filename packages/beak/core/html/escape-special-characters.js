@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * A mapping of HTML special characters to their escaped counterparts.
  */

@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * This module leverages JavaScript's tagged template literals to provide
  * a powerful and flexible templating engine, similar to JSX. It is the root

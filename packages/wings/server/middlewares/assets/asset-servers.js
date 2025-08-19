@@ -11,7 +11,6 @@ import path from "node:path";
 import { setAssetResponse } from "./response-utils.js";
 
 /**
- * @packageDocumentation
  *
  * Serve an asset from SEA embedded resources.
  * This function retrieves assets from Single Executable Application embedded

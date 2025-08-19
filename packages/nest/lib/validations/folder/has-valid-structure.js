@@ -10,7 +10,6 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * @packageDocumentation
  *
  * Validates that a directory has the required package structure files
  */

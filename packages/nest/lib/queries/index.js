@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation Module exports and main entry point
  */
 
 export { GetAllFilePaths } from "./get-all-file-paths.js";

@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * ANSI color codes for terminal output.
  */

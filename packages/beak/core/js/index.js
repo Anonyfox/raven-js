@@ -9,7 +9,6 @@
 import { processJSTemplate } from "./template-processor.js";
 
 /**
- * @packageDocumentation
  *
  * Creates JavaScript snippets from template literals with intelligent value interpolation.
  * This function processes JavaScript template literals by:

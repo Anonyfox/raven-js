@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation Assets Index - Public API exports for the refactored Assets middleware
  *
  * This file exports the same public API as the original monolithic assets.js file,
  * ensuring backward compatibility while providing the benefits of the modular

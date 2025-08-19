@@ -10,7 +10,6 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 
 /**
- * @packageDocumentation
  *
  * Recursively list all files in a directory with relative paths.
  * Returns paths in web format (forward slashes, starting with /).

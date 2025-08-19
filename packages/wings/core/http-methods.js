@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Type definition for valid HTTP methods and CLI commands.
  * This typedef ensures type safety when working with HTTP methods and CLI commands

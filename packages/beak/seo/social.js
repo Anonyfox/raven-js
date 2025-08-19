@@ -14,7 +14,6 @@ import { pinterest } from "./pinterest.js";
 import { twitter } from "./twitter.js";
 
 /**
- * @packageDocumentation
  *
  */
 

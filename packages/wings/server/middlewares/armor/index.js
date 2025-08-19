@@ -38,7 +38,6 @@ export {
 } from "./security-headers.js";
 
 /**
- * @packageDocumentation
  *
  * Armor - Comprehensive web application security middleware
  * A production-ready security middleware that combines multiple protection layers

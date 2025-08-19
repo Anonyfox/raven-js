@@ -14,7 +14,6 @@ import { parseList } from "./list-parser.js";
 import { parseParagraph } from "./paragraph-parser.js";
 
 /**
- * @packageDocumentation
  *
  * Parses block-level markdown elements from an array of lines
  */

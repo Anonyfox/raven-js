@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation Module exports and main entry point
  */
 
 export { bumpVersion } from "./bump-version.js";

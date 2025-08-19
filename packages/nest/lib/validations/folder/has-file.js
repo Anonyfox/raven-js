@@ -10,7 +10,6 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * @packageDocumentation
  *
  * Checks if a specific file exists in a directory
  */

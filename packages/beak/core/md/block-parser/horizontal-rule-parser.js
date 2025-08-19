@@ -9,7 +9,6 @@
 import { NODE_TYPES, REGEX_PATTERNS } from "../types.js";
 
 /**
- * @packageDocumentation
  *
  * Parses horizontal rule elements
  */

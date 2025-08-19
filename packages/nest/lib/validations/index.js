@@ -40,7 +40,6 @@ import {
 } from "./package-json/index.js";
 
 /**
- * @packageDocumentation
  *
  */
 

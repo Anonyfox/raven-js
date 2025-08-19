@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * AST node types for markdown parsing
  */

@@ -10,7 +10,6 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * @packageDocumentation
  *
  * Validates that a package has the required engines configuration
  */

@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Cluster statistics and status information.
  * Provides real-time information about the cluster's health and performance

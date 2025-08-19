@@ -10,7 +10,6 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * @packageDocumentation
  *
  * Checks if a given path contains an npm package by verifying the existence of package.json
  */

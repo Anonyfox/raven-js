@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * HTML template literal processing with XSS protection and dynamic content
  * interpolation

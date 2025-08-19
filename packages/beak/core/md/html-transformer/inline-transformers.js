@@ -9,7 +9,6 @@
 import { escapeHTML } from "./escape-html.js";
 
 /**
- * @packageDocumentation
  *
  * Transforms an array of inline nodes into HTML
  */

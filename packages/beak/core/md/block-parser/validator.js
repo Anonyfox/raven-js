@@ -12,7 +12,6 @@ import { NODE_TYPES, VALIDATORS } from "../types.js";
 const VALIDATION_RULES = {
 	[NODE_TYPES.PARAGRAPH]: (
 		/**
- * @packageDocumentation
  *
  */ /** @type {any} */ node,
 	) => Array.isArray(node.content) && node.content.length > 0,

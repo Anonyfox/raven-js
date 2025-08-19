@@ -9,7 +9,6 @@
 import { html } from "../core/index.js";
 
 /**
- * @packageDocumentation
  *
  */
 

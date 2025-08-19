@@ -10,7 +10,6 @@ import { escapeSpecialCharacters } from "./escape-special-characters.js";
 import { stringify } from "./stringify.js";
 
 /**
- * @packageDocumentation
  *
  * Checks if a value should be included in the output.
  */

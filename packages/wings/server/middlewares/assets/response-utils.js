@@ -9,7 +9,6 @@
 import { getMimeType } from "../../../core/mime-utils.js";
 
 /**
- * @packageDocumentation
  *
  * Set the response for a successfully found asset.
  * Configures all necessary headers and response body for asset serving.

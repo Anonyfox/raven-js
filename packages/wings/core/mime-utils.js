@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Internal mapping of file extensions to MIME types.
  * This object contains the complete mapping of supported file extensions

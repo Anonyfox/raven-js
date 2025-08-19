@@ -9,7 +9,6 @@
 import readline from "node:readline";
 
 /**
- * @packageDocumentation
  *
  * Ask user for text input with a prompt.
  * This function creates a readline interface, displays a prompt,

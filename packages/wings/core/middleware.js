@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Type definition for middleware handler functions.
  * A middleware handler is a function that receives a Context object and can

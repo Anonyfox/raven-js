@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Escapes HTML special characters
  */

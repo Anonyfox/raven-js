@@ -15,7 +15,6 @@ import { readBody } from "../read-body.js";
 import "../server-options.js";
 
 /**
- * @packageDocumentation
  *
  * Base HTTP server class for Wings - NOT meant for direct use.
  * This is a lightweight, fast base class with zero dependencies and strong test coverage.

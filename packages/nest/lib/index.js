@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Nest CLI - Raven's development command center
  * This module provides the core functionality for Raven's development tools.

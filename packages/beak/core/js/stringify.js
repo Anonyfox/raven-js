@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Converts a value to a string, joining arrays if necessary.
  * This function handles:

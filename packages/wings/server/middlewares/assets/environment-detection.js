@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Check if we're running in a Single Executable Application.
  * Uses dynamic import to avoid errors in environments where node:sea is not available.

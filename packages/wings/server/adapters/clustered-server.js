@@ -11,7 +11,6 @@ import { availableParallelism } from "node:os";
 import { NodeHttp } from "./node-http.js";
 
 /**
- * @packageDocumentation
  *
  * Production-ready clustered HTTP server with automatic scaling and crash recovery.
  * Features:

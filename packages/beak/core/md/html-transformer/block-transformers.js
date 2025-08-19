@@ -9,7 +9,6 @@
 import { transformInlineNodes } from "./inline-transformers.js";
 
 /**
- * @packageDocumentation
  *
  * Transforms a single block node into HTML
  */

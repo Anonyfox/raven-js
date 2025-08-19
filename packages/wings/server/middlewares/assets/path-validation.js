@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Validate that a request path is safe for asset serving.
  * Implements security checks to prevent path traversal and unauthorized access.

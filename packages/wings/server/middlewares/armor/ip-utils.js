@@ -9,7 +9,6 @@
 import { isIP } from "node:net";
 
 /**
- * @packageDocumentation
  *
  * Parse a CIDR notation string into network and mask
  */

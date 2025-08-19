@@ -10,7 +10,6 @@ import { html } from "../core/index.js";
 import { absoluteUrl } from "./utils.js";
 
 /**
- * @packageDocumentation
  *
  */
 

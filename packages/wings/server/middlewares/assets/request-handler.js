@@ -14,7 +14,6 @@ import {
 import { isValidAssetPath } from "./path-validation.js";
 
 /**
- * @packageDocumentation
  *
  * Handle an asset request using the current mode.
  * This is the main entry point for asset serving.

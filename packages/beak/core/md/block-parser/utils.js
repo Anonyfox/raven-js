@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Splits text into lines for block parsing
  */

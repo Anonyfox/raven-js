@@ -9,7 +9,6 @@
 import { NODE_TYPES } from "../types.js";
 
 /**
- * @packageDocumentation
  *
  * Handles text content between inline elements
  */

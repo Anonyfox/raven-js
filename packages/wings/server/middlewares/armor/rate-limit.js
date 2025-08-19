@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Rate limiting store with sliding window algorithm
  * Memory-efficient with automatic cleanup of expired entries

@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Template literal function for parsing markdown into HTML.
  * A lightweight, deterministic markdown parser that converts markdown text to HTML.

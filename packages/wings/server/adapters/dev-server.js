@@ -12,7 +12,6 @@ import { Router } from "../../core/index.js";
 import { NodeHttp } from "./node-http.js";
 
 /**
- * @packageDocumentation
  *
  * Development server with live-reload for Wings.
  * Extends NodeHttp to inject WebSocket-based reload scripts into HTML responses.

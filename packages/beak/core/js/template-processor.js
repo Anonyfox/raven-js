@@ -9,7 +9,6 @@
 import { stringify } from "./stringify.js";
 
 /**
- * @packageDocumentation
  *
  * Processes JavaScript template literals by combining static strings and interpolated values.
  * This function handles:

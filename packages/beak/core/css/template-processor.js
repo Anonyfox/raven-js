@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Processes CSS template literals by combining static strings and interpolated values.
  * This function handles:

@@ -9,7 +9,6 @@
 import { transformBlockNode } from "./block-transformers.js";
 
 /**
- * @packageDocumentation
  *
  * Transforms a markdown AST into HTML
  * This function recursively processes both block and inline nodes,

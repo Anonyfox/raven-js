@@ -9,7 +9,6 @@
 import { processSQLTemplate } from "./template-processor.js";
 
 /**
- * @packageDocumentation
  *
  * The main template tag function for creating SQL queries with automatic string sanitization.
  * This function provides a safe and convenient way to build SQL queries using template literals.

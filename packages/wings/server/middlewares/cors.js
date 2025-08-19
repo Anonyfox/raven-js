@@ -9,7 +9,6 @@
 import { Middleware } from "../../core/middleware.js";
 
 /**
- * @packageDocumentation
  *
  * Default HTTP methods allowed for CORS requests
  * These are the standard methods most APIs need to support

@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Bump a semantic version according to the specified type
  */

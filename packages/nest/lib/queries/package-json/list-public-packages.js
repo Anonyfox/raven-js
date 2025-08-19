@@ -11,7 +11,6 @@ import { join } from "node:path";
 import { ListWorkspacePackages } from "./list-workspace-packages.js";
 
 /**
- * @packageDocumentation
  *
  * Lists all public (non-private) workspace packages from a workspace root directory
  */

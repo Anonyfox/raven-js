@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Default Content Security Policy directives
  * Restrictive by default, can be relaxed as needed

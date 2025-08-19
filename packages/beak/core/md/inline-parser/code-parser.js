@@ -9,7 +9,6 @@
 import { NODE_TYPES } from "../types.js";
 
 /**
- * @packageDocumentation
  *
  * Tries to parse inline code (`code`)
  */

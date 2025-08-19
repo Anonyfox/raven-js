@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * HTTP request/response context and lifecycle management
  */

@@ -9,7 +9,6 @@
 import { listFilesRecursive } from "./file-operations.js";
 
 /**
- * @packageDocumentation
  *
  * Magic filename for SEA asset manifests.
  * This file should contain a JSON array of public asset paths.

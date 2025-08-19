@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Generate a self-signed SSL certificate for development use. Creates a new RSA key pair
  * and self-signed certificate suitable for HTTPS development servers. The certificate will
@@ -91,7 +90,6 @@ export async function generateSSLCert(/** @type {CertOptions} */ options = {}) {
 }
 
 /**
- * @packageDocumentation
  *
  * Encode Tag-Length-Value (TLV) structure according to ASN.1 DER encoding
  */

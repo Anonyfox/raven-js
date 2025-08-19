@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Favicon copying utilities for documentation generation
  */

@@ -10,7 +10,6 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 /**
- * @packageDocumentation
  *
  * Find workspace root by walking up directory tree
  */

@@ -10,7 +10,6 @@ import { parseInline } from "../inline-parser/index.js";
 import { NODE_TYPES, REGEX_PATTERNS } from "../types.js";
 
 /**
- * @packageDocumentation
  *
  * Parses heading elements
  */

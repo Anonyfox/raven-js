@@ -10,7 +10,6 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 /**
- * @packageDocumentation
  *
  * Gets all file paths in a directory recursively, respecting .gitignore files
  */

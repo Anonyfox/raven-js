@@ -9,7 +9,6 @@
 import { Middleware } from "../../core/middleware.js";
 
 /**
- * @packageDocumentation
  *
  * RavenJS color palette for terminal output
  * Designed for readability with black backgrounds and proper contrast

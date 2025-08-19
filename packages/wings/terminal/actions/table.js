@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * Display data in a formatted table.
  * This function takes an array of objects and displays them as a

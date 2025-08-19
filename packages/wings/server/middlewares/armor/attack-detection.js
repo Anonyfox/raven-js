@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * SQL injection detection patterns
  * Common SQL injection indicators and attack vectors

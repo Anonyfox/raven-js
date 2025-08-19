@@ -9,7 +9,6 @@
 import { parseInlineRecursive } from "./recursive-parser.js";
 
 /**
- * @packageDocumentation
  *
  * Parses inline markdown elements from text
  */

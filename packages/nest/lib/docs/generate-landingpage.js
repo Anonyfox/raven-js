@@ -12,7 +12,6 @@ import { join } from "node:path";
 import { css, html } from "../../../beak/core/index.js";
 
 /**
- * @packageDocumentation
  *
  */
 

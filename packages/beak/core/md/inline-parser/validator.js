@@ -9,7 +9,6 @@
 import { NODE_TYPES, VALIDATORS } from "../types.js";
 
 /**
- * @packageDocumentation
  *
  * Validates an inline node
  */

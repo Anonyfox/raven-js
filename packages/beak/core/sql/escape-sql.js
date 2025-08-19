@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * A mapping of SQL special characters to their escaped counterparts.
  * This map handles the most common SQL injection vectors and special characters

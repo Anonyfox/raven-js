@@ -7,7 +7,6 @@
  */
 
 /**
- * @packageDocumentation
  *
  * ANSI formatting codes for terminal text styling.
  */
