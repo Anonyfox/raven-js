@@ -1,5 +1,4 @@
 /**
- * @file Type definitions and validation schemas
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -8,10 +7,8 @@
  */
 
 /**
- * @typedef {Object} PackageAuthor
- * @property {string} name - Author name
- * @property {string} email - Author email
- * @property {string} url - Author URL
+ * @packageDocumentation
+ *
  */
 
 /**
@@ -43,7 +40,7 @@
  * @property {string} [main] - Main entry point
  * @property {PackageExports} [exports] - Package exports
  * @property {string[]} [keywords] - Package keywords
- * @property {PackageAuthor} [author] - Package author
+ * @property {Object|string} [author] - Package author information
  * @property {string} [license] - Package license
  * @property {PackageRepository} [repository] - Package repository
  * @property {PackageBugs} [bugs] - Package bugs

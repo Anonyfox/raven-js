@@ -1,5 +1,4 @@
 /**
- * @file Context file generation for documentation
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,11 +10,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
+ * @packageDocumentation
+ *
  * Generate a context file for a package
- * @param {string} packagePath - Path to the package directory
- * @returns {import('../types.js').ContextObject|null} Context object or null if generation fails
  */
-export function generateContext(packagePath) {
+export function generateContext(/** @type {string} */ packagePath) {
 	try {
 		// Get package.json content
 		const packageJsonPath = join(packagePath, "package.json");

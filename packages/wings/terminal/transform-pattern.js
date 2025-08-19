@@ -1,29 +1,21 @@
 /**
- * @file CLI to URL transformation utilities
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
  * @see {@link https://ravenjs.dev}
- * @see {@link https://anonyfox.com}
- *
- * Transform command-line arguments into URLs and vice versa.
- * Provides bidirectional conversion between CLI patterns and URL patterns.
+ * @see {@link https://anonyfox.com} Transform command-line arguments into URLs and vice versa. Provides bidirectional conversion between CLI patterns and URL patterns.
  */
 
 /**
- * Transforms CLI arguments into a URL-like string
- * @param {string[]} args - Array of command line arguments
- * @returns {string} URL string with path and query parameters
+ * @packageDocumentation
  *
- * @example
+ * Transforms CLI arguments into a URL-like string
  * ArgsToUrl(['git', 'commit', '--message', 'Initial commit', '--amend'])
  * // Returns: '/git/commit?message=Initial%20commit&amend=true'
- *
- * @example
  * ArgsToUrl(['npm', 'install', 'express', '--save-dev', '--verbose'])
  * // Returns: '/npm/install/express?save-dev=true&verbose=true'
  */
-export function ArgsToUrl(args) {
+export function ArgsToUrl(/** @type {string[]} */ args) {
 	if (!Array.isArray(args) || args.length === 0) {
 		return "/";
 	}

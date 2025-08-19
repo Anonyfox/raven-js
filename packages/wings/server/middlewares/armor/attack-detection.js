@@ -1,5 +1,4 @@
 /**
- * @file Attack pattern detection utilities for security monitoring
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -8,6 +7,8 @@
  */
 
 /**
+ * @packageDocumentation
+ *
  * SQL injection detection patterns
  * Common SQL injection indicators and attack vectors
  */

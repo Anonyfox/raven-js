@@ -1,5 +1,4 @@
 /**
- * @file HTML character escaping utilities for XSS protection
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -8,8 +7,9 @@
  */
 
 /**
+ * @packageDocumentation
+ *
  * A mapping of HTML special characters to their escaped counterparts.
- * @type {Object.<string, string>}
  */
 export const escapeMap = {
 	"&": "&amp;",
@@ -42,5 +42,8 @@ const escapeRegex = new RegExp(
 export const escapeSpecialCharacters = (str) => {
 	// Convert to string first to handle non-string inputs
 	const stringValue = String(str);
-	return stringValue.replace(escapeRegex, (char) => escapeMap[char]);
+	return stringValue.replace(
+		escapeRegex,
+		(char) => /** @type {Record<string, string>} */ (escapeMap)[char],
+	);
 };

@@ -1,5 +1,4 @@
 /**
- * @file Package.json license field validation
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,12 +10,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
+ * @packageDocumentation
+ *
  * Validates that a package has the required MIT license
- * @param {string} packagePath - The path to the package directory
- * @returns {boolean} True if the package has a valid license, throws error otherwise
- * @throws {Error} Informative error message if validation fails
  */
-export const HasValidLicense = (packagePath) => {
+export const HasValidLicense = (/** @type {string} */ packagePath) => {
 	if (typeof packagePath !== "string" || packagePath === "") {
 		throw new Error("Package path must be a non-empty string");
 	}

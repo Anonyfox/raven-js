@@ -1,69 +1,55 @@
 /**
- * @file Terminal runtime for executing CLI commands through Wings router
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
  * @see {@link https://ravenjs.dev}
- * @see {@link https://anonyfox.com}
- *
- * Terminal runtime that enables CLI command execution through the Wings routing system.
- * This creates a unified interface where the same routes and middleware can handle
- * both HTTP requests and CLI commands.
+ * @see {@link https://anonyfox.com} Terminal runtime that enables CLI command execution through the Wings routing system. This creates a unified interface where the same routes and middleware can handle both HTTP requests and CLI commands.
  */
 
 import { Context } from "../core/index.js";
 import { ArgsToUrl } from "./transform-pattern.js";
 
 /**
- * **Terminal** - CLI command execution runtime for Wings.
+ * @packageDocumentation
  *
+ * **Terminal** - CLI command execution runtime for Wings.
  * The Terminal class provides a lean, fast runtime that executes CLI commands
  * through the Wings routing system. It transforms command-line arguments into
  * HTTP-like Context objects, routes them through the same middleware pipeline,
  * and interprets the results for terminal output.
- *
  * ## Key Features
  * - **Unified Routing**: Same routes and middleware for HTTP and CLI
  * - **Context Reuse**: Leverages existing Context abstraction
  * - **Platform Primitives**: Uses Node.js built-ins for stdin/stdout
  * - **Zero Dependencies**: Pure JavaScript with no external dependencies
  * - **Async Support**: Full support for interactive CLI commands
- *
  * ## Design Philosophy
- *
  * The Terminal runtime follows the Raven principle of "platform mastery over
  * abstraction layers" by reusing the existing HTTP abstractions but interpreting
  * them through CLI platform primitives.
- *
  * **Context Mapping**:
  * - `responseBody` → stdout content
  * - `responseStatusCode` → exit code (200-299 = 0, others = 1)
  * - `responseHeaders` → ignored (CLI doesn't need headers)
  * - `requestBody` → stdin input (if piped)
- *
- * @example
  * ```javascript
  * import { Router } from '@raven-js/wings/core';
  * import { Terminal } from '@raven-js/wings/terminal';
- *
  * // Create router with command routes
  * const router = new Router();
- *
  * router.cmd('/git/status', (ctx) => {
- *   ctx.text('On branch main\nnothing to commit, working tree clean');
+ * ctx.text('On branch main\nnothing to commit, working tree clean');
  * });
- *
  * router.cmd('/git/commit', async (ctx) => {
- *   const message = ctx.queryParams.get('message');
- *   if (!message) {
- *     ctx.responseStatusCode = 400;
- *     ctx.text('Error: commit message required');
- *     return;
- *   }
- *   await performCommit(message);
- *   ctx.text('✅ Committed successfully');
+ * const message = ctx.queryParams.get('message');
+ * if (!message) {
+ * ctx.responseStatusCode = 400;
+ * ctx.text('Error: commit message required');
+ * return;
+ * }
+ * await performCommit(message);
+ * ctx.text('✅ Committed successfully');
  * });
- *
  * // Create and run terminal
  * const terminal = new Terminal(router);
  * await terminal.run(process.argv.slice(2));

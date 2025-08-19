@@ -1,39 +1,17 @@
 /**
- * @file Trie data structure for efficient route matching
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
  * @see {@link https://ravenjs.dev}
- * @see {@link https://anonyfox.com}
- *
-
- * Trie data structure for fast route matching including wildcards and named param matches.
- *
- * see: https://www.enjoyalgorithms.com/blog/introduction-to-trie-data-structure
- *
- * - Accessing a random key in an object is roughly O(1) with a very low constant factor in JS.
- * - class methods are more performant than object function literals and saves memory.
- *   (since they exist only once on the prototype and not on every instance)
- *
- * Building up the trie is roughly O(numRoutes * avgNumSegments), with special
- * care of keeping the constant factor low (simple imperative operations, early returns, ...).
- *
- * Usually avgNumSegments is very low (1-3) for most routes, so this is very efficient,
- * even though we have duplicated iterations for multiple named parameters in
- * the same position in the sub-path. This is a trade-off for simpler code.
- *
- * A medium sized app might have 100 routes with ~3 segments each, and since we
- * can exploit the low constant factor of O(1) for object key access, this is
- * probably pretty much instant resolution, while allowing route declarations
- * in arbitrary order.
+ * @see {@link https://anonyfox.com} Trie data structure for fast route matching including wildcards and named param matches. see: https://www.enjoyalgorithms.com/blog/introduction-to-trie-data-structure - Accessing a random key in an object is roughly O(1) with a very low constant factor in JS. - class methods are more performant than object function literals and saves memory. (since they exist only once on the prototype and not on every instance) Building up the trie is roughly O(numRoutes * avgNumSegments), with special care of keeping the constant factor low (simple imperative operations, early returns, ...). Usually avgNumSegments is very low (1-3) for most routes, so this is very efficient, even though we have duplicated iterations for multiple named parameters in the same position in the sub-path. This is a trade-off for simpler code. A medium sized app might have 100 routes with ~3 segments each, and since we can exploit the low constant factor of O(1) for object key access, this is probably pretty much instant resolution, while allowing route declarations in arbitrary order.
  */
 export class Trie {
 	/**
-	 * Unique identifier for the route, -1 (or < 0 actually) means no route.
-	 * So if this is set, this is a leaf node representing a route.
-	 *
-	 * @type {number}
-	 */
+ * @packageDocumentation
+ *
+ * Unique identifier for the route, -1 (or < 0 actually) means no route.
+ * So if this is set, this is a leaf node representing a route.
+ */
 	id = -1;
 
 	/**

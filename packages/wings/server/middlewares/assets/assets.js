@@ -1,14 +1,4 @@
 /**
- * @file Assets - Static file serving middleware with transparent multi-source support
- *
- * This middleware provides seamless static file serving with intelligent source detection.
- * It automatically chooses the best available asset source without requiring configuration,
- * supporting modern deployment patterns like Single Executable Applications (SEA) and
- * bundled deployments while falling back gracefully to traditional file system serving.
- *
- * Built with zero dependencies and following Wings' philosophy of working reliably
- * out of the box with sensible defaults.
- *
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -30,77 +20,61 @@ import {
 import { handleAssetRequest } from "./request-handler.js";
 
 /**
- * Assets - Static file serving middleware with transparent multi-source support
+ * @packageDocumentation
  *
+ * Assets - Static file serving middleware with transparent multi-source support
  * This middleware automatically detects the best available asset source and serves
  * static files transparently. It supports modern deployment patterns while maintaining
  * backwards compatibility with traditional file-based serving.
- *
  * The middleware operates in three modes with automatic priority-based selection:
  * 1. SEA mode: Serves from Single Executable Application embedded resources
  * 2. Global mode: Serves from JavaScript variables in globalThis.RavenJS.assets
  * 3. FileSystem mode: Serves from local file system (traditional approach)
- *
  * Mode selection is completely transparent - the same public API works regardless
  * of the deployment method. This allows applications to be developed with file
  * system assets and deployed as bundled or executable applications without changes.
- *
  * ## Security Model
- *
  * All modes enforce the same security model:
  * - Only assets with paths starting with '/' are served (public assets)
  * - Path traversal attacks are prevented through validation
  * - Internal/private files are never exposed to the web
  * - Mode isolation prevents cross-contamination
- *
  * ## Error Handling
- *
  * The middleware follows Wings' error collection pattern:
  * - Asset serving errors are collected in ctx.errors for logging
  * - Missing assets return early (allowing router to handle 404s)
  * - Mode initialization failures fall back gracefully
  * - No unhandled exceptions break the request pipeline
- *
- * @example Development Setup (File System Mode)
  * ```javascript
  * // Directory structure:
  * // public/
  * //   ├── css/styles.css
  * //   ├── js/app.js
  * //   └── images/logo.png
- *
  * const assets = new Assets({ assetsDir: 'public' });
  * router.use(assets);
- *
  * // GET /css/styles.css -> serves public/css/styles.css
  * // GET /js/app.js -> serves public/js/app.js
  * // GET /images/logo.png -> serves public/images/logo.png
  * ```
- *
- * @example Production SEA Deployment
  * ```javascript
  * // Same code works in SEA mode:
  * const assets = new Assets(); // assetsDir ignored in SEA mode
  * router.use(assets);
- *
  * // Assets served from embedded SEA resources automatically
  * // No code changes required!
  * ```
- *
- * @example Bundled Deployment with Global Assets
  * ```javascript
  * // Assets embedded as JavaScript:
  * globalThis.RavenJS = {
- *   assets: {
- *     '/css/styles.css': 'body { color: red; }',
- *     '/js/app.js': 'console.log("Hello");',
- *     '/images/logo.png': Buffer.from([...])
- *   }
+ * assets: {
+ * '/css/styles.css': 'body { color: red; }',
+ * '/js/app.js': 'console.log("Hello");',
+ * '/images/logo.png': Buffer.from([...])
+ * }
  * };
- *
  * const assets = new Assets();
  * router.use(assets);
- *
  * // Same public API, different source - completely transparent
  * ```
  */
@@ -141,7 +115,7 @@ export class Assets extends Middleware {
 			throw new Error("Assets: assetsDir must be a non-empty string");
 		}
 
-		super(async (ctx) => {
+		super(async (/** @type {any} */ ctx) => {
 			// Handle asset request directly in the middleware chain
 			// This runs before routing, so assets take priority over routes
 			await handleAssetRequest(ctx, this.#getAssetConfig());

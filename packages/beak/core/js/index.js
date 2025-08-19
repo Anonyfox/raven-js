@@ -1,5 +1,4 @@
 /**
- * @file JavaScript template literal processing with script tag generation
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -10,100 +9,82 @@
 import { processJSTemplate } from "./template-processor.js";
 
 /**
- * Creates JavaScript snippets from template literals with intelligent value interpolation.
+ * @packageDocumentation
  *
+ * Creates JavaScript snippets from template literals with intelligent value interpolation.
  * This function processes JavaScript template literals by:
  * - Interpolating dynamic values (strings, numbers, arrays, objects, functions)
  * - Automatically joining arrays with empty string (no separators)
  * - Filtering out null/undefined/false/empty string values (except 0)
  * - Preserving modern JavaScript syntax and features
  * - Trimming whitespace for clean output
- *
- * @param {TemplateStringsArray} strings - The static parts of the template.
- * @param {...any} values - The interpolated values.
- * @returns {string} The processed JavaScript snippet.
- *
- * @example
  * // Basic variable interpolation
  * import { js } from '@raven-js/beak';
- *
  * const varName = 'userCount';
  * const count = 42;
  * const snippet = js`const ${varName} = ${count};`;
  * // Result: "const userCount = 42;"
- *
- * @example
  * // Modern JavaScript features
  * const config = { apiUrl: 'https://api.example.com', timeout: 5000 };
  * const handlers = ['onSuccess', 'onError'];
  * const code = js`
- *   const { apiUrl, timeout } = ${config};
- *   const [${handlers.join(', ')}] = handlers;
- *   const fetchData = async () => {
- *     const response = await fetch(apiUrl, { timeout });
- *     return response.json();
- *   };
+ * const { apiUrl, timeout } = ${config};
+ * const [${handlers.join(', ')}] = handlers;
+ * const fetchData = async () => {
+ * const response = await fetch(apiUrl, { timeout });
+ * return response.json();
+ * };
  * `;
- *
- * @example
  * // Conditional logic and expressions
  * const isProduction = true;
  * const debugLevel = 'verbose';
  * const code = js`
- *   const config = {
- *     debug: ${isProduction ? 'false' : 'true'},
- *     logLevel: ${isProduction ? '"error"' : `"${debugLevel}"`},
- *     features: ${isProduction ? '["core"]' : '["core", "debug", "dev"]'}
- *   };
+ * const config = {
+ * debug: ${isProduction ? 'false' : 'true'},
+ * logLevel: ${isProduction ? '"error"' : `"${debugLevel}"`},
+ * features: ${isProduction ? '["core"]' : '["core", "debug", "dev"]'}
+ * };
  * `;
- *
- * @example
  * // Function generation with complex logic
  * const methodName = 'validateUser';
  * const validationRules = ['required', 'email', 'minLength'];
  * const code = js`
- *   const ${methodName} = (user) => {
- *     const errors = [];
- *     ${validationRules.map(rule => `
- *       if (!${rule}Validation(user.${rule})) {
- *         errors.push('${rule} validation failed');
- *       }
- *     `).join('')}
- *     return errors.length === 0;
- *   };
+ * const ${methodName} = (user) => {
+ * const errors = [];
+ * ${validationRules.map(rule => `
+ * if (!${rule}Validation(user.${rule})) {
+ * errors.push('${rule} validation failed');
+ * }
+ * `).join('')}
+ * return errors.length === 0;
+ * };
  * `;
- *
- * @example
  * // Template literal expressions
  * const prefix = 'user';
  * const id = 123;
  * const code = js`
- *   const key = \`${prefix}_${id}\`;
- *   const message = \`User \${key} has been updated\`;
+ * const key = \`${prefix}_${id}\`;
+ * const message = \`User \${key} has been updated\`;
  * `;
- *
- * @example
  * // Array and object manipulation
  * const items = ['apple', 'banana', 'cherry'];
  * const user = { name: 'John', age: 30 };
  * const code = js`
- *   const fruits = [${items}];
- *   const { name, age } = ${user};
- *   const userInfo = \`\${name} is \${age} years old\`;
+ * const fruits = [${items}];
+ * const { name, age } = ${user};
+ * const userInfo = \`\${name} is \${age} years old\`;
  * `;
- *
- * @example
  * // Error handling and edge cases
  * const errorHandler = 'handleError';
  * const fallback = 'defaultValue';
  * const code = js`
- *   try {
- *     const result = await riskyOperation();
- *     return result;
- *   } catch (error) {
- *     ${errorHandler}(error);
- *     return ${fallback};
- *   }
+ * try {
+ * const result = await riskyOperation();
+ * return result;
+ * } catch (error) {
+ * ${errorHandler}(error);
+ * return ${fallback};
+ * }
  * `;
  */
 export const js = processJSTemplate;

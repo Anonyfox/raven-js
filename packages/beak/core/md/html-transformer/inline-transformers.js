@@ -1,5 +1,4 @@
 /**
- * @file Inline markdown to HTML transformation utilities
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -10,11 +9,11 @@
 import { escapeHTML } from "./escape-html.js";
 
 /**
+ * @packageDocumentation
+ *
  * Transforms an array of inline nodes into HTML
- * @param {Array<import('../types.js').InlineNode>} nodes - Array of inline nodes
- * @returns {string} - The HTML representation
  */
-export const transformInlineNodes = (nodes) => {
+export const transformInlineNodes = (/** @type {any} */ nodes) => {
 	if (!Array.isArray(nodes)) {
 		return "";
 	}
@@ -34,7 +33,8 @@ export const transformInlineNode = (node) => {
 
 	switch (node.type) {
 		case "text":
-			return escapeHTML(node.content || "");
+			// Text nodes always have string content
+			return escapeHTML(typeof node.content === "string" ? node.content : "");
 		case "bold":
 			return transformBold(node);
 		case "italic":
@@ -80,7 +80,10 @@ const transformItalic = (node) => {
  * @returns {string} - The HTML inline code element
  */
 const transformInlineCode = (node) => {
-	const content = escapeHTML(node.content || "");
+	// Inline code nodes always have string content
+	const content = escapeHTML(
+		typeof node.content === "string" ? node.content : "",
+	);
 	return `<code>${content}</code>`;
 };
 

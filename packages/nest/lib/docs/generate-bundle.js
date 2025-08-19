@@ -1,5 +1,4 @@
 /**
- * @file Documentation bundle generation utilities
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -13,11 +12,11 @@ import { join } from "node:path";
 import { build } from "esbuild";
 
 /**
+ * @packageDocumentation
+ *
  * Get entry point for a package
- * @param {string} packagePath - Path to the package directory
- * @returns {string|null} Entry point path or null if not found
  */
-export function getBundleEntryPoint(packagePath) {
+export function getBundleEntryPoint(/** @type {string} */ packagePath) {
 	try {
 		const packageJsonPath = join(packagePath, "package.json");
 		if (!existsSync(packageJsonPath)) {

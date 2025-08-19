@@ -1,5 +1,4 @@
 /**
- * @file Recursive parsing utilities for nested markdown elements
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -20,11 +19,11 @@ import {
 } from "./utils.js";
 
 /**
+ * @packageDocumentation
+ *
  * Parses inline markdown elements from text (recursive version)
- * @param {string} text - The text to parse for inline elements
- * @returns {Array<import('../types.js').InlineNode>} - Array of parsed inline nodes
  */
-export const parseInlineRecursive = (text) => {
+export const parseInlineRecursive = (/** @type {string} */ text) => {
 	// Input validation
 	if (typeof text !== "string") {
 		return [{ type: NODE_TYPES.TEXT, content: String(text) }];

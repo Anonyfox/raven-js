@@ -19,12 +19,17 @@ import {
 
 describe("HasValidJSDocHeaders", () => {
 	const validJSDocHeader = `/**
- * @file Test utility functions for data processing
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
  * @see {@link https://ravenjs.dev}
  * @see {@link https://anonyfox.com}
+ */
+
+/**
+ * @file
+ *
+ * Test utility functions for data processing
  */`;
 
 	test("should return true for file with valid JSDoc header", () => {
@@ -50,7 +55,6 @@ describe("HasValidJSDocHeaders", () => {
 
 		try {
 			const headerWithMultipleAuthors = `/**
- * @file Test utility with multiple contributors
  * @author Anonyfox <max@anonyfox.com>
  * @author Jane Doe <jane@example.com>
  * @license MIT
@@ -58,6 +62,12 @@ describe("HasValidJSDocHeaders", () => {
  * @see {@link https://ravenjs.dev}
  * @see {@link https://anonyfox.com}
  * @see {@link https://example.com/additional-docs}
+ */
+
+/**
+ * @file
+ *
+ * Test utility with multiple contributors
  */`;
 
 			writeFileSync(
@@ -81,7 +91,7 @@ describe("HasValidJSDocHeaders", () => {
 
 			assert.throws(
 				() => HasValidJSDocHeaders(filePath),
-				/Missing JSDoc header comment block at the beginning of file/,
+				/Files must have exactly two JSDoc blocks: metadata block first, then documentation block/,
 				"Should throw for missing JSDoc header",
 			);
 		} finally {
@@ -109,7 +119,7 @@ describe("HasValidJSDocHeaders", () => {
 
 			assert.throws(
 				() => HasValidJSDocHeaders(filePath),
-				/Missing or empty @file description/,
+				/Files must have exactly two JSDoc blocks: metadata block first, then documentation block/,
 				"Should throw for missing @file tag",
 			);
 		} finally {
@@ -123,12 +133,17 @@ describe("HasValidJSDocHeaders", () => {
 
 		try {
 			const headerWithWrongAuthor = `/**
- * @file Test utility functions
  * @author Jane Doe <jane@example.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
  * @see {@link https://ravenjs.dev}
  * @see {@link https://anonyfox.com}
+ */
+
+/**
+ * @file
+ *
+ * Test utility functions
  */`;
 
 			writeFileSync(
@@ -138,7 +153,7 @@ describe("HasValidJSDocHeaders", () => {
 
 			assert.throws(
 				() => HasValidJSDocHeaders(filePath),
-				/Missing required @author Anonyfox <max@anonyfox\.com>/,
+				/First JSDoc block missing required @author Anonyfox <max@anonyfox\.com>/,
 				"Should throw for missing required author",
 			);
 		} finally {

@@ -1,10 +1,4 @@
 /**
- * @file Request validation utilities for security and size limits
- *
- * Provides utilities for validating request size, structure, and content to prevent
- * various attacks and resource exhaustion. Includes validation for path length,
- * query parameters, headers, and body size.
- *
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -13,6 +7,8 @@
  */
 
 /**
+ * @packageDocumentation
+ *
  * Default request validation configuration
  */
 export const DEFAULT_VALIDATION = {

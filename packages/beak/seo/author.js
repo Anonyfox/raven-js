@@ -1,5 +1,4 @@
 /**
- * @file Author meta tag generation for content attribution
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -10,9 +9,15 @@
 import { html } from "../core/index.js";
 
 /**
+ * @packageDocumentation
+ *
+ */
+
+/**
  * @typedef {Object} AuthorConfig
- * @property {string} name - The name of the content author.
- * @property {string} [email] - Optional. The email address of the author.
+ * @property {string} name - Author's full name
+ * @property {string} [url] - URL to author's profile or website
+ * @property {string} [email] - Author's email address
  */
 
 /**

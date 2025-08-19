@@ -1,5 +1,4 @@
 /**
- * @file Utility functions and helper methods
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -10,13 +9,11 @@
 import { NODE_TYPES } from "../types.js";
 
 /**
+ * @packageDocumentation
+ *
  * Handles text content between inline elements
- * @param {string} text - The text to process
- * @param {number} current - Current position
- * @param {number} nodeStart - Start position of the node
- * @param {Array<import('../types.js').InlineNode>} ast - The AST to append to
  */
-export const handleTextContent = (text, current, nodeStart, ast) => {
+export const handleTextContent = (/** @type {string} */ text, /** @type {number} */ current, /** @type {number} */ nodeStart, /** @type {any} */ ast) => {
 	if (nodeStart > current) {
 		const textContent = text.slice(current, nodeStart);
 		if (textContent.length > 0) {

@@ -1,5 +1,4 @@
 /**
- * @file Block-level markdown to HTML transformation utilities
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -10,11 +9,11 @@
 import { transformInlineNodes } from "./inline-transformers.js";
 
 /**
+ * @packageDocumentation
+ *
  * Transforms a single block node into HTML
- * @param {import('../types.js').BlockNode} node - The block node to transform
- * @returns {string} - The HTML representation
  */
-export const transformBlockNode = (node) => {
+export const transformBlockNode = (/** @type {any} */ node) => {
 	if (!node || typeof node !== "object" || !node.type) {
 		return "";
 	}

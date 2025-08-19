@@ -1,5 +1,4 @@
 /**
- * @file Module exports and main entry point
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -41,17 +40,15 @@ import {
 } from "./package-json/index.js";
 
 /**
- * @typedef {Object} ValidationCheck
- * @property {string} name - Name of the validation check
- * @property {boolean} passed - Whether the check passed
- * @property {string} [error] - Error message if check failed
+ * @packageDocumentation
+ *
  */
 
 /**
  * @typedef {Object} PackageValidationResult
  * @property {string} packagePath - Path to the package
  * @property {string} packageName - Name of the package
- * @property {ValidationCheck[]} checks - Individual validation results
+ * @property {Object[]} checks - Individual validation results
  * @property {boolean} passed - Whether all checks passed
  */
 
@@ -65,7 +62,7 @@ import {
  * Runs a validation function and returns a check result instead of throwing
  * @param {string} name - Name of the validation check
  * @param {Function} validationFn - Validation function to run
- * @returns {ValidationCheck} Check result
+ * @returns {Object} Check result
  */
 const runCheck = (name, validationFn) => {
 	try {
@@ -123,12 +120,16 @@ const displayResults = (results) => {
 		);
 
 		for (const check of packageResult.checks) {
-			const checkIcon = check.passed ? "  ✓" : "  ✗";
-			const checkColor = check.passed ? colors.green : colors.red;
-			const errorMsg = check.error ? ` - ${check.error}` : "";
+			const checkIcon = /** @type {any} */ (check).passed ? "  ✓" : "  ✗";
+			const checkColor = /** @type {any} */ (check).passed
+				? colors.green
+				: colors.red;
+			const errorMsg = /** @type {any} */ (check).error
+				? ` - ${/** @type {any} */ (check).error}`
+				: "";
 
 			console.log(
-				`${checkColor}${checkIcon} ${check.name}${errorMsg}${colors.reset}`,
+				`${checkColor}${checkIcon} ${/** @type {any} */ (check).name}${errorMsg}${colors.reset}`,
 			);
 		}
 		console.log(); // Empty line between packages
@@ -206,7 +207,9 @@ export const validateWorkspaceRoot = (workspacePath) => {
 		runCheck("folder structure", () => FolderHasValidStructure(workspacePath)),
 	);
 
-	const passed = checks.every((check) => check.passed);
+	const passed = checks.every(
+		(/** @type {any} */ check) => /** @type {any} */ (check).passed,
+	);
 
 	return {
 		packagePath: workspacePath,
@@ -341,7 +344,9 @@ export const validatePackage = (packagePath) => {
 		runCheck("JSDoc headers", () => validateJSDocHeaders(packagePath)),
 	);
 
-	const passed = checks.every((check) => check.passed);
+	const passed = checks.every(
+		(/** @type {any} */ check) => /** @type {any} */ (check).passed,
+	);
 
 	return {
 		packagePath,

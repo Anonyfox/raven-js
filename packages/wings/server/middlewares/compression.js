@@ -1,54 +1,4 @@
 /**
- * @file Wings Compression Middleware - Because bytes matter
- *
- * This middleware provides automatic HTTP response compression using standard
- * algorithms like gzip, brotli, and deflate. It intelligently selects the best
- * compression method based on client Accept-Encoding headers, content type,
- * and response size to optimize both bandwidth and performance.
- *
- * Built with zero dependencies using Node.js native zlib module, this middleware
- * seamlessly integrates with Wings' after-callback architecture to compress
- * responses without interfering with the request lifecycle.
- *
- * ## Key Features
- * - ✅ Standards-compliant Accept-Encoding parsing with quality values
- * - ✅ Smart content-type detection (compresses text, skips images/video)
- * - ✅ Configurable size thresholds (don't compress tiny responses)
- * - ✅ Graceful error handling (fallback to uncompressed on failure)
- * - ✅ Memory-efficient streaming for large responses
- * - ✅ Production-ready with comprehensive error resilience
- *
- * ## Supported Algorithms
- * - **Brotli**: Best compression ratio, modern browsers (Chrome 50+, Firefox 44+)
- * - **Gzip**: Universal compatibility, excellent compression
- * - **Deflate**: Good compatibility, decent compression
- *
- * @example Basic Usage
- * ```javascript
- * import { CompressionMiddleware } from '@raven-js/wings/server/compression.js';
- * import { Router } from '@raven-js/wings/core/router.js';
- *
- * const router = new Router();
- * const compression = new CompressionMiddleware();
- *
- * // Enable compression for all responses
- * router.use(compression);
- *
- * router.get('/api/data', (ctx) => {
- *   ctx.json({ data: largeDataArray }); // Will be automatically compressed
- * });
- * ```
- *
- * @example Advanced Configuration
- * ```javascript
- * const compression = new CompressionMiddleware({
- *   threshold: 2048,           // Only compress responses >= 2KB
- *   algorithms: ['brotli', 'gzip'], // Prefer brotli, fallback to gzip
- *   level: 9,                  // Maximum compression (slower but smaller)
- *   compressibleTypes: ['text/', 'application/json', 'application/xml']
- * });
- * ```
- *
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -65,6 +15,8 @@ import {
 import { Middleware } from "../../core/middleware.js";
 
 /**
+ * @packageDocumentation
+ *
  * Default compressible MIME types
  * These content types benefit from compression and are safe to compress
  */
@@ -413,10 +365,10 @@ export class Compression extends Middleware {
 			throw new Error("Compression level must be between 1 and 11");
 		}
 
-		super(async (ctx) => {
+		super(async (/** @type {any} */ ctx) => {
 			// Register after callback for compression
 			ctx.addAfterCallback(
-				new Middleware(async (ctx) => {
+				new Middleware(async (/** @type {any} */ ctx) => {
 					await this.#compressResponse(ctx);
 				}, `${identifier}-compressor`),
 			);

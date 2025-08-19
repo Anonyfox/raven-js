@@ -1,5 +1,4 @@
 /**
- * @file Search engine robots meta tag generation
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -10,9 +9,16 @@
 import { html } from "../core/index.js";
 
 /**
+ * @packageDocumentation
+ *
+ */
+
+/**
  * @typedef {Object} RobotsConfig
- * @property {boolean} [index] - Optional. Whether search engines should index this page. Defaults to true.
- * @property {boolean} [follow] - Optional. Whether search engines should follow links on this page. Defaults to true.
+ * @property {string|boolean} [index] - Index directive (index/noindex)
+ * @property {string|boolean} [follow] - Follow directive (follow/nofollow)
+ * @property {string} [archive] - Archive directive
+ * @property {string} [snippet] - Snippet directive
  */
 
 /**

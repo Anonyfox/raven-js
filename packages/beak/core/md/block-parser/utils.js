@@ -1,5 +1,4 @@
 /**
- * @file Utility functions for markdown block parsing operations
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -8,11 +7,11 @@
  */
 
 /**
+ * @packageDocumentation
+ *
  * Splits text into lines for block parsing
- * @param {string} text - The text to split
- * @returns {string[]} - Array of lines
  */
-export const splitIntoLines = (text) => {
+export const splitIntoLines = (/** @type {string} */ text) => {
 	if (typeof text !== "string") return [];
 	return text.split(/\r?\n/);
 };

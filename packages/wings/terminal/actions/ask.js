@@ -1,44 +1,33 @@
 /**
- * @file Interactive input functions for terminal interfaces
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
  * @see {@link https://ravenjs.dev}
- * @see {@link https://anonyfox.com}
- *
- * Pure functions for gathering user input in terminal applications.
- * Uses Node.js built-in readline module for cross-platform compatibility.
+ * @see {@link https://anonyfox.com} Pure functions for gathering user input in terminal applications. Uses Node.js built-in readline module for cross-platform compatibility.
  */
 
 import readline from "node:readline";
 
 /**
- * Ask user for text input with a prompt.
+ * @packageDocumentation
  *
+ * Ask user for text input with a prompt.
  * This function creates a readline interface, displays a prompt,
  * and waits for user input. It automatically handles cleanup
  * and returns the trimmed input as a string.
- *
  * **Pure Function**: No side effects except terminal I/O.
  * **Platform**: Works on all platforms supported by Node.js.
- *
- * @param {string} question - The prompt to display to the user
- * @returns {Promise<string>} User input as trimmed string
- *
- * @example
  * ```javascript
  * import { ask } from '@raven-js/wings/terminal';
- *
  * const name = await ask('What is your name? ');
  * console.log(`Hello, ${name}!`);
- *
  * const email = await ask('Enter your email: ');
  * if (!email.includes('@')) {
- *   console.log('Invalid email format');
+ * console.log('Invalid email format');
  * }
  * ```
  */
-export async function ask(question) {
+export async function ask(/** @type {string} */ question) {
 	if (typeof question !== "string") {
 		throw new TypeError("Question must be a string");
 	}

@@ -1,5 +1,4 @@
 /**
- * @file HTML character escaping utilities for markdown to HTML transformation
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -8,11 +7,11 @@
  */
 
 /**
+ * @packageDocumentation
+ *
  * Escapes HTML special characters
- * @param {any} text - The text to escape (will be converted to string if not already)
- * @returns {string} - The escaped text
  */
-export const escapeHTML = (text) => {
+export const escapeHTML = (/** @type {string} */ text) => {
 	if (typeof text !== "string") {
 		text = String(text);
 	}

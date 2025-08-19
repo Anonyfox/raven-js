@@ -1,5 +1,4 @@
 /**
- * @file Package version synchronization utilities
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -12,12 +11,11 @@ import { join } from "node:path";
 import { PackageJsonListWorkspacePackages } from "../queries/index.js";
 
 /**
+ * @packageDocumentation
+ *
  * Update version in all package.json files in a workspace
- * @param {string} workspacePath - Path to the workspace root
- * @param {string} newVersion - New version to set
- * @returns {Object} Result object with updated packages and any errors
  */
-export function updatePackageVersions(workspacePath, newVersion) {
+export function updatePackageVersions(/** @type {string} */ workspacePath, /** @type {string} */ newVersion) {
 	/** @type {{updated: string[], errors: string[], skipped: string[]}} */
 	const result = {
 		updated: [],

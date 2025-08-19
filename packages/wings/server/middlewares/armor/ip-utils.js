@@ -1,10 +1,4 @@
 /**
- * @file IP utility functions for network operations and access control
- *
- * Provides utilities for parsing CIDR notation, checking IP ranges, extracting client IPs,
- * and implementing IP-based access control. Supports both IPv4 and IPv6 with efficient
- * algorithms for production use.
- *
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -15,12 +9,11 @@
 import { isIP } from "node:net";
 
 /**
- * Parse a CIDR notation string into network and mask
+ * @packageDocumentation
  *
- * @param {string} cidr - CIDR notation string (e.g., "192.168.1.0/24")
- * @returns {{network: string, prefix: number} | null} Parsed CIDR or null if invalid
+ * Parse a CIDR notation string into network and mask
  */
-export function parseCIDR(cidr) {
+export function parseCIDR(/** @type {string} */ cidr) {
 	if (typeof cidr !== "string") return null;
 
 	const parts = cidr.split("/");

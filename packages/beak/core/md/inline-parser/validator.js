@@ -1,5 +1,4 @@
 /**
- * @file Validation utilities and functions
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -10,11 +9,11 @@
 import { NODE_TYPES, VALIDATORS } from "../types.js";
 
 /**
+ * @packageDocumentation
+ *
  * Validates an inline node
- * @param {import('../types.js').InlineNode | null | undefined | any} node - The node to validate
- * @returns {boolean} - True if valid, false otherwise
  */
-export const validateInlineNode = (node) => {
+export const validateInlineNode = (/** @type {any} */ node) => {
 	if (!node || typeof node !== "object") return false;
 	if (!VALIDATORS.isValidNodeType(node.type)) return false;
 

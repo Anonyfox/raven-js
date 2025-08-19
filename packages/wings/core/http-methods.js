@@ -1,63 +1,22 @@
 /**
- * @file HTTP method constants and validation utilities
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
  * @see {@link https://ravenjs.dev}
- * @see {@link https://anonyfox.com}
- *
-
- * **HTTP Methods** - Standard HTTP method constants and validation utilities.
- *
- * This module provides a centralized source of truth for all supported HTTP methods
- * in the Wings framework. It includes constants, type definitions, validation functions,
- * and utility methods for working with HTTP methods.
- *
- * ## Supported Methods
- * - **GET**: Retrieve a resource
- * - **POST**: Create a new resource
- * - **PUT**: Replace an entire resource
- * - **DELETE**: Remove a resource
- * - **PATCH**: Partially update a resource
- * - **HEAD**: Get headers only (no body)
- * - **OPTIONS**: Get allowed methods for a resource
- *
- * ## Design Philosophy
- * This module follows the principle of "explicit over implicit" by providing
- * a finite set of well-defined HTTP methods rather than accepting any string.
- * This prevents typos, ensures consistency, and makes the codebase more maintainable.
- *
- * **Note**: Only the most commonly used HTTP methods are included. Less common
- * methods like TRACE, CONNECT, COPY, etc. are not supported to keep the API
- * focused and prevent misuse.
- *
- * @example
- * ```javascript
- * import { HTTP_METHODS, isValidHttpMethod, getHttpMethods } from './http-methods.js';
- *
- * // Use constants to prevent typos
- * if (method === HTTP_METHODS.GET) {
- *   // Handle GET request
- * }
- *
- * // Validate user input
- * if (!isValidHttpMethod(userMethod)) {
- *   throw new Error('Invalid HTTP method');
- * }
- *
- * // Get all supported methods
- * const methods = getHttpMethods();
- * console.log(methods); // ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']
- * ```
+ * @see {@link https://anonyfox.com} **HTTP Methods** - Standard HTTP method constants and validation utilities. This module provides a centralized source of truth for all supported HTTP methods in the Wings framework. It includes constants, type definitions, validation functions, and utility methods for working with HTTP methods. ## Supported Methods - **GET**: Retrieve a resource - **POST**: Create a new resource - **PUT**: Replace an entire resource - **DELETE**: Remove a resource - **PATCH**: Partially update a resource - **HEAD**: Get headers only (no body) - **OPTIONS**: Get allowed methods for a resource ## Design Philosophy This module follows the principle of "explicit over implicit" by providing a finite set of well-defined HTTP methods rather than accepting any string. This prevents typos, ensures consistency, and makes the codebase more maintainable. **Note**: Only the most commonly used HTTP methods are included. Less common methods like TRACE, CONNECT, COPY, etc. are not supported to keep the API focused and prevent misuse.
  */
 
 /**
- * Type definition for valid HTTP methods and CLI commands.
+ * @packageDocumentation
  *
+ * Type definition for valid HTTP methods and CLI commands.
  * This typedef ensures type safety when working with HTTP methods and CLI commands
  * throughout the codebase. It restricts the allowed values to only the supported methods.
- *
- * @typedef {'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS' | 'COMMAND'} HttpMethod
+ */
+
+/**
+ * @typedef {'GET'|'POST'|'PUT'|'DELETE'|'PATCH'|'HEAD'|'OPTIONS'|'COMMAND'} HttpMethod
+ * Standard HTTP methods supported by Wings framework
  */
 
 /**

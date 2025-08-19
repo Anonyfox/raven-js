@@ -1,5 +1,4 @@
 /**
- * @file Recursive file path discovery utilities with gitignore support
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,12 +10,11 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 /**
+ * @packageDocumentation
+ *
  * Gets all file paths in a directory recursively, respecting .gitignore files
- * @param {string} directoryPath - The path to the directory
- * @returns {string[]} Array of relative file paths
- * @throws {Error} Informative error message if validation fails
  */
-export const GetAllFilePaths = (directoryPath) => {
+export const GetAllFilePaths = (/** @type {string} */ directoryPath) => {
 	if (typeof directoryPath !== "string" || directoryPath === "") {
 		throw new Error("Directory path must be a non-empty string");
 	}

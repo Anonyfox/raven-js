@@ -1,5 +1,4 @@
 /**
- * @file Pinterest-specific social media meta tags
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,11 +10,18 @@ import { html } from "../core/index.js";
 import { absoluteUrl } from "./utils.js";
 
 /**
+ * @packageDocumentation
+ *
+ */
+
+/**
  * @typedef {Object} PinterestConfig
- * @property {string} description - The description for rich pins.
- * @property {string} domain - The domain of the website. Required to ensure absolute URLs.
- * @property {string} [imageUrl] - Optional. The relative path of the image to be used in rich pins.
- * @property {string} [sourceUrl] - Optional. The source URL for rich pins (usually the same as the page URL).
+ * @property {string} title - Page title for Pinterest
+ * @property {string} description - Page description for Pinterest
+ * @property {string} [image] - Image URL for Pinterest
+ * @property {string} [domain] - Domain for URL construction
+ * @property {string} [imageUrl] - Alternative image URL property
+ * @property {string} [sourceUrl] - Source URL for Pinterest
  */
 
 /**

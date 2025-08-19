@@ -1,5 +1,4 @@
 /**
- * @file High-performance HTML template rendering engine with whitespace normalization
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,11 +10,12 @@ import { escapeSpecialCharacters } from "./escape-special-characters.js";
 import { stringify } from "./stringify.js";
 
 /**
+ * @packageDocumentation
+ *
  * Checks if a value should be included in the output.
- * @param {*} value - The value to check.
- * @returns {boolean} True if the value should be included, false otherwise.
  */
-export const isValidValue = (value) => value === 0 || Boolean(value);
+export const isValidValue = (/** @type {any} */ value) =>
+	value === 0 || Boolean(value);
 
 // Pre-compiled regex patterns for whitespace normalization
 const WHITESPACE_BETWEEN_TAGS = />\s+</g;
@@ -29,7 +29,7 @@ const STRING_CACHE = new Map();
  * @param {string} str - String to normalize
  * @returns {string} Normalized string
  */
-export const fastNormalize = (str) => {
+export const fastNormalize = (/** @type {string} */ str) => {
 	// Check cache first
 	if (STRING_CACHE.has(str)) {
 		return STRING_CACHE.get(str);

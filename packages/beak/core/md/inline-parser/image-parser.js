@@ -1,5 +1,4 @@
 /**
- * @file Image parsing for markdown inline elements
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -10,12 +9,11 @@
 import { NODE_TYPES } from "../types.js";
 
 /**
+ * @packageDocumentation
+ *
  * Tries to parse an image ![alt](url)
- * @param {string} text - The text to parse
- * @param {number} start - Starting position
- * @returns {{node: import('../types.js').InlineNode, start: number, end: number} | null}
  */
-export const tryParseImage = (text, start) => {
+export const tryParseImage = (/** @type {string} */ text, /** @type {number} */ start) => {
 	if (start + 1 >= text.length) return null;
 	if (text.slice(start, start + 2) !== "![") return null;
 

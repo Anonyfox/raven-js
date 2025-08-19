@@ -1,46 +1,4 @@
 /**
- * @file RavenJS Logger - Because debugging shouldn't feel like archaeology
- *
- * Look, we've all been there. Your app crashes, you get a stack trace that looks like
- * it was designed to hide the actual problem, and you spend more time parsing error
- * messages than fixing the issue.
- *
- * This logger is different. It's built by developers who got tired of:
- * - Ugly, unreadable stack traces with absolute paths
- * - Error messages that swallow crucial debugging information
- * - Logging libraries that require a PhD to configure
- * - Dependencies that break your build when you least expect it
- *
- * What you get instead:
- * - ✅ Zero dependencies (seriously, none)
- * - ✅ Beautiful, scannable output with smart path formatting
- * - ✅ Stack traces that highlight YOUR code, not framework noise
- * - ✅ Error collection that doesn't crash your request lifecycle
- * - ✅ Production-ready structured JSON when you need it
- * - ✅ Works perfectly with AI coding assistants
- *
- * Built for Node.js 22.5+ and modern JavaScript. No transpilation,
- * no configuration hell, no surprises. Just logging that gets out of
- * your way and helps you ship faster.
- *
- * @example
- * ```javascript
- * import { Logger } from '@raven-js/wings/server/logger.js';
- *
- * const logger = new Logger({ production: false });
- * router.useEarly(logger);
- *
- * // Now your errors look like this:
- * // 22:14:29 [500] (⚡ 341 µs) GET /api/users/123
- * //   [Error] ValidationError: User validation failed
- * //   Stack trace:
- * //     → at Route.handler (./src/handlers/users.js line:42)
- * //       at Router.handleRequest (./packages/wings/core/router.js line:747)
- * //   Additional properties:
- * //     code: VALIDATION_ERROR
- * //     field: email
- * ```
- *
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -51,6 +9,8 @@
 import { Middleware } from "../../core/middleware.js";
 
 /**
+ * @packageDocumentation
+ *
  * RavenJS color palette for terminal output
  * Designed for readability with black backgrounds and proper contrast
  */
@@ -852,7 +812,7 @@ export class Logger extends Middleware {
 			identifier = "@raven-js/wings/logger",
 		} = options;
 
-		super(async (ctx) => {
+		super(async (/** @type {any} */ ctx) => {
 			const startTime = performance.now();
 			const requestId = generateRequestId();
 			const timestamp = new Date();
@@ -863,7 +823,7 @@ export class Logger extends Middleware {
 
 			// Add after callback to log response
 			ctx.addAfterCallback(
-				new Middleware((ctx) => {
+				new Middleware((/** @type {any} */ ctx) => {
 					const logData = collectLogData(ctx, startTime, requestId, timestamp);
 
 					// Consume errors from the context (make a copy then clear the array)

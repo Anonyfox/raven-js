@@ -1,41 +1,28 @@
 /**
- * @file Table display function for terminal interfaces
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
  * @see {@link https://ravenjs.dev}
- * @see {@link https://anonyfox.com}
- *
- * Pure function for displaying tabular data in terminal applications.
- * Uses simple ASCII characters for cross-platform compatibility.
+ * @see {@link https://anonyfox.com} Pure function for displaying tabular data in terminal applications. Uses simple ASCII characters for cross-platform compatibility.
  */
 
 /**
- * Display data in a formatted table.
+ * @packageDocumentation
  *
+ * Display data in a formatted table.
  * This function takes an array of objects and displays them as a
  * formatted table with headers and aligned columns. It automatically
  * calculates column widths and handles text alignment.
- *
  * **Pure Function**: No side effects except stdout write.
  * **Alignment**: Left-aligned text, handles varying column widths.
  * **Headers**: Uses object keys as column headers.
- *
- * @param {Object[]} data - Array of objects to display as table rows
- * @param {Object} [options] - Table formatting options
- * @param {string[]} [options.headers] - Custom header names (defaults to object keys)
- * @param {number} [options.padding] - Column padding (default: 2)
- *
- * @example
  * ```javascript
  * import { table } from '@raven-js/wings/terminal';
- *
  * const users = [
- *   { name: 'John', age: 30, city: 'New York' },
- *   { name: 'Jane', age: 25, city: 'Los Angeles' },
- *   { name: 'Bob', age: 35, city: 'Chicago' }
+ * { name: 'John', age: 30, city: 'New York' },
+ * { name: 'Jane', age: 25, city: 'Los Angeles' },
+ * { name: 'Bob', age: 35, city: 'Chicago' }
  * ];
- *
  * table(users);
  * // Output:
  * // ┌──────┬─────┬─────────────┐
@@ -45,12 +32,14 @@
  * // │ Jane │ 25  │ Los Angeles │
  * // │ Bob  │ 35  │ Chicago     │
  * // └──────┴─────┴─────────────┘
- *
  * // With custom headers
  * table(users, { headers: ['Name', 'Age', 'Location'] });
  * ```
  */
-export function table(data, options = {}) {
+export function table(
+	/** @type {Object[]} */ data,
+	/** @type {Object} */ options = {},
+) {
 	if (!Array.isArray(data)) {
 		throw new TypeError("Data must be an array");
 	}
@@ -60,11 +49,13 @@ export function table(data, options = {}) {
 		return;
 	}
 
-	const { padding = 2 } = options;
+	const { padding = 2 } =
+		/** @type {{padding?: number, headers?: string[]}} */ (options);
 
 	// Get all unique keys from all objects
 	const allKeys = [...new Set(data.flatMap(Object.keys))];
-	const headers = options.headers || allKeys;
+	const headers =
+		/** @type {{headers?: string[]}} */ (options).headers || allKeys;
 
 	if (headers.length === 0) {
 		console.log("No columns to display");

@@ -1,5 +1,4 @@
 /**
- * @file NPM package validation utilities
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,11 +10,11 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 /**
+ * @packageDocumentation
+ *
  * Checks if a given path contains an npm package by verifying the existence of package.json
- * @param {string} packagePath - The path to check for an npm package
- * @returns {boolean} True if the path contains a package.json file, false otherwise
  */
-export const IsNpmPackage = (packagePath) => {
+export const IsNpmPackage = (/** @type {string} */ packagePath) => {
 	if (typeof packagePath !== "string" || packagePath === "") {
 		return false;
 	}

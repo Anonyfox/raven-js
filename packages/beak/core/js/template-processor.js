@@ -1,5 +1,4 @@
 /**
- * @file High-performance JavaScript template literal processing engine
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -10,26 +9,21 @@
 import { stringify } from "./stringify.js";
 
 /**
- * Processes JavaScript template literals by combining static strings and interpolated values.
+ * @packageDocumentation
  *
+ * Processes JavaScript template literals by combining static strings and interpolated values.
  * This function handles:
  * - Template literal string interpolation
  * - Value validation (falsy values except 0 are filtered out)
  * - Array value flattening (joined with empty string)
  * - String concatenation for the final JavaScript snippet
  * - Automatic trimming of the result
- *
- * @param {TemplateStringsArray} strings - The static parts of the template.
- * @param {...any} values - The interpolated values.
- * @returns {string} The combined JavaScript snippet as a string.
- *
- * @example
  * processJSTemplate`let ${'count'} = ${10};`  // "let count = 10;"
  * processJSTemplate`${['a', 'b', 'c']}`       // "abc"
  * processJSTemplate`${null}${'valid'}`        // "valid"
  * processJSTemplate`${0}${false}`             // "0"
  */
-export const processJSTemplate = (strings, ...values) => {
+export const processJSTemplate = (/** @type {TemplateStringsArray} */ strings, /** @type {any[]} */ ...values) => {
 	const stringsLength = strings.length;
 	const valuesLength = values.length;
 

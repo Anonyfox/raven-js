@@ -1,5 +1,4 @@
 /**
- * @file Multi-process clustered server adapter
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -12,8 +11,9 @@ import { availableParallelism } from "node:os";
 import { NodeHttp } from "./node-http.js";
 
 /**
- * Production-ready clustered HTTP server with automatic scaling and crash recovery.
+ * @packageDocumentation
  *
+ * Production-ready clustered HTTP server with automatic scaling and crash recovery.
  * Features:
  * - Horizontal scaling across all CPU cores
  * - Automatic worker restart on crashes

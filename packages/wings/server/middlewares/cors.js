@@ -1,56 +1,4 @@
 /**
- * @file Wings CORS Middleware - Cross-Origin Resource Sharing made simple
- *
- * This middleware provides comprehensive CORS (Cross-Origin Resource Sharing) support
- * for Wings applications, enabling secure cross-origin requests from web browsers.
- * It handles both preflight OPTIONS requests and regular request CORS headers with
- * intelligent defaults and flexible configuration options.
- *
- * Built with zero dependencies using standard HTTP headers, this middleware seamlessly
- * integrates with Wings' middleware architecture to provide standards-compliant CORS
- * support without interfering with the request lifecycle.
- *
- * ## Key Features
- * - ✅ Standards-compliant CORS implementation (RFC 6454, WHATWG CORS)
- * - ✅ Automatic preflight OPTIONS request handling
- * - ✅ Flexible origin configuration (strings, arrays, regexes, functions)
- * - ✅ Security-first design with credential validation
- * - ✅ Configurable methods, headers, and cache control
- * - ✅ Graceful error handling with meaningful responses
- *
- * ## CORS Flow
- * 1. **Preflight Requests**: OPTIONS requests are handled immediately with validation
- * 2. **Regular Requests**: CORS headers are added via after-callbacks
- * 3. **Origin Validation**: Configured origin rules determine access
- * 4. **Header Management**: Appropriate CORS headers set based on configuration
- *
- * @example Basic Usage
- * ```javascript
- * import { CORS } from '@raven-js/wings/server/cors.js';
- * import { Router } from '@raven-js/wings/core/router.js';
- *
- * const router = new Router();
- * const cors = new CORS();
- *
- * // Enable CORS for all routes
- * router.use(cors);
- *
- * router.get('/api/data', (ctx) => {
- *   ctx.json({ data: 'This will have CORS headers' });
- * });
- * ```
- *
- * @example Advanced Configuration
- * ```javascript
- * const cors = new CORS({
- *   origin: ['https://myapp.com', 'https://localhost:3000'],
- *   methods: ['GET', 'POST', 'PUT', 'DELETE'],
- *   allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
- *   credentials: true,
- *   maxAge: 3600
- * });
- * ```
- *
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -61,6 +9,8 @@
 import { Middleware } from "../../core/middleware.js";
 
 /**
+ * @packageDocumentation
+ *
  * Default HTTP methods allowed for CORS requests
  * These are the standard methods most APIs need to support
  */
@@ -328,14 +278,14 @@ export class CORS extends Middleware {
 			maxAge,
 		};
 
-		super(async (ctx) => {
+		super(async (/** @type {any} */ ctx) => {
 			// Handle preflight OPTIONS requests immediately
 			if (ctx.method === "OPTIONS") {
 				await this.#handlePreflight(ctx);
 			} else {
 				// Register after callback for regular requests
 				ctx.addAfterCallback(
-					new Middleware(async (ctx) => {
+					new Middleware(async (/** @type {any} */ ctx) => {
 						this.#setCorsHeaders(ctx);
 					}, `${identifier}-headers`),
 				);

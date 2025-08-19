@@ -1,10 +1,4 @@
 /**
- * @file Request Handler - Main asset request processing logic
- *
- * Provides the main request handling logic for asset serving middleware.
- * Orchestrates path validation, mode detection, and asset serving while
- * maintaining proper error handling and security.
- *
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -20,9 +14,10 @@ import {
 import { isValidAssetPath } from "./path-validation.js";
 
 /**
+ * @packageDocumentation
+ *
  * Handle an asset request using the current mode.
  * This is the main entry point for asset serving.
- *
  * This function orchestrates the entire asset serving pipeline:
  * 1. Validates that a response hasn't already been sent
  * 2. Decodes the URL path to handle unicode characters
@@ -30,36 +25,24 @@ import { isValidAssetPath } from "./path-validation.js";
  * 4. Checks if the asset exists in the current mode
  * 5. Serves the asset using the appropriate mode-specific handler
  * 6. Handles errors gracefully without breaking the request pipeline
- *
- * @param {import('../../../core/context.js').Context} ctx - Request context
- * @param {Object} assetConfig - Asset configuration object
- * @param {string} assetConfig.mode - Current asset serving mode ('sea'|'global'|'filesystem'|'uninitialized')
- * @param {string[]} assetConfig.assetsList - Cached list of available assets
- * @param {string|null} assetConfig.assetsPath - Full path to assets directory (filesystem mode only)
- *
- * @example Basic Usage
  * ```javascript
  * import { handleAssetRequest } from './request-handler.js';
- *
  * const config = {
- *   mode: 'filesystem',
- *   assetsList: ['/css/style.css', '/js/app.js'],
- *   assetsPath: '/path/to/assets'
+ * mode: 'filesystem',
+ * assetsList: ['/css/style.css', '/js/app.js'],
+ * assetsPath: '/path/to/assets'
  * };
- *
  * await handleAssetRequest(ctx, config);
  * ```
- *
- * @example Error Handling
  * ```javascript
  * // Errors are collected in ctx.errors for logging
  * await handleAssetRequest(ctx, config);
  * if (ctx.errors.length > 0) {
- *   console.log('Asset serving errors:', ctx.errors);
+ * console.log('Asset serving errors:', ctx.errors);
  * }
  * ```
  */
-export async function handleAssetRequest(ctx, assetConfig) {
+export async function handleAssetRequest(/** @type {any} */ ctx, /** @type {any} */ assetConfig) {
 	try {
 		// Skip if response already handled or no response body expected
 		if (ctx.responseEnded) return;

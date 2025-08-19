@@ -1,5 +1,4 @@
 /**
- * @file Workspace package discovery and enumeration utilities
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,12 +10,11 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 /**
+ * @packageDocumentation
+ *
  * Lists all workspace packages from a workspace root directory
- * @param {string} workspaceRoot - The path to the workspace root directory
- * @returns {string[]} Array of package paths relative to workspace root
- * @throws {Error} If the directory is not a valid workspace or cannot be read
  */
-export const ListWorkspacePackages = (workspaceRoot) => {
+export const ListWorkspacePackages = (/** @type {string} */ workspaceRoot) => {
 	if (typeof workspaceRoot !== "string" || workspaceRoot === "") {
 		throw new Error("Workspace root path must be a non-empty string");
 	}

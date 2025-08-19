@@ -1,5 +1,4 @@
 /**
- * @file Development server adapter with hot reloading
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -13,13 +12,12 @@ import { Router } from "../../core/index.js";
 import { NodeHttp } from "./node-http.js";
 
 /**
- * Development server with live-reload for Wings.
+ * @packageDocumentation
  *
+ * Development server with live-reload for Wings.
  * Extends NodeHttp to inject WebSocket-based reload scripts into HTML responses.
  * For file watching, use Node.js CLI flags: `node --watch-path=./src boot.js`
  * This restarts the server instantly, triggering browser reload via WebSocket.
- *
- * @extends {NodeHttp}
  */
 export class DevServer extends NodeHttp {
 	/**

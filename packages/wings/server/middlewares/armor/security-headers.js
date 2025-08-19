@@ -1,10 +1,4 @@
 /**
- * @file Security headers formatting and utilities
- *
- * Provides utilities for formatting security headers like Content Security Policy,
- * Permissions Policy, and other HTTP security headers. Designed to generate
- * standards-compliant header values with proper escaping and validation.
- *
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -13,6 +7,8 @@
  */
 
 /**
+ * @packageDocumentation
+ *
  * Default Content Security Policy directives
  * Restrictive by default, can be relaxed as needed
  */

@@ -1,82 +1,28 @@
 /**
- * @file Middleware composition and execution utilities
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
  * @see {@link https://ravenjs.dev}
- * @see {@link https://anonyfox.com}
- *
-
- * **Middleware** - Request processing pipeline component.
- *
- * The Middleware class encapsulates a function that can be executed during
- * the request processing pipeline. Middleware can be used for authentication,
- * logging, request/response transformation, error handling, and other
- * cross-cutting concerns.
- *
- * ## Key Features
- * - **Flexible Execution**: Supports both synchronous and asynchronous handlers
- * - **Context Modification**: Can modify the request/response context directly
- * - **Identifier System**: Optional identifiers for duplicate prevention
- * - **Error Propagation**: Errors in middleware are properly propagated
- * - **Type Safety**: Strong typing with JSDoc for better development experience
- *
- * ## Design Philosophy
- * Middleware follows the "chain of responsibility" pattern where each middleware
- * can process the request, modify the context, and optionally pass control to
- * the next middleware in the chain. This allows for modular, reusable request
- * processing logic.
- *
- * **Note**: Middleware handlers receive the context object and can modify it
- * directly. This mutable approach is chosen for performance over immutability.
- *
- * @example
- * ```javascript
- * import { Middleware } from './middleware.js';
- * import { Context } from './context.js';
- *
- * // Simple logging middleware
- * const loggingMiddleware = new Middleware((ctx) => {
- *   console.log(`${ctx.method} ${ctx.path} - ${new Date().toISOString()}`);
- * });
- *
- * // Authentication middleware
- * const authMiddleware = new Middleware(async (ctx) => {
- *   const token = ctx.requestHeaders.get('authorization');
- *   if (!token) {
- *     ctx.responseStatusCode = 401;
- *     ctx.responseBody = 'Unauthorized';
- *     ctx.responseEnded = true;
- *     return;
- *   }
- *   ctx.data.user = await validateToken(token);
- * });
- *
- * // Rate limiting middleware with identifier
- * const rateLimitMiddleware = new Middleware((ctx) => {
- *   if (isRateLimited(ctx)) {
- *     ctx.responseStatusCode = 429;
- *     ctx.responseBody = 'Too Many Requests';
- *     ctx.responseEnded = true;
- *   }
- * }, 'rate-limiter');
- * ```
+ * @see {@link https://anonyfox.com} **Middleware** - Request processing pipeline component. The Middleware class encapsulates a function that can be executed during the request processing pipeline. Middleware can be used for authentication, logging, request/response transformation, error handling, and other cross-cutting concerns. ## Key Features - **Flexible Execution**: Supports both synchronous and asynchronous handlers - **Context Modification**: Can modify the request/response context directly - **Identifier System**: Optional identifiers for duplicate prevention - **Error Propagation**: Errors in middleware are properly propagated - **Type Safety**: Strong typing with JSDoc for better development experience ## Design Philosophy Middleware follows the "chain of responsibility" pattern where each middleware can process the request, modify the context, and optionally pass control to the next middleware in the chain. This allows for modular, reusable request processing logic. **Note**: Middleware handlers receive the context object and can modify it directly. This mutable approach is chosen for performance over immutability.
  */
 
 /**
- * Type definition for middleware handler functions.
+ * @packageDocumentation
  *
+ * Type definition for middleware handler functions.
  * A middleware handler is a function that receives a Context object and can
  * optionally return a Promise. The handler can modify the context directly
  * or perform side effects like logging, authentication, etc.
- *
  * **Handler Responsibilities**:
  * - Process the request context
  * - Modify context properties as needed
  * - Set responseEnded flag to short-circuit processing
  * - Handle errors appropriately
- *
- * @typedef {((ctx: import('./context.js').Context) => void | Promise<void>)} Handler
+ */
+
+/**
+ * @typedef {function(import('./context.js').Context): (void|Promise<void>)} Handler
+ * Middleware handler function that processes requests
  */
 export class Middleware {
 	/**

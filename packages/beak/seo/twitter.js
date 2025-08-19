@@ -1,5 +1,4 @@
 /**
- * @file Twitter Cards meta tag generation
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,12 +10,19 @@ import { html } from "../core/index.js";
 import { absoluteUrl } from "./utils.js";
 
 /**
+ * @packageDocumentation
+ *
+ */
+
+/**
  * @typedef {Object} TwitterConfig
- * @property {string} title - The title of the page.
- * @property {string} description - The description of the page.
- * @property {string} domain - The domain of the website. Required to ensure absolute URLs.
- * @property {string} [imageUrl] - Optional. The relative path of the image to be used in the Twitter card.
- * @property {string} [cardType] - Optional. The Twitter card type. Defaults to "summary".
+ * @property {string} title - Page title for Twitter
+ * @property {string} description - Page description for Twitter
+ * @property {string} [image] - Image URL for Twitter Card
+ * @property {string} [card] - Twitter Card type
+ * @property {string} [domain] - Domain for URL construction
+ * @property {string} [imageUrl] - Alternative image URL property
+ * @property {string} [cardType] - Twitter card type alternative
  */
 
 /**

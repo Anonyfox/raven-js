@@ -1,65 +1,4 @@
 /**
- * @file Wings Armor Middleware - Comprehensive web application security
- *
- * A security-first middleware that combines multiple protection layers into a single,
- * efficient component. Designed for production environments where security, performance,
- * and reliability are paramount. Zero external dependencies, maximum protection.
- *
- * Built with the Wings philosophy: sensible defaults, minimal configuration,
- * and bulletproof reliability. Works out of the box with enterprise-grade security
- * while remaining developer-friendly and performance-optimized.
- *
- * ## Security Features
- * - ✅ HTTP Security Headers (CSP, HSTS, X-Frame-Options, etc.)
- * - ✅ Advanced rate limiting with sliding windows and per-route controls
- * - ✅ IP-based access control with CIDR support
- * - ✅ Request validation and size limits
- * - ✅ Basic attack pattern detection (SQL injection, etc.)
- * - ✅ JSON/XML bomb protection
- * - ✅ Graceful error handling and logging
- *
- * ## Performance Optimizations
- * - Memory-efficient rate limiting with automatic cleanup
- * - O(1) IP lookups using optimized data structures
- * - Lazy initialization of expensive components
- * - Minimal overhead when features are disabled
- *
- * @example Basic Usage
- * ```javascript
- * import { Armor } from '@raven-js/wings/server/armor.js';
- * import { Router } from '@raven-js/wings/core/router.js';
- *
- * const router = new Router();
- * const armor = new Armor(); // Secure defaults
- *
- * // Apply security to all routes
- * router.use(armor);
- *
- * router.get('/api/data', (ctx) => {
- *   ctx.json({ message: 'Protected by Armor' });
- * });
- * ```
- *
- * @example Production Configuration
- * ```javascript
- * const armor = new Armor({
- *   rateLimiting: {
- *     global: { windowMs: 15 * 60 * 1000, max: 1000 },
- *     routes: {
- *       '/api/auth/': { max: 10, windowMs: 15 * 60 * 1000 },
- *       '/api/upload/': { max: 5, windowMs: 60 * 1000 }
- *     }
- *   },
- *   securityHeaders: {
- *     hsts: { maxAge: 31536000, includeSubDomains: true, preload: true }
- *   },
- *   ipAccess: {
- *     mode: 'blacklist',
- *     blacklist: ['192.168.100.0/24']
- *   }
- * });
- * ```
- *
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -99,95 +38,82 @@ export {
 } from "./security-headers.js";
 
 /**
- * Armor - Comprehensive web application security middleware
+ * @packageDocumentation
  *
+ * Armor - Comprehensive web application security middleware
  * A production-ready security middleware that combines multiple protection layers
  * into a single, efficient component. Designed to provide enterprise-grade security
  * while maintaining the Wings philosophy of simplicity and reliability.
- *
  * The middleware operates in two phases:
  * 1. **Pre-processing**: Rate limiting, IP filtering, request validation (early exit)
  * 2. **Post-processing**: Security headers, response validation (after callbacks)
- *
  * ## Security Layers
- *
  * ### HTTP Security Headers
  * Implements a comprehensive set of security headers including CSP, HSTS,
  * X-Frame-Options, and modern headers like Cross-Origin-Embedder-Policy.
  * Headers are only set if not already present (respects other middleware).
- *
  * ### Rate Limiting
  * Memory-efficient sliding window rate limiting with per-route configuration.
  * Automatically cleans up expired entries to prevent memory leaks.
  * Supports custom key generation for advanced use cases.
- *
  * ### IP Access Control
  * Supports both whitelist and blacklist modes with CIDR notation.
  * Properly handles proxy headers when configured to trust them.
  * Efficient IP matching using optimized algorithms.
- *
  * ### Request Validation
  * Validates request size, structure, and content to prevent various attacks.
  * Includes protection against oversized requests, parameter pollution,
  * and malformed headers.
- *
  * ### Attack Pattern Detection
  * Basic detection of common attack patterns including SQL injection
  * and suspicious request patterns. Logs detected attacks for monitoring.
- *
- * @example Basic Security (Recommended for most applications)
  * ```javascript
  * const armor = new Armor();
  * router.use(armor);
- *
  * // Provides:
  * // - Standard security headers
  * // - Rate limiting (100 req/15min)
  * // - Request validation
  * // - Attack pattern detection
  * ```
- *
- * @example High-Security API
  * ```javascript
  * const armor = new Armor({
- *   rateLimiting: {
- *     global: { max: 60, windowMs: 60 * 1000 }, // 1 minute windows
- *     routes: {
- *       '/api/auth/': { max: 5, windowMs: 15 * 60 * 1000 }
- *     }
- *   },
- *   securityHeaders: {
- *     hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
- *     contentSecurityPolicy: {
- *       directives: {
- *         defaultSrc: ["'none'"],
- *         scriptSrc: ["'self'"],
- *         connectSrc: ["'self'", "https://api.trusted.com"]
- *       }
- *     }
- *   },
- *   ipAccess: {
- *     mode: 'whitelist',
- *     whitelist: ['192.168.1.0/24', '10.0.0.0/8'],
- *     trustProxy: true
- *   }
+ * rateLimiting: {
+ * global: { max: 60, windowMs: 60 * 1000 }, // 1 minute windows
+ * routes: {
+ * '/api/auth/': { max: 5, windowMs: 15 * 60 * 1000 }
+ * }
+ * },
+ * securityHeaders: {
+ * hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+ * contentSecurityPolicy: {
+ * directives: {
+ * defaultSrc: ["'none'"],
+ * scriptSrc: ["'self'"],
+ * connectSrc: ["'self'", "https://api.trusted.com"]
+ * }
+ * }
+ * },
+ * ipAccess: {
+ * mode: 'whitelist',
+ * whitelist: ['192.168.1.0/24', '10.0.0.0/8'],
+ * trustProxy: true
+ * }
  * });
  * ```
- *
- * @example Development Mode (Relaxed Security)
  * ```javascript
  * const armor = new Armor({
- *   securityHeaders: {
- *     contentSecurityPolicy: false, // Disable CSP for dev tools
- *     hsts: false // No HTTPS requirement in development
- *   },
- *   rateLimiting: {
- *     global: { max: 10000 } // Very high limit for development
- *   },
- *   attackDetection: {
- *     sqlInjection: false, // Disable for testing
- *     suspiciousPatterns: false
- *   }
+ * securityHeaders: {
+ * contentSecurityPolicy: false, // Disable CSP for dev tools
+ * hsts: false // No HTTPS requirement in development
+ * },
+ * rateLimiting: {
+ * global: { max: 10000 } // Very high limit for development
+ * },
+ * attackDetection: {
+ * sqlInjection: false, // Disable for testing
+ * suspiciousPatterns: false
+ * }
  * });
  * ```
  */
@@ -200,7 +126,7 @@ export class Armor extends Middleware {
 	 * @throws {Error} When configuration is invalid
 	 */
 	constructor(userConfig = {}, identifier = "@raven-js/wings/armor") {
-		super(async (ctx) => {
+		super(async (/** @type {any} */ ctx) => {
 			await this.#processRequest(ctx);
 		}, identifier);
 
@@ -244,7 +170,7 @@ export class Armor extends Middleware {
 
 			// Phase 2: Register after-callback for response processing
 			ctx.addAfterCallback(
-				new Middleware(async (ctx) => {
+				new Middleware(async (/** @type {any} */ ctx) => {
 					this.#setSecurityHeaders(ctx);
 				}, `${this.identifier}-headers`),
 			);

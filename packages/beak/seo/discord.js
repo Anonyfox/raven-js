@@ -1,5 +1,4 @@
 /**
- * @file Discord-specific social media meta tags
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,13 +10,20 @@ import { html } from "../core/index.js";
 import { absoluteUrl } from "./utils.js";
 
 /**
+ * @packageDocumentation
+ *
+ */
+
+/**
  * @typedef {Object} DiscordConfig
- * @property {string} title - The title of the page.
- * @property {string} description - The description of the page.
- * @property {string} domain - The domain of the website. Required to ensure absolute URLs.
- * @property {string} path - The relative path of the current page.
- * @property {string} [imageUrl] - Optional. The relative path of the image to be used in Discord embeds.
- * @property {string} [invite] - Optional. Discord server invite code (e.g., "abc123" for discord.gg/abc123).
+ * @property {string} title - Page title for Discord
+ * @property {string} description - Page description for Discord
+ * @property {string} [image] - Image URL for Discord embed
+ * @property {string} [color] - Embed color in hex format
+ * @property {string} [domain] - Domain for URL construction
+ * @property {string} [path] - Path for URL construction
+ * @property {string} [imageUrl] - Alternative image URL property
+ * @property {string} [invite] - Discord invite URL
  */
 
 /**

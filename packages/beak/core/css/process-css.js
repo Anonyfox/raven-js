@@ -1,5 +1,4 @@
 /**
- * @file CSS processing utilities for whitespace normalization and optimization
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -17,8 +16,9 @@ const SEMICOLON_SPACE_REGEX = /;(?!$|\s)/g;
 const CLOSE_BRACE_SPACE_REGEX = /\}(?!$|\s)/g;
 
 /**
- * Processes a CSS string to ensure single-line output with minimal whitespace.
+ * @packageDocumentation
  *
+ * Processes a CSS string to ensure single-line output with minimal whitespace.
  * This function performs the following transformations:
  * - Normalizes all whitespace sequences to single spaces
  * - Removes spaces before and after colons in property declarations
@@ -27,20 +27,15 @@ const CLOSE_BRACE_SPACE_REGEX = /\}(?!$|\s)/g;
  * - Removes spaces before closing braces
  * - Ensures proper spacing after semicolons and closing braces
  * - Trims leading and trailing whitespace
- *
- * @param {string} css - The input CSS string.
- * @returns {string} The processed CSS string.
- *
- * @example
  * processCSS(`
- *   .button {
- *     color: white;
- *     background: #007bff;
- *   }
+ * .button {
+ * color: white;
+ * background: #007bff;
+ * }
  * `);
  * // Returns: ".button{ color:white; background:#007bff; }"
  */
-export const processCSS = (css) => {
+export const processCSS = (/** @type {string} */ css) => {
 	// Fast path for empty or whitespace-only strings
 	if (!css || css.trim() === "") return "";
 

@@ -1,5 +1,4 @@
 /**
- * @file Validates that a JavaScript file has an accompanying test file
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,12 +10,11 @@ import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 /**
+ * @packageDocumentation
+ *
  * Validates that a JavaScript file has an accompanying test file
- * @param {string} filePath - The path to the JavaScript file
- * @returns {boolean} True if the file has a test file, throws error otherwise
- * @throws {Error} Informative error message if validation fails
  */
-export const HasValidTestFile = (filePath) => {
+export const HasValidTestFile = (/** @type {string} */ filePath) => {
 	if (typeof filePath !== "string" || filePath === "") {
 		throw new Error("File path must be a non-empty string");
 	}

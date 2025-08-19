@@ -1,5 +1,4 @@
 /**
- * @file AST flattening utilities for markdown processing
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -10,11 +9,15 @@
 import { NODE_TYPES } from "../types.js";
 
 /**
+ * @packageDocumentation
+ *
  * Flattens nested inline nodes into a single string
- * @param {Array<import('../types.js').InlineNode> | null | undefined | any} nodes - Array of inline nodes or invalid input
- * @returns {string} - Flattened text content
  */
-export const flattenInlineNodes = (nodes) => {
+/**
+ * @param {any[]} nodes - Array of inline nodes to flatten
+ * @returns {string} Flattened string content
+ */
+export const flattenInlineNodes = (/** @type {any[]} */ nodes) => {
 	if (!Array.isArray(nodes)) return "";
 
 	return nodes

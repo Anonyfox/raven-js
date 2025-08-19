@@ -1,5 +1,4 @@
 /**
- * @file Documentation path resolution utilities
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,12 +10,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 /**
+ * @packageDocumentation
+ *
  * Find workspace root by walking up directory tree
- * @param {string} startPath - Starting path to search from
- * @returns {string} Path to workspace root
- * @throws {Error} If workspace root cannot be found
  */
-function findWorkspaceRoot(startPath) {
+function findWorkspaceRoot(/** @type {string} */ startPath) {
 	let currentPath = resolve(startPath);
 
 	while (currentPath !== dirname(currentPath)) {

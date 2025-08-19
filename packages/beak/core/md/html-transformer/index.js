@@ -1,5 +1,4 @@
 /**
- * @file Module exports and main entry point
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -10,15 +9,13 @@
 import { transformBlockNode } from "./block-transformers.js";
 
 /**
- * Transforms a markdown AST into HTML
+ * @packageDocumentation
  *
+ * Transforms a markdown AST into HTML
  * This function recursively processes both block and inline nodes,
  * converting them into properly formatted HTML with appropriate escaping.
- *
- * @param {Array<import('../types.js').BlockNode>} ast - The markdown AST to transform
- * @returns {string} - The generated HTML
  */
-export const transformToHTML = (ast) => {
+export const transformToHTML = (/** @type {any} */ ast) => {
 	if (!Array.isArray(ast)) {
 		return "";
 	}

@@ -1,89 +1,20 @@
 /**
- * @file MIME type detection and content-type utilities
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
  * @see {@link https://ravenjs.dev}
- * @see {@link https://anonyfox.com}
- *
-
- * **MIME Utils** - File extension to MIME type mapping utilities.
- *
- * This module provides utilities for determining the appropriate MIME type
- * based on file extensions. It includes a comprehensive mapping of common
- * file extensions to their corresponding MIME types, with proper fallback
- * handling for unknown extensions.
- *
- * ## Supported File Types
- *
- * ### Web Files
- * - HTML, JavaScript, CSS, JSON, XML
- *
- * ### Images
- * - PNG, JPEG, GIF, SVG, ICO, WebP, AVIF
- *
- * ### Media
- * - Audio: WAV, MP3
- * - Video: MP4, WebM
- *
- * ### Fonts
- * - WOFF, TTF, EOT, OTF
- *
- * ### Documents
- * - PDF, TXT, Markdown, CSV
- *
- * ### Archives
- * - ZIP, GZ
- *
- * ### Other
- * - WebAssembly (WASM)
- *
- * ## Design Philosophy
- * This module prioritizes simplicity and reliability over completeness.
- * It covers the most common file types used in web applications while
- * providing a sensible default for unknown extensions.
- *
- * **Note**: The mapping is case-insensitive and handles edge cases like
- * files with multiple dots, leading dots, and various special characters.
- *
- * @example
- * ```javascript
- * import { getMimeType } from './mime-utils.js';
- *
- * // Basic usage
- * getMimeType('index.html');     // 'text/html'
- * getMimeType('styles.css');     // 'text/css'
- * getMimeType('script.js');      // 'text/javascript'
- * getMimeType('image.png');      // 'image/png'
- *
- * // Case insensitive
- * getMimeType('file.HTML');      // 'text/html'
- * getMimeType('file.Html');      // 'text/html'
- *
- * // Files with multiple dots
- * getMimeType('file.name.txt');  // 'text/plain'
- *
- * // Unknown extensions
- * getMimeType('file.xyz');       // 'application/octet-stream'
- *
- * // Edge cases
- * getMimeType('');               // 'application/octet-stream'
- * getMimeType(null);             // 'application/octet-stream'
- * getMimeType('filename');       // 'application/octet-stream'
- * ```
+ * @see {@link https://anonyfox.com} **MIME Utils** - File extension to MIME type mapping utilities. This module provides utilities for determining the appropriate MIME type based on file extensions. It includes a comprehensive mapping of common file extensions to their corresponding MIME types, with proper fallback handling for unknown extensions. ## Supported File Types ### Web Files - HTML, JavaScript, CSS, JSON, XML ### Images - PNG, JPEG, GIF, SVG, ICO, WebP, AVIF ### Media - Audio: WAV, MP3 - Video: MP4, WebM ### Fonts - WOFF, TTF, EOT, OTF ### Documents - PDF, TXT, Markdown, CSV ### Archives - ZIP, GZ ### Other - WebAssembly (WASM) ## Design Philosophy This module prioritizes simplicity and reliability over completeness. It covers the most common file types used in web applications while providing a sensible default for unknown extensions. **Note**: The mapping is case-insensitive and handles edge cases like files with multiple dots, leading dots, and various special characters.
  */
 
 /**
- * Internal mapping of file extensions to MIME types.
+ * @packageDocumentation
  *
+ * Internal mapping of file extensions to MIME types.
  * This object contains the complete mapping of supported file extensions
  * to their corresponding MIME types. Extensions are stored with leading
  * dots (e.g., '.html') for efficient lookup.
- *
  * **Coverage**: Includes the most commonly used file types in web applications,
  * covering web files, images, media, fonts, documents, and archives.
- *
- * @type {Object<string, string>}
  */
 const mimeTypes = {
 	".html": "text/html",
@@ -238,5 +169,8 @@ export function getMimeType(filename) {
 
 	// Get the last part and trim any whitespace, then convert to lowercase
 	const ext = `.${parts.pop().trim().toLowerCase()}`;
-	return mimeTypes[ext] || "application/octet-stream";
+	return (
+		/** @type {Record<string, string>} */ (mimeTypes)[ext] ||
+		"application/octet-stream"
+	);
 }

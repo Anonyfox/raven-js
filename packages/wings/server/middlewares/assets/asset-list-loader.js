@@ -1,10 +1,4 @@
 /**
- * @file Asset List Loader - Asset manifest loading utilities for different sources
- *
- * Provides utilities for loading asset lists from different sources including
- * Single Executable Applications (SEA), global variables, and file system.
- * Each loader handles source-specific logic and security filtering.
- *
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -15,11 +9,11 @@
 import { listFilesRecursive } from "./file-operations.js";
 
 /**
+ * @packageDocumentation
+ *
  * Magic filename for SEA asset manifests.
  * This file should contain a JSON array of public asset paths.
  * Convention: Only paths starting with '/' are served as public assets.
- *
- * @type {string}
  */
 export const SEA_ASSETS_MANIFEST = "@raven-js/assets.json";
 

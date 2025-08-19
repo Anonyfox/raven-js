@@ -1,5 +1,4 @@
 /**
- * @file Combined social media meta tag generation
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -15,18 +14,26 @@ import { pinterest } from "./pinterest.js";
 import { twitter } from "./twitter.js";
 
 /**
+ * @packageDocumentation
+ *
+ */
+
+/**
  * @typedef {Object} SocialConfig
- * @property {string} title - The title of the page.
- * @property {string} description - The description of the page.
- * @property {string} domain - The domain of the website. Required to ensure absolute URLs.
- * @property {string} path - The relative path of the current page.
- * @property {string} [imageUrl] - Optional. The relative path of the image to be used in social sharing.
- * @property {string} [ogType] - Optional. The Open Graph type. Defaults to "website".
- * @property {string} [twitterCardType] - Optional. The Twitter card type. Defaults to "summary".
- * @property {string} [pinterestSourceUrl] - Optional. The source URL for Pinterest rich pins.
- * @property {string} [linkedinOwner] - Optional. LinkedIn profile ID of the content owner.
- * @property {string} [linkedinCompany] - Optional. LinkedIn company page ID.
- * @property {string} [discordInvite] - Optional. Discord server invite code.
+ * @property {Object} twitter - Twitter configuration
+ * @property {Object} openGraph - Open Graph configuration
+ * @property {string} [image] - Default social image
+ * @property {string} [title] - Social title
+ * @property {string} [description] - Social description
+ * @property {string} [domain] - Domain for URL construction
+ * @property {string} [path] - Path for URL construction
+ * @property {string} [imageUrl] - Image URL for social media
+ * @property {string} [ogType] - Open Graph type
+ * @property {string} [twitterCardType] - Twitter card type
+ * @property {string} [pinterestSourceUrl] - Pinterest source URL
+ * @property {string} [linkedinOwner] - LinkedIn owner
+ * @property {string} [linkedinCompany] - LinkedIn company
+ * @property {string} [discordInvite] - Discord invite URL
  */
 
 /**
@@ -110,6 +117,7 @@ export const social = ({
 		cardType: twitterCardType,
 	});
 	const pinterestTags = pinterest({
+		title,
 		description,
 		domain,
 		imageUrl,

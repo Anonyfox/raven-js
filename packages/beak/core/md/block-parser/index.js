@@ -1,5 +1,4 @@
 /**
- * @file Module exports and main entry point
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -15,11 +14,11 @@ import { parseList } from "./list-parser.js";
 import { parseParagraph } from "./paragraph-parser.js";
 
 /**
+ * @packageDocumentation
+ *
  * Parses block-level markdown elements from an array of lines
- * @param {string[]|string} lines - Array of lines to parse for block elements
- * @returns {Array<import('../types.js').BlockNode>} - Array of parsed block nodes
  */
-export const parseBlocks = (lines) => {
+export const parseBlocks = (/** @type {string[]} */ lines) => {
 	// Input validation
 	if (!Array.isArray(lines) || lines.length === 0) {
 		return [];

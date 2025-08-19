@@ -1,10 +1,4 @@
 /**
- * @file Path Validation - Asset path validation and security utilities
- *
- * Provides utilities for validating request paths to ensure they are safe for asset serving.
- * Implements security checks to prevent path traversal attacks and unauthorized access
- * to internal or sensitive files.
- *
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -13,9 +7,10 @@
  */
 
 /**
+ * @packageDocumentation
+ *
  * Validate that a request path is safe for asset serving.
  * Implements security checks to prevent path traversal and unauthorized access.
- *
  * Security rules enforced:
  * - Must be a string
  * - Must start with '/' for public access (security requirement)
@@ -23,11 +18,6 @@
  * - Must not contain backslashes to prevent Windows path traversal
  * - Must not contain null bytes or other control characters
  * - Must not be just a slash (root path)
- *
- * @param {string} requestPath - The request path to validate
- * @returns {boolean} True if the path is safe to serve
- *
- * @example
  * ```javascript
  * isValidAssetPath('/css/style.css')   // → true
  * isValidAssetPath('/js/app.js')       // → true
@@ -38,7 +28,7 @@
  * isValidAssetPath(null)               // → false (not string)
  * ```
  */
-export function isValidAssetPath(requestPath) {
+export function isValidAssetPath(/** @type {string} */ requestPath) {
 	// Must be a string
 	if (typeof requestPath !== "string") return false;
 

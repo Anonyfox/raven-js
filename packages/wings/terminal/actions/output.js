@@ -1,18 +1,15 @@
 /**
- * @file Colored output functions for terminal interfaces
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
  * @see {@link https://ravenjs.dev}
- * @see {@link https://anonyfox.com}
- *
- * Pure functions for displaying colored messages in terminal applications.
- * Uses ANSI escape codes for cross-platform color support.
+ * @see {@link https://anonyfox.com} Pure functions for displaying colored messages in terminal applications. Uses ANSI escape codes for cross-platform color support.
  */
 
 /**
+ * @packageDocumentation
+ *
  * ANSI color codes for terminal output.
- * @private
  */
 const colors = {
 	reset: "\x1b[0m",

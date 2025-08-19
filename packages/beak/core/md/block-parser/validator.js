@@ -1,5 +1,4 @@
 /**
- * @file Validation utilities and functions
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -12,7 +11,10 @@ import { NODE_TYPES, VALIDATORS } from "../types.js";
 // Validation rules for each node type
 const VALIDATION_RULES = {
 	[NODE_TYPES.PARAGRAPH]: (
-		/** @type {import('../types.js').BlockNode} */ node,
+		/**
+ * @packageDocumentation
+ *
+ */ /** @type {any} */ node,
 	) => Array.isArray(node.content) && node.content.length > 0,
 	[NODE_TYPES.BLOCKQUOTE]: (
 		/** @type {import('../types.js').BlockNode} */ node,

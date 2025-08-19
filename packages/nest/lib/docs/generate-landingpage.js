@@ -1,5 +1,4 @@
 /**
- * @file Landing page generation for documentation
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -13,12 +12,8 @@ import { join } from "node:path";
 import { css, html } from "../../../beak/core/index.js";
 
 /**
- * @typedef {Object} PackageInfo
- * @property {string} pkg - Package directory name
- * @property {string} emoji - Package emoji icon
- * @property {string} name - Display name (from package.json)
- * @property {string} description - Package description
- * @property {string} version - Package version
+ * @packageDocumentation
+ *
  */
 
 /**
@@ -33,10 +28,12 @@ const PACKAGE_EMOJIS = {
 
 /**
  * Creates a package card component
- * @param {PackageInfo} packageInfo - Package information object
+ * @param {Object} packageInfo - Package information object
  * @returns {string} HTML for package card
  */
-function PackageCard({ pkg, emoji, name, description, version }) {
+function PackageCard(
+	/** @type {any} */ { pkg, emoji, name, description, version },
+) {
 	return html`
 		<div class="package">
 			<h2><a href="./${pkg}/">${emoji} ${name}</a></h2>
@@ -314,7 +311,7 @@ export function generateLandingPage(packageNames, workspacePath) {
 
 				const packageJson = JSON.parse(packageJsonContent);
 
-				/** @type {PackageInfo} */
+				/** @type {Object} */
 				return {
 					pkg,
 					emoji: PACKAGE_EMOJIS[pkg] || "📦",

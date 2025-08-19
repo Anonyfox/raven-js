@@ -1,5 +1,4 @@
 /**
- * @file Open Graph meta tag generation
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,13 +10,20 @@ import { html } from "../core/index.js";
 import { absoluteUrl } from "./utils.js";
 
 /**
+ * @packageDocumentation
+ *
+ */
+
+/**
  * @typedef {Object} OpenGraphConfig
- * @property {string} title - The title of the page.
- * @property {string} description - The description of the page.
- * @property {string} domain - The domain of the website. Required to ensure absolute URLs.
- * @property {string} path - The relative path of the current page.
- * @property {string} [imageUrl] - Optional. The relative path of the image to be used in social sharing.
- * @property {string} [type] - Optional. The Open Graph type. Defaults to "website".
+ * @property {string} title - Page title
+ * @property {string} description - Page description
+ * @property {string} [image] - Image URL
+ * @property {string} [url] - Page URL
+ * @property {string} [type] - Content type (website, article, etc.)
+ * @property {string} [domain] - Domain for URL construction
+ * @property {string} [path] - Path for URL construction
+ * @property {string} [imageUrl] - Alternative image URL property
  */
 
 /**

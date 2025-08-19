@@ -1,5 +1,4 @@
 /**
- * @file SQL string escaping utilities for injection prevention
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -8,11 +7,11 @@
  */
 
 /**
+ * @packageDocumentation
+ *
  * A mapping of SQL special characters to their escaped counterparts.
  * This map handles the most common SQL injection vectors and special characters
  * that need escaping in SQL string literals.
- *
- * @type {Object.<string, string>}
  */
 const sqlEscapeMap = {
 	"'": "''", // Single quote - most common SQL injection vector
@@ -64,7 +63,7 @@ export const escapeSql = (str) => {
 	let result = "";
 	for (let i = 0; i < stringValue.length; i++) {
 		const char = stringValue[i];
-		const escaped = sqlEscapeMap[char];
+		const escaped = /** @type {Record<string, string>} */ (sqlEscapeMap)[char];
 		// This ensures the fallback branch is always tested
 		result += escaped !== undefined ? escaped : char;
 	}

@@ -1,5 +1,4 @@
 /**
- * @file Bold text parsing for markdown inline elements
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,12 +10,11 @@ import { NODE_TYPES } from "../types.js";
 import { parseInlineRecursive } from "./recursive-parser.js";
 
 /**
+ * @packageDocumentation
+ *
  * Tries to parse bold text (**text**)
- * @param {string} text - The text to parse
- * @param {number} start - Starting position
- * @returns {{node: import('../types.js').InlineNode, start: number, end: number} | null}
  */
-export const tryParseBold = (text, start) => {
+export const tryParseBold = (/** @type {string} */ text, /** @type {number} */ start) => {
 	if (start + 2 >= text.length) return null;
 	if (text.slice(start, start + 2) !== "**") return null;
 

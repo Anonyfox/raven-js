@@ -1,5 +1,4 @@
 /**
- * @file TypeDoc documentation generation utilities
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,11 +10,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
+ * @packageDocumentation
+ *
  * Get entry points for TypeDoc generation
- * @param {string} packagePath - Path to the package directory
- * @returns {string[]} Array of entry point paths
  */
-export function getEntryPoints(packagePath) {
+export function getEntryPoints(/** @type {string} */ packagePath) {
 	try {
 		const packageJsonPath = join(packagePath, "package.json");
 		if (!existsSync(packageJsonPath)) {

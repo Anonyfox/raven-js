@@ -1,10 +1,4 @@
 /**
- * @file Configuration management and validation for armor middleware
- *
- * Provides utilities for creating, validating, and merging configuration objects
- * for the armor middleware. Includes default configurations and comprehensive
- * validation with helpful error messages.
- *
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -13,8 +7,9 @@
  */
 
 /**
+ * @packageDocumentation
+ *
  * Default armor configuration with sensible security defaults
- * @type {Object}
  */
 export const DEFAULT_CONFIG = {
 	// General options

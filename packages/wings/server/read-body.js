@@ -1,18 +1,16 @@
 /**
- * @file HTTP request body parsing utilities
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
  * @see {@link https://ravenjs.dev}
- * @see {@link https://anonyfox.com}
- *
-
- * Security defaults for request body processing.
- * These values provide protection against common attack vectors while
- * maintaining good performance for legitimate requests.
+ * @see {@link https://anonyfox.com} Security defaults for request body processing. These values provide protection against common attack vectors while maintaining good performance for legitimate requests.
  */
 export const SECURITY_DEFAULTS = {
-	/** Maximum request body size in bytes (10MB) */
+	/**
+ * @packageDocumentation
+ *
+ * Maximum request body size in bytes (10MB)
+ */
 	MAX_BODY_SIZE: 10 * 1024 * 1024,
 	/** Maximum number of data chunks to prevent flooding attacks */
 	MAX_CHUNKS: 1000,

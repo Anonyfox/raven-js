@@ -1,5 +1,4 @@
 /**
- * @file Code block parsing functionality for markdown syntax
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -10,12 +9,11 @@
 import { NODE_TYPES, REGEX_PATTERNS } from "../types.js";
 
 /**
+ * @packageDocumentation
+ *
  * Parses code block elements
- * @param {string[]} lines - Array of lines
- * @param {number} start - Starting line index
- * @returns {{node: import('../types.js').BlockNode, start: number, end: number} | null}
  */
-export const parseCodeBlock = (lines, start) => {
+export const parseCodeBlock = (/** @type {string[]} */ lines, /** @type {number} */ start) => {
 	if (start >= lines.length) return null;
 
 	const line = lines[start];

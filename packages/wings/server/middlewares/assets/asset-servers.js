@@ -1,11 +1,4 @@
 /**
- * @file Asset Servers - Mode-specific asset serving implementations
- *
- * Provides mode-specific implementations for serving assets from different sources:
- * Single Executable Applications (SEA), global variables, and file system.
- * Each server handles the specifics of its asset source while maintaining
- * a consistent interface.
- *
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -18,32 +11,25 @@ import path from "node:path";
 import { setAssetResponse } from "./response-utils.js";
 
 /**
- * Serve an asset from SEA embedded resources.
+ * @packageDocumentation
  *
+ * Serve an asset from SEA embedded resources.
  * This function retrieves assets from Single Executable Application embedded
  * resources using the node:sea module. It handles the conversion from the
  * embedded format to a Buffer and sets up the appropriate HTTP response.
- *
- * @param {import('../../../core/context.js').Context} ctx - Request context
- * @param {string} assetPath - Decoded asset path to serve
- *
- * @example
  * ```javascript
  * import { serveAssetSEA } from './asset-servers.js';
- *
  * // In SEA environment, serve embedded asset
  * await serveAssetSEA(ctx, '/css/style.css');
  * // → Retrieves from SEA resources and sets response
  * ```
- *
- * @example Error Handling
  * ```javascript
  * // When asset doesn't exist in SEA
  * await serveAssetSEA(ctx, '/nonexistent.css');
  * // → Returns without setting response (allows fallthrough)
  * ```
  */
-export async function serveAssetSEA(ctx, assetPath) {
+export async function serveAssetSEA(/** @type {any} */ ctx, /** @type {string} */ assetPath) {
 	try {
 		const sea = require("node:sea");
 		const content = sea.getAsset(assetPath);

@@ -1,18 +1,15 @@
 /**
- * @file Text formatting functions for terminal interfaces
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
  * @see {@link https://ravenjs.dev}
- * @see {@link https://anonyfox.com}
- *
- * Pure functions for formatting text with ANSI escape codes.
- * These functions wrap text with appropriate formatting codes.
+ * @see {@link https://anonyfox.com} Pure functions for formatting text with ANSI escape codes. These functions wrap text with appropriate formatting codes.
  */
 
 /**
+ * @packageDocumentation
+ *
  * ANSI formatting codes for terminal text styling.
- * @private
  */
 const format = {
 	reset: "\x1b[0m",

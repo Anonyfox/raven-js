@@ -1,5 +1,4 @@
 /**
- * @file Module exports and main entry point
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -8,18 +7,15 @@
  */
 
 /**
- * Nest CLI - Raven's development command center
+ * @packageDocumentation
  *
+ * Nest CLI - Raven's development command center
  * This module provides the core functionality for Raven's development tools.
  * It's designed to be efficient, reliable, and focused on getting the job done.
- *
- * @example
  * ```javascript
  * import { validate } from '@raven-js/nest/rules';
- *
  * // Validate a single package or workspace (auto-detects)
  * validate('./packages/beak'); // throws on first error
- *
  * // Validate workspace (validates all packages)
  * validate('.'); // throws on first error
  * ```

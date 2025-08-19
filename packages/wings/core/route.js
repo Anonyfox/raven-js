@@ -1,5 +1,4 @@
 /**
- * @file Route definition and matching utilities
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -10,58 +9,51 @@
 import { HTTP_METHODS } from "./http-methods.js";
 
 /**
- * **Route** - HTTP route definition and configuration.
+ * @packageDocumentation
  *
+ * **Route** - HTTP route definition and configuration.
  * The Route class represents a single HTTP route in the Wings framework.
  * It encapsulates the HTTP method, path, handler function, and optional
  * configuration like middleware, parameter constraints, and documentation.
- *
  * ## Key Features
  * - **Static Factory Methods**: Convenient methods for creating routes with specific HTTP methods
  * - **Flexible Configuration**: Support for middleware, constraints, and descriptions
  * - **Type Safety**: Strong typing with JSDoc for better development experience
  * - **Validation**: Built-in handling of edge cases and invalid inputs
  * - **Extensibility**: Easy to extend with additional properties and methods
- *
  * ## Design Philosophy
  * Routes are designed to be declarative and self-contained. Each route
  * contains all the information needed to handle a specific HTTP request,
  * including validation rules and documentation.
- *
  * **Note**: The Route class uses a mutable design for flexibility, allowing
  * properties to be modified after creation. This enables dynamic route
  * configuration and middleware injection.
- *
- * @example
  * ```javascript
  * import { Route } from './route.js';
- *
  * // Basic route creation
  * const userRoute = Route.GET('/users/:id', (ctx) => {
- *   const userId = ctx.pathParams.id;
- *   ctx.json({ id: userId, name: 'John Doe' });
+ * const userId = ctx.pathParams.id;
+ * ctx.json({ id: userId, name: 'John Doe' });
  * });
- *
  * // Route with middleware and constraints
  * const protectedRoute = Route.POST('/users', async (ctx) => {
- *   const userData = ctx.requestBody();
- *   // Create user logic
+ * const userData = ctx.requestBody();
+ * // Create user logic
  * }, {
- *   middleware: [authMiddleware, validationMiddleware],
- *   constraints: { id: '\\d+' },
- *   description: 'Create a new user'
+ * middleware: [authMiddleware, validationMiddleware],
+ * constraints: { id: '\\d+' },
+ * description: 'Create a new user'
  * });
- *
  * // Route with all options
  * const complexRoute = Route.PUT('/users/:id/posts/:postId', (ctx) => {
- *   // Update post logic
+ * // Update post logic
  * }, {
- *   middleware: [authMiddleware, rateLimitMiddleware],
- *   constraints: {
- *     id: '\\d+',
- *     postId: '\\d+'
- *   },
- *   description: 'Update a specific post for a user'
+ * middleware: [authMiddleware, rateLimitMiddleware],
+ * constraints: {
+ * id: '\\d+',
+ * postId: '\\d+'
+ * },
+ * description: 'Update a specific post for a user'
  * });
  * ```
  */

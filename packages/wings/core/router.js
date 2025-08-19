@@ -1,5 +1,4 @@
 /**
- * @file Request routing and handler dispatching
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -17,13 +16,13 @@ import { Route } from "./route.js";
 import { Trie } from "./trie.js";
 
 /**
- * **Router** - High-performance HTTP request router for the Wings framework.
+ * @packageDocumentation
  *
+ * **Router** - High-performance HTTP request router for the Wings framework.
  * The Router class provides a lean, fast, and isomorphic HTTP router that can handle
  * requests in both Node.js and browser environments. It uses a Trie data structure
  * for optimal performance and supports middleware, path parameters, and complex
  * routing patterns.
- *
  * ## Key Features
  * - **High Performance**: O(1) route matching using Trie data structure
  * - **Isomorphic**: Works in Node.js, browser, and serverless environments
@@ -32,67 +31,52 @@ import { Trie } from "./trie.js";
  * - **Method Chaining**: Fluent API for building routes
  * - **Error Handling**: Built-in error handling and recovery
  * - **Zero Dependencies**: Pure JavaScript with no external dependencies
- *
  * ## Performance Characteristics
- *
  * **Route Registration**: O(n) where n is the number of path segments
  * **Route Matching**: O(m) where m is the number of segments in the request path
  * **Memory Usage**: Minimal overhead (~1KB for typical applications)
- *
  * The router is optimized for scenarios where both route registration and matching
  * performance matter, such as serverless functions and browser SPAs.
- *
  * ## Design Philosophy
- *
  * The Router prioritizes:
  * - **Speed**: Fast route matching and registration
  * - **Simplicity**: Clean, intuitive API
  * - **Flexibility**: Support for various deployment scenarios
  * - **Reliability**: Robust error handling and edge case management
- *
  * **Note**: This router is designed to be environment-agnostic. As long as you can
  * create a Context instance from your request, you can use this router anywhere.
- *
- * @example
  * ```javascript
  * import { Router } from './router.js';
  * import { Context } from './context.js';
- *
  * // Create router instance
  * const router = new Router();
- *
  * // Add routes with method chaining
  * router
- *   .get('/users', (ctx) => {
- *     ctx.json({ users: [] });
- *   })
- *   .get('/users/:id', (ctx) => {
- *     const userId = ctx.pathParams.id;
- *     ctx.json({ id: userId, name: 'John Doe' });
- *   })
- *   .post('/users', async (ctx) => {
- *     const userData = ctx.requestBody();
- *     const newUser = await createUser(userData);
- *     ctx.json(newUser);
- *   });
- *
+ * .get('/users', (ctx) => {
+ * ctx.json({ users: [] });
+ * })
+ * .get('/users/:id', (ctx) => {
+ * const userId = ctx.pathParams.id;
+ * ctx.json({ id: userId, name: 'John Doe' });
+ * })
+ * .post('/users', async (ctx) => {
+ * const userData = ctx.requestBody();
+ * const newUser = await createUser(userData);
+ * ctx.json(newUser);
+ * });
  * // Add middleware
  * router.use(authMiddleware);
- *
  * // Handle request
  * const url = new URL('http://localhost/users/123');
  * const ctx = new Context('GET', url, new Headers());
  * await router.handleRequest(ctx);
  * ```
- *
  * ## Performance Trade-offs
- *
  * **Advantages**:
  * - Extremely fast route matching
  * - Minimal memory footprint
  * - No external dependencies
  * - Works in any JavaScript environment
- *
  * **Limitations**:
  * - No WebSocket support
  * - Requires modern JavaScript (ES6+)
@@ -210,7 +194,7 @@ export class Router {
 	 * @returns {Router} The Router instance for chaining
 	 */
 	#addMethodRoute(method, path, handler) {
-		const route = Route[method](path, handler);
+		const route = /** @type {any} */ (Route)[method](path, handler);
 		return this.#registerRoute(method, path, route);
 	}
 

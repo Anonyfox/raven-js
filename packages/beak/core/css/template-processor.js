@@ -1,5 +1,4 @@
 /**
- * @file CSS template literal value processing and array flattening utilities
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -8,19 +7,14 @@
  */
 
 /**
- * Processes CSS template literals by combining static strings and interpolated values.
+ * @packageDocumentation
  *
+ * Processes CSS template literals by combining static strings and interpolated values.
  * This function handles:
  * - Template literal string interpolation
  * - Array value flattening (joined with spaces)
  * - Null/undefined value filtering
  * - String concatenation for the final CSS
- *
- * @param {TemplateStringsArray} strings - The static parts of the template.
- * @param {...any} values - The interpolated values.
- * @returns {string} The combined CSS string before processing.
- *
- * @example
  * const result = processCSSTemplate`color: ${'red'}; background: ${['blue', 'solid']};`;
  * // Returns: "color: red; background: blue solid;"
  */
@@ -54,7 +48,7 @@ export const flattenValue = (value) => {
  * @param {...any} values - The interpolated values.
  * @returns {string} The combined CSS string before processing.
  */
-export const processCSSTemplate = (strings, ...values) => {
+export const processCSSTemplate = (/** @type {TemplateStringsArray} */ strings, /** @type {any[]} */ ...values) => {
 	let result = strings[0];
 	for (let i = 0; i < values.length; i++) {
 		const value = values[i];

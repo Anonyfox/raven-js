@@ -1,5 +1,4 @@
 /**
- * @file File existence validation utilities
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,13 +10,11 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 /**
+ * @packageDocumentation
+ *
  * Checks if a specific file exists in a directory
- * @param {string} directoryPath - The path to the directory
- * @param {string} fileName - The name/path of the file to check for
- * @returns {boolean} True if the file exists, throws error otherwise
- * @throws {Error} Informative error message if validation fails
  */
-export const HasFile = (directoryPath, fileName) => {
+export const HasFile = (/** @type {string} */ directoryPath, /** @type {string} */ fileName) => {
 	if (typeof directoryPath !== "string" || directoryPath === "") {
 		throw new Error("Directory path must be a non-empty string");
 	}

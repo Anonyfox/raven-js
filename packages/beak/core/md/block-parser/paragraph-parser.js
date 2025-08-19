@@ -1,5 +1,4 @@
 /**
- * @file Paragraph parsing functionality for markdown syntax
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,12 +10,11 @@ import { parseInline } from "../inline-parser/index.js";
 import { NODE_TYPES, REGEX_PATTERNS } from "../types.js";
 
 /**
+ * @packageDocumentation
+ *
  * Parses paragraph elements
- * @param {string[]} lines - Array of lines
- * @param {number} start - Starting line index
- * @returns {{node: import('../types.js').BlockNode, start: number, end: number} | null}
  */
-export const parseParagraph = (lines, start) => {
+export const parseParagraph = (/** @type {string[]} */ lines, /** @type {number} */ start) => {
 	if (!lines || start >= lines.length) return null;
 
 	const line = lines[start];

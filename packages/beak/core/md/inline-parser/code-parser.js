@@ -1,5 +1,4 @@
 /**
- * @file Inline code parsing for markdown elements
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -10,12 +9,11 @@
 import { NODE_TYPES } from "../types.js";
 
 /**
+ * @packageDocumentation
+ *
  * Tries to parse inline code (`code`)
- * @param {string} text - The text to parse
- * @param {number} start - Starting position
- * @returns {{node: import('../types.js').InlineNode, start: number, end: number} | null}
  */
-export const tryParseInlineCode = (text, start) => {
+export const tryParseInlineCode = (/** @type {string} */ text, /** @type {number} */ start) => {
 	if (start >= text.length) return null;
 	if (text[start] !== "`") return null;
 

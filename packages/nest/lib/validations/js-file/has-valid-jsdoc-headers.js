@@ -1,5 +1,4 @@
 /**
- * @file Validates that a JavaScript file has proper JSDoc headers with required metadata
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -10,19 +9,18 @@
 import { readFileSync } from "node:fs";
 
 /**
+ * @packageDocumentation
+ *
  * Validates that a JavaScript file has a proper JSDoc header with required metadata
- * @param {string} filePath - The path to the JavaScript file
- * @returns {boolean} True if the file has valid JSDoc headers, throws error otherwise
- * @throws {Error} Informative error message if validation fails
  */
-export const HasValidJSDocHeaders = (filePath) => {
+export const HasValidJSDocHeaders = (/** @type {string} */ filePath) => {
 	if (typeof filePath !== "string" || filePath === "") {
 		throw new Error("File path must be a non-empty string");
 	}
 
 	try {
 		const fileContent = readFileSync(filePath, "utf8");
-		const validationResult = validateJSDocHeader(fileContent);
+		const validationResult = validateJSDocHeader(fileContent, filePath);
 
 		if (!validationResult.isValid) {
 			throw new Error(
@@ -66,52 +64,59 @@ export const shouldHaveJSDocHeader = (filePath) => {
 /**
  * Validates the JSDoc header content of a file
  * @param {string} content - The file content
+ * @param {string} filePath - The file path to determine validation rules
  * @returns {{isValid: boolean, errors: string[]}} Validation result
  */
-function validateJSDocHeader(content) {
+function validateJSDocHeader(content, filePath) {
+	// All non-test JS files should use the new two-block format
+	return validateTwoBlockFormat(content, filePath);
+}
+
+/**
+ * Validates the new two-block format for all JS files
+ * @param {string} content - The file content
+ * @returns {{isValid: boolean, errors: string[]}} Validation result
+ */
+function validateTwoBlockFormat(
+	/** @type {string} */ content,
+	/** @type {string} */ _filePath,
+) {
 	const errors = [];
 
-	// Extract the first JSDoc comment block
-	const jsdocMatch = content.match(/^\/\*\*\s*([\s\S]*?)\*\//);
+	// Extract all JSDoc comment blocks
+	const jsdocBlocks = content.match(/\/\*\*\s*([\s\S]*?)\*\//g);
 
-	if (!jsdocMatch) {
+	if (!jsdocBlocks || jsdocBlocks.length < 2) {
 		return {
 			isValid: false,
-			errors: ["Missing JSDoc header comment block at the beginning of file"],
+			errors: [
+				"Files must have exactly two JSDoc blocks: metadata block first, then documentation block",
+			],
 		};
 	}
 
-	const jsdocContent = jsdocMatch[1];
+	// First block: metadata (@author, @license, @see)
+	const firstBlockContent = jsdocBlocks[0].replace(/^\/\*\*\s*|\s*\*\/$/g, "");
+	const firstBlockTags = parseJSDocTags(firstBlockContent);
 
-	// Required tags and their expected values
-	const requiredChecks = [
-		{
-			tag: "@file",
-			required: true,
-			validate: /** @param {string[]} values */ (values) =>
-				values.length > 0 && values[0].trim().length > 0,
-			errorMessage: "Missing or empty @file description",
-		},
+	// Validate required metadata in first block
+	const requiredMetadataChecks = [
 		{
 			tag: "@author",
-			required: true,
 			validate: /** @param {string[]} values */ (values) =>
-				values.some(
-					/** @param {string} v */ (v) =>
-						v.includes("Anonyfox <max@anonyfox.com>"),
-				),
-			errorMessage: "Missing required @author Anonyfox <max@anonyfox.com>",
+				values.some((v) => v.includes("Anonyfox <max@anonyfox.com>")),
+			errorMessage:
+				"First JSDoc block missing required @author Anonyfox <max@anonyfox.com>",
 		},
 		{
 			tag: "@license",
-			required: true,
 			validate: /** @param {string[]} values */ (values) =>
-				values.some(/** @param {string} v */ (v) => v.trim() === "MIT"),
-			errorMessage: "Missing or incorrect @license (must be 'MIT')",
+				values.some((v) => v.trim() === "MIT"),
+			errorMessage:
+				"First JSDoc block missing or incorrect @license (must be 'MIT')",
 		},
 		{
 			tag: "@see",
-			required: true,
 			validate: /** @param {string[]} values */ (values) => {
 				const requiredLinks = [
 					"https://github.com/Anonyfox/ravenjs",
@@ -119,23 +124,42 @@ function validateJSDocHeader(content) {
 					"https://anonyfox.com",
 				];
 				return requiredLinks.every((link) =>
-					values.some(/** @param {string} v */ (v) => v.includes(link)),
+					values.some((v) => v.includes(link)),
 				);
 			},
 			errorMessage:
-				"Missing required @see links: https://github.com/Anonyfox/ravenjs, https://ravenjs.dev, https://anonyfox.com",
+				"First JSDoc block missing required @see links: https://github.com/Anonyfox/ravenjs, https://ravenjs.dev, https://anonyfox.com",
 		},
 	];
 
-	// Parse all JSDoc tags
-	const tags = parseJSDocTags(jsdocContent);
-
-	// Validate each required check
-	for (const check of requiredChecks) {
-		const tagValues = tags[check.tag] || [];
-
-		if (check.required && !check.validate(tagValues)) {
+	for (const check of requiredMetadataChecks) {
+		const tagValues = firstBlockTags[check.tag] || [];
+		if (!check.validate(tagValues)) {
 			errors.push(check.errorMessage);
+		}
+	}
+
+	// First block should NOT contain documentation tags
+	const documentationTags = ["@packageDocumentation"];
+	for (const tag of documentationTags) {
+		if (firstBlockTags[tag]) {
+			errors.push(
+				`First JSDoc block should not contain ${tag} - documentation belongs in second block`,
+			);
+		}
+	}
+
+	// Second block: documentation content (@packageDocumentation, etc.)
+	const secondBlockContent = jsdocBlocks[1].replace(/^\/\*\*\s*|\s*\*\/$/g, "");
+	const secondBlockTags = parseJSDocTags(secondBlockContent);
+
+	// Second block should NOT contain metadata tags (enforce clean separation)
+	const metadataTags = ["@author", "@license", "@see"];
+	for (const tag of metadataTags) {
+		if (secondBlockTags[tag]) {
+			errors.push(
+				`Second JSDoc block should not contain ${tag} - metadata belongs in first block`,
+			);
 		}
 	}
 

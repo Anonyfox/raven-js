@@ -1,5 +1,4 @@
 /**
- * @file Semantic version bumping utilities
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -8,13 +7,11 @@
  */
 
 /**
+ * @packageDocumentation
+ *
  * Bump a semantic version according to the specified type
- * @param {string} currentVersion - Current version string (e.g., "1.2.3")
- * @param {"major" | "minor" | "patch"} bumpType - Type of version bump
- * @returns {string} New version string
- * @throws {Error} If currentVersion is invalid or bumpType is unsupported
  */
-export function bumpVersion(currentVersion, bumpType) {
+export function bumpVersion(/** @type {string} */ currentVersion, /** @type {string} */ bumpType) {
 	// Validate current version format
 	if (!/^\d+\.\d+\.\d+$/.test(currentVersion)) {
 		throw new Error(

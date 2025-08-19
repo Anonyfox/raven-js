@@ -1,5 +1,4 @@
 /**
- * @file High-performance SQL template literal processing with value interpolation and escaping
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -10,42 +9,33 @@
 import { escapeSql } from "./escape-sql.js";
 
 /**
- * Processes SQL template literals by interpolating and escaping dynamic values.
+ * @packageDocumentation
  *
+ * Processes SQL template literals by interpolating and escaping dynamic values.
  * This function takes the static parts of a template literal and the dynamic values,
  * then combines them while ensuring all dynamic values are properly escaped to
  * prevent SQL injection attacks.
- *
- * @param {TemplateStringsArray} strings - The static parts of the template.
- * @param {...any} values - The dynamic values to be interpolated and escaped.
- * @returns {string} The processed SQL query as a string.
- *
- * @example
  * // Basic usage
  * const tableName = 'users';
  * const userId = 42;
  * const query = processSQLTemplate`SELECT * FROM ${tableName} WHERE id = ${userId}`;
  * // Result: "SELECT * FROM users WHERE id = 42"
- *
- * @example
  * // With user input (automatically escaped)
  * const userInput = "O'Connor";
  * const query = processSQLTemplate`SELECT * FROM users WHERE name = '${userInput}'`;
  * // Result: "SELECT * FROM users WHERE name = 'O''Connor'"
- *
- * @example
  * // Complex query with multiple values
  * const table = 'orders';
  * const status = 'pending';
  * const limit = 10;
  * const query = processSQLTemplate`
- *   SELECT * FROM ${table}
- *   WHERE status = '${status}'
- *   LIMIT ${limit}
+ * SELECT * FROM ${table}
+ * WHERE status = '${status}'
+ * LIMIT ${limit}
  * `;
  * // Result: "SELECT * FROM orders WHERE status = 'pending' LIMIT 10"
  */
-export const processSQLTemplate = (strings, ...values) => {
+export const processSQLTemplate = (/** @type {TemplateStringsArray} */ strings, /** @type {any[]} */ ...values) => {
 	const valuesLength = values.length;
 
 	// Fast path: no values

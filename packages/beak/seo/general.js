@@ -1,5 +1,4 @@
 /**
- * @file General SEO meta tag generation for basic search engine optimization
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,12 +10,19 @@ import { html } from "../core/index.js";
 import { absoluteUrl } from "./utils.js";
 
 /**
+ * @packageDocumentation
+ *
+ */
+
+/**
  * @typedef {Object} GeneralConfig
- * @property {string} title - The title of the page. Ideal: ~65 characters. Perfect: exactly the same as your `<h1 />` text.
- * @property {string} description - The description of the page. Ideal: ~130 characters.
- * @property {string} domain - The domain of the website. Required to ensure absolute URLs.
- * @property {string} path - The relative path of the current page.
- * @property {string} [suffix] - Optional. If set, will add `| {suffix}` to titles where appropriate.
+ * @property {string} title - Page title
+ * @property {string} description - Page description
+ * @property {string[]} [keywords] - Page keywords
+ * @property {string} [robots] - Robots directive
+ * @property {string} [domain] - Domain for URL construction
+ * @property {string} [path] - Path for URL construction
+ * @property {string} [suffix] - Title suffix
  */
 
 /**

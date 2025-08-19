@@ -1,10 +1,4 @@
 /**
- * @file Environment Detection - Asset source environment detection utilities
- *
- * Provides utilities for detecting available asset sources in different execution environments.
- * Supports Single Executable Applications (SEA) and global variable-based asset embedding
- * with graceful fallback handling for environments where features are not available.
- *
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -13,10 +7,10 @@
  */
 
 /**
+ * @packageDocumentation
+ *
  * Check if we're running in a Single Executable Application.
  * Uses dynamic import to avoid errors in environments where node:sea is not available.
- *
- * @returns {boolean} True if running in SEA mode
  */
 export function isSEAEnvironment() {
 	try {

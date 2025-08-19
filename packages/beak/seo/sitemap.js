@@ -1,5 +1,4 @@
 /**
- * @file XML sitemap generation functionality
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,12 +10,21 @@ import { html } from "../core/index.js";
 import { absoluteUrl } from "./utils.js";
 
 /**
+ * @packageDocumentation
+ *
+ */
+
+/**
  * @typedef {Object} SitemapConfig
- * @property {string} domain - The domain of the website (without protocol), e.g., "example.com"
- * @property {string[]} pages - Array of page paths to include in the sitemap, e.g., ["/", "/about", "/contact"]
- * @property {string} [lastmod] - Optional. Last modification date in ISO format. Defaults to current date.
- * @property {string} [changefreq] - Optional. How frequently the page is likely to change. Defaults to "weekly".
- * @property {string} [priority] - Optional. Priority of this URL relative to other URLs on your site. Defaults to "0.8".
+ * @property {Object[]} pages - Array of page objects
+ * @property {string} pages[].url - Page URL
+ * @property {Date} [pages[].lastmod] - Last modification date
+ * @property {string} [pages[].changefreq] - Change frequency
+ * @property {number} [pages[].priority] - Priority (0.0-1.0)
+ * @property {string} [domain] - Domain for URL construction
+ * @property {Date} [lastmod] - Default last modification date
+ * @property {string} [changefreq] - Default change frequency
+ * @property {number} [priority] - Default priority
  */
 
 /**
@@ -79,7 +87,7 @@ export const sitemap = ({ domain, pages, lastmod, changefreq, priority }) => {
 	const defaultChangefreq = "weekly";
 	const defaultPriority = "0.8";
 
-	const entries = pages.map((page) => {
+	const entries = pages.map((/** @type {any} */ page) => {
 		const url = absoluteUrl(page, domain);
 		const pageLastmod = lastmod || defaultLastmod;
 		const pageChangefreq = changefreq || defaultChangefreq;

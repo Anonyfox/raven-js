@@ -1,5 +1,4 @@
 /**
- * @file Package.json structure validation
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,12 +10,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
+ * @packageDocumentation
+ *
  * Validates that a directory has the required package structure files
- * @param {string} directoryPath - The path to the directory
- * @returns {boolean} True if the directory has valid structure, throws error otherwise
- * @throws {Error} Informative error message if validation fails
  */
-export const HasValidStructure = (directoryPath) => {
+export const HasValidStructure = (/** @type {string} */ directoryPath) => {
 	if (typeof directoryPath !== "string" || directoryPath === "") {
 		throw new Error("Directory path must be a non-empty string");
 	}

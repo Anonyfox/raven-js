@@ -1,5 +1,4 @@
 /**
- * @file Workspace detection and validation utilities
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -11,11 +10,11 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
+ * @packageDocumentation
+ *
  * Checks if a directory contains a workspace by examining the workspaces field in package.json
- * @param {string} directoryPath - The path to the directory to check
- * @returns {boolean} True if the directory contains a valid workspace, false otherwise
  */
-export const IsWorkspace = (directoryPath) => {
+export const IsWorkspace = (/** @type {string} */ directoryPath) => {
 	if (typeof directoryPath !== "string" || directoryPath === "") {
 		return false;
 	}

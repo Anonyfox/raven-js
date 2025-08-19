@@ -1,5 +1,4 @@
 /**
- * @file Markdown parsing AST node types, constants, and validation utilities
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -8,6 +7,8 @@
  */
 
 /**
+ * @packageDocumentation
+ *
  * AST node types for markdown parsing
  */
 export const NODE_TYPES = {

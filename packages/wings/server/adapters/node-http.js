@@ -1,5 +1,4 @@
 /**
- * @file Node.js HTTP server adapter
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
@@ -16,11 +15,11 @@ import { readBody } from "../read-body.js";
 import "../server-options.js";
 
 /**
- * Base HTTP server class for Wings - NOT meant for direct use.
+ * @packageDocumentation
  *
+ * Base HTTP server class for Wings - NOT meant for direct use.
  * This is a lightweight, fast base class with zero dependencies and strong test coverage.
  * For development, use DevServer. For production, use ClusteredServer.
- *
  * Only extend this class when building custom server implementations.
  */
 export class NodeHttp {
@@ -77,8 +76,8 @@ export class NodeHttp {
 		// Create server based on SSL detection
 		if (this.#isSSL) {
 			const sslOptions = {
-				key: this.#options.sslPrivateKey,
-				cert: this.#options.sslCertificate,
+				key: /** @type {string | Buffer} */ (this.#options.sslPrivateKey),
+				cert: /** @type {string | Buffer} */ (this.#options.sslCertificate),
 			};
 			this.#server = https.createServer(
 				sslOptions,
