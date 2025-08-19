@@ -878,5 +878,25 @@ describe("isIPAllowed", () => {
 			assert.strictEqual(isIPInCIDR("2001:fe00::1", "2001:fe00::/7"), true);
 			assert.strictEqual(isIPInCIDR("2003:0100::1", "2001:fe00::/7"), true); // Should still match in /7 range
 		});
+
+		it("should cover edge cases for maximum test coverage", () => {
+			// Test various edge cases to ensure comprehensive coverage
+			assert.strictEqual(isIPInCIDR("192.168.1", "192.168.1.0/24"), false); // 3 parts instead of 4
+			assert.strictEqual(isIPInCIDR("192.168.1.1.1", "192.168.1.0/24"), false); // 5 parts instead of 4
+			assert.strictEqual(isIPInCIDR("2001:db8:::1", "2001:db8::/32"), false); // Triple colons - invalid
+			assert.strictEqual(
+				isIPInCIDR("2001:db8:1:2:3:4:5:6:7:8:9", "2001:db8::/32"),
+				false,
+			); // Too many parts
+			assert.strictEqual(isIPInCIDR("2001::db8::1", "2001:db8::/32"), false); // Multiple ::
+			assert.strictEqual(
+				isIPInCIDR("1:2:3:4:5:6:7::8", "2001:db8::/32"),
+				false,
+			); // Edge case
+
+			// Test parsing edge cases
+			assert.strictEqual(parseCIDR("192.168.1.1.1/24"), null); // 5 octets in IPv4
+			assert.strictEqual(parseCIDR("192.168.1/24"), null); // 3 octets in IPv4
+		});
 	});
 });

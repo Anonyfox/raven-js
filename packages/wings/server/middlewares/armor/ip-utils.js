@@ -69,8 +69,6 @@ function isIPv4InCIDR(ip, network, prefix) {
 	const ipInt = ipv4ToInt(ip);
 	const networkInt = ipv4ToInt(network);
 
-	if (ipInt === null || networkInt === null) return false;
-
 	// Handle /0 case (matches all IPs)
 	if (prefix === 0) return true;
 
@@ -89,8 +87,6 @@ function isIPv4InCIDR(ip, network, prefix) {
 function isIPv6InCIDR(ip, network, prefix) {
 	const ipBytes = ipv6ToBytes(ip);
 	const networkBytes = ipv6ToBytes(network);
-
-	if (!ipBytes || !networkBytes) return false;
 
 	const bytesToCheck = Math.floor(prefix / 8);
 	const bitsInLastByte = prefix % 8;
@@ -122,7 +118,6 @@ function isIPv6InCIDR(ip, network, prefix) {
  */
 function ipv4ToInt(ip) {
 	const parts = ip.split(".");
-	if (parts.length !== 4) return null;
 
 	let result = 0;
 	for (let i = 0; i < 4; i++) {
@@ -143,10 +138,8 @@ function ipv4ToInt(ip) {
 function ipv6ToBytes(ip) {
 	// Expand compressed IPv6 addresses
 	const expanded = expandIPv6(ip);
-	if (!expanded) return null;
 
 	const parts = expanded.split(":");
-	if (parts.length !== 8) return null;
 
 	const bytes = new Uint8Array(16);
 	for (let i = 0; i < 8; i++) {
@@ -172,13 +165,11 @@ function expandIPv6(ip) {
 	}
 
 	const parts = ip.split("::");
-	if (parts.length !== 2) return null;
 
 	const left = parts[0] ? parts[0].split(":") : [];
 	const right = parts[1] ? parts[1].split(":") : [];
 
 	const totalParts = left.length + right.length;
-	if (totalParts >= 8) return null;
 
 	const zerosNeeded = 8 - totalParts;
 	const zeros = new Array(zerosNeeded).fill("0");
