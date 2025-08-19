@@ -170,10 +170,11 @@ export class Terminal {
 	 * It's used to support Unix pipe patterns like `echo "data" | myapp process`.
 	 *
 	 * @returns {Promise<Buffer|null>} stdin data or null if TTY
-	 * @private
+
 	 */
 	async #readStdin() {
 		return new Promise((resolve) => {
+			/** @type {Buffer[]} */
 			const chunks = [];
 
 			process.stdin.on("data", (chunk) => {

@@ -92,21 +92,35 @@ const prodServer = new ClusteredServer(router, {
 await prodServer.listen(443);
 ```
 
-## CLI Routing
+## Terminal Runtime
+
+Transform CLI commands into URL patterns, then leverage the blazing-fast HTTP router for command dispatch. COMMAND routes are separate from HTTP routes but use the same O(1) Trie matching.
 
 ```javascript
-import { cliRouter } from "@raven-js/wings/cli";
+import { Router } from "@raven-js/wings/core";
+import { Terminal, success, table } from "@raven-js/wings/terminal";
 
-const routes = [
-  { pattern: "build [target]", handler: (args) => buildProject(args.target) },
-  {
-    pattern: "deploy --env <environment>",
-    handler: (args) => deploy(args.environment),
-  },
-];
+const router = new Router();
 
-const router = cliRouter(routes);
-router.handle(process.argv.slice(2));
+// CLI commands use router.cmd() (COMMAND method)
+router.cmd("/users/list", async (ctx) => {
+  const active = ctx.queryParams.get("active") === "true";
+  const users = await getUsers({ active });
+  table(users); // Built-in terminal table renderer
+});
+
+router.cmd("/deploy/:env", async (ctx) => {
+  const env = ctx.pathParams.env;
+  await deployToEnvironment(env);
+  success(`Deployed to ${env}`);
+});
+
+// CLI execution: args → URL pattern → fast router matching
+const terminal = new Terminal(router);
+await terminal.run(process.argv.slice(2));
+
+// Usage: node app.js users list --active
+//        node app.js deploy production
 ```
 
 ## Environment-Specific Setup
@@ -194,22 +208,108 @@ await server.listen(3000);
 
 **ClusteredServer Helpers**: `isMainProcess` and `isWorkerProcess` getters for process identification in clustered environments.
 
-### CLI Module
+### Terminal Module
 
 ```javascript
-import { cliRouter } from "@raven-js/wings/cli";
+import { Router } from "@raven-js/wings/core";
+import {
+  Terminal,
+  ask,
+  confirm,
+  success,
+  error,
+  table,
+  bold,
+} from "@raven-js/wings/terminal";
 
-const routes = [
-  { pattern: "build [target]", handler: (args) => buildProject(args.target) },
-  {
-    pattern: "deploy --env <environment>",
-    handler: (args) => deploy(args.environment),
-  },
-];
+const router = new Router();
 
-const router = cliRouter(routes);
-router.handle(process.argv.slice(2));
+// Interactive CLI commands
+router.cmd("/setup", async (ctx) => {
+  const name = await ask("Project name: ");
+  const confirmed = await confirm(`Create ${bold(name)}?`);
+
+  if (confirmed) {
+    await createProject(name);
+    success("Project created!");
+  }
+});
+
+// Data display
+router.cmd("/users", async (ctx) => {
+  const users = await getUsers();
+  table(users); // ASCII table output
+});
+
+const terminal = new Terminal(router);
+await terminal.run(process.argv.slice(2));
 ```
+
+**Available actions**: `ask()`, `confirm()` (async input) • `success()`, `error()`, `warning()`, `info()`, `print()` (colored output) • `bold()`, `italic()`, `dim()`, `underline()` (text formatting) • `table()` (structured data display)
+
+## Combined Runtimes
+
+Your app becomes multi-purpose. Starts as CLI tool but can boot into web server mode using the same router. Single deliverable handles both operational commands and web serving.
+
+```javascript
+import { Router } from "@raven-js/wings/core";
+import { ClusteredServer } from "@raven-js/wings/server";
+import { Terminal, success, info } from "@raven-js/wings/terminal";
+
+const router = new Router();
+
+// HTTP routes for web traffic
+router.get("/", (ctx) => ctx.html("<h1>Hello, World!</h1>"));
+router.get("/api/users", (ctx) => ctx.json({ users: [] }));
+router.get("/health", (ctx) => ctx.json({ status: "ok" }));
+
+// CLI operational commands
+router.cmd("/migrate", async (ctx) => {
+  info("Running database migrations...");
+  await runMigrations();
+  success("Migrations completed");
+});
+
+router.cmd("/seed", async (ctx) => {
+  await seedDatabase();
+  success("Database seeded");
+});
+
+router.cmd("/backup", async (ctx) => {
+  const filename = await backupDatabase();
+  success(`Backup created: ${filename}`);
+});
+
+// CLI command that boots web server
+router.cmd("/boot", async (ctx) => {
+  info("Starting web server...");
+  const server = new ClusteredServer(router);
+  await server.listen(3000);
+  success("Server running on port 3000");
+  // Server now handles HTTP routes while CLI commands remain available
+});
+
+// Start in CLI mode
+const terminal = new Terminal(router);
+await terminal.run(process.argv.slice(2));
+```
+
+**Usage patterns**:
+
+```bash
+# Operational commands
+node app.js migrate
+node app.js seed
+node app.js backup
+
+# Boot web server (uses same router for HTTP routes)
+node app.js boot
+
+# In another terminal, operational commands still work
+node app.js health-check
+```
+
+**Deployment advantages**: Your final application handles its own operational needs. No separate migration scripts, backup tools, or health check utilities needed. One deliverable, multiple operational modes.
 
 ## License
 
