@@ -7,7 +7,6 @@ describe("lib/rules/folder/index.js", () => {
 		assert.strictEqual(typeof folderRules.GetAllFilePaths, "function");
 		assert.strictEqual(typeof folderRules.HasFile, "function");
 		assert.strictEqual(typeof folderRules.HasValidStructure, "function");
-		assert.strictEqual(typeof folderRules.HasValidTestFiles, "function");
 	});
 
 	it("should have working GetAllFilePaths function", () => {

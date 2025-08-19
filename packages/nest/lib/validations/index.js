@@ -2,16 +2,23 @@
 
 import { readFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { PackageJsonListWorkspacePackages } from "../queries/index.js";
 import {
-	HasValidStructure as FolderHasValidStructure,
-	HasValidTestFiles,
-} from "./folder/index.js";
+	GetAllFilePaths,
+	PackageJsonListWorkspacePackages,
+} from "../queries/index.js";
+import { HasValidStructure as FolderHasValidStructure } from "./folder/index.js";
 import { IsNpmPackage } from "./is-npm-package.js";
+import {
+	HasValidJSDocHeaders,
+	HasValidTestFile,
+	shouldHaveJSDocHeader,
+	shouldHaveTestFile,
+} from "./js-file/index.js";
 import {
 	HasValidAuthor,
 	HasValidBugs,
 	HasValidEngines,
+	HasValidFunding,
 	HasValidHomepage,
 	HasValidLicense,
 	HasValidName,
@@ -201,6 +208,74 @@ export const validateWorkspaceRoot = (workspacePath) => {
 };
 
 /**
+ * Validates test files for all JavaScript files in a package
+ * @param {string} packagePath - The path to the package directory
+ * @returns {boolean} True if all JS files have tests, throws error otherwise
+ * @throws {Error} Informative error message if validation fails
+ */
+const validateTestFiles = (packagePath) => {
+	const allFilePaths = GetAllFilePaths(packagePath);
+	const jsFiles = allFilePaths
+		.map((relativePath) => join(packagePath, relativePath))
+		.filter(shouldHaveTestFile);
+
+	const errors = [];
+
+	for (const jsFile of jsFiles) {
+		try {
+			HasValidTestFile(jsFile);
+		} catch (error) {
+			const relativePath = jsFile.replace(`${packagePath}/`, "");
+			errors.push(
+				`${relativePath}: ${error instanceof Error ? error.message : String(error)}`,
+			);
+		}
+	}
+
+	if (errors.length > 0) {
+		throw new Error(
+			`Missing test files in ${packagePath}:\\n${errors.join("\\n")}`,
+		);
+	}
+
+	return true;
+};
+
+/**
+ * Validates JSDoc headers for all JavaScript files in a package
+ * @param {string} packagePath - The path to the package directory
+ * @returns {boolean} True if all JS files have valid JSDoc headers, throws error otherwise
+ * @throws {Error} Informative error message if validation fails
+ */
+const validateJSDocHeaders = (packagePath) => {
+	const allFilePaths = GetAllFilePaths(packagePath);
+	const jsFiles = allFilePaths
+		.map((relativePath) => join(packagePath, relativePath))
+		.filter(shouldHaveJSDocHeader);
+
+	const errors = [];
+
+	for (const jsFile of jsFiles) {
+		try {
+			HasValidJSDocHeaders(jsFile);
+		} catch (error) {
+			const relativePath = jsFile.replace(`${packagePath}/`, "");
+			errors.push(
+				`${relativePath}: ${error instanceof Error ? error.message : String(error)}`,
+			);
+		}
+	}
+
+	if (errors.length > 0) {
+		throw new Error(
+			`Invalid JSDoc headers in ${packagePath}:\\n${errors.join("\\n")}`,
+		);
+	}
+
+	return true;
+};
+
+/**
  * Validates a package by running all validation rules in a logical order.
  * Collects all validation results instead of throwing on first error.
  * @param {string} packagePath - The path to the package directory
@@ -242,6 +317,7 @@ export const validatePackage = (packagePath) => {
 	);
 	checks.push(runCheck("valid bugs", () => HasValidBugs(packagePath)));
 	checks.push(runCheck("valid engines", () => HasValidEngines(packagePath)));
+	checks.push(runCheck("valid funding", () => HasValidFunding(packagePath)));
 	checks.push(
 		runCheck("valid publish config", () => HasValidPublishConfig(packagePath)),
 	);
@@ -251,7 +327,10 @@ export const validatePackage = (packagePath) => {
 	checks.push(
 		runCheck("folder structure", () => FolderHasValidStructure(packagePath)),
 	);
-	checks.push(runCheck("test files", () => HasValidTestFiles(packagePath)));
+	checks.push(runCheck("test files", () => validateTestFiles(packagePath)));
+	checks.push(
+		runCheck("JSDoc headers", () => validateJSDocHeaders(packagePath)),
+	);
 
 	const passed = checks.every((check) => check.passed);
 
