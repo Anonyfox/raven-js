@@ -182,11 +182,23 @@ async function handleValidateCommand(args, _options) {
 	console.log(`🦅 Validating: ${targetPath}`);
 
 	try {
-		validate(resolvedPath);
-		console.log("✅ Validation passed");
+		const result = validate(resolvedPath);
+
+		if (result.passed) {
+			console.log(
+				`\n${result.packages.length === 1 ? "✅ Package validation passed" : `✅ All ${result.packages.length} packages passed validation`}`,
+			);
+			process.exit(0);
+		} else {
+			const failedCount = result.packages.filter((pkg) => !pkg.passed).length;
+			console.log(
+				`\n💥 Validation failed: ${failedCount} of ${result.packages.length} packages failed`,
+			);
+			process.exit(1);
+		}
 	} catch (/** @type {unknown} */ error) {
 		const message = error instanceof Error ? error.message : String(error);
-		console.log(`❌ Validation failed: ${message}`);
+		console.log(`❌ Validation error: ${message}`);
 		process.exit(1);
 	}
 }
