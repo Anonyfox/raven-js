@@ -1,4 +1,13 @@
 /**
+ * @file CSS template literal value processing and array flattening utilities
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ */
+
+/**
  * Processes CSS template literals by combining static strings and interpolated values.
  *
  * This function handles:

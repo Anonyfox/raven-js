@@ -1,3 +1,12 @@
+/**
+ * @file Package.json engines field validation
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ */
+
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 

@@ -1,4 +1,11 @@
 /**
+ * @file Main export module for template literal processing across multiple languages
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ *
  * @packageDocumentation
  *
  * This module leverages JavaScript's tagged template literals to provide

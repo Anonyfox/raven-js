@@ -1,12 +1,15 @@
 /**
- * @fileoverview Rate limiting implementation with sliding window algorithm
+ * @file Rate limiting implementation with sliding window algorithm
  *
  * Provides memory-efficient rate limiting with automatic cleanup of expired entries.
  * Supports per-key rate limiting with customizable time windows and request limits.
  * Designed for production use with minimal memory overhead.
  *
- * @author RavenJS Team
- * @since 0.3.0
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
  */
 
 /**

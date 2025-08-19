@@ -1,7 +1,10 @@
 /**
- * @fileoverview Copy favicon to docs directory
+ * @file Favicon copying utilities for documentation generation
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
  */
 
 import { copyFileSync, existsSync, mkdirSync } from "node:fs";

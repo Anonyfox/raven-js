@@ -1,5 +1,5 @@
 /**
- * @fileoverview Wings Compression Middleware - Because bytes matter
+ * @file Wings Compression Middleware - Because bytes matter
  *
  * This middleware provides automatic HTTP response compression using standard
  * algorithms like gzip, brotli, and deflate. It intelligently selects the best
@@ -49,8 +49,11 @@
  * });
  * ```
  *
- * @author RavenJS Team
- * @since 0.2.6
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
  */
 
 import {

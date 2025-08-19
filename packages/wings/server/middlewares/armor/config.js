@@ -1,12 +1,15 @@
 /**
- * @fileoverview Configuration management and validation for armor middleware
+ * @file Configuration management and validation for armor middleware
  *
  * Provides utilities for creating, validating, and merging configuration objects
  * for the armor middleware. Includes default configurations and comprehensive
  * validation with helpful error messages.
  *
- * @author RavenJS Team
- * @since 0.3.0
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
  */
 
 /**

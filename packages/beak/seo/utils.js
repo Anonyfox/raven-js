@@ -1,4 +1,13 @@
 /**
+ * @file URL utility functions for SEO meta tag generation
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ */
+
+/**
  * Constructs an absolute URL given a relative URL and a domain.
  *
  * @param {string} url - The relative or absolute URL.

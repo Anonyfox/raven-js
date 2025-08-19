@@ -1,4 +1,12 @@
 /**
+ * @file HTTP method constants and validation utilities
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ *
+
  * **HTTP Methods** - Standard HTTP method constants and validation utilities.
  *
  * This module provides a centralized source of truth for all supported HTTP methods

@@ -1,4 +1,12 @@
 /**
+ * @file Server configuration and options handling
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ *
+
  * Unified server configuration options for all server implementations.
  *
  * This single configuration object supports both basic HTTP server options

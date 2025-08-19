@@ -1,4 +1,12 @@
 /**
+ * @file MIME type detection and content-type utilities
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ *
+
  * **MIME Utils** - File extension to MIME type mapping utilities.
  *
  * This module provides utilities for determining the appropriate MIME type

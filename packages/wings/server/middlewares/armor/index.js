@@ -1,5 +1,5 @@
 /**
- * @fileoverview Wings Armor Middleware - Comprehensive web application security
+ * @file Wings Armor Middleware - Comprehensive web application security
  *
  * A security-first middleware that combines multiple protection layers into a single,
  * efficient component. Designed for production environments where security, performance,
@@ -60,8 +60,11 @@
  * });
  * ```
  *
- * @author RavenJS Team
- * @since 0.3.0
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
  */
 
 import { Middleware } from "../../../core/middleware.js";

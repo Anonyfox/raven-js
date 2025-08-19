@@ -1,4 +1,12 @@
 /**
+ * @file HTTP request body parsing utilities
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ *
+
  * Security defaults for request body processing.
  * These values provide protection against common attack vectors while
  * maintaining good performance for legitimate requests.

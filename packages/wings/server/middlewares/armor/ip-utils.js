@@ -1,12 +1,15 @@
 /**
- * @fileoverview IP utility functions for network operations and access control
+ * @file IP utility functions for network operations and access control
  *
  * Provides utilities for parsing CIDR notation, checking IP ranges, extracting client IPs,
  * and implementing IP-based access control. Supports both IPv4 and IPv6 with efficient
  * algorithms for production use.
  *
- * @author RavenJS Team
- * @since 0.3.0
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
  */
 
 import { isIP } from "node:net";

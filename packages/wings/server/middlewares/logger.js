@@ -1,5 +1,5 @@
 /**
- * @fileoverview RavenJS Logger - Because debugging shouldn't feel like archaeology
+ * @file RavenJS Logger - Because debugging shouldn't feel like archaeology
  *
  * Look, we've all been there. Your app crashes, you get a stack trace that looks like
  * it was designed to hide the actual problem, and you spend more time parsing error
@@ -41,8 +41,11 @@
  * //     field: email
  * ```
  *
- * @author RavenJS Team
- * @since 0.2.5
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
  */
 
 import { Middleware } from "../../core/middleware.js";

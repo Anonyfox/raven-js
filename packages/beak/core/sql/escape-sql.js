@@ -1,4 +1,13 @@
 /**
+ * @file SQL string escaping utilities for injection prevention
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ */
+
+/**
  * A mapping of SQL special characters to their escaped counterparts.
  * This map handles the most common SQL injection vectors and special characters
  * that need escaping in SQL string literals.

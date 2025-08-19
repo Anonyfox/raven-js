@@ -1,4 +1,13 @@
 /**
+ * @file Markdown template literal processing with comprehensive syntax support
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ */
+
+/**
  * Template literal function for parsing markdown into HTML.
  *
  * A lightweight, deterministic markdown parser that converts markdown text to HTML.

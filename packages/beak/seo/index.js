@@ -1,4 +1,11 @@
 /**
+ * @file SEO meta tag generators for comprehensive social media and search engine optimization
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ *
  * @packageDocumentation
  *
  * Zero-config SEO meta tag generators for modern web apps.

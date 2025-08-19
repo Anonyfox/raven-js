@@ -1,3 +1,12 @@
+/**
+ * @file Multi-process clustered server adapter
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ */
+
 import cluster from "node:cluster";
 import { availableParallelism } from "node:os";
 import { NodeHttp } from "./node-http.js";

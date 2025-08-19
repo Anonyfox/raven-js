@@ -1,4 +1,13 @@
 /**
+ * @file Value stringification utilities for HTML template interpolation
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ */
+
+/**
  * Recursively flattens an array and joins all elements with empty string.
  * Uses a WeakSet to detect circular references and prevent infinite recursion.
  * @param {Array<*>} arr - The array to flatten.

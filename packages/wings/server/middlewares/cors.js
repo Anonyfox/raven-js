@@ -1,5 +1,5 @@
 /**
- * @fileoverview Wings CORS Middleware - Cross-Origin Resource Sharing made simple
+ * @file Wings CORS Middleware - Cross-Origin Resource Sharing made simple
  *
  * This middleware provides comprehensive CORS (Cross-Origin Resource Sharing) support
  * for Wings applications, enabling secure cross-origin requests from web browsers.
@@ -51,8 +51,11 @@
  * });
  * ```
  *
- * @author RavenJS Team
- * @since 0.2.7
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
  */
 
 import { Middleware } from "../../core/middleware.js";

@@ -1,4 +1,13 @@
 /**
+ * @file Value stringification utilities for JavaScript template interpolation
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ */
+
+/**
  * Converts a value to a string, joining arrays if necessary.
  *
  * This function handles:

@@ -1,12 +1,10 @@
 /**
- * @fileoverview Attack pattern detection utilities for security monitoring
- *
- * Provides utilities for detecting various types of attacks including SQL injection,
- * XSS attempts, path traversal, and other suspicious patterns in requests.
- * Uses efficient pattern matching for production performance.
- *
- * @author RavenJS Team
- * @since 0.3.0
+ * @file Attack pattern detection utilities for security monitoring
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
  */
 
 /**

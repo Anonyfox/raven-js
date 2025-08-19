@@ -1,5 +1,5 @@
 /**
- * @fileoverview Wings Assets Middleware - Static file serving with transparent multi-source support
+ * @file Wings Assets Middleware - Static file serving with transparent multi-source support
  *
  * This middleware provides seamless static file serving with intelligent source detection.
  * It automatically chooses the best available asset source without requiring configuration,
@@ -83,8 +83,11 @@
  * router.use(assets);
  * ```
  *
- * @author RavenJS Team
- * @since 0.2.8
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
  */
 
 import { promises as fs } from "node:fs";

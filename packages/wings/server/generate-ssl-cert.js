@@ -1,4 +1,12 @@
 /**
+ * @file SSL certificate generation utilities for HTTPS
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ *
+
  * Generate a self-signed SSL certificate for development use.
  *
  * Creates a new RSA key pair and self-signed certificate suitable for HTTPS development servers.

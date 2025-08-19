@@ -1,4 +1,12 @@
 /**
+ * @file Trie data structure for efficient route matching
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ *
+
  * Trie data structure for fast route matching including wildcards and named param matches.
  *
  * see: https://www.enjoyalgorithms.com/blog/introduction-to-trie-data-structure

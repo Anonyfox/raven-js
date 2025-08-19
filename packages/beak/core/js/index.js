@@ -1,3 +1,12 @@
+/**
+ * @file JavaScript template literal processing with script tag generation
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ */
+
 import { processJSTemplate } from "./template-processor.js";
 
 /**

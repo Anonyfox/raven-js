@@ -1,3 +1,12 @@
+/**
+ * @file Code block parsing functionality for markdown syntax
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ */
+
 import { NODE_TYPES, REGEX_PATTERNS } from "../types.js";
 
 /**

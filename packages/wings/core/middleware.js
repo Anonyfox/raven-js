@@ -1,4 +1,12 @@
 /**
+ * @file Middleware composition and execution utilities
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ *
+
  * **Middleware** - Request processing pipeline component.
  *
  * The Middleware class encapsulates a function that can be executed during
