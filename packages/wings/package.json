@@ -8,6 +8,7 @@
     "*.d.ts",
     "core/**/*.js",
     "server/**/*.js",
+    "terminal/**/*.js",
     "types.*.d.ts",
     "LICENSE",
     "README.md"
@@ -20,6 +21,10 @@
     "./server": {
       "import": "./server/index.js",
       "types": "./types.server.d.ts"
+    },
+    "./terminal": {
+      "import": "./terminal/index.js",
+      "types": "./types.terminal.d.ts"
     }
   },
   "scripts": {
@@ -28,7 +33,7 @@
     "test": "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
     "test:code": "timeout 30s node --no-warnings --test --test-reporter=dot",
     "test:coverage": "timeout 30s node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
-    "test:style": "npx biome lint --error-on-warnings ./core ./server",
+    "test:style": "npx biome lint --error-on-warnings ./core ./server ./terminal",
     "test:types": "tsc --noEmit --project jsconfig.json"
   },
   "keywords": [
