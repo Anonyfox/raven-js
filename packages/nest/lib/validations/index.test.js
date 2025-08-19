@@ -6,6 +6,7 @@ describe("lib/rules/index.js", () => {
 	it("should export main validation functions", () => {
 		assert.strictEqual(typeof rules.validate, "function");
 		assert.strictEqual(typeof rules.validatePackage, "function");
+		assert.strictEqual(typeof rules.validateWorkspaceRoot, "function");
 		assert.strictEqual(typeof rules.IsWorkspace, "function");
 		assert.strictEqual(typeof rules.ListWorkspacePackages, "function");
 	});
@@ -37,5 +38,41 @@ describe("lib/rules/index.js", () => {
 		assert.throws(() => {
 			rules.validatePackage("/non/existent/path");
 		}, /is not a valid npm package/);
+	});
+
+	it("should validateWorkspaceRoot function signature", () => {
+		// Test input validation
+		assert.throws(() => {
+			rules.validateWorkspaceRoot("");
+		}, /Workspace path must be a non-empty string/);
+
+		assert.throws(() => {
+			rules.validateWorkspaceRoot(null);
+		}, /Workspace path must be a non-empty string/);
+	});
+
+	it("should handle invalid workspace path", () => {
+		// Test with non-existent path
+		assert.throws(() => {
+			rules.validateWorkspaceRoot("/non/existent/path");
+		}, /is not a valid npm package/);
+	});
+
+	it("should validateWorkspaceRoot with actual workspace", () => {
+		// Test with actual workspace root path
+		const workspaceRoot = "/Users/fox/projects/github.com/Anonyfox/ravenjs";
+
+		// This should pass since the workspace root should be valid
+		const result = rules.validateWorkspaceRoot(workspaceRoot);
+		assert.strictEqual(result, true);
+	});
+
+	it("should validate function with actual workspace", () => {
+		// Test the main validate function with workspace
+		const workspaceRoot = "/Users/fox/projects/github.com/Anonyfox/ravenjs";
+
+		// This should pass and validate the workspace + all packages
+		const result = rules.validate(workspaceRoot);
+		assert.strictEqual(result, true);
 	});
 });

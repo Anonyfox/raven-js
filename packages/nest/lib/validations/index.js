@@ -23,6 +23,53 @@ import {
 } from "./package-json/index.js";
 
 /**
+ * Validates a workspace root by running validation rules appropriate for workspace roots.
+ * Throws on the first validation error encountered.
+ * @param {string} workspacePath - The path to the workspace root directory
+ * @returns {boolean} True if all validations pass, throws error otherwise
+ * @throws {Error} Informative error message if any validation fails
+ */
+export const validateWorkspaceRoot = (workspacePath) => {
+	if (typeof workspacePath !== "string" || workspacePath === "") {
+		throw new Error("Workspace path must be a non-empty string");
+	}
+
+	// 1. Basic existence check (fastest)
+	if (!IsNpmPackage(workspacePath)) {
+		throw new Error(
+			`Path ${workspacePath} is not a valid npm package (missing package.json)`,
+		);
+	}
+
+	// 2. Package.json validation (simple to complex)
+	// Start with structural validation that also parses JSON
+	PackageJsonHasValidStructure(workspacePath);
+
+	// Basic package.json fields (simple string validations)
+	HasValidName(workspacePath);
+	HasValidSemver(workspacePath);
+	HasValidType(workspacePath);
+	HasValidLicense(workspacePath);
+
+	// More complex package.json fields
+	HasValidAuthor(workspacePath);
+	HasValidHomepage(workspacePath);
+	HasValidRepository(workspacePath);
+	HasValidBugs(workspacePath);
+	HasValidEngines(workspacePath);
+
+	// Skip HasValidPublishConfig - workspace roots are typically not published
+	// Skip HasValidScripts - workspace roots have different script requirements
+
+	// 3. Folder/file structure validation (README.md, LICENSE, main entry point)
+	FolderHasValidStructure(workspacePath);
+
+	// Skip HasValidTestFiles - workspace roots don't have the same test requirements
+
+	return true;
+};
+
+/**
  * Validates a package by running all validation rules in a logical order.
  * Throws on the first validation error encountered.
  * @param {string} packagePath - The path to the package directory
@@ -85,7 +132,7 @@ export const validate = (path) => {
 	// Check if this is a workspace
 	if (IsWorkspace(path)) {
 		// Validate workspace root first
-		// validatePackage(path); // skip for now
+		validateWorkspaceRoot(path);
 
 		// Get all workspace packages and validate each
 		const packagePaths = PackageJsonListWorkspacePackages(path);
