@@ -53,14 +53,9 @@ import {
 	generateTypeDoc,
 	getDocsPath,
 } from "../lib/docs/index.js";
-import {
-	bumpVersion,
-	Folder,
-	listPackages,
-	listPublicPackages,
-	updatePackageVersions,
-	validatePackage,
-} from "../lib/index.js";
+import { bumpVersion, updatePackageVersions } from "../lib/index.js";
+import { PackageJsonListPublicPackages } from "../lib/queries/index.js";
+import { validate } from "../lib/rules/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -186,59 +181,13 @@ async function handleValidateCommand(args, _options) {
 
 	console.log(`🦅 Validating: ${targetPath}`);
 
-	// Create a Folder instance for the target path
-	const folder = new Folder(resolvedPath);
-
-	// Check if this is a workspace
-	const workspacePackages = listPackages(folder);
-
-	if (workspacePackages) {
-		// This is a workspace - validate all packages including root
-		console.log("📦 Detected workspace - validating all packages...");
-
-		let allValid = true;
-		const packagesToValidate = [".", ...workspacePackages];
-
-		for (const packagePath of packagesToValidate) {
-			const fullPath =
-				packagePath === "." ? resolvedPath : `${resolvedPath}/${packagePath}`;
-			const packageName = packagePath === "." ? "workspace root" : packagePath;
-
-			console.log(`\n🔍 Validating ${packageName}...`);
-			const result = validatePackage(fullPath);
-
-			if (result.valid) {
-				console.log(`✅ ${packageName}: Valid`);
-			} else {
-				console.log(`❌ ${packageName}: Invalid`);
-				allValid = false;
-				for (const error of result.errors) {
-					console.log(`   ${error.code}: ${error.message}`);
-				}
-			}
-		}
-
-		if (!allValid) {
-			console.log("\n❌ Workspace validation failed");
-			process.exit(1);
-		} else {
-			console.log("\n✅ Workspace validation passed");
-		}
-	} else {
-		// This is a single package - validate just this package
-		console.log("📦 Detected single package - validating...");
-
-		const result = validatePackage(resolvedPath);
-
-		if (result.valid) {
-			console.log("✅ Package is valid");
-		} else {
-			console.log("❌ Package validation failed:");
-			for (const error of result.errors) {
-				console.log(`   ${error.code}: ${error.message}`);
-			}
-			process.exit(1);
-		}
+	try {
+		validate(resolvedPath);
+		console.log("✅ Validation passed");
+	} catch (/** @type {unknown} */ error) {
+		const message = error instanceof Error ? error.message : String(error);
+		console.log(`❌ Validation failed: ${message}`);
+		process.exit(1);
 	}
 }
 
@@ -289,13 +238,21 @@ async function handleBuildDocsCommand(args, _options) {
 		const docsPath = getDocsPath(resolvedPath);
 		console.log(`📁 Docs folder: ${docsPath}`);
 
-		// Create a Folder instance for the workspace
-		const workspaceFolder = new Folder(resolvedPath);
+		// Store the workspace path
+		const workspacePath = resolvedPath;
 
 		// Check if this is a workspace or single package
-		const workspacePackages = listPublicPackages(workspaceFolder);
+		let workspacePackages = null;
+		try {
+			if (workspacePath) {
+				workspacePackages = PackageJsonListPublicPackages(workspacePath);
+			}
+		} catch {
+			// Not a workspace
+			workspacePackages = null;
+		}
 
-		if (workspacePackages) {
+		if (workspacePackages && workspacePackages.length > 0) {
 			// This is a workspace - build docs for all packages
 			console.log("📦 Detected workspace - building docs for all packages...");
 
@@ -311,7 +268,7 @@ async function handleBuildDocsCommand(args, _options) {
 				const packageName = packagePath.split("/").pop();
 				if (packageName) {
 					console.log(`\n📦 Building docs for ${packageName}...`);
-					await buildPackageDocs(packageName, workspaceFolder, docsPath, true);
+					await buildPackageDocs(packageName, workspacePath, docsPath, true);
 				}
 			}
 
@@ -324,10 +281,7 @@ async function handleBuildDocsCommand(args, _options) {
 			const packageNames = workspacePackages
 				.map((p) => p.split("/").pop())
 				.filter((p) => p !== undefined);
-			const landingPageHtml = generateLandingPage(
-				packageNames,
-				workspaceFolder,
-			);
+			const landingPageHtml = generateLandingPage(packageNames, workspacePath);
 			writeFileSync(join(docsPath, "index.html"), landingPageHtml);
 
 			console.log("\n✅ Workspace documentation built successfully");
@@ -347,7 +301,7 @@ async function handleBuildDocsCommand(args, _options) {
 				mkdirSync(docsPath, { recursive: true });
 			}
 
-			await buildPackageDocs(packageName, workspaceFolder, docsPath, false);
+			await buildPackageDocs(packageName, workspacePath, docsPath, false);
 
 			// Copy favicon to package docs directory
 			console.log("\n🖼️  Copying favicon...");
@@ -369,29 +323,22 @@ async function handleBuildDocsCommand(args, _options) {
 /**
  * Build documentation for a single package
  * @param {string} packageName - Name of the package
- * @param {import('../lib/folder.js').Folder} workspaceFolder - Workspace folder instance
+ * @param {string} workspacePath - Path to workspace root
  * @param {string} docsPath - Path to the docs folder
  * @param {boolean} isWorkspace - Whether this is being called from workspace mode
  */
 async function buildPackageDocs(
 	packageName,
-	workspaceFolder,
+	workspacePath,
 	docsPath,
 	isWorkspace = true,
 ) {
-	const packageFolder = isWorkspace
-		? new Folder(
-				join(
-					/** @type {string} */ (workspaceFolder.rootPath),
-					"packages",
-					packageName,
-				),
-			)
-		: new Folder(workspaceFolder.rootPath || process.cwd());
-
 	// Generate context file
 	console.log(`  📄 Generating context for ${packageName}...`);
-	const contextJson = generateContextJson(packageFolder);
+	const packagePath = isWorkspace
+		? join(workspacePath, "packages", packageName)
+		: workspacePath;
+	const contextJson = generateContextJson(packagePath);
 	if (contextJson) {
 		writeFileSync(
 			join(docsPath, `${packageName}.context.json`),
@@ -404,7 +351,7 @@ async function buildPackageDocs(
 
 	// Generate bundles
 	console.log(`  📦 Generating bundles for ${packageName}...`);
-	const bundles = await generateAllBundles(packageFolder, packageName);
+	const bundles = await generateAllBundles(packagePath, packageName);
 	if (bundles) {
 		// Write bundle files directly to docs folder with new naming pattern
 		if (bundles.cjs) {
@@ -464,7 +411,7 @@ async function buildPackageDocs(
 	// Generate TypeDoc documentation
 	console.log(`  📚 Generating TypeDoc documentation for ${packageName}...`);
 	const packageDocsPath = join(docsPath, packageName);
-	const typeDocSuccess = await generateTypeDoc(packageFolder, packageDocsPath);
+	const typeDocSuccess = await generateTypeDoc(packagePath, packageDocsPath);
 	if (typeDocSuccess) {
 		console.log(`  ✅ TypeDoc documentation generated: ${packageName}/`);
 	} else {
@@ -476,8 +423,8 @@ async function buildPackageDocs(
 	// Copy favicon to package docs directory
 	console.log(`  🖼️  Copying favicon for ${packageName}...`);
 	const workspaceRoot = isWorkspace
-		? /** @type {string} */ (workspaceFolder.rootPath)
-		: workspaceFolder.rootPath || process.cwd();
+		? workspacePath
+		: workspacePath || process.cwd();
 	copyFavicon(packageDocsPath, workspaceRoot);
 }
 

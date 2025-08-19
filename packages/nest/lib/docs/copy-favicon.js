@@ -34,7 +34,9 @@ export function copyFavicon(docsPath, workspaceRoot) {
 		console.log("  ✅ Favicon copied to docs directory");
 		return true;
 	} catch (error) {
-		console.log(`  ⚠️  Failed to copy favicon: ${error.message}`);
+		console.log(
+			`  ⚠️  Failed to copy favicon: ${error instanceof Error ? error.message : String(error)}`,
+		);
 		return false;
 	}
 }

@@ -1,3 +1,4 @@
+import { escapeSpecialCharacters } from "./escape-special-characters.js";
 import { _renderHtmlFast, _renderSafeHtmlFast } from "./template-renderer.js";
 
 /**
@@ -224,3 +225,21 @@ export const html = (strings, ...values) => _renderHtmlFast(strings, values);
  */
 export const safeHtml = (strings, ...values) =>
 	_renderSafeHtmlFast(strings, values);
+
+/**
+ * Escapes HTML special characters in a string to prevent XSS attacks.
+ *
+ * This function converts HTML special characters (&, <, >, ", ') to their
+ * corresponding HTML entities to safely display user input in HTML context.
+ *
+ * @param {*} str - The value to escape (will be converted to string).
+ * @returns {string} The escaped string.
+ *
+ * @example
+ * import { escapeHtml } from '@raven-js/beak';
+ *
+ * const userInput = '<script>alert("XSS")</script>';
+ * const safe = escapeHtml(userInput);
+ * // Result: "&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;"
+ */
+export const escapeHtml = escapeSpecialCharacters;

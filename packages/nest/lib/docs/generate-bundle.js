@@ -4,23 +4,24 @@
  * @license MIT
  */
 
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { build } from "esbuild";
 
 /**
  * Get entry point for a package
- * @param {import('../folder.js').Folder} folder - Folder instance containing package files
+ * @param {string} packagePath - Path to the package directory
  * @returns {string|null} Entry point path or null if not found
  */
-export function getBundleEntryPoint(folder) {
+export function getBundleEntryPoint(packagePath) {
 	try {
-		const packageJsonContent = folder.getFile("package.json");
-		if (!packageJsonContent) {
+		const packageJsonPath = join(packagePath, "package.json");
+		if (!existsSync(packageJsonPath)) {
 			return null;
 		}
 
+		const packageJsonContent = readFileSync(packageJsonPath, "utf8");
 		const packageJson = JSON.parse(packageJsonContent);
 
 		// Get the main entry point
@@ -32,10 +33,11 @@ export function getBundleEntryPoint(folder) {
 			entryPoint = "index.js";
 		}
 
-		// Check if the entry point exists in the folder
+		// Check if the entry point exists in the package
 		// Remove leading ./ if present for comparison
 		const normalizedEntryPoint = entryPoint.replace(/^\.\//, "");
-		if (!folder.hasFile(normalizedEntryPoint)) {
+		const entryPointPath = join(packagePath, normalizedEntryPoint);
+		if (!existsSync(entryPointPath)) {
 			return null;
 		}
 
@@ -47,111 +49,33 @@ export function getBundleEntryPoint(folder) {
 
 /**
  * Generate CommonJS bundle
- * @param {import('../folder.js').Folder} folder - Folder instance containing package files
+ * @param {string} packagePath - Path to the package directory
  * @param {string} packageName - Name of the package for global variable
  * @returns {Promise<{code: string, map: string}|null>} Bundle content and sourcemap or null if generation fails
  */
-export async function generateCommonJSBundle(folder, packageName) {
+export async function generateCommonJSBundle(packagePath, packageName) {
 	try {
-		const entryPoint = getBundleEntryPoint(folder);
+		const entryPoint = getBundleEntryPoint(packagePath);
 		if (!entryPoint) {
 			return null;
 		}
 
-		// For test environments where rootPath might be null, use a virtual filesystem approach
-		if (!folder.rootPath) {
-			// Create a virtual filesystem for esbuild
-			const virtualFS = /** @type {Record<string, string>} */ ({});
-			for (const filePath of folder.getFilePaths()) {
-				const content = folder.getFile(filePath);
-				if (content !== undefined) {
-					virtualFS[filePath] = content;
-				}
-			}
-
-			const result = await build({
-				entryPoints: [entryPoint],
-				bundle: true,
-				format: "iife",
-				minify: true,
-				sourcemap: true,
-				target: "es2015",
-				platform: "browser",
-				globalName: `RavenJS_${packageName.charAt(0).toUpperCase() + packageName.slice(1)}`,
-				write: false,
-				plugins: [
-					{
-						name: "virtual-fs",
-						setup(build) {
-							build.onResolve({ filter: /.*/ }, (args) => {
-								// Handle relative imports
-								let resolvedPath = args.path;
-
-								// If it's a relative import, resolve it relative to the importer
-								if (args.path.startsWith("./") || args.path.startsWith("../")) {
-									const importerDir = args.importer
-										? args.importer.split("/").slice(0, -1).join("/")
-										: "";
-									resolvedPath = importerDir
-										? `${importerDir}/${args.path}`
-										: args.path;
-								}
-
-								// Try exact match first
-								if (virtualFS[resolvedPath]) {
-									return { path: resolvedPath, namespace: "virtual" };
-								}
-
-								// Try with .js extension
-								if (virtualFS[`${resolvedPath}.js`]) {
-									return { path: `${resolvedPath}.js`, namespace: "virtual" };
-								}
-
-								// Try index.js in directory
-								if (virtualFS[`${resolvedPath}/index.js`]) {
-									return {
-										path: `${resolvedPath}/index.js`,
-										namespace: "virtual",
-									};
-								}
-
-								return null;
-							});
-							build.onLoad({ filter: /.*/, namespace: "virtual" }, (args) => {
-								return { contents: virtualFS[args.path] };
-							});
-						},
-					},
-				],
-			});
-
-			const outputFile = result.outputFiles?.[0];
-			const sourceMapFile = result.outputFiles?.[1];
-			return outputFile
-				? {
-						code: outputFile.text,
-						map: sourceMapFile?.text || "",
-					}
-				: null;
-		}
-
-		// Use the actual filesystem since the package folder is already loaded
 		// Create a temporary directory for esbuild to write files
 		const tempDir = mkdtempSync(join(tmpdir(), "esbuild-"));
 		const outFile = join(tempDir, "bundle.js");
 
 		try {
 			await build({
-				entryPoints: [entryPoint],
+				entryPoints: [join(packagePath, entryPoint)],
 				bundle: true,
 				format: "iife",
-				minify: true,
+				minify: false,
 				sourcemap: true,
 				target: "es2015",
 				platform: "browser",
 				globalName: `RavenJS_${packageName.charAt(0).toUpperCase() + packageName.slice(1)}`,
 				outfile: outFile,
-				absWorkingDir: folder.rootPath,
+				absWorkingDir: packagePath,
 			});
 
 			// Read the generated files
@@ -174,102 +98,24 @@ export async function generateCommonJSBundle(folder, packageName) {
 
 /**
  * Generate CommonJS bundle (minified)
- * @param {import('../folder.js').Folder} folder - Folder instance containing package files
+ * @param {string} packagePath - Path to the package directory
  * @param {string} packageName - Name of the package for global variable
  * @returns {Promise<{code: string, map: string}|null>} Bundle content and sourcemap or null if generation fails
  */
-export async function generateCommonJSMinifiedBundle(folder, packageName) {
+export async function generateCommonJSMinifiedBundle(packagePath, packageName) {
 	try {
-		const entryPoint = getBundleEntryPoint(folder);
+		const entryPoint = getBundleEntryPoint(packagePath);
 		if (!entryPoint) {
 			return null;
 		}
 
-		// For test environments where rootPath might be null, use a virtual filesystem approach
-		if (!folder.rootPath) {
-			// Create a virtual filesystem for esbuild
-			const virtualFS = /** @type {Record<string, string>} */ ({});
-			for (const filePath of folder.getFilePaths()) {
-				const content = folder.getFile(filePath);
-				if (content !== undefined) {
-					virtualFS[filePath] = content;
-				}
-			}
-
-			const result = await build({
-				entryPoints: [entryPoint],
-				bundle: true,
-				format: "iife",
-				minify: true,
-				sourcemap: true,
-				target: "es2015",
-				platform: "browser",
-				globalName: `RavenJS_${packageName.charAt(0).toUpperCase() + packageName.slice(1)}`,
-				write: false,
-				plugins: [
-					{
-						name: "virtual-fs",
-						setup(build) {
-							build.onResolve({ filter: /.*/ }, (args) => {
-								// Handle relative imports
-								let resolvedPath = args.path;
-
-								// If it's a relative import, resolve it relative to the importer
-								if (args.path.startsWith("./") || args.path.startsWith("../")) {
-									const importerDir = args.importer
-										? args.importer.split("/").slice(0, -1).join("/")
-										: "";
-									resolvedPath = importerDir
-										? `${importerDir}/${args.path}`
-										: args.path;
-								}
-
-								// Try exact match first
-								if (virtualFS[resolvedPath]) {
-									return { path: resolvedPath, namespace: "virtual" };
-								}
-
-								// Try with .js extension
-								if (virtualFS[`${resolvedPath}.js`]) {
-									return { path: `${resolvedPath}.js`, namespace: "virtual" };
-								}
-
-								// Try index.js in directory
-								if (virtualFS[`${resolvedPath}/index.js`]) {
-									return {
-										path: `${resolvedPath}/index.js`,
-										namespace: "virtual",
-									};
-								}
-
-								return null;
-							});
-							build.onLoad({ filter: /.*/, namespace: "virtual" }, (args) => {
-								return { contents: virtualFS[args.path] };
-							});
-						},
-					},
-				],
-			});
-
-			const outputFile = result.outputFiles?.[0];
-			const sourceMapFile = result.outputFiles?.[1];
-			return outputFile
-				? {
-						code: outputFile.text,
-						map: sourceMapFile?.text || "",
-					}
-				: null;
-		}
-
-		// Use the actual filesystem since the package folder is already loaded
 		// Create a temporary directory for esbuild to write files
 		const tempDir = mkdtempSync(join(tmpdir(), "esbuild-"));
 		const outFile = join(tempDir, "bundle.js");
 
 		try {
 			await build({
-				entryPoints: [entryPoint],
+				entryPoints: [join(packagePath, entryPoint)],
 				bundle: true,
 				format: "iife",
 				minify: true,
@@ -278,7 +124,7 @@ export async function generateCommonJSMinifiedBundle(folder, packageName) {
 				platform: "browser",
 				globalName: `RavenJS_${packageName.charAt(0).toUpperCase() + packageName.slice(1)}`,
 				outfile: outFile,
-				absWorkingDir: folder.rootPath,
+				absWorkingDir: packagePath,
 			});
 
 			// Read the generated files
@@ -301,108 +147,31 @@ export async function generateCommonJSMinifiedBundle(folder, packageName) {
 
 /**
  * Generate ESM bundle (development)
- * @param {import('../folder.js').Folder} folder - Folder instance containing package files
+ * @param {string} packagePath - Path to the package directory
  * @returns {Promise<{code: string, map: string}|null>} Bundle content and sourcemap or null if generation fails
  */
-export async function generateESMBundle(folder) {
+export async function generateESMBundle(packagePath) {
 	try {
-		const entryPoint = getBundleEntryPoint(folder);
+		const entryPoint = getBundleEntryPoint(packagePath);
 		if (!entryPoint) {
 			return null;
 		}
 
-		// For test environments where rootPath might be null, use a virtual filesystem approach
-		if (!folder.rootPath) {
-			// Create a virtual filesystem for esbuild
-			const virtualFS = /** @type {Record<string, string>} */ ({});
-			for (const filePath of folder.getFilePaths()) {
-				const content = folder.getFile(filePath);
-				if (content !== undefined) {
-					virtualFS[filePath] = content;
-				}
-			}
-
-			const result = await build({
-				entryPoints: [entryPoint],
-				bundle: true,
-				format: "esm",
-				minify: false,
-				sourcemap: true,
-				target: "es2020",
-				platform: "browser",
-				write: false,
-				plugins: [
-					{
-						name: "virtual-fs",
-						setup(build) {
-							build.onResolve({ filter: /.*/ }, (args) => {
-								// Handle relative imports
-								let resolvedPath = args.path;
-
-								// If it's a relative import, resolve it relative to the importer
-								if (args.path.startsWith("./") || args.path.startsWith("../")) {
-									const importerDir = args.importer
-										? args.importer.split("/").slice(0, -1).join("/")
-										: "";
-									resolvedPath = importerDir
-										? `${importerDir}/${args.path}`
-										: args.path;
-								}
-
-								// Try exact match first
-								if (virtualFS[resolvedPath]) {
-									return { path: resolvedPath, namespace: "virtual" };
-								}
-
-								// Try with .js extension
-								if (virtualFS[`${resolvedPath}.js`]) {
-									return { path: `${resolvedPath}.js`, namespace: "virtual" };
-								}
-
-								// Try index.js in directory
-								if (virtualFS[`${resolvedPath}/index.js`]) {
-									return {
-										path: `${resolvedPath}/index.js`,
-										namespace: "virtual",
-									};
-								}
-
-								return null;
-							});
-							build.onLoad({ filter: /.*/, namespace: "virtual" }, (args) => {
-								return { contents: virtualFS[args.path] };
-							});
-						},
-					},
-				],
-			});
-
-			const outputFile = result.outputFiles?.[0];
-			const sourceMapFile = result.outputFiles?.[1];
-			return outputFile
-				? {
-						code: outputFile.text,
-						map: sourceMapFile?.text || "",
-					}
-				: null;
-		}
-
-		// Use the actual filesystem since the package folder is already loaded
 		// Create a temporary directory for esbuild to write files
 		const tempDir = mkdtempSync(join(tmpdir(), "esbuild-"));
 		const outFile = join(tempDir, "bundle.js");
 
 		try {
 			await build({
-				entryPoints: [entryPoint],
+				entryPoints: [join(packagePath, entryPoint)],
 				bundle: true,
 				format: "esm",
 				minify: false,
 				sourcemap: true,
-				target: "es2020",
+				target: "es2015",
 				platform: "browser",
 				outfile: outFile,
-				absWorkingDir: folder.rootPath,
+				absWorkingDir: packagePath,
 			});
 
 			// Read the generated files
@@ -424,111 +193,32 @@ export async function generateESMBundle(folder) {
 }
 
 /**
- * Generate ESM bundle (production)
- * @param {import('../folder.js').Folder} folder - Folder instance containing package files
+ * Generate ESM bundle (minified)
+ * @param {string} packagePath - Path to the package directory
  * @returns {Promise<{code: string, map: string}|null>} Bundle content and sourcemap or null if generation fails
  */
-export async function generateESMMinifiedBundle(folder) {
+export async function generateESMMinifiedBundle(packagePath) {
 	try {
-		const entryPoint = getBundleEntryPoint(folder);
+		const entryPoint = getBundleEntryPoint(packagePath);
 		if (!entryPoint) {
 			return null;
 		}
 
-		// For test environments where rootPath might be null, use a virtual filesystem approach
-		if (!folder.rootPath) {
-			// Create a virtual filesystem for esbuild
-			const virtualFS = /** @type {Record<string, string>} */ ({});
-			for (const filePath of folder.getFilePaths()) {
-				const content = folder.getFile(filePath);
-				if (content !== undefined) {
-					virtualFS[filePath] = content;
-				}
-			}
-
-			const result = await build({
-				entryPoints: [entryPoint],
-				bundle: true,
-				format: "esm",
-				minify: true,
-				sourcemap: true,
-				target: "es2020",
-				platform: "browser",
-				mangleProps: /^_/, // Mangle private properties
-				write: false,
-				plugins: [
-					{
-						name: "virtual-fs",
-						setup(build) {
-							build.onResolve({ filter: /.*/ }, (args) => {
-								// Handle relative imports
-								let resolvedPath = args.path;
-
-								// If it's a relative import, resolve it relative to the importer
-								if (args.path.startsWith("./") || args.path.startsWith("../")) {
-									const importerDir = args.importer
-										? args.importer.split("/").slice(0, -1).join("/")
-										: "";
-									resolvedPath = importerDir
-										? `${importerDir}/${args.path}`
-										: args.path;
-								}
-
-								// Try exact match first
-								if (virtualFS[resolvedPath]) {
-									return { path: resolvedPath, namespace: "virtual" };
-								}
-
-								// Try with .js extension
-								if (virtualFS[`${resolvedPath}.js`]) {
-									return { path: `${resolvedPath}.js`, namespace: "virtual" };
-								}
-
-								// Try index.js in directory
-								if (virtualFS[`${resolvedPath}/index.js`]) {
-									return {
-										path: `${resolvedPath}/index.js`,
-										namespace: "virtual",
-									};
-								}
-
-								return null;
-							});
-							build.onLoad({ filter: /.*/, namespace: "virtual" }, (args) => {
-								return { contents: virtualFS[args.path] };
-							});
-						},
-					},
-				],
-			});
-
-			const outputFile = result.outputFiles?.[0];
-			const sourceMapFile = result.outputFiles?.[1];
-			return outputFile
-				? {
-						code: outputFile.text,
-						map: sourceMapFile?.text || "",
-					}
-				: null;
-		}
-
-		// Use the actual filesystem since the package folder is already loaded
 		// Create a temporary directory for esbuild to write files
 		const tempDir = mkdtempSync(join(tmpdir(), "esbuild-"));
 		const outFile = join(tempDir, "bundle.js");
 
 		try {
 			await build({
-				entryPoints: [entryPoint],
+				entryPoints: [join(packagePath, entryPoint)],
 				bundle: true,
 				format: "esm",
 				minify: true,
 				sourcemap: true,
-				target: "es2020",
+				target: "es2015",
 				platform: "browser",
-				mangleProps: /^_/, // Mangle private properties
 				outfile: outFile,
-				absWorkingDir: folder.rootPath,
+				absWorkingDir: packagePath,
 			});
 
 			// Read the generated files
@@ -550,18 +240,18 @@ export async function generateESMMinifiedBundle(folder) {
 }
 
 /**
- * Generate all bundles for a package
- * @param {import('../folder.js').Folder} folder - Folder instance containing package files
- * @param {string} packageName - Name of the package
- * @returns {Promise<import('../types.js').BundleResult|null>} Bundle results or null if generation fails
+ * Generate all bundle types for a package
+ * @param {string} packagePath - Path to the package directory
+ * @param {string} packageName - Name of the package for global variable
+ * @returns {Promise<{cjs: {code: string, map: string}|null, cjsMin: {code: string, map: string}|null, esm: {code: string, map: string}|null, esmMin: {code: string, map: string}|null}|null>} All bundle types or null if generation fails
  */
-export async function generateAllBundles(folder, packageName) {
+export async function generateAllBundles(packagePath, packageName) {
 	try {
 		const [cjs, cjsMin, esm, esmMin] = await Promise.all([
-			generateCommonJSBundle(folder, packageName),
-			generateCommonJSMinifiedBundle(folder, packageName),
-			generateESMBundle(folder),
-			generateESMMinifiedBundle(folder),
+			generateCommonJSBundle(packagePath, packageName),
+			generateCommonJSMinifiedBundle(packagePath, packageName),
+			generateESMBundle(packagePath),
+			generateESMMinifiedBundle(packagePath),
 		]);
 
 		if (!cjs && !cjsMin && !esm && !esmMin) {
@@ -569,7 +259,6 @@ export async function generateAllBundles(folder, packageName) {
 		}
 
 		return {
-			packageName,
 			cjs,
 			cjsMin,
 			esm,
@@ -582,9 +271,9 @@ export async function generateAllBundles(folder, packageName) {
 
 /**
  * Check if package can generate bundles
- * @param {import('../folder.js').Folder} folder - Folder instance containing package files
+ * @param {string} packagePath - Path to the package directory
  * @returns {boolean} True if package can generate bundles
  */
-export function canGenerateBundles(folder) {
-	return getBundleEntryPoint(folder) !== null;
+export function canGenerateBundles(packagePath) {
+	return getBundleEntryPoint(packagePath) !== null;
 }

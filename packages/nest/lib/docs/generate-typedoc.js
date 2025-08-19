@@ -4,18 +4,22 @@
  * @license MIT
  */
 
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
 /**
  * Get entry points for TypeDoc generation
- * @param {import('../folder.js').Folder} folder - Folder instance containing package files
+ * @param {string} packagePath - Path to the package directory
  * @returns {string[]} Array of entry point paths
  */
-export function getEntryPoints(folder) {
+export function getEntryPoints(packagePath) {
 	try {
-		const packageJsonContent = folder.getFile("package.json");
-		if (!packageJsonContent) {
+		const packageJsonPath = join(packagePath, "package.json");
+		if (!existsSync(packageJsonPath)) {
 			return [];
 		}
 
+		const packageJsonContent = readFileSync(packageJsonPath, "utf8");
 		const packageJson = JSON.parse(packageJsonContent);
 
 		// For TypeDoc, we'll use the main entry point and let it discover files through jsconfig.json
@@ -38,19 +42,20 @@ export function getEntryPoints(folder) {
 
 /**
  * Generate TypeDoc configuration for a package
- * @param {import('../folder.js').Folder} folder - Folder instance containing package files
+ * @param {string} packagePath - Path to the package directory
  * @param {string} outputPath - Output directory path
  * @returns {import('../types.js').TypeDocConfig|null} TypeDoc configuration object or null if generation fails
  */
-export function generateTypeDocConfig(folder, outputPath) {
+export function generateTypeDocConfig(packagePath, outputPath) {
 	try {
-		const packageJsonContent = folder.getFile("package.json");
-		if (!packageJsonContent) {
+		const packageJsonPath = join(packagePath, "package.json");
+		if (!existsSync(packageJsonPath)) {
 			return null;
 		}
 
+		const packageJsonContent = readFileSync(packageJsonPath, "utf8");
 		const packageJson = JSON.parse(packageJsonContent);
-		const entryPoints = getEntryPoints(folder);
+		const entryPoints = getEntryPoints(packagePath);
 
 		if (entryPoints.length === 0) {
 			return null;
@@ -71,27 +76,26 @@ export function generateTypeDocConfig(folder, outputPath) {
 
 /**
  * Check if package has valid TypeDoc configuration
- * @param {import('../folder.js').Folder} folder - Folder instance containing package files
+ * @param {string} packagePath - Path to the package directory
  * @returns {boolean} True if package can generate TypeDoc documentation
  */
-export function canGenerateTypeDoc(folder) {
-	const config = generateTypeDocConfig(folder, "./temp");
+export function canGenerateTypeDoc(packagePath) {
+	const config = generateTypeDocConfig(packagePath, "./temp");
 	return config !== null && config.entryPoints.length > 0;
 }
 
 /**
  * Generate TypeDoc documentation for a package
- * @param {import('../folder.js').Folder} folder - Folder instance containing package files
+ * @param {string} packagePath - Path to the package directory
  * @param {string} outputPath - Output directory path
  * @returns {Promise<boolean>} True if documentation was generated successfully
  */
-export async function generateTypeDoc(folder, outputPath) {
+export async function generateTypeDoc(packagePath, outputPath) {
 	// Change to package directory for TypeDoc to work correctly
 	const originalCwd = process.cwd();
-	const packagePath = folder.rootPath || process.cwd();
 
 	try {
-		const config = generateTypeDocConfig(folder, outputPath);
+		const config = generateTypeDocConfig(packagePath, outputPath);
 		if (!config) {
 			return false;
 		}

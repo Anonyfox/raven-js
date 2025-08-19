@@ -9,9 +9,10 @@
     "nest": "bin/nest.js"
   },
   "scripts": {
-    "test": "npm run test:code && npm run test:style",
+    "test": "npm run test:types && npm run test:style && npm run test:code",
     "test:code": "node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js' --test-coverage-include='lib/**/*.js'",
     "test:style": "npx biome lint --error-on-warnings .",
+    "test:types": "tsc --noEmit --project jsconfig.json",
     "nest:validate": "node bin/nest.js validate",
     "nest:docs": "node bin/nest.js build-docs",
     "lint": "npx biome check .",
@@ -42,6 +43,9 @@
   "homepage": "https://ravenjs.dev",
   "engines": {
     "node": ">=22.5.0"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.1.4",

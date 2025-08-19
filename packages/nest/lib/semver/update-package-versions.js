@@ -6,8 +6,7 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { Folder } from "../folder.js";
-import { listPackages } from "../list-packages.js";
+import { PackageJsonListWorkspacePackages } from "../queries/index.js";
 
 /**
  * Update version in all package.json files in a workspace
@@ -16,6 +15,7 @@ import { listPackages } from "../list-packages.js";
  * @returns {Object} Result object with updated packages and any errors
  */
 export function updatePackageVersions(workspacePath, newVersion) {
+	/** @type {{updated: string[], errors: string[], skipped: string[]}} */
 	const result = {
 		updated: [],
 		errors: [],
@@ -23,12 +23,11 @@ export function updatePackageVersions(workspacePath, newVersion) {
 	};
 
 	try {
-		// Create a Folder instance for the workspace
-		const folder = new Folder(workspacePath);
-
 		// Get all packages in the workspace
-		const packages = listPackages(folder);
-		if (!packages) {
+		let packages;
+		try {
+			packages = PackageJsonListWorkspacePackages(workspacePath);
+		} catch {
 			result.errors.push("Not a valid workspace - no packages found");
 			return result;
 		}
@@ -45,7 +44,7 @@ export function updatePackageVersions(workspacePath, newVersion) {
 			result.updated.push("package.json (root)");
 		} catch (error) {
 			result.errors.push(
-				`Failed to update root package.json: ${error.message}`,
+				`Failed to update root package.json: ${error instanceof Error ? error.message : String(error)}`,
 			);
 		}
 
@@ -72,13 +71,17 @@ export function updatePackageVersions(workspacePath, newVersion) {
 				);
 				result.updated.push(packagePath);
 			} catch (error) {
-				result.errors.push(`Failed to update ${packagePath}: ${error.message}`);
+				result.errors.push(
+					`Failed to update ${packagePath}: ${error instanceof Error ? error.message : String(error)}`,
+				);
 			}
 		}
 
 		return result;
 	} catch (error) {
-		result.errors.push(`Workspace error: ${error.message}`);
+		result.errors.push(
+			`Workspace error: ${error instanceof Error ? error.message : String(error)}`,
+		);
 		return result;
 	}
 }

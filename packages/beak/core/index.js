@@ -40,8 +40,8 @@
  * // Result: "<button>Click me</button>"
  */
 
-export * from "./css/index.js";
-export * from "./html/index.js";
-export * from "./js/index.js";
+export { css, style } from "./css/index.js";
+export { html, safeHtml } from "./html/index.js";
+export { js, script, scriptAsync, scriptDefer } from "./js/index.js";
 export { md } from "./md/index.js";
-export * from "./sql/index.js";
+export { sql } from "./sql/index.js";

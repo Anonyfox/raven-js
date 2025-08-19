@@ -4,6 +4,9 @@
  * @license MIT
  */
 
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { css, html } from "../../../beak/core/index.js";
 
 /**
@@ -289,20 +292,22 @@ function PageStyles() {
 /**
  * Generate landing page HTML from package names
  * @param {string[]} packageNames - Array of package names (e.g., ["beak", "nest"])
- * @param {import('../folder.js').Folder} workspaceFolder - Folder instance containing workspace packages
+ * @param {string} workspacePath - Path to the workspace root directory
  * @returns {string} Complete HTML page
  */
-export function generateLandingPage(packageNames, workspaceFolder) {
+export function generateLandingPage(packageNames, workspacePath) {
 	// Process package data
 	const packageData = packageNames
 		.map((pkg) => {
 			try {
-				const packageJsonContent = workspaceFolder.getFile(
+				const packageJsonPath = join(
+					workspacePath,
 					`packages/${pkg}/package.json`,
 				);
-				if (!packageJsonContent) {
+				if (!existsSync(packageJsonPath)) {
 					return null;
 				}
+				const packageJsonContent = readFileSync(packageJsonPath, "utf8");
 
 				const packageJson = JSON.parse(packageJsonContent);
 

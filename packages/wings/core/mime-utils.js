@@ -205,6 +205,11 @@ const mimeTypes = {
  * }
  * ```
  */
+
+/**
+ * @param {string} filename - The filename to analyze
+ * @returns {string} The MIME type for the file extension, or "application/octet-stream" if not found
+ */
 export function getMimeType(filename) {
 	if (!filename || typeof filename !== "string") {
 		return "application/octet-stream";

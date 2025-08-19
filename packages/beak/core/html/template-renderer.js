@@ -48,7 +48,7 @@ export const fastNormalize = (str) => {
  * @param {Function} [escapeFn] - Optional function to escape values.
  * @returns {string} The rendered template as a string.
  */
-export const _renderTemplate = (strings, values, escapeFn = null) => {
+export const _renderTemplate = (strings, values, escapeFn = undefined) => {
 	// Fast path for common case: no values
 	if (values.length === 0) {
 		return fastNormalize(strings[0]);

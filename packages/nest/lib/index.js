@@ -12,27 +12,18 @@
  *
  * @example
  * ```javascript
- * import { validatePackage, validateWorkspace } from '@raven-js/nest';
+ * import { validate } from '@raven-js/nest/rules';
  *
- * // Validate a single package
- * const result = validatePackage('./packages/beak');
+ * // Validate a single package or workspace (auto-detects)
+ * validate('./packages/beak'); // throws on first error
  *
- * // Validate all packages in workspace
- * const workspaceResult = validateWorkspace('.');
+ * // Validate workspace (validates all packages)
+ * validate('.'); // throws on first error
  * ```
  */
 
 export * from "./docs/index.js";
-export { Folder } from "./folder.js";
-export { listPackages, listPublicPackages } from "./list-packages.js";
-export {
-	getPackageInfo,
-	getWorkspacePackages,
-	isValidPackage,
-	readPackageJson,
-	validatePackage,
-	validateWorkspace,
-} from "./package.js";
+// Legacy exports - consider using the new rules/queries system instead
 export * from "./semver/index.js";
 
 /**
@@ -41,23 +32,6 @@ export * from "./semver/index.js";
  */
 export function getVersion() {
 	return "0.1.0";
-}
-
-/**
- * Check if nest is running in development mode
- * @returns {boolean} True if in development mode
- */
-export function isDevelopment() {
-	return process.env.NODE_ENV === "development";
-}
-
-/**
- * Get the workspace root directory
- * @returns {string} Path to the workspace root
- */
-export function getWorkspaceRoot() {
-	// TODO: Implement workspace detection
-	return process.cwd();
 }
 
 /**
