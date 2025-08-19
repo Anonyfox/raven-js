@@ -6,7 +6,6 @@
  * @see {@link https://ravenjs.dev}
  * @see {@link https://anonyfox.com}
  *
- * @packageDocumentation
  *
  * Zero-config SEO meta tag generators for modern web apps.
  *

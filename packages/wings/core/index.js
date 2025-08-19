@@ -91,7 +91,6 @@
  * - **Memory Usage**: ~1KB overhead for typical applications
  * - **Bundle Size**: Minimal with tree-shaking support
  *
- * @packageDocumentation
  */
 
 export * from "./context.js";

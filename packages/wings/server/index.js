@@ -7,7 +7,6 @@
  * @see {@link https://anonyfox.com}
  *
 
- * @packageDocumentation
  *
  * # Wings Server - Node.js Backend Runtime
  *

@@ -6,7 +6,6 @@
  * @see {@link https://ravenjs.dev}
  * @see {@link https://anonyfox.com}
  *
- * @packageDocumentation
  *
  * This module leverages JavaScript's tagged template literals to provide
  * a powerful and flexible templating engine, similar to JSX. It is the root
