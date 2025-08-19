@@ -7,253 +7,95 @@
  */
 
 /**
+ * @file HTML template literals with performance optimization and XSS protection
  *
- * HTML template literal processing with XSS protection and dynamic content
- * interpolation
+ * Tagged template functions for safe HTML generation. Provides fast rendering
+ * with optional content escaping for untrusted input. Features whitespace
+ * normalization, array flattening, and performance caching.
  */
 
 import { escapeSpecialCharacters } from "./escape-special-characters.js";
 import { _renderHtmlFast, _renderSafeHtmlFast } from "./template-renderer.js";
 
 /**
- * The main template tag function for creating HTML templates.
+ * Tagged template literal for trusted HTML content.
  *
- * This function uses JavaScript's native tagged template literals to create HTML strings
- * with dynamic content interpolation. It does NOT escape the input by default, trusting
- * the developer to provide safe content. For untrusted input, use `safeHtml` instead.
+ * **Performance:** Zero-copy for static templates, optimized fast paths for
+ * single-value interpolation. String cache reduces repeated normalization overhead.
  *
- * **How it works:**
- * - Takes template strings and dynamic values as arguments
- * - Interpolates values into the template at runtime
- * - Automatically handles arrays by flattening them
- * - Normalizes whitespace for clean HTML output
- * - Falsy values (except 0) are excluded from output
+ * **Behavior:**
+ * - Arrays flatten without separators: `[1,2,3]` → `"123"`
+ * - Falsy values excluded except `0`
+ * - Whitespace normalized between tags
+ * - **No XSS protection** - use `safeHtml` for untrusted input
  *
- * @param {TemplateStringsArray} strings - The static parts of the template.
- * @param {...*} values - The dynamic values to be interpolated.
- * @returns {string} The rendered HTML as a string.
+ * @param {TemplateStringsArray} strings - Static template parts
+ * @param {...*} values - Dynamic values for interpolation
+ * @returns {string} Rendered HTML string
  *
  * @example
- * // Basic variable interpolation
- * import { html } from '@raven-js/beak';
- *
- * const name = 'John Doe';
- * const content = html`<div><h1>Hello, ${name}!</h1></div>`;
- * // Result: "<div><h1>Hello, John Doe!</h1></div>"
+ * const name = 'Alice';
+ * html`<h1>Hello, ${name}!</h1>`
+ * // "<h1>Hello, Alice!</h1>"
  *
  * @example
- * // Conditional rendering with ternary operators
- * const isLoggedIn = true;
- * const userContent = html`
- *   <div>
- *     ${isLoggedIn ? html`<span>Welcome back!</span>` : html`<a href="/login">Login</a>`}
- *   </div>
- * `;
+ * const items = ['a', 'b', 'c'];
+ * html`<ul>${items.map(x => html`<li>${x}</li>`)}</ul>`
+ * // "<ul><li>a</li><li>b</li><li>c</li></ul>"
  *
  * @example
- * // List rendering with map()
- * const items = ['apple', 'banana', 'cherry'];
- * const listContent = html`
- *   <ul>
- *     ${items.map(item => html`<li>${item}</li>`)}
- *   </ul>
- * `;
- *
- * @example
- * // Conditional attributes
- * const isDisabled = true;
- * const button = html`<button${isDisabled ? ' disabled' : ''}>Submit</button>`;
- *
- * @example
- * // Dynamic CSS classes
- * const isActive = true;
- * const element = html`<div class="base ${isActive ? 'active' : ''}">Content</div>`;
- *
- * @example
- * // Complex nested structures with data
- * const users = [
- *   { name: 'Alice', isAdmin: true },
- *   { name: 'Bob', isAdmin: false }
- * ];
- * const userList = html`
- *   <div class="users">
- *     ${users.map(user => html`
- *       <div class="user${user.isAdmin ? ' admin' : ''}">
- *         <h3>${user.name}</h3>
- *         ${user.isAdmin ? html`<span class="badge">Admin</span>` : ''}
- *       </div>
- *     `)}
- *   </div>
- * `;
- *
- * @example
- * // Form rendering with dynamic fields
- * const fields = [
- *   { name: 'username', type: 'text', required: true },
- *   { name: 'email', type: 'email', required: true }
- * ];
- * const form = html`
- *   <form>
- *     ${fields.map(field => html`
- *       <div class="field">
- *         <label for="${field.name}">${field.name}</label>
- *         <input type="${field.type}" name="${field.name}"${field.required ? ' required' : ''}>
- *       </div>
- *     `)}
- *   </form>
- * `;
- *
- * @example
- * // Handling falsy values (null, undefined, false, empty string)
- * const user = null;
- * const content = html`<div>${user || 'Guest'}</div>`;
- * // Result: "<div>Guest</div>"
- *
- * @example
- * // Zero is treated as truthy (included in output)
  * const count = 0;
- * const content = html`<div>Count: ${count}</div>`;
- * // Result: "<div>Count: 0</div>"
- *
- * @example
- * // Array flattening
- * const items = [['a', 'b'], ['c', 'd']];
- * const content = html`<div>${items}</div>`;
- * // Result: "<div>abcd</div>"
+ * html`<div>Count: ${count}</div>`
+ * // "<div>Count: 0</div>" (zero preserved)
  */
-export const html = (strings, ...values) => _renderHtmlFast(strings, values);
+export const html = (
+	/** @type {TemplateStringsArray} */ strings,
+	/** @type {...*} */ ...values
+) => _renderHtmlFast(strings, values);
 
 /**
- * A template tag function for creating HTML with escaped content.
+ * Tagged template literal with XSS protection for untrusted content.
  *
- * This function provides XSS protection by automatically escaping HTML special characters
- * in dynamic content. Use this whenever you're dealing with untrusted user input.
- * For trusted content, use `html` for better performance.
+ * **Security:** Escapes `&`, `<`, `>`, `"`, `'` to prevent script injection,
+ * tag injection, and attribute injection attacks.
  *
- * **How it works:**
- * - Escapes HTML special characters: &, <, >, ", '
- * - Converts them to HTML entities: &amp;, &lt;, &gt;, &quot;, &#39;
- * - Prevents script injection and other XSS attacks
- * - Works with all the same patterns as `html` function
+ * **Performance:** Same optimizations as `html` with additional escaping step.
+ * Use `html` for trusted content to avoid escape overhead.
  *
- * **When to use:**
- * - User comments, reviews, or posts
- * - Form input data
- * - API responses from untrusted sources
- * - Any content that comes from external users
+ * **Critical for:** User input, form data, API responses, comments, any external content.
  *
- * @param {TemplateStringsArray} strings - The static parts of the template.
- * @param {...*} values - The dynamic values to be interpolated and escaped.
- * @returns {string} The rendered HTML as a string with escaped content.
+ * @param {TemplateStringsArray} strings - Static template parts
+ * @param {...*} values - Dynamic values for interpolation and escaping
+ * @returns {string} Rendered HTML with escaped dynamic content
  *
  * @example
- * // Basic usage with user input
- * import { safeHtml } from '@raven-js/beak';
- *
  * const userInput = '<script>alert("XSS")</script>';
- * const content = safeHtml`<div><p>${userInput}</p></div>`;
- * // Result: "<div><p>&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;</p></div>"
+ * safeHtml`<p>${userInput}</p>`
+ * // "<p>&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;</p>"
  *
  * @example
- * // User-generated content in forms
- * const userComment = '<img src="x" onerror="alert(\'XSS\')">';
- * const commentSection = safeHtml`
- *   <div class="comment">
- *     <p>${userComment}</p>
- *   </div>
- * `;
- *
- * @example
- * // User data in tables
- * const userData = [
- *   { name: '<script>alert("XSS")</script>', email: 'user@example.com' },
- *   { name: 'Bob', email: '<img src="x" onerror="alert(\'XSS\')">' }
- * ];
- * const userTable = safeHtml`
- *   <table>
- *     <tbody>
- *       ${userData.map(user => safeHtml`
- *         <tr>
- *           <td>${user.name}</td>
- *           <td>${user.email}</td>
- *         </tr>
- *       `)}
- *     </tbody>
- *   </table>
- * `;
- *
- * @example
- * // Mixed trusted and untrusted content
- * const trustedContent = "This is safe content";
- * const untrustedContent = '<script>alert("XSS")</script>';
- * const mixedContent = safeHtml`
- *   <div>
- *     <p>${trustedContent}</p>
- *     <p>${untrustedContent}</p>
- *   </div>
- * `;
- *
- * @example
- * // User input in conditional rendering
- * const userInput = '<script>alert("XSS")</script>';
- * const isLoggedIn = true;
- * const userContent = safeHtml`
- *   <div>
- *     ${isLoggedIn ? safeHtml`<span>Welcome, ${userInput}!</span>` : safeHtml`<a href="/login">Login</a>`}
- *   </div>
- * `;
- *
- * @example
- * // User-generated attributes
- * const maliciousClass = '"><script>alert("XSS")</script><div class="';
- * const isActive = true;
- * const element = safeHtml`<div class="base ${isActive ? maliciousClass : ''}">Content</div>`;
- * // Result: "<div class=\"base &quot;&gt;&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;&lt;div class=&quot;\">Content</div>"
- *
- * @example
- * // Complex user-generated content
- * const userProfile = {
- *   name: '<script>alert("XSS")</script>',
- *   bio: '<img src="x" onerror="alert(\'XSS\')">',
- *   website: 'javascript:alert("XSS")'
- * };
- * const profile = safeHtml`
- *   <div class="user-profile">
- *     <h1>${userProfile.name}</h1>
- *     <p>${userProfile.bio}</p>
- *     <a href="${userProfile.website}">Website</a>
- *   </div>
- * `;
- *
- * @example
- * // Handling falsy values with escaping
- * const userInput = null;
- * const content = safeHtml`<div>${userInput || 'No input provided'}</div>`;
- * // Result: "<div>No input provided</div>"
- *
- * @example
- * // Array flattening with escaping
- * const userInputs = [['<script>alert("XSS1")</script>', '<script>alert("XSS2")</script>']];
- * const content = safeHtml`<div>${userInputs}</div>`;
- * // Result: "<div>&lt;script&gt;alert(&quot;XSS1&quot;)&lt;/script&gt;&lt;script&gt;alert(&quot;XSS2&quot;)&lt;/script&gt;</div>"
+ * const users = [{name: '<script>', email: 'user@test.com'}];
+ * safeHtml`<table>${users.map(u => safeHtml`<tr><td>${u.name}</td></tr>`)}</table>`
+ * // Escapes user.name, keeps structure safe
  */
-export const safeHtml = (strings, ...values) =>
-	_renderSafeHtmlFast(strings, values);
+export const safeHtml = (
+	/** @type {TemplateStringsArray} */ strings,
+	/** @type {...*} */ ...values
+) => _renderSafeHtmlFast(strings, values);
 
 /**
- * Escapes HTML special characters in a string to prevent XSS attacks.
+ * Escapes HTML special characters to prevent XSS attacks.
  *
- * This function converts HTML special characters (&, <, >, ", ') to their
- * corresponding HTML entities to safely display user input in HTML context.
+ * Converts dangerous characters to safe HTML entities:
+ * `&` → `&amp;`, `<` → `&lt;`, `>` → `&gt;`, `"` → `&quot;`, `'` → `&#39;`
  *
- * @param {*} str - The value to escape (will be converted to string).
- * @returns {string} The escaped string.
+ * **Alias for `escapeSpecialCharacters`** - use directly when not templating.
+ *
+ * @param {*} str - Value to escape (converted to string)
+ * @returns {string} String with HTML entities replacing special characters
  *
  * @example
- * import { escapeHtml } from '@raven-js/beak';
- *
- * const userInput = '<script>alert("XSS")</script>';
- * const safe = escapeHtml(userInput);
- * // Result: "&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;"
+ * escapeHtml('<script>alert("XSS")</script>')
+ * // "&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;"
  */
 export const escapeHtml = escapeSpecialCharacters;

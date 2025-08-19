@@ -7,20 +7,17 @@
  */
 
 /**
+ * @file Core string conversion utility for template processing.
  *
- * Converts a value to a string, joining arrays if necessary.
- * This function handles:
- * - Arrays: joins all elements with empty string (no separators)
- * - All other types: converts to string using String() constructor
- * - Null/undefined: converts to "null"/"undefined" strings
- * - Objects: converts to "[object Object]" or custom toString() result
- * - Functions: converts to function source code
- * stringify("hello")           // "hello"
- * stringify(42)               // "42"
+ * Converts values to strings with array flattening. Arrays join with empty string,
+ * all other types use String() constructor.
+ *
+ * @param {any} value - Value to convert to string.
+ * @returns {string} String representation. Arrays flatten to concatenated elements.
+ * @throws {TypeError} When value cannot be converted to string (null-prototype objects).
+ *
+ * @example
  * stringify([1, 2, 3])        // "123"
- * stringify(["a", "b", "c"])  // "abc"
- * stringify(null)             // "null"
- * stringify(undefined)        // "undefined"
  * stringify({ key: "value" }) // "[object Object]"
  * stringify(() => "test")     // "() => \"test\""
  */

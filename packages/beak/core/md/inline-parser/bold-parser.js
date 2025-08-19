@@ -10,10 +10,18 @@ import { NODE_TYPES } from "../types.js";
 import { parseInlineRecursive } from "./recursive-parser.js";
 
 /**
- *
  * Tries to parse bold text (**text**)
+ *
+ * @param {string} text - Text to parse
+ * @param {number} start - Starting position
+ * @param {Object<string, {url: string, title?: string}>} [references={}] - Reference definitions
+ * @returns {{node: import('../types.js').InlineNode, start: number, end: number}|null} - Parsed node or null
  */
-export const tryParseBold = (/** @type {string} */ text, /** @type {number} */ start) => {
+export const tryParseBold = (
+	/** @type {string} */ text,
+	/** @type {number} */ start,
+	/** @type {Object<string, {url: string, title?: string}>} */ references = {},
+) => {
 	if (start + 2 >= text.length) return null;
 	if (text.slice(start, start + 2) !== "**") return null;
 
@@ -26,7 +34,7 @@ export const tryParseBold = (/** @type {string} */ text, /** @type {number} */ s
 	return {
 		node: {
 			type: NODE_TYPES.BOLD,
-			content: parseInlineRecursive(content), // Recursive parsing for nested elements
+			content: parseInlineRecursive(content, references), // Recursive parsing for nested elements
 		},
 		start,
 		end: end + 2,

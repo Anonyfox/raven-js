@@ -10,8 +10,19 @@ import { escapeSpecialCharacters } from "./escape-special-characters.js";
 import { stringify } from "./stringify.js";
 
 /**
+ * Determines if a value should be included in template output.
  *
- * Checks if a value should be included in the output.
+ * **Falsy filtering:** Excludes null, undefined, false, empty string, NaN.
+ * **Zero preservation:** Includes 0 as valid output (common requirement).
+ *
+ * @param {*} value - Value to test for inclusion
+ * @returns {boolean} true if value should be rendered, false to skip
+ *
+ * @example
+ * isValidValue(0)        // true  (zero is valid)
+ * isValidValue("")       // false (empty string excluded)
+ * isValidValue(null)     // false (null excluded)
+ * isValidValue("text")   // true  (non-empty string included)
  */
 export const isValidValue = (/** @type {any} */ value) =>
 	value === 0 || Boolean(value);
@@ -24,9 +35,27 @@ const NEWLINES_AND_SPACES = /\n\s*/g;
 const STRING_CACHE = new Map();
 
 /**
- * Fast string normalization with caching for repeated patterns
- * @param {string} str - String to normalize
- * @returns {string} Normalized string
+ * Normalizes HTML whitespace with performance caching.
+ *
+ * **Optimizations:**
+ * - Trims leading/trailing whitespace
+ * - Collapses whitespace between tags: `> <` → `><`
+ * - Removes newlines and indentation
+ * - Caches results for strings < 1000 chars (prevents memory bloat)
+ *
+ * **Performance:** Cache hit avoids regex operations. Pre-compiled patterns
+ * ensure consistent execution time.
+ *
+ * @param {string} str - HTML string to normalize
+ * @returns {string} Minimized HTML without formatting whitespace
+ *
+ * @example
+ * fastNormalize(`
+ *   <div>
+ *     <span>content</span>
+ *   </div>
+ * `)
+ * // "<div><span>content</span></div>"
  */
 export const fastNormalize = (/** @type {string} */ str) => {
 	// Check cache first
@@ -49,14 +78,26 @@ export const fastNormalize = (/** @type {string} */ str) => {
 };
 
 /**
- * Private template rendering function that handles the core logic.
- * Optimized for performance using modern JavaScript features.
- * @param {TemplateStringsArray} strings - The static parts of the template.
- * @param {Array<*>} values - The dynamic values to be interpolated.
- * @param {Function} [escapeFn] - Optional function to escape values.
- * @returns {string} The rendered template as a string.
+ * Core template rendering with performance optimizations.
+ *
+ * **Performance paths:**
+ * - No values: Direct normalization of static string
+ * - Single value: Avoids array allocation and iteration
+ * - Multiple values: Pre-allocated array prevents string concatenation overhead
+ *
+ * **Memory optimization:** Single string join instead of incremental concatenation
+ * prevents intermediate string allocations.
+ *
+ * @param {TemplateStringsArray} strings - Static template parts
+ * @param {Array<*>} values - Dynamic values for interpolation
+ * @param {((str: string) => string)} [escapeFn] - Optional escaping function
+ * @returns {string} Rendered and normalized HTML string
  */
-export const _renderTemplate = (strings, values, escapeFn = undefined) => {
+export const _renderTemplate = (
+	/** @type {TemplateStringsArray} */ strings,
+	/** @type {Array<*>} */ values,
+	/** @type {((str: string) => string)|undefined} */ escapeFn = undefined,
+) => {
 	// Fast path for common case: no values
 	if (values.length === 0) {
 		return fastNormalize(strings[0]);
@@ -98,12 +139,22 @@ export const _renderTemplate = (strings, values, escapeFn = undefined) => {
 };
 
 /**
- * Fast path for html function with common optimizations
- * @param {TemplateStringsArray} strings - The static parts of the template.
- * @param {Array<*>} values - The dynamic values to be interpolated.
- * @returns {string} The rendered HTML as a string.
+ * Optimized renderer for trusted HTML content (no escaping).
+ *
+ * **Fast paths:** Handles zero-value and single-value cases without function call
+ * overhead. Avoids escape function allocation for performance.
+ *
+ * **Use for:** Static content, pre-sanitized HTML, trusted template literals.
+ * **Avoid for:** User input, API responses, untrusted content.
+ *
+ * @param {TemplateStringsArray} strings - Static template parts
+ * @param {Array<*>} values - Dynamic values for interpolation
+ * @returns {string} Rendered HTML without escaping
  */
-export const _renderHtmlFast = (strings, values) => {
+export const _renderHtmlFast = (
+	/** @type {TemplateStringsArray} */ strings,
+	/** @type {Array<*>} */ values,
+) => {
 	// Fast path for common case: no values
 	if (values.length === 0) {
 		return fastNormalize(strings[0]);
@@ -124,12 +175,22 @@ export const _renderHtmlFast = (strings, values) => {
 };
 
 /**
- * Fast path for safeHtml function with common optimizations
- * @param {TemplateStringsArray} strings - The static parts of the template.
- * @param {Array<*>} values - The dynamic values to be interpolated.
- * @returns {string} The rendered HTML as a string with escaped content.
+ * Optimized renderer for untrusted content with XSS protection.
+ *
+ * **Fast paths:** Handles zero-value and single-value cases with direct escaping.
+ * Avoids function call overhead for common template patterns.
+ *
+ * **Security:** All dynamic values escaped using escapeSpecialCharacters.
+ * **Use for:** User input, form data, API responses, untrusted content.
+ *
+ * @param {TemplateStringsArray} strings - Static template parts
+ * @param {Array<*>} values - Dynamic values for interpolation and escaping
+ * @returns {string} Rendered HTML with all dynamic content escaped
  */
-export const _renderSafeHtmlFast = (strings, values) => {
+export const _renderSafeHtmlFast = (
+	/** @type {TemplateStringsArray} */ strings,
+	/** @type {Array<*>} */ values,
+) => {
 	// Fast path for common case: no values
 	if (values.length === 0) {
 		return fastNormalize(strings[0]);

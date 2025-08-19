@@ -7,8 +7,16 @@
  */
 
 /**
+ * HTML special character to entity mapping for XSS protection.
  *
- * A mapping of HTML special characters to their escaped counterparts.
+ * Maps dangerous characters to safe HTML entities:
+ * - `&` → `&amp;` (must be first to prevent double-escaping)
+ * - `<` → `&lt;` (prevents tag injection)
+ * - `>` → `&gt;` (prevents tag injection)
+ * - `'` → `&#39;` (prevents attribute injection)
+ * - `"` → `&quot;` (prevents attribute injection)
+ *
+ * @type {Record<string, string>}
  */
 export const escapeMap = {
 	"&": "&amp;",
@@ -19,8 +27,11 @@ export const escapeMap = {
 };
 
 /**
- * Regex pattern built dynamically from the escapeMap keys.
- * This ensures the regex always matches exactly what we can escape.
+ * Pre-compiled regex matching all escapable characters.
+ *
+ * Built dynamically from escapeMap keys with proper regex escaping.
+ * Single regex execution is faster than multiple replace() calls.
+ *
  * @type {RegExp}
  */
 const escapeRegex = new RegExp(
@@ -34,11 +45,29 @@ const escapeRegex = new RegExp(
 );
 
 /**
- * Escapes HTML special characters in a string to prevent XSS attacks.
- * @param {*} str - The value to escape (will be converted to string).
- * @returns {string} The escaped string.
+ * Escapes HTML special characters to prevent XSS attacks.
+ *
+ * Converts input to string first, then replaces dangerous characters
+ * with safe HTML entities using pre-compiled regex for performance.
+ *
+ * **Critical for untrusted input:** User comments, form data, API responses.
+ *
+ * @param {*} str - Value to escape (converted to string if needed)
+ * @returns {string} String with HTML entities replacing special characters
+ *
+ * @example
+ * escapeSpecialCharacters('<script>alert("XSS")</script>')
+ * // '&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;'
+ *
+ * @example
+ * escapeSpecialCharacters('Normal text')
+ * // 'Normal text'
+ *
+ * @example
+ * escapeSpecialCharacters(null)
+ * // 'null'
  */
-export const escapeSpecialCharacters = (str) => {
+export const escapeSpecialCharacters = (/** @type {*} */ str) => {
 	// Convert to string first to handle non-string inputs
 	const stringValue = String(str);
 	return stringValue.replace(

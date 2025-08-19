@@ -7,9 +7,27 @@
  */
 
 /**
+ * Recursively flattens arrays and joins elements without separators.
  *
- * Recursively flattens an array and joins all elements with empty string.
- * Uses a WeakSet to detect circular references and prevent infinite recursion.
+ * **Circular reference protection:** Uses WeakSet to detect cycles and prevent
+ * infinite recursion. Circular arrays render as "[Circular]" string.
+ *
+ * **Performance:** Linear time complexity, single-pass string building.
+ * Memory usage scales with nesting depth (WeakSet overhead).
+ *
+ * @param {any[]} arr - Array to flatten
+ * @param {WeakSet<any[]>} [seen] - Circular reference tracker (internal use)
+ * @returns {string} Concatenated string of all array elements
+ *
+ * @example
+ * flattenArray([1, [2, 3], 4])
+ * // "1234"
+ *
+ * @example
+ * const circular = [1, 2];
+ * circular.push(circular);
+ * flattenArray(circular)
+ * // "12[Circular]"
  */
 const flattenArray = (/** @type {any[]} */ arr, seen = new WeakSet()) => {
 	// Prevent circular references
@@ -31,21 +49,34 @@ const flattenArray = (/** @type {any[]} */ arr, seen = new WeakSet()) => {
 };
 
 /**
- * Converts a value to a string for HTML template interpolation.
- * Arrays are flattened and joined without separators.
+ * Converts values to strings for HTML template interpolation.
  *
- * @param {*} value - The value to stringify.
- * @returns {string} The stringified value.
+ * **Array handling:** Flattens nested arrays and joins without separators.
+ * Essential for rendering lists without unwanted commas in output.
+ *
+ * **Type coercion:** Uses String() constructor for consistent conversion
+ * of primitives, objects, null, undefined.
+ *
+ * @param {*} value - Value to convert to string
+ * @returns {string} String representation suitable for HTML interpolation
  *
  * @example
- * stringify("hello") // "hello"
- * stringify([1, 2, 3]) // "123"
- * stringify([1, [2, 3], 4]) // "1234"
- * stringify(null) // "null"
- * stringify(undefined) // "undefined"
- * stringify(42) // "42"
+ * stringify([1, 2, 3])
+ * // "123" (not "1,2,3")
+ *
+ * @example
+ * stringify([1, [2, 3], 4])
+ * // "1234"
+ *
+ * @example
+ * stringify(null)
+ * // "null"
+ *
+ * @example
+ * stringify({toString: () => "custom"})
+ * // "custom"
  */
-export const stringify = (value) => {
+export const stringify = (/** @type {*} */ value) => {
 	if (Array.isArray(value)) {
 		return flattenArray(value);
 	}

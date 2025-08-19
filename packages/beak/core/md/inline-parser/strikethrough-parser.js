@@ -11,33 +11,28 @@ import { parseInlineRecursive } from "./recursive-parser.js";
 
 /**
  *
- * Tries to parse italic text (*text*)
+ * Tries to parse strikethrough text (~~text~~)
  */
-export const tryParseItalic = (
+export const tryParseStrikethrough = (
 	/** @type {string} */ text,
 	/** @type {number} */ start,
 	/** @type {Object<string, {url: string, title?: string}>} */ references = {},
 ) => {
-	if (start >= text.length) return null;
-	if (text[start] !== "*") return null;
+	if (start + 2 >= text.length) return null;
+	if (text.slice(start, start + 2) !== "~~") return null;
 
-	const end = text.indexOf("*", start + 1);
+	const end = text.indexOf("~~", start + 2);
 	if (end === -1) return null;
 
-	const content = text.slice(start + 1, end);
+	const content = text.slice(start + 2, end);
 	if (content.length === 0) return null;
-
-	// Check if this might be bold (don't parse single * as italic if ** follows)
-	if (end + 1 < text.length && text[end + 1] === "*") {
-		return null;
-	}
 
 	return {
 		node: {
-			type: NODE_TYPES.ITALIC,
+			type: NODE_TYPES.STRIKETHROUGH,
 			content: parseInlineRecursive(content, references), // Recursive parsing for nested elements
 		},
 		start,
-		end: end + 1,
+		end: end + 2,
 	};
 };

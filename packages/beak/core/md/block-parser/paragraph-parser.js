@@ -13,7 +13,11 @@ import { NODE_TYPES, REGEX_PATTERNS } from "../types.js";
  *
  * Parses paragraph elements
  */
-export const parseParagraph = (/** @type {string[]} */ lines, /** @type {number} */ start) => {
+export const parseParagraph = (
+	/** @type {string[]} */ lines,
+	/** @type {number} */ start,
+	/** @type {Object<string, {url: string, title?: string}>} */ references = {},
+) => {
 	if (!lines || start >= lines.length) return null;
 
 	const line = lines[start];
@@ -50,7 +54,7 @@ export const parseParagraph = (/** @type {string[]} */ lines, /** @type {number}
 	return {
 		node: {
 			type: NODE_TYPES.PARAGRAPH,
-			content: parseInline(contentLines.join("\n")),
+			content: parseInline(contentLines.join("\n"), references),
 		},
 		start,
 		end,

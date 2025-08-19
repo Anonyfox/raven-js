@@ -12,7 +12,12 @@ import { NODE_TYPES } from "../types.js";
  *
  * Handles text content between inline elements
  */
-export const handleTextContent = (/** @type {string} */ text, /** @type {number} */ current, /** @type {number} */ nodeStart, /** @type {any} */ ast) => {
+export const handleTextContent = (
+	/** @type {string} */ text,
+	/** @type {number} */ current,
+	/** @type {number} */ nodeStart,
+	/** @type {any} */ ast,
+) => {
 	if (nodeStart > current) {
 		const textContent = text.slice(current, nodeStart);
 		if (textContent.length > 0) {
@@ -58,7 +63,15 @@ export const ensureInlineParserAdvances = (current, startPosition) => {
 export const findNextSpecialChar = (text, start) => {
 	for (let i = start; i < text.length; i++) {
 		const char = text[i];
-		if (char === "*" || char === "`" || char === "[" || char === "!") {
+		if (
+			char === "*" ||
+			char === "`" ||
+			char === "[" ||
+			char === "!" ||
+			char === "~" ||
+			char === "<" ||
+			(char === "h" && text.slice(i).startsWith("http"))
+		) {
 			return i;
 		}
 	}

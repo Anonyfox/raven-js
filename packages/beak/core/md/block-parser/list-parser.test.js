@@ -42,4 +42,27 @@ describe("List Parser", () => {
 		const result = parseList(["- Item"], 1);
 		assert.equal(result, null);
 	});
+
+	it("should parse task list with checked items", () => {
+		const result = parseList(["- [x] Completed task", "- [ ] Pending task"], 0);
+		assert.ok(result);
+		assert.equal(result.node.type, NODE_TYPES.LIST);
+		assert.equal(result.node.ordered, false);
+		assert.equal(result.node.items.length, 2);
+		assert.equal(result.node.items[0].checked, true);
+		assert.equal(result.node.items[1].checked, false);
+		assert.equal(result.end, 2);
+	});
+
+	it("should parse mixed task list with different checkbox states", () => {
+		const result = parseList(
+			["- [x] Done", "- [ ] Todo", "- [x] Also done"],
+			0,
+		);
+		assert.ok(result);
+		assert.equal(result.node.items.length, 3);
+		assert.equal(result.node.items[0].checked, true);
+		assert.equal(result.node.items[1].checked, false);
+		assert.equal(result.node.items[2].checked, true);
+	});
 });

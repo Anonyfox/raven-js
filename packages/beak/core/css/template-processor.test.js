@@ -31,9 +31,9 @@ describe("flattenValue", () => {
 			assert.equal(result, "true");
 		});
 
-		it("should convert objects to string", () => {
+		it("should convert objects to CSS key-value pairs", () => {
 			const result = flattenValue({ key: "value" });
-			assert.equal(result, "[object Object]");
+			assert.equal(result, "key:value;");
 		});
 
 		it("should convert functions to string", () => {
@@ -47,9 +47,9 @@ describe("flattenValue", () => {
 			assert.equal(result, "0");
 		});
 
-		it("should convert false to string", () => {
+		it("should convert false to empty string (for CSS conditionals)", () => {
 			const result = flattenValue(false);
-			assert.equal(result, "false");
+			assert.equal(result, "");
 		});
 
 		it("should convert empty string to string", () => {
@@ -173,7 +173,7 @@ describe("flattenValue", () => {
 	describe("mixed type handling", () => {
 		it("should handle arrays with mixed types", () => {
 			const result = flattenValue(["string", 42, true, { obj: "value" }]);
-			assert.equal(result, "string 42 true [object Object]");
+			assert.equal(result, "string 42 true obj:value;");
 		});
 
 		it("should handle arrays with functions", () => {
@@ -185,6 +185,70 @@ describe("flattenValue", () => {
 		it("should handle arrays with nested mixed types", () => {
 			const result = flattenValue([["string", 42], true, [null, "world"]]);
 			assert.equal(result, "string 42 true world");
+		});
+	});
+
+	describe("object decomposition", () => {
+		it("should convert camelCase to kebab-case", () => {
+			const result = flattenValue({
+				backgroundColor: "#007bff",
+				fontSize: "16px",
+			});
+			assert.equal(result, "background-color:#007bff; font-size:16px;");
+		});
+
+		it("should handle vendor prefixes", () => {
+			const result = flattenValue({
+				WebkitTransform: "scale(1.02)",
+				MozTransform: "rotate(45deg)",
+			});
+			assert.equal(
+				result,
+				"-webkit-transform:scale(1.02); -moz-transform:rotate(45deg);",
+			);
+		});
+
+		it("should handle nested objects", () => {
+			const result = flattenValue({
+				padding: "10px",
+				border: { width: "1px", style: "solid" },
+				margin: "5px",
+			});
+			assert.equal(
+				result,
+				"padding:10px; border:width:1px; style:solid; margin:5px;",
+			);
+		});
+
+		it("should handle objects with arrays", () => {
+			const result = flattenValue({
+				boxShadow: ["0 2px 4px rgba(0,0,0,0.1)", "0 4px 8px rgba(0,0,0,0.15)"],
+				fontFamily: ["Arial", "sans-serif"],
+			});
+			assert.equal(
+				result,
+				"box-shadow:0 2px 4px rgba(0,0,0,0.1) 0 4px 8px rgba(0,0,0,0.15); font-family:Arial sans-serif;",
+			);
+		});
+
+		it("should filter null and undefined values in objects", () => {
+			const result = flattenValue({
+				color: "red",
+				background: null,
+				fontSize: undefined,
+				margin: "10px",
+			});
+			assert.equal(result, "color:red; margin:10px;");
+		});
+
+		it("should handle empty objects", () => {
+			const result = flattenValue({});
+			assert.equal(result, "");
+		});
+
+		it("should handle objects with empty string values", () => {
+			const result = flattenValue({ content: "", display: "block" });
+			assert.equal(result, "content:; display:block;");
 		});
 	});
 
@@ -416,9 +480,9 @@ describe("processCSSTemplate", () => {
 			assert.equal(result, "opacity: 0;");
 		});
 
-		it("should handle false as a valid value", () => {
+		it("should handle false as empty (for conditionals)", () => {
 			const result = processCSSTemplate`display: ${false};`;
-			assert.equal(result, "display: false;");
+			assert.equal(result, "display: ;");
 		});
 
 		it("should handle empty string as a valid value", () => {
@@ -433,13 +497,13 @@ describe("processCSSTemplate", () => {
 
 		it("should handle booleans", () => {
 			const result = processCSSTemplate`enabled: ${true}; disabled: ${false};`;
-			assert.equal(result, "enabled: true; disabled: false;");
+			assert.equal(result, "enabled: true; disabled: ;");
 		});
 
-		it("should handle objects (converted to string)", () => {
+		it("should handle objects (converted to CSS key-value pairs)", () => {
 			const theme = { primary: "#007bff" };
 			const result = processCSSTemplate`theme: ${theme};`;
-			assert.equal(result, "theme: [object Object];");
+			assert.equal(result, "theme: primary:#007bff;;");
 		});
 
 		it("should handle functions (converted to string)", () => {
@@ -472,19 +536,19 @@ describe("processCSSTemplate", () => {
 		it("should handle arrays with objects and functions", () => {
 			const complex = [{ prop: "value" }, () => "func", "string"];
 			const result = processCSSTemplate`complex: ${complex};`;
-			assert.equal(result, 'complex: [object Object] () => "func" string;');
+			assert.equal(result, 'complex: prop:value; () => "func" string;');
 		});
 
 		it("should handle arrays with falsy values", () => {
 			const falsy = [0, false, "", null, undefined];
 			const result = processCSSTemplate`falsy: ${falsy};`;
-			assert.equal(result, "falsy: 0 false ;");
+			assert.equal(result, "falsy: 0  ;");
 		});
 
 		it("should handle arrays with only falsy values", () => {
 			const allFalsy = [null, undefined, false, ""];
 			const result = processCSSTemplate`allFalsy: ${allFalsy};`;
-			assert.equal(result, "allFalsy: false ;");
+			assert.equal(result, "allFalsy:  ;");
 		});
 
 		it("should handle arrays with missing indices (sparse array edge case)", () => {
@@ -1067,6 +1131,50 @@ describe("processCSSTemplate", () => {
 				.header {
 					font-size: 24px;
 					font-weight: bold;
+				}
+			`,
+			);
+		});
+
+		it("should handle React-style conditional styling with objects", () => {
+			const isActive = true;
+			const isPrimary = false;
+			const result = processCSSTemplate`
+				.button {
+					${isActive && { backgroundColor: "#007bff", color: "white" }}
+					${isPrimary && { fontWeight: "bold", fontSize: "18px" }}
+					padding: 10px 20px;
+				}
+			`;
+			assert.equal(
+				result,
+				`
+				.button {
+					background-color:#007bff; color:white;
+
+					padding: 10px 20px;
+				}
+			`,
+			);
+		});
+
+		it("should handle object spread pattern in templates", () => {
+			const baseStyles = { padding: "10px", margin: "5px" };
+			const themeStyles = { backgroundColor: "#007bff", color: "white" };
+			const result = processCSSTemplate`
+				.component {
+					${baseStyles}
+					${themeStyles}
+					border: 1px solid #ccc;
+				}
+			`;
+			assert.equal(
+				result,
+				`
+				.component {
+					padding:10px; margin:5px;
+					background-color:#007bff; color:white;
+					border: 1px solid #ccc;
 				}
 			`,
 			);

@@ -9,20 +9,34 @@
 import { stringify } from "./stringify.js";
 
 /**
+ * @file High-performance JavaScript template literal processor.
  *
- * Processes JavaScript template literals by combining static strings and interpolated values.
- * This function handles:
- * - Template literal string interpolation
- * - Value validation (falsy values except 0 are filtered out)
- * - Array value flattening (joined with empty string)
- * - String concatenation for the final JavaScript snippet
- * - Automatic trimming of the result
+ * Processes template literals with intelligent value filtering and optimized string building.
+ * Performance-optimized with multiple execution paths based on value count.
+ *
+ * @param {TemplateStringsArray} strings - Static template parts.
+ * @param {...any} values - Interpolated values for processing.
+ * @returns {string} Processed JavaScript code with trimmed whitespace.
+ *
+ * @performance
+ * - Zero values: Direct string return (fastest path)
+ * - Single value: Optimized concat operation
+ * - 2-3 values: StringBuilder pattern
+ * - 4+ values: Pre-allocated array with exact sizing
+ *
+ * @filtering
+ * Includes: 0 (zero), truthy values
+ * Excludes: null, undefined, false, empty string
+ *
+ * @example
  * processJSTemplate`let ${'count'} = ${10};`  // "let count = 10;"
- * processJSTemplate`${['a', 'b', 'c']}`       // "abc"
  * processJSTemplate`${null}${'valid'}`        // "valid"
  * processJSTemplate`${0}${false}`             // "0"
  */
-export const processJSTemplate = (/** @type {TemplateStringsArray} */ strings, /** @type {any[]} */ ...values) => {
+export const processJSTemplate = (
+	/** @type {TemplateStringsArray} */ strings,
+	/** @type {any[]} */ ...values
+) => {
 	const stringsLength = strings.length;
 	const valuesLength = values.length;
 

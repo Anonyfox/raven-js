@@ -38,12 +38,16 @@ export const transformInlineNode = (node) => {
 			return transformBold(node);
 		case "italic":
 			return transformItalic(node);
+		case "strikethrough":
+			return transformStrikethrough(node);
 		case "code":
 			return transformInlineCode(node);
 		case "link":
 			return transformLink(node);
 		case "image":
 			return transformImage(node);
+		case "inlineHtml":
+			return transformInlineHTML(node);
 		default:
 			return "";
 	}
@@ -74,6 +78,18 @@ const transformItalic = (node) => {
 };
 
 /**
+ * Transforms a strikethrough node
+ * @param {import('../types.js').InlineNode} node - The strikethrough node
+ * @returns {string} - The HTML strikethrough element
+ */
+const transformStrikethrough = (node) => {
+	const content = transformInlineNodes(
+		Array.isArray(node.content) ? node.content : [],
+	);
+	return `<del>${content}</del>`;
+};
+
+/**
  * Transforms an inline code node
  * @param {import('../types.js').InlineNode} node - The inline code node
  * @returns {string} - The HTML inline code element
@@ -96,7 +112,8 @@ const transformLink = (node) => {
 		Array.isArray(node.content) ? node.content : [],
 	);
 	const url = escapeHTML(node.url || "#");
-	return `<a href="${url}">${content}</a>`;
+	const title = node.title ? ` title="${escapeHTML(node.title)}"` : "";
+	return `<a href="${url}"${title}>${content}</a>`;
 };
 
 /**
@@ -107,5 +124,15 @@ const transformLink = (node) => {
 const transformImage = (node) => {
 	const alt = escapeHTML(node.alt || "");
 	const url = escapeHTML(node.url || "");
-	return `<img src="${url}" alt="${alt}">`;
+	const title = node.title ? ` title="${escapeHTML(node.title)}"` : "";
+	return `<img src="${url}" alt="${alt}"${title}>`;
+};
+
+/**
+ * Transforms an inline HTML node (raw HTML pass-through)
+ * @param {import('../types.js').InlineNode} node - The inline HTML node
+ * @returns {string} - The raw HTML content
+ */
+const transformInlineHTML = (node) => {
+	return typeof node.html === "string" ? node.html : "";
 };

@@ -7,11 +7,14 @@
  */
 
 import { NODE_TYPES } from "../types.js";
+import { tryParseAutolink } from "./autolink-parser.js";
 import { tryParseBold } from "./bold-parser.js";
 import { tryParseInlineCode } from "./code-parser.js";
-import { tryParseImage } from "./image-parser.js";
+import { tryParseInlineHTML } from "./inline-html-parser.js";
 import { tryParseItalic } from "./italic-parser.js";
-import { tryParseLink } from "./link-parser.js";
+import { tryParseReferenceImage } from "./reference-image-parser.js";
+import { tryParseReferenceLink } from "./reference-link-parser.js";
+import { tryParseStrikethrough } from "./strikethrough-parser.js";
 import {
 	ensureInlineParserAdvances,
 	findNextSpecialChar,
@@ -19,10 +22,16 @@ import {
 } from "./utils.js";
 
 /**
- *
  * Parses inline markdown elements from text (recursive version)
+ *
+ * @param {string} text - Text to parse
+ * @param {Object<string, {url: string, title?: string}>} [references={}] - Reference definitions
+ * @returns {Array<import('../types.js').InlineNode>} - Array of parsed inline nodes
  */
-export const parseInlineRecursive = (/** @type {string} */ text) => {
+export const parseInlineRecursive = (
+	/** @type {string} */ text,
+	/** @type {Object<string, {url: string, title?: string}>} */ references = {},
+) => {
 	// Input validation
 	if (typeof text !== "string") {
 		return [{ type: NODE_TYPES.TEXT, content: String(text) }];
@@ -45,11 +54,14 @@ export const parseInlineRecursive = (/** @type {string} */ text) => {
 
 		// Try to match each inline element type in order of precedence
 		const node =
-			tryParseBold(text, current) ||
-			tryParseItalic(text, current) ||
+			tryParseBold(text, current, references) ||
+			tryParseItalic(text, current, references) ||
+			tryParseStrikethrough(text, current, references) ||
 			tryParseInlineCode(text, current) ||
-			tryParseLink(text, current) ||
-			tryParseImage(text, current);
+			tryParseReferenceLink(text, current, references) ||
+			tryParseReferenceImage(text, current, references) ||
+			tryParseAutolink(text, current) ||
+			tryParseInlineHTML(text, current);
 
 		if (node) {
 			// Add any text before the matched element

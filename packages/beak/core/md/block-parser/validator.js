@@ -12,8 +12,8 @@ import { NODE_TYPES, VALIDATORS } from "../types.js";
 const VALIDATION_RULES = {
 	[NODE_TYPES.PARAGRAPH]: (
 		/**
- *
- */ /** @type {any} */ node,
+		 *
+		 */ /** @type {any} */ node,
 	) => Array.isArray(node.content) && node.content.length > 0,
 	[NODE_TYPES.BLOCKQUOTE]: (
 		/** @type {import('../types.js').BlockNode} */ node,

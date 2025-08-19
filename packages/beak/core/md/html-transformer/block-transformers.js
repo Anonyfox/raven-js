@@ -30,8 +30,16 @@ export const transformBlockNode = (/** @type {any} */ node) => {
 			return transformBlockquote(node);
 		case "codeBlock":
 			return transformCodeBlock(node);
+		case "htmlBlock":
+			return transformHTMLBlock(node);
 		case "horizontalRule":
 			return transformHorizontalRule(node);
+		case "table":
+			return transformTable(node);
+		case "tableRow":
+			return transformTableRow(node);
+		case "tableCell":
+			return transformTableCell(node);
 		default:
 			return "";
 	}
@@ -84,6 +92,13 @@ const transformListItem = (node) => {
 	const content = Array.isArray(node.content)
 		? transformInlineNodes(node.content)
 		: "";
+
+	// Handle task list items
+	if (typeof node.checked === "boolean") {
+		const checked = node.checked ? " checked" : "";
+		return `<li><input type="checkbox"${checked} disabled> ${content}</li>`;
+	}
+
 	return `<li>${content}</li>`;
 };
 
@@ -112,10 +127,78 @@ const transformCodeBlock = (node) => {
 };
 
 /**
+ * Transforms an HTML block node (raw HTML pass-through)
+ * @param {import('../types.js').BlockNode} node - The HTML block node
+ * @returns {string} - The raw HTML content
+ */
+const transformHTMLBlock = (node) => {
+	return typeof node.html === "string" ? node.html : "";
+};
+
+/**
  * Transforms a horizontal rule node
  * @param {import('../types.js').BlockNode} _node - The horizontal rule node
  * @returns {string} - The HTML horizontal rule
  */
 const transformHorizontalRule = (_node) => {
 	return "<hr>";
+};
+
+/**
+ * Transforms a table node
+ * @param {import('../types.js').BlockNode} node - The table node
+ * @returns {string} - The HTML table
+ */
+const transformTable = (node) => {
+	if (!Array.isArray(node.rows)) return "";
+
+	const [headerRow, ...dataRows] = node.rows;
+
+	let html = "<table>";
+
+	// Header
+	if (headerRow) {
+		html += "<thead>";
+		html += transformTableRow(headerRow, true);
+		html += "</thead>";
+	}
+
+	// Body
+	if (dataRows.length > 0) {
+		html += "<tbody>";
+		html += dataRows.map((row) => transformTableRow(row, false)).join("");
+		html += "</tbody>";
+	}
+
+	html += "</table>";
+	return html;
+};
+
+/**
+ * Transforms a table row node
+ * @param {import('../types.js').BlockNode} node - The table row node
+ * @param {boolean} isHeader - Whether this is a header row
+ * @returns {string} - The HTML table row
+ */
+const transformTableRow = (node, isHeader = false) => {
+	if (!Array.isArray(node.cells)) return "";
+
+	const cells = node.cells
+		.map((cell) => transformTableCell(cell, isHeader))
+		.join("");
+	return `<tr>${cells}</tr>`;
+};
+
+/**
+ * Transforms a table cell node
+ * @param {import('../types.js').BlockNode} node - The table cell node
+ * @param {boolean} isHeader - Whether this is a header cell
+ * @returns {string} - The HTML table cell
+ */
+const transformTableCell = (node, isHeader = false) => {
+	const content = Array.isArray(node.content)
+		? transformInlineNodes(node.content)
+		: "";
+	const tag = isHeader ? "th" : "td";
+	return `<${tag}>${content}</${tag}>`;
 };

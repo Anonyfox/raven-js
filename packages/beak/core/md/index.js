@@ -59,6 +59,7 @@
  * - **Blockquotes**: `> quoted text`
  * - **Code blocks**:
  * - Fenced: \`\`\`language\ncode\n\`\`\`
+ * - Indented: 4+ spaces or 1+ tabs
  * - Inline: \`code\`
  * - **Horizontal rules**: `---`, `***`, `___`
  * ### Inline Elements
@@ -73,59 +74,54 @@
  * - **Deterministic parsing**: Consistent output for identical input
  * - **Safety checks**: Prevents infinite loops and handles edge cases
  * - **HTML escaping**: Automatic escaping of special characters
- * ## GFM Features Not Yet Supported
- * The following GitHub Flavored Markdown (GFM) features are not currently implemented:
- * ### Tables
+ * ## GitHub Flavored Markdown (GFM) Support
+ * RavenJS now supports the most commonly used GFM features:
+ * ### ✅ Tables
  * ```markdown
  * | Header 1 | Header 2 |
  * |----------|----------|
  * | Cell 1   | Cell 2   |
  * ```
- * ### Task Lists
+ * ### ✅ Task Lists
  * ```markdown
  * - [x] Completed task
  * - [ ] Pending task
  * ```
- * ### Strikethrough
+ * ### ✅ Strikethrough
  * ```markdown
  * ~~strikethrough text~~
  * ```
- * ### Extended Code Blocks
- * - Syntax highlighting (language detection only)
- * - Line numbers
- * - Diff highlighting
- * ### Extended Links
- * - Reference-style links: `[text][ref]`
- * - Link definitions: `[ref]: url "title"`
- * ### Extended Images
- * - Reference-style images: `![alt][ref]`
- * - Image definitions: `[ref]: url "title"`
- * ### Extended Lists
- * - Nested lists (indentation-based)
- * - Mixed list types
- * - List continuation
- * ### Extended Blockquotes
- * - Nested blockquotes
- * - Blockquotes with other block elements
- * ### Extended Headings
- * - Setext-style headings: `===` and `---`
- * ### Extended Code
- * - Indented code blocks
- * - Code blocks with language-specific features
- * ### Extended Emphasis
- * - Multiple emphasis levels
- * - Emphasis with underscores in words
- * ### Extended Links and Images
- * - Relative URLs
- * - Fragment identifiers
- * - Email links
- * ### Extended HTML
- * - Raw HTML blocks
- * - HTML comments
- * - HTML entities
- * ### Extended Escaping
- * - Escaped characters in code blocks
- * - Escaped characters in links
+ * ### ✅ Autolinks
+ * ```markdown
+ * Visit https://example.com for more info
+ * ```
+ * ### ✅ Nested Lists (Basic)
+ * ```markdown
+ * - Item 1
+ *   - Nested item
+ * - Item 2
+ * ```
+ * ### ✅ Indented Code Blocks
+ * ```markdown
+ *     function hello() {
+ *         console.log("Hello!");
+ *     }
+ * ```
+ * ### ✅ HTML Blocks (Raw HTML Embedding)
+ * ```markdown
+ * <div class="container">
+ *   <p>Raw HTML content</p>
+ * </div>
+ * ```
+ * ### ✅ Inline HTML
+ * ```markdown
+ * This has <strong>inline HTML</strong> and <em>emphasis</em> tags.
+ * ```
+ * ## Advanced GFM Features (Future)
+ * The following advanced features may be added in future releases:
+ * - Setext-style headings
+ * - Advanced table alignment
+ * - Multi-level nested lists
  * ## Performance Characteristics
  * - **Deterministic**: Same input always produces same output
  * - **Bounded**: Parsing time is O(n) where n is input length

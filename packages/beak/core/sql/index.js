@@ -9,107 +9,47 @@
 import { processSQLTemplate } from "./template-processor.js";
 
 /**
+ * SQL template literal with automatic escaping and performance optimization.
  *
- * The main template tag function for creating SQL queries with automatic string sanitization.
- * This function provides a safe and convenient way to build SQL queries using template literals.
- * All dynamic values are automatically sanitized to escape dangerous characters and control bytes,
- * while static parts of the query remain unchanged. The function also handles whitespace normalization.
- * **Key Features:**
- * - 🛡️ **String Sanitization**: Escapes dangerous characters and control bytes
- * - 🚀 **High Performance**: Optimized for common use cases
- * - 📝 **Developer Friendly**: Uses familiar template literal syntax
- * - 🧹 **Whitespace Handling**: Automatically trims leading/trailing whitespace
- * - 🔧 **Type Flexibility**: Accepts any value type (converted to string)
- * **Security Note:** This function sanitizes strings by escaping dangerous characters, but it does
- * not prevent logical SQL injection or validate input. Always validate and sanitize user input
- * before using it in queries. This is primarily for escaping accidental dangerous bytes and
- * characters, not for comprehensive SQL injection prevention.
- * // Basic usage with simple values
- * import { sql } from '@raven-js/beak';
- * const userId = 42;
- * const query = sql`SELECT * FROM users WHERE id = ${userId}`;
- * // Result: "SELECT * FROM users WHERE id = 42"
- * // User input with automatic string sanitization
- * const userInput = "O'Connor"; // Note the apostrophe
- * const query = sql`SELECT * FROM users WHERE name = '${userInput}'`;
- * // Result: "SELECT * FROM users WHERE name = 'O''Connor'"
- * // The apostrophe is escaped to prevent string literal breakouts
- * // Complex query with multiple values
- * const table = 'orders';
- * const status = 'pending';
- * const limit = 10;
- * const query = sql`
- * SELECT * FROM ${table}
- * WHERE status = '${status}'
- * ORDER BY created_at DESC
- * LIMIT ${limit}
- * `;
- * // Result: "SELECT * FROM orders WHERE status = 'pending' ORDER BY created_at DESC LIMIT 10"
- * // Dynamic table and column names
- * const tableName = 'user_profiles';
- * const columnName = 'email';
- * const searchValue = 'john@example.com';
- * const query = sql`SELECT * FROM ${tableName} WHERE ${columnName} = '${searchValue}'`;
- * // Result: "SELECT * FROM user_profiles WHERE email = 'john@example.com'"
- * // Building WHERE clauses dynamically
- * const conditions = [];
- * const params = {};
- * if (searchName) {
- * conditions.push(sql`name LIKE '%${searchName}%'`);
- * }
- * if (minAge) {
- * conditions.push(sql`age >= ${minAge}`);
- * }
- * const whereClause = conditions.length > 0 ? sql`WHERE ${conditions.join(' AND ')}` : '';
- * const query = sql`SELECT * FROM users ${whereClause}`;
- * // Handling different data types
- * const id = 123;                    // number
- * const name = "John Doe";           // string
- * const isActive = true;             // boolean
- * const lastLogin = null;            // null
- * const tags = ['admin', 'user'];    // array (converted to string)
- * const query = sql`
- * INSERT INTO users (id, name, is_active, last_login, tags)
- * VALUES (${id}, '${name}', ${isActive}, ${lastLogin}, '${tags}')
- * `;
- * // Result: "INSERT INTO users (id, name, is_active, last_login, tags) VALUES (123, 'John Doe', true, null, 'admin,user')"
- * // Pagination queries
- * const page = 2;
- * const pageSize = 20;
- * const offset = (page - 1) * pageSize;
- * const query = sql`
- * SELECT * FROM posts
- * WHERE published = true
- * ORDER BY created_at DESC
- * LIMIT ${pageSize} OFFSET ${offset}
- * `;
- * // Result: "SELECT * FROM posts WHERE published = true ORDER BY created BY created_at DESC LIMIT 20 OFFSET 20"
- * // JOIN queries with dynamic conditions
- * const userRole = 'admin';
- * const department = 'engineering';
- * const query = sql`
- * SELECT u.name, u.email, d.name as dept_name
- * FROM users u
- * JOIN departments d ON u.dept_id = d.id
- * WHERE u.role = '${userRole}' AND d.name = '${department}'
- * `;
- * // Result: "SELECT u.name, u.email, d.name as dept_name FROM users u JOIN departments d ON u.dept_id = d.id WHERE u.role = 'admin' AND d.name = 'engineering'"
- * // UPDATE queries with dynamic fields
- * const userId = 456;
- * const updates = {
- * name: 'Jane Smith',
- * email: 'jane@example.com',
- * last_updated: new Date().toISOString()
+ * Template tag that builds SQL queries by interpolating values with automatic
+ * character escaping. Implements tiered performance optimizations based on
+ * interpolation count (0, 1, 2-3, 4+ values).
+ *
+ * **Security Boundary**: Escapes string literal breakouts and binary injection.
+ * Does NOT prevent logical injection patterns. Use parameterized queries for
+ * complete protection.
+ *
+ * **Performance**: Four optimization tiers scale from simple concatenation to
+ * pre-sized array joins. Conditional whitespace trimming avoids unnecessary work.
+ *
+ * @type {typeof import("./template-processor.js").processSQLTemplate}
+ *
+ * @example
+ * // String literal escaping
+ * sql`SELECT * FROM users WHERE name = '${userInput}'`
+ * // O'Connor → "SELECT * FROM users WHERE name = 'O''Connor'"
+ *
+ * @example
+ * // Dynamic identifiers and values
+ * sql`SELECT * FROM ${table} WHERE status = '${status}' LIMIT ${limit}`
+ * // → "SELECT * FROM orders WHERE status = 'pending' LIMIT 10"
+ *
+ * @example
+ * // Composed query building
+ * const where = conditions.length ? sql`WHERE ${conditions.join(' AND ')}` : '';
+ * sql`SELECT * FROM users ${where} ORDER BY created_at`
+ *
+ * @example
+ * // Advanced composition patterns
+ * const buildInsert = (table, data) => {
+ *   const keys = Object.keys(data).join(', ');
+ *   const values = Object.values(data).map(v => `'${v}'`).join(', ');
+ *   return sql`INSERT INTO ${table} (${keys}) VALUES (${values})`;
  * };
- * const setClause = Object.entries(updates)
- * .map(([key, value]) => sql`${key} = '${value}'`)
- * .join(', ');
- * const query = sql`UPDATE users SET ${setClause} WHERE id = ${userId}`;
- * // Result: "UPDATE users SET name = 'Jane Smith', email = 'jane@example.com', last_updated = '2024-01-15T10:30:00.000Z' WHERE id = 456"
- * // DELETE queries with conditions
- * const tableName = 'temp_data';
- * const olderThan = '2024-01-01';
- * const query = sql`DELETE FROM ${tableName} WHERE created_at < '${olderThan}'`;
- * // Result: "DELETE FROM temp_data WHERE created_at < '2024-01-01'"
+ *
+ * @example
+ * // Performance consideration: batch operations
+ * const queries = items.map(item => sql`INSERT INTO logs VALUES (${item.id}, '${item.msg}')`);
+ * // Each sql`` call optimizes independently - consider direct string building for massive batches
  */
 export const sql = processSQLTemplate;

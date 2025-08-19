@@ -17,12 +17,18 @@ export const NODE_TYPES = {
 	LIST_ITEM: "listItem",
 	BLOCKQUOTE: "blockquote",
 	CODE_BLOCK: "codeBlock",
+	HTML_BLOCK: "htmlBlock",
 	HORIZONTAL_RULE: "horizontalRule",
+	TABLE: "table",
+	TABLE_ROW: "tableRow",
+	TABLE_CELL: "tableCell",
 	LINK: "link",
 	IMAGE: "image",
 	BOLD: "bold",
 	ITALIC: "italic",
+	STRIKETHROUGH: "strikethrough",
 	CODE: "code",
+	INLINE_HTML: "inlineHtml",
 	TEXT: "text",
 };
 
@@ -31,11 +37,18 @@ export const NODE_TYPES = {
  * @property {string} type - The type of the node, e.g., 'paragraph', 'heading', 'list', etc.
  * @property {string|Node[]} [content] - The content of the node, used for inline elements like text, bold, italic, etc.
  * @property {Array<Node>} [items] - The list items, used for list nodes.
+ * @property {Array<Node>} [rows] - The table rows, used for table nodes.
+ * @property {Array<Node>} [cells] - The table cells, used for table row nodes.
  * @property {number} [level] - The level of the heading, used for heading nodes.
  * @property {string} [url] - The URL, used for link and image nodes.
  * @property {string} [alt] - The alt text, used for image nodes.
+ * @property {string} [title] - The title attribute, used for link and image nodes.
+ * @property {string} [html] - Raw HTML content, used for inline HTML nodes.
  * @property {string} [language] - The programming language, used for code block nodes.
+ * @property {string} [html] - Raw HTML content, used for HTML block nodes.
  * @property {boolean} [ordered] - If it's a list, whether it is ordered or not.
+ * @property {boolean} [checked] - If it's a task list item, whether it is checked or not.
+ * @property {string} [align] - Table cell alignment: 'left', 'center', 'right'.
  */
 
 /**
@@ -44,6 +57,8 @@ export const NODE_TYPES = {
  * @property {string|InlineNode[]} [content] - The content of the inline node
  * @property {string} [url] - The URL, used for link nodes
  * @property {string} [alt] - The alt text, used for image nodes
+ * @property {string} [title] - The title attribute, used for link and image nodes
+ * @property {string} [html] - Raw HTML content, used for inline HTML nodes
  */
 
 /**
@@ -51,9 +66,14 @@ export const NODE_TYPES = {
  * @property {string} type - The type of the block node
  * @property {InlineNode[]|string} [content] - The content of the block node (InlineNode[] for most nodes, string for code blocks)
  * @property {Array<BlockNode>} [items] - The list items, used for list nodes
+ * @property {Array<BlockNode>} [rows] - The table rows, used for table nodes
+ * @property {Array<BlockNode>} [cells] - The table cells, used for table row nodes
  * @property {number} [level] - The level of the heading, used for heading nodes
  * @property {string} [language] - The programming language, used for code block nodes
+ * @property {string} [html] - Raw HTML content, used for HTML block nodes
  * @property {boolean} [ordered] - If it's a list, whether it is ordered or not
+ * @property {boolean} [checked] - If it's a task list item, whether it is checked or not
+ * @property {string} [align] - Table cell alignment: 'left', 'center', 'right'
  */
 
 /**
@@ -80,19 +100,36 @@ export const REGEX_PATTERNS = {
 	// List patterns
 	UNORDERED_LIST: /^[-*]\s+(.+)$/,
 	ORDERED_LIST: /^([1-9]\d*)\.\s+(.+)$/,
+	TASK_LIST: /^[-*]\s+\[([x ])\]\s+(.+)$/,
 
 	// Block patterns
 	BLOCKQUOTE: /^>\s+(.+)$/,
 	CODE_BLOCK_START: /^```(\w*)$/,
 	CODE_BLOCK_END: /^```$/,
 	HORIZONTAL_RULE: /^---+$/,
+	TABLE_ROW: /^\|(.+)\|$/,
+	TABLE_SEPARATOR: /^\|[\s:|-]+\|$/,
+
+	// HTML Block patterns
+	HTML_BLOCK_OPEN: /^<([a-zA-Z][a-zA-Z0-9-]*)\b[^>]*>/,
+	HTML_BLOCK_CLOSE: /^<\/([a-zA-Z][a-zA-Z0-9-]*)\s*>/,
+	HTML_BLOCK_SELF_CLOSING: /^<([a-zA-Z][a-zA-Z0-9-]*)\b[^>]*\/\s*>/,
+	HTML_COMMENT: /^<!--/,
+	HTML_COMMENT_END: /-->/,
 
 	// Inline patterns
 	BOLD: /\*\*(.+?)\*\*/g,
 	ITALIC: /\*(.+?)\*/g,
+	STRIKETHROUGH: /~~(.+?)~~/g,
 	INLINE_CODE: /`([^`]+)`/g,
 	LINK: /\[([^\]]+)\]\(([^)]+)\)/g,
 	IMAGE: /!\[([^\]]*)\]\(([^)]+)\)/g,
+	AUTOLINK: /(https?:\/\/[^\s<>"{}|\\^`[\]]+)/g,
+
+	// Inline HTML patterns
+	INLINE_HTML_SELF_CLOSING: /<([a-zA-Z][a-zA-Z0-9-]*)\b[^>]*\/\s*>/,
+	INLINE_HTML_OPEN: /<([a-zA-Z][a-zA-Z0-9-]*)\b[^>]*>/,
+	INLINE_HTML_CLOSE: /<\/([a-zA-Z][a-zA-Z0-9-]*)\s*>/,
 
 	// Utility patterns
 	WHITESPACE: /^\s*$/,
@@ -110,12 +147,18 @@ export const HTML_TAGS = {
 	[NODE_TYPES.LIST_ITEM]: "li",
 	[NODE_TYPES.BLOCKQUOTE]: "blockquote",
 	[NODE_TYPES.CODE_BLOCK]: "pre",
+	[NODE_TYPES.HTML_BLOCK]: null, // Raw HTML pass-through
 	[NODE_TYPES.HORIZONTAL_RULE]: "hr",
+	[NODE_TYPES.TABLE]: "table",
+	[NODE_TYPES.TABLE_ROW]: "tr",
+	[NODE_TYPES.TABLE_CELL]: "td",
 	[NODE_TYPES.LINK]: "a",
 	[NODE_TYPES.IMAGE]: "img",
 	[NODE_TYPES.BOLD]: "strong",
 	[NODE_TYPES.ITALIC]: "em",
+	[NODE_TYPES.STRIKETHROUGH]: "del",
 	[NODE_TYPES.CODE]: "code",
+	[NODE_TYPES.INLINE_HTML]: null, // Raw HTML pass-through
 	[NODE_TYPES.TEXT]: null, // No tag for plain text
 };
 
