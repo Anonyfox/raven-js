@@ -703,6 +703,32 @@ test("CORS Middleware - Preflight OPTIONS Requests", async (t) => {
 			assert.equal(ctx.responseEnded, true);
 		},
 	);
+
+	await t.test(
+		"should handle function origin returning true in preflight",
+		async () => {
+			const cors = new CORS({
+				origin: (origin) => {
+					// Return true for allowed origins
+					return origin === "https://allowed.com";
+				},
+			});
+
+			const ctx = createMockContext("OPTIONS", "http://localhost/test", {
+				origin: "https://allowed.com",
+				"access-control-request-method": "POST",
+			});
+
+			await executeMiddleware(cors, ctx);
+
+			assert.equal(ctx.responseStatusCode, 204);
+			assert.equal(ctx.responseEnded, true);
+			assert.equal(
+				ctx.responseHeaders.get("Access-Control-Allow-Origin"),
+				"https://allowed.com",
+			);
+		},
+	);
 });
 
 test("CORS Middleware - Regular Request Headers", async (t) => {

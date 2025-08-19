@@ -9,9 +9,12 @@
 import { Middleware } from "../../core/middleware.js";
 
 /**
- *
+ * @file Request logging middleware providing beautiful development output and SOC2/ISO27001/GDPR compliant production logs.
+ */
+
+/**
  * RavenJS color palette for terminal output
- * Designed for readability with black backgrounds and proper contrast
+ * Optimized for black backgrounds and professional readability
  */
 const COLORS = {
 	reset: "\x1b[0m",
@@ -50,8 +53,11 @@ const COLORS = {
 };
 
 /**
- * Generate a unique request ID for traceability
- * @returns {string} A unique request identifier
+ * Generate unique request ID for distributed tracing
+ *
+ * **Performance:** Uses timestamp + Math.random() for collision resistance without crypto overhead.
+ *
+ * @returns {string} Timestamp-prefixed unique identifier (format: "1705356869123-abc123def")
  */
 export function generateRequestId() {
 	return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -134,24 +140,16 @@ export function formatDuration(duration) {
 }
 
 /**
- * Collect comprehensive log data from request context - One function to rule them all
+ * Extract complete log data from request context
  *
- * This function extracts everything you need to know about a request into a clean,
- * consistent object. No hunting through context properties or trying to remember
- * which header contains what. Just all the logging data, properly structured.
+ * **Performance:** Uses performance.now() for sub-millisecond precision timing.
+ * **Dangerous Edge:** Header values can be null - handled gracefully throughout.
+ * **Integration Trap:** IP extraction prioritizes x-forwarded-for for load balancer compatibility.
  *
- * Automatically extracts:
- * - Request details (method, path, query params, headers)
- * - Response details (status code, headers, content type)
- * - Performance metrics (duration with intelligent units)
- * - User context (from Authorization header, X-User-ID, etc.)
- * - Network details (IP address, User-Agent, Referrer)
- * - Request tracking (unique ID, timestamp)
- *
- * @param {import('../../core/context.js').Context} ctx - Wings request context (contains all request/response data)
- * @param {number} startTime - Request start time from performance.now()
- * @param {string} requestId - Unique request identifier for tracing
- * @param {Date} timestamp - Request timestamp for logging
+ * @param {import('../../core/context.js').Context} ctx - Wings request context
+ * @param {number} startTime - Request start timestamp from performance.now()
+ * @param {string} requestId - Unique request identifier
+ * @param {Date} timestamp - Request start date
  * @returns {{
  *   method: string,
  *   path: string,
@@ -163,7 +161,7 @@ export function formatDuration(duration) {
  *   timestamp: Date,
  *   ip: string,
  *   userIdentity: string|null
- * }} Complete log data object ready for development or production logging
+ * }} Normalized log data for production/development formatting
  *
  * @example Typical Output
  * ```javascript
@@ -209,32 +207,36 @@ export function collectLogData(ctx, startTime, requestId, timestamp) {
 }
 
 /**
- * Create structured JSON log entry compliant with SOC2, ISO 27001, and GDPR
- * @param {Object} params - Log parameters
+ * Create compliance-ready structured log entry
+ *
+ * **Compliance Coverage:** SOC2 CC5.1 (user identity + action), ISO 27001 A.12.4.1 (event logging), GDPR Art. 30 (processing records).
+ * **Critical Error:** JSON.stringify can fail on circular references - caller must ensure serializable data.
+ *
+ * @param {Object} params - Complete log data
  * @param {string} params.method - HTTP method
  * @param {string} params.path - Request path
  * @param {number} params.statusCode - HTTP status code
  * @param {number} params.duration - Request duration in milliseconds
- * @param {string|null} params.userAgent - User agent string
- * @param {string|null} params.referrer - Referrer URL
+ * @param {string|null} params.userAgent - User-Agent header value
+ * @param {string|null} params.referrer - Referer header value
  * @param {string} params.requestId - Unique request identifier
  * @param {Date} params.timestamp - Request timestamp
- * @param {string} params.ip - Client IP address
- * @param {string|null} params.userIdentity - User identity (from auth headers)
- * @param {Error[]} [params.errors] - Array of errors that occurred during request processing
+ * @param {string} params.ip - Client IP (x-forwarded-for, x-real-ip, or "unknown")
+ * @param {string|null} params.userIdentity - Authorization header value or null
+ * @param {Error[]} [params.errors] - Collected errors from request processing
  * @returns {{
  *   timestamp: string,
- *   level: string,
+ *   level: "info"|"error",
  *   message: string,
  *   user: {identity: string, ipAddress: string|null, userAgent: string|null},
  *   action: {method: string, path: string, referrer: string|null},
- *   result: {success: boolean, statusCode: number, duration: string, performance: string},
- *   audit: {requestId: string, source: string},
- *   compliance: Object,
- *   metadata: {service: string, version: string, environment: string, complianceReady: boolean},
+ *   result: {success: boolean, statusCode: number, duration: string, performance: "excellent"|"good"|"slow"},
+ *   audit: {requestId: string, source: "wings-server"},
+ *   compliance: {soc2: Object, iso27001: Object, gdpr: Object},
+ *   metadata: {service: "wings-server", version: "1.0.0", environment: string, complianceReady: true},
  *   errors?: Array<{index: number, message: string, stack: string, name: string}>,
  *   errorCount?: number
- * }} Structured log entry
+ * }} Audit-ready structured log entry
  */
 export function createStructuredLog({
 	method,
@@ -252,11 +254,14 @@ export function createStructuredLog({
 	const isSuccess =
 		statusCode >= 200 && statusCode < 400 && errors.length === 0;
 
+	/** @type {"info"|"error"} */
+	const level = isSuccess ? "info" : "error";
+
 	const logEntry = {
 		// SOC2 CC5.1: Control Activities - Timestamp in UTC/ISO format
 		// GDPR Art. 30: Records of processing activities
 		timestamp: timestamp.toISOString(),
-		level: isSuccess ? "info" : "error",
+		level,
 		message: `${method} ${path} ${statusCode}`,
 
 		// SOC2 CC5.1: User identity and action performed
@@ -281,14 +286,15 @@ export function createStructuredLog({
 				duration < 1
 					? `${Math.round(duration * 1000)}µs`
 					: `${Math.round(duration)}ms`,
-			performance:
-				duration < 10 ? "excellent" : duration < 100 ? "good" : "slow",
+			performance: /** @type {"excellent"|"good"|"slow"} */ (
+				duration < 10 ? "excellent" : duration < 100 ? "good" : "slow"
+			),
 		},
 
 		// ISO 27001 A.12.4.1: Event logging with traceability
 		audit: {
 			requestId,
-			source: "wings-server",
+			source: /** @type {"wings-server"} */ ("wings-server"),
 		},
 
 		// Compliance standard mappings
@@ -308,10 +314,10 @@ export function createStructuredLog({
 
 		// Machine-readable fields for automated processing
 		metadata: {
-			service: "wings-server",
-			version: "1.0.0",
+			service: /** @type {"wings-server"} */ ("wings-server"),
+			version: /** @type {"1.0.0"} */ ("1.0.0"),
 			environment: process.env.NODE_ENV || "development",
-			complianceReady: true,
+			complianceReady: /** @type {true} */ (true),
 		},
 	};
 
@@ -487,23 +493,16 @@ function formatFileUrl(line, fileUrl, replaceTarget, cwd, hasParentheses) {
 }
 
 /**
- * Format error message for development output - The stack trace formatter you've been waiting for
+ * Format error for surgical development debugging
  *
- * Takes an ugly, unreadable error and turns it into something a human can actually use.
- * No more squinting at absolute paths or trying to figure out which line is actually yours.
+ * **Critical Error Handling:** process.cwd() can throw ENOENT if CWD deleted during execution.
+ * **Performance:** Regex path parsing optimized for file:// URLs from Node.js stack traces.
+ * **Dangerous Edge:** Custom error properties with circular references will cause toString() failures.
  *
- * Features:
- * - Relative paths (./src/handlers/auth.js instead of /Users/.../project/src/handlers/auth.js)
- * - Clean line numbers (line:42 instead of :42:17)
- * - User code highlighting (your code gets → arrows and bright colors)
- * - External package detection ([package-name] formatting ready for when needed)
- * - Custom error properties displayed clearly
- * - Consistent 2-space indentation for easy scanning
- *
- * @param {Error} error - Error object to format (supports custom properties)
- * @param {number} index - Error index for multiple errors (0-based)
- * @param {number} total - Total number of errors (for "Error 1/3" labeling)
- * @returns {string[]} Array of formatted error lines ready for console.log
+ * @param {Error} error - Error object with stack trace (assumes Node.js Error format)
+ * @param {number} index - Zero-based error index for multiple errors
+ * @param {number} total - Total error count for "Error X/Y" labeling
+ * @returns {string[]} Formatted error lines with ANSI colors for console output
  *
  * @example Single Error
  * ```javascript
@@ -764,17 +763,17 @@ export function logDevelopment(logData, _includeHeaders, errors = []) {
  */
 export class Logger extends Middleware {
 	/**
-	 * Create a new Logger middleware instance
+	 * Create Logger middleware with error collection architecture
 	 *
-	 * Three simple options that cover 99% of real-world use cases.
-	 * No complex configuration objects, no YAML files, no environment
-	 * variable magic. Just the settings that actually matter.
+	 * **Integration Trap:** Must register early via router.useEarly() to capture all request lifecycle errors.
+	 * **Critical Behavior:** Errors are collected during request processing, not thrown immediately.
+	 * **Performance Alert:** Console.log is synchronous and blocks the event loop - avoid massive log volumes.
 	 *
-	 * @param {Object} options - Logger configuration options
-	 * @param {boolean} [options.production=false] - Switch between beautiful terminal output (false) and structured JSON (true)
-	 * @param {boolean} [options.includeHeaders=true] - Log request headers (useful for debugging, privacy considerations for production)
-	 * @param {boolean} [options.includeBody=false] - Log request bodies in development only (never logged in production for security)
-	 * @param {string} [options.identifier='@raven-js/wings/logger'] - Middleware identifier for debugging and middleware management
+	 * @param {Object} [options={}] - Logger configuration
+	 * @param {boolean} [options.production=false] - JSON logs (true) vs colored terminal output (false)
+	 * @param {boolean} [options.includeHeaders=true] - Log request headers (consider privacy for production)
+	 * @param {boolean} [options.includeBody=false] - Log request bodies (development only, never production)
+	 * @param {string} [options.identifier='@raven-js/wings/logger'] - Middleware identifier
 	 *
 	 * @example Development Setup
 	 * ```javascript

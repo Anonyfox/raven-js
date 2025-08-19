@@ -15,9 +15,12 @@ import {
 import { Middleware } from "../../core/middleware.js";
 
 /**
- *
+ * @file HTTP response compression middleware with intelligent content-type detection and algorithm selection.
+ */
+
+/**
  * Default compressible MIME types
- * These content types benefit from compression and are safe to compress
+ * Text-based content that compresses efficiently (typically 60-90% size reduction)
  */
 const DEFAULT_COMPRESSIBLE_TYPES = [
 	"text/",
@@ -46,13 +49,13 @@ const NON_COMPRESSIBLE_TYPES = [
 ];
 
 /**
- * Parse Accept-Encoding header with quality values
+ * Parse Accept-Encoding header with RFC 7231 quality value handling
  *
- * Parses the Accept-Encoding header according to RFC 7231 Section 5.3.4,
- * handling quality values (q-values) and returning encodings sorted by preference.
+ * **Performance:** Floating-point parsing optimized for typical q-value ranges (0.0-1.0).
+ * **Dangerous Edge:** Malformed q-values default to 1.0, zero quality encodings are excluded.
  *
- * @param {string} acceptEncoding - The Accept-Encoding header value
- * @returns {Array<{encoding: string, quality: number}>} Sorted array of accepted encodings
+ * @param {string|null|undefined} acceptEncoding - Accept-Encoding header value
+ * @returns {Array<{encoding: string, quality: number}>} Client preferences sorted by quality (highest first)
  *
  * @example
  * ```javascript
@@ -113,11 +116,14 @@ export function parseAcceptEncoding(acceptEncoding) {
 }
 
 /**
- * Select the best compression algorithm based on client preferences and available algorithms
+ * Select optimal compression algorithm from client preferences
  *
- * @param {Array<{encoding: string, quality: number}>} acceptedEncodings - Parsed Accept-Encoding preferences
- * @param {string[]} availableAlgorithms - Available compression algorithms in preference order
- * @returns {string|null} Selected compression algorithm or null if none suitable
+ * **Algorithm Priority:** brotli > gzip > deflate (optimal compression ratio vs compatibility).
+ * **Performance:** First-match selection for O(n*m) worst-case efficiency.
+ *
+ * @param {Array<{encoding: string, quality: number}>} acceptedEncodings - Client preferences (quality-sorted)
+ * @param {string[]} availableAlgorithms - Server algorithms in preference order
+ * @returns {string|null} Selected algorithm name or null if no acceptable match
  *
  * @example
  * ```javascript
@@ -151,14 +157,18 @@ export function selectBestEncoding(acceptedEncodings, availableAlgorithms) {
 }
 
 /**
- * Check if a response should be compressed based on content type and size
+ * Determine compression eligibility based on content characteristics
  *
- * @param {string|null} contentType - Response content-type header
- * @param {number} contentLength - Response content length in bytes
+ * **Performance Decision:** Sub-threshold responses skip compression to avoid CPU overhead exceeding benefits.
+ * **Critical Logic:** Explicit non-compressible types override compressible patterns for security.
+ * **Dangerous Edge:** Missing content-type defaults to no compression for safety.
+ *
+ * @param {string|null} contentType - Content-Type header value (can include charset)
+ * @param {number} contentLength - Response size in bytes
  * @param {Object} options - Compression configuration
- * @param {number} options.threshold - Minimum size threshold for compression
- * @param {string[]} options.compressibleTypes - Array of compressible content type prefixes
- * @returns {boolean} True if response should be compressed
+ * @param {number} options.threshold - Minimum byte size for compression consideration
+ * @param {string[]} options.compressibleTypes - MIME type prefixes eligible for compression
+ * @returns {boolean} True if response meets compression criteria
  */
 export function shouldCompress(contentType, contentLength, options) {
 	// Don't compress if below threshold
@@ -191,11 +201,15 @@ export function shouldCompress(contentType, contentLength, options) {
 }
 
 /**
- * Get compression options for a specific algorithm
+ * Generate algorithm-specific compression options
  *
- * @param {string} algorithm - Compression algorithm ('gzip', 'deflate', 'brotli')
+ * **Performance Tuning:** Level 1=fastest/largest, Level 9/11=slowest/smallest.
+ * **Critical Bounds:** Invalid levels are clamped to algorithm-safe ranges.
+ *
+ * @param {string} algorithm - Compression algorithm name ('gzip'|'deflate'|'brotli')
  * @param {number} level - Compression level (1-9 for gzip/deflate, 1-11 for brotli)
- * @returns {Object} Algorithm-specific compression options
+ * @returns {Object} Algorithm-specific options object for Node.js zlib streams
+ * @throws {Error} Unsupported algorithm names
  */
 export function getCompressionOptions(algorithm, level) {
 	switch (algorithm) {
@@ -218,11 +232,15 @@ export function getCompressionOptions(algorithm, level) {
 }
 
 /**
- * Create a compression stream for the specified algorithm
+ * Create Node.js compression transform stream
  *
- * @param {string} algorithm - Compression algorithm
- * @param {Object} options - Compression options
- * @returns {import('stream').Transform} Compression transform stream
+ * **Performance:** Streaming compression minimizes memory usage for large responses.
+ * **Critical Error:** Invalid algorithms throw immediately (fail-fast design).
+ *
+ * @param {string} algorithm - Algorithm name ('gzip'|'deflate'|'brotli')
+ * @param {Object} options - Algorithm-specific compression options
+ * @returns {import('stream').Transform} Node.js zlib compression stream
+ * @throws {Error} Unsupported algorithm names
  */
 export function createCompressionStream(algorithm, options) {
 	switch (algorithm) {
@@ -238,12 +256,16 @@ export function createCompressionStream(algorithm, options) {
 }
 
 /**
- * Compress response data using the specified algorithm
+ * Compress response data asynchronously
+ *
+ * **Performance Alert:** Large responses block event loop during compression - consider streaming for >1MB.
+ * **Critical Error:** Stream errors reject promise immediately (no partial compression).
+ * **Memory Usage:** Accumulates entire compressed output in memory before resolving.
  *
  * @param {string|Buffer} data - Response data to compress
- * @param {string} algorithm - Compression algorithm
- * @param {Object} options - Compression options
- * @returns {Promise<Buffer>} Compressed data
+ * @param {string} algorithm - Compression algorithm name
+ * @param {Object} options - Algorithm-specific compression options
+ * @returns {Promise<Buffer>} Promise resolving to compressed data buffer
  */
 export async function compressData(data, algorithm, options) {
 	return new Promise((resolve, reject) => {
@@ -318,14 +340,19 @@ export async function compressData(data, algorithm, options) {
  */
 export class Compression extends Middleware {
 	/**
-	 * Create a new CompressionMiddleware instance
+	 * Create compression middleware with intelligent content detection
 	 *
-	 * @param {Object} [options={}] - Compression configuration options
-	 * @param {number} [options.threshold=1024] - Minimum response size to compress (bytes)
-	 * @param {string[]} [options.algorithms=['brotli', 'gzip', 'deflate']] - Preferred compression algorithms in order
-	 * @param {number} [options.level=6] - Compression level (1=fast, 9=best for gzip/deflate, 11=best for brotli)
-	 * @param {string[]} [options.compressibleTypes] - Content types to compress (defaults to text-based types)
+	 * **Integration Trap:** Register after content-generation middleware to compress final responses.
+	 * **Performance Trade-off:** Lower levels = faster compression, higher levels = better ratios.
+	 * **Critical Validation:** Invalid thresholds/levels throw during construction (fail-fast design).
+	 *
+	 * @param {Object} [options={}] - Compression configuration
+	 * @param {number} [options.threshold=1024] - Minimum response bytes before compression consideration
+	 * @param {("brotli"|"gzip"|"deflate")[]} [options.algorithms=['brotli', 'gzip', 'deflate']] - Algorithm preference order
+	 * @param {number} [options.level=6] - Compression intensity (1=fastest, 9=best gzip/deflate, 11=best brotli)
+	 * @param {string[]} [options.compressibleTypes] - MIME type prefixes to compress (defaults to text-based)
 	 * @param {string} [options.identifier='@raven-js/wings/compression'] - Middleware identifier
+	 * @throws {Error} Configuration validation failures
 	 *
 	 * @example Development Setup (Fast Compression)
 	 * ```javascript
@@ -381,16 +408,13 @@ export class Compression extends Middleware {
 	}
 
 	/**
-	 * Compress response if appropriate
+	 * Execute compression pipeline with graceful error handling
 	 *
-	 * This private method handles the actual compression logic:
-	 * 1. Check if response should be compressed
-	 * 2. Parse client Accept-Encoding preferences
-	 * 3. Select best available compression algorithm
-	 * 4. Compress response data
-	 * 5. Update response headers
+	 * **Critical Resilience:** Compression failures never break requests - falls back to uncompressed response.
+	 * **Performance Decision:** Only compresses if result is actually smaller than original.
+	 * **Integration Trap:** Requires responseBody to be available (runs in after-callback phase).
 	 *
-	 * @param {import('../../core/context.js').Context} ctx - Request context
+	 * @param {import('../../core/context.js').Context} ctx - Wings request context
 	 */
 	async #compressResponse(ctx) {
 		try {

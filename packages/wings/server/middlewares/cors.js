@@ -9,9 +9,12 @@
 import { Middleware } from "../../core/middleware.js";
 
 /**
- *
+ * @file CORS (Cross-Origin Resource Sharing) middleware providing RFC 6454 compliant origin validation and preflight handling for Wings applications.
+ */
+
+/**
  * Default HTTP methods allowed for CORS requests
- * These are the standard methods most APIs need to support
+ * Standard methods covering 95% of API requirements
  */
 const DEFAULT_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"];
 
@@ -24,14 +27,17 @@ const DEFAULT_ALLOWED_HEADERS = ["Content-Type", "Authorization"];
 /**
  * Validate CORS configuration options
  *
+ * **Critical Validation Error:** Wildcard origins with credentials enabled create security vulnerabilities
+ * per CORS specification. This function enforces the RFC 6454 security constraint.
+ *
  * @param {Object} options - Configuration options to validate
- * @param {*} options.origin - Origin configuration
- * @param {string[]} options.methods - HTTP methods
- * @param {string[]} options.allowedHeaders - Allowed request headers
- * @param {string[]} options.exposedHeaders - Headers exposed to the client
- * @param {boolean} options.credentials - Whether credentials are allowed
- * @param {number} options.maxAge - Preflight cache time
- * @throws {Error} When configuration is invalid
+ * @param {string|string[]|RegExp|((origin: string|null) => boolean)|boolean} options.origin - Origin configuration
+ * @param {string[]} options.methods - HTTP methods array
+ * @param {string[]} options.allowedHeaders - Allowed request headers array
+ * @param {string[]} options.exposedHeaders - Headers exposed to client array
+ * @param {boolean} options.credentials - Whether credentials (cookies/auth headers) allowed
+ * @param {number} options.maxAge - Preflight cache time in seconds
+ * @throws {Error} Configuration validation failures requiring immediate fix
  */
 function validateCorsOptions(options) {
 	// Validate methods array
@@ -73,8 +79,10 @@ function validateCorsOptions(options) {
 /**
  * Format header array for HTTP header value
  *
- * @param {string[]} headers - Array of header names
- * @returns {string} Comma-separated header string
+ * **Performance:** Simple string join - no validation overhead for trusted internal data.
+ *
+ * @param {string[]} headers - Array of header names (assumed valid)
+ * @returns {string} RFC 7230 compliant comma-separated header string
  *
  * @example
  * ```javascript
@@ -89,8 +97,11 @@ function formatHeaderValue(headers) {
 /**
  * Parse comma-separated header value into array
  *
- * @param {string|null} headerValue - Header value to parse
- * @returns {string[]} Array of trimmed header names
+ * **Dangerous Edge:** Null/empty values return empty array. Malformed headers are filtered out.
+ * **Performance:** Trims whitespace for cross-browser compatibility.
+ *
+ * @param {string|null} headerValue - Access-Control-Request-Headers value or null
+ * @returns {string[]} Array of trimmed, non-empty header names
  *
  * @example
  * ```javascript
@@ -188,18 +199,22 @@ function parseHeaderValue(headerValue) {
  */
 export class CORS extends Middleware {
 	/**
-	 * Create a new CORS middleware instance
+	 * Create CORS middleware with surgical security validation
+	 *
+	 * **Integration Trap:** Must register before route handlers to catch preflight OPTIONS requests.
+	 * **Security Constraint:** Cannot combine wildcard origins with credentials per RFC 6454.
+	 * **Performance Note:** Origin functions called for every request - keep validation logic fast.
 	 *
 	 * @param {Object} [options={}] - CORS configuration options
-	 * @param {string|string[]|RegExp|Function|boolean} [options.origin='*'] - Allowed origins configuration
+	 * @param {string|string[]|RegExp|((origin: string|null) => boolean)|boolean} [options.origin='*'] - Origin validation strategy
 	 * @param {string[]} [options.methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']] - Allowed HTTP methods
-	 * @param {string[]} [options.allowedHeaders=['Content-Type', 'Authorization']] - Headers allowed in requests
-	 * @param {string[]} [options.exposedHeaders=[]] - Headers exposed to the client
-	 * @param {boolean} [options.credentials=false] - Whether to allow credentials (cookies, auth headers)
-	 * @param {number} [options.maxAge=86400] - How long browsers can cache preflight responses (seconds)
-	 * @param {string} [options.identifier='@raven-js/wings/cors'] - Middleware identifier
+	 * @param {string[]} [options.allowedHeaders=['Content-Type', 'Authorization']] - Request headers whitelist
+	 * @param {string[]} [options.exposedHeaders=[]] - Response headers visible to client JavaScript
+	 * @param {boolean} [options.credentials=false] - Allow cookies/authorization headers (requires specific origins)
+	 * @param {number} [options.maxAge=86400] - Preflight cache duration in seconds
+	 * @param {string} [options.identifier='@raven-js/wings/cors'] - Middleware identifier for debugging
 	 *
-	 * @throws {Error} When configuration is invalid
+	 * @throws {Error} Configuration validation failures preventing secure operation
 	 *
 	 * @example Development Setup
 	 * ```javascript
@@ -449,15 +464,15 @@ export class CORS extends Middleware {
 	}
 
 	/**
-	 * Get the allowed origin value for preflight requests
+	 * Get allowed origin for preflight requests with error propagation
 	 *
-	 * This method is similar to #getAllowedOrigin but allows function
-	 * errors to propagate, which enables proper 500 error responses
-	 * during preflight validation when origin functions throw errors.
+	 * **Critical Difference:** Unlike regular requests, preflight origin function errors
+	 * propagate to generate proper 500 responses. Regular requests silently deny on errors.
+	 * **Dangerous Edge:** Null origin indicates same-origin request requiring no CORS headers.
 	 *
-	 * @param {string|null} requestOrigin - Origin from request
-	 * @returns {string|null} Origin value for header or null if not allowed
-	 * @throws {Error} When origin function throws (for proper error handling)
+	 * @param {string|null} requestOrigin - Origin header value from preflight request
+	 * @returns {string|null} Allowed origin for Access-Control-Allow-Origin header or null if denied
+	 * @throws {Error} Origin function validation errors (propagated for preflight error responses)
 	 */
 	#getAllowedOriginForPreflight(requestOrigin) {
 		// No origin header = same-origin request, no CORS headers needed
@@ -502,14 +517,14 @@ export class CORS extends Middleware {
 	}
 
 	/**
-	 * Get the allowed origin value for response header
+	 * Get allowed origin for regular requests with silent error handling
 	 *
-	 * This method determines what value should be used in the
-	 * Access-Control-Allow-Origin header based on the configuration
-	 * and the requesting origin.
+	 * **Critical Difference:** Origin function errors are silently caught and treated as denial.
+	 * Preflight requests propagate errors for proper 500 responses.
+	 * **Dangerous Edge:** Returns null for null origins (same-origin requests need no CORS).
 	 *
-	 * @param {string|null} requestOrigin - Origin from request
-	 * @returns {string|null} Origin value for header or null if not allowed
+	 * @param {string|null} requestOrigin - Origin header value from request
+	 * @returns {string|null} Allowed origin for Access-Control-Allow-Origin header or null if denied
 	 */
 	#getAllowedOrigin(requestOrigin) {
 		// No origin header = same-origin request, no CORS headers needed
@@ -558,13 +573,13 @@ export class CORS extends Middleware {
 	}
 
 	/**
-	 * Check if requested headers are allowed
+	 * Validate preflight requested headers against whitelist
 	 *
-	 * Validates that all headers requested in a preflight request
-	 * are included in the allowedHeaders configuration.
+	 * **Performance:** Case-insensitive comparison for cross-browser compatibility.
+	 * **Dangerous Edge:** Empty header values are ignored, malformed headers cause denial.
 	 *
-	 * @param {string} requestedHeaders - Comma-separated header names from request
-	 * @returns {boolean} True if all headers are allowed
+	 * @param {string} requestedHeaders - Access-Control-Request-Headers value (comma-separated)
+	 * @returns {boolean} True if all requested headers in allowedHeaders whitelist
 	 */
 	#areHeadersAllowed(requestedHeaders) {
 		const requested = parseHeaderValue(requestedHeaders);

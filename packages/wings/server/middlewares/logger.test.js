@@ -114,6 +114,23 @@ describe("Logger Helper Functions", () => {
 			new Date(),
 		);
 		assert.strictEqual(realIpLog.ip, "10.0.0.1");
+
+		// Test slow performance classification (duration >= 100ms)
+		const slowCtx = new Context(
+			"GET",
+			new URL("http://localhost/slow"),
+			new Headers(),
+		);
+		slowCtx.responseStatusCode = 200;
+		const slowStartTime = performance.now() - 150; // Simulate 150ms duration
+		const slowLogData = collectLogData(
+			slowCtx,
+			slowStartTime,
+			"test-id",
+			new Date(),
+		);
+		const slowStructuredLog = createStructuredLog(slowLogData, []);
+		assert.strictEqual(slowStructuredLog.result.performance, "slow");
 	});
 
 	test("createStructuredLog generates compliance logs", () => {
