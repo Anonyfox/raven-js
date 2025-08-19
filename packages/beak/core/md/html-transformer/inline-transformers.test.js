@@ -25,6 +25,16 @@ describe("Inline Transformers", () => {
 		};
 		assert.equal(transformInlineNode(italicNode), "<em>Italic Text</em>");
 
+		// Strikethrough node
+		const strikethroughNode = {
+			type: "strikethrough",
+			content: [{ type: "text", content: "Struck Text" }],
+		};
+		assert.equal(
+			transformInlineNode(strikethroughNode),
+			"<del>Struck Text</del>",
+		);
+
 		// Inline code node
 		const codeNode = { type: "code", content: "const x = 1;" };
 		assert.equal(transformInlineNode(codeNode), "<code>const x = 1;</code>");
@@ -50,6 +60,13 @@ describe("Inline Transformers", () => {
 			transformInlineNode(imageNode),
 			'<img src="https://example.com/image.jpg" alt="Image description">',
 		);
+
+		// Inline HTML node
+		const inlineHtmlNode = {
+			type: "inlineHtml",
+			html: "<span>Raw HTML</span>",
+		};
+		assert.equal(transformInlineNode(inlineHtmlNode), "<span>Raw HTML</span>");
 	});
 
 	it("should handle edge cases and invalid inputs", () => {
@@ -121,6 +138,45 @@ describe("Inline Transformers", () => {
 		assert.equal(
 			transformInlineNode(imageNodeNoUrl),
 			'<img src="" alt="Image description">',
+		);
+
+		// Strikethrough edge cases
+		const strikethroughNodeNoContent = { type: "strikethrough" };
+		assert.equal(
+			transformInlineNode(strikethroughNodeNoContent),
+			"<del></del>",
+		);
+
+		// Inline HTML edge cases
+		const inlineHtmlNodeNoHtml = { type: "inlineHtml" };
+		assert.equal(transformInlineNode(inlineHtmlNodeNoHtml), "");
+
+		const inlineHtmlNodeNonString = { type: "inlineHtml", html: 123 };
+		// @ts-expect-error - Testing invalid input
+		assert.equal(transformInlineNode(inlineHtmlNodeNonString), "");
+
+		// Link with title
+		const linkWithTitle = {
+			type: "link",
+			url: "https://example.com",
+			title: "Example Site",
+			content: [{ type: "text", content: "Link" }],
+		};
+		assert.equal(
+			transformInlineNode(linkWithTitle),
+			'<a href="https://example.com" title="Example Site">Link</a>',
+		);
+
+		// Image with title
+		const imageWithTitle = {
+			type: "image",
+			url: "https://example.com/image.jpg",
+			alt: "Image",
+			title: "Image Title",
+		};
+		assert.equal(
+			transformInlineNode(imageWithTitle),
+			'<img src="https://example.com/image.jpg" alt="Image" title="Image Title">',
 		);
 	});
 });

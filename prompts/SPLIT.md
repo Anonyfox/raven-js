@@ -1,5 +1,7 @@
 # SPLIT
 
+**Read CODEX.md first.** Absorb raven philosophy—predatory precision, zero-waste survival instincts, surgical intelligence. Refactoring demands methodical dissection—slice monoliths into razor-sharp modules without sacrificing functionality.
+
 Refactor monolithic JavaScript files into maintainable, well-tested modules. Target: identical public API with improved organization and coverage.
 
 ## Template

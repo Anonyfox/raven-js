@@ -153,6 +153,26 @@ describe("Reference Parser", () => {
 				assert.equal(result, null, `Should reject: ${lines[i]}`);
 			}
 		});
+
+		it("should reject references with malformed URL and title combinations", () => {
+			// Test cases that will cause parseUrlAndTitle to return null (lines 120-121)
+			const lines = [
+				"[link1]: \t  \t ", // Only whitespace after colon - fails both patterns since \S+ requires non-whitespace
+			];
+
+			for (let i = 0; i < lines.length; i++) {
+				const result = parseReferences([lines[i]], 0);
+				assert.equal(result, null, `Should reject: ${lines[i]}`);
+			}
+		});
+
+		it("should return null when start position is beyond array length", () => {
+			// Test case for line 21: start >= lines.length
+			const lines = ["[link]: https://example.com"];
+			const result = parseReferences(lines, 5);
+
+			assert.equal(result, null);
+		});
 	});
 
 	describe("collectReferences", () => {

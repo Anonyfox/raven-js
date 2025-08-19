@@ -189,5 +189,53 @@ describe("Reference Link Parser", () => {
 			assert.ok(result);
 			assert.equal(result.node.url, "https://github.com");
 		});
+
+		it("should return null when bracket is at end for regular syntax", () => {
+			// Force regular link parsing by providing no references
+			const result = tryParseReferenceLink("[text]", 0, {});
+			assert.equal(result, null);
+		});
+
+		it("should return null when character after bracket is not opening paren", () => {
+			// Force regular link parsing, test [text]x instead of [text](
+			const result = tryParseReferenceLink("[text]x", 0, {});
+			assert.equal(result, null);
+		});
+
+		it("should return null when no closing bracket found", () => {
+			// Test case where endBracket === -1 in regular syntax
+			const result = tryParseReferenceLink("[no closing bracket", 0, {});
+			assert.equal(result, null);
+		});
+
+		it("should return null when URL is empty in regular syntax", () => {
+			// Test case where url.length === 0
+			const result = tryParseReferenceLink("[text]()", 0, {});
+			assert.equal(result, null);
+		});
+
+		it("should return null when link text is empty in regular syntax", () => {
+			// Test case where linkText.length === 0
+			const result = tryParseReferenceLink("[](url)", 0, {});
+			assert.equal(result, null);
+		});
+
+		it("should return null when no closing bracket in reference syntax", () => {
+			// Test case where firstCloseBracket === -1 in reference syntax
+			const result = tryParseReferenceLink("[no bracket in ref", 0, references);
+			assert.equal(result, null);
+		});
+
+		it("should return null when bracket not followed by paren even with closing paren later", () => {
+			// This has a ) later but not immediately after ], should trigger the condition check
+			const result = tryParseReferenceLink("[text]x)", 0, {});
+			assert.equal(result, null);
+		});
+
+		it("should return null when start position is beyond text length", () => {
+			// Test case where start >= text.length
+			const result = tryParseReferenceLink("short", 10, references);
+			assert.equal(result, null);
+		});
 	});
 });

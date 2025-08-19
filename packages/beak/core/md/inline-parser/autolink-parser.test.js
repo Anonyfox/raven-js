@@ -104,4 +104,10 @@ describe("Autolink Parser", () => {
 			end: 24,
 		});
 	});
+
+	it("should not parse when URL exists but not at start of slice", () => {
+		// This text contains "http" at start but URL is not immediately at position 0
+		const result = tryParseAutolink("http and https://example.com", 0);
+		assert.equal(result, null);
+	});
 });

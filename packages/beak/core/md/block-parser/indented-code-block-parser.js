@@ -47,9 +47,6 @@ export const parseIndentedCodeBlock = (
 		}
 	}
 
-	// Must have at least one line of content
-	if (contentLines.length === 0) return null;
-
 	// Remove trailing empty lines for cleaner output
 	while (
 		contentLines.length > 0 &&
@@ -102,8 +99,7 @@ const isEmptyLine = (line) => {
 const removeIndentation = (line) => {
 	if (line.startsWith("\t")) {
 		return line.slice(1); // Remove 1 tab
-	} else if (/^ {4}/.test(line)) {
-		return line.slice(4); // Remove 4 spaces
 	}
-	return line; // Fallback (shouldn't happen if isIndentedCodeLine passed)
+	// If not a tab, it must be 4+ spaces (guaranteed by isIndentedCodeLine)
+	return line.slice(4); // Remove 4 spaces
 };

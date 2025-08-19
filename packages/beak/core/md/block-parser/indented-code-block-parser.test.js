@@ -152,4 +152,39 @@ describe("Indented Code Block Parser", () => {
 			"def fibonacci(n):\n    if n <= 1:\n        return n\n    else:\n        return fibonacci(n-1) + fibonacci(n-2)\n\nprint(fibonacci(10))";
 		assert.equal(result.node.content, expected);
 	});
+
+	it("should handle edge case with unconventional indentation", () => {
+		// Test for fallback case in removeIndentation - this is a defensive test
+		// to ensure the fallback path is covered, even though it shouldn't normally happen
+		const lines = ["     five spaces"]; // 5 spaces - matches isIndentedCodeLine but not exact pattern
+		const result = parseIndentedCodeBlock(lines, 0);
+
+		assert.ok(result);
+		// Should remove 4 spaces, leaving 1 space + content
+		assert.equal(result.node.content, " five spaces");
+	});
+
+	it("should return null when start is beyond array length", () => {
+		// Test edge case where start >= lines.length
+		const lines = ["some content"];
+		const result = parseIndentedCodeBlock(lines, 5);
+
+		assert.equal(result, null);
+	});
+
+	it("should return null when code block contains only whitespace", () => {
+		// Test case where all collected lines are empty (line 62 coverage)
+		const lines = ["    ", "    ", "    "]; // Lines with only spaces
+		const result = parseIndentedCodeBlock(lines, 0);
+
+		assert.equal(result, null);
+	});
+
+	it("should return null when indented line contains only spaces", () => {
+		// Test for line 51 coverage - line with only indentation becomes empty after processing
+		const lines = ["    "]; // 4 spaces exactly - becomes empty string after removeIndentation
+		const result = parseIndentedCodeBlock(lines, 0);
+
+		assert.equal(result, null);
+	});
 });

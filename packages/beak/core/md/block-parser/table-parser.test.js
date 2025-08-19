@@ -76,4 +76,19 @@ describe("Table Parser", () => {
 		const result = parseTable(["| Header |"], 1);
 		assert.equal(result, null);
 	});
+
+	it("should handle edge case with minimal table structure", () => {
+		// Test a valid minimal table that should parse successfully
+		const lines = [
+			"| A |", // Valid table row with content
+			"|---|", // Valid separator
+			"| B |", // Valid data row
+		];
+		const result = parseTable(lines, 0);
+
+		// This should work and produce a valid table
+		assert.ok(result);
+		assert.ok(result.node.type === NODE_TYPES.TABLE);
+		assert.equal(result.node.rows.length, 2); // header + data row
+	});
 });

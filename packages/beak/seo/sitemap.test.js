@@ -126,4 +126,28 @@ describe("sitemap", () => {
 		assert.strictEqual(changefreqCount, 2);
 		assert.strictEqual(priorityCount, 2);
 	});
+
+	it("should handle edge cases for regex matching fallbacks", () => {
+		// Create a case where the sitemap function might return unexpected content
+		// to test the || [] fallbacks in regex matches
+		const result = sitemap({
+			domain: "example.com",
+			pages: [],
+		});
+
+		// This should produce a sitemap with no URL entries, testing the regex fallbacks
+		const urlCount = (result.match(/<url>/g) || []).length;
+		assert.strictEqual(urlCount, 0);
+
+		// Test other regex patterns that might not match
+		const locCount = (result.match(/<loc>/g) || []).length;
+		const lastmodCount = (result.match(/<lastmod>/g) || []).length;
+		const changefreqCount = (result.match(/<changefreq>/g) || []).length;
+		const priorityCount = (result.match(/<priority>/g) || []).length;
+
+		assert.strictEqual(locCount, 0);
+		assert.strictEqual(lastmodCount, 0);
+		assert.strictEqual(changefreqCount, 0);
+		assert.strictEqual(priorityCount, 0);
+	});
 });

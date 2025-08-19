@@ -128,6 +128,7 @@ describe("Reference Image Parser", () => {
 				"![alt][ref", // Unclosed reference
 				"![][]", // Empty alt text
 				"![alt][ ]", // Reference with only space
+				"![alt]", // No ( after ] for regular syntax
 			];
 
 			for (const test of tests) {
@@ -196,6 +197,47 @@ describe("Reference Image Parser", () => {
 			assert.ok(result);
 			assert.equal(result.node.url, "https://example.com/special.png");
 			assert.equal(result.node.alt, "special-chars");
+		});
+
+		it("should return null when bracket is at end for regular syntax", () => {
+			// Force regular image parsing by providing no references
+			const result = tryParseReferenceImage("![alt]", 0, {});
+			assert.equal(result, null);
+		});
+
+		it("should return null when character after bracket is not opening paren", () => {
+			// Force regular image parsing by providing no references, test ![alt]x instead of ![alt](
+			const result = tryParseReferenceImage("![alt]x", 0, {});
+			assert.equal(result, null);
+		});
+
+		it("should return null when bracket not followed by paren even with closing paren later", () => {
+			// This has a ) later but not immediately after ], should trigger the condition check
+			const result = tryParseReferenceImage("![alt]x)", 0, {});
+			assert.equal(result, null);
+		});
+
+		it("should return null when no closing bracket found", () => {
+			// Test case where endBracket === -1 in regular syntax
+			const result = tryParseReferenceImage("![no closing bracket", 0, {});
+			assert.equal(result, null);
+		});
+
+		it("should return null when URL is empty in regular syntax", () => {
+			// Test case where url.length === 0
+			const result = tryParseReferenceImage("![alt]()", 0, {});
+			assert.equal(result, null);
+		});
+
+		it("should return null when no closing bracket in reference syntax", () => {
+			// Test case where firstCloseBracket === -1 in reference syntax
+			// Force this by having invalid regular syntax but also invalid reference syntax
+			const result = tryParseReferenceImage(
+				"![no bracket in ref",
+				0,
+				references,
+			);
+			assert.equal(result, null);
 		});
 	});
 });

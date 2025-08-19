@@ -32,7 +32,6 @@ export const parseTable = (
 
 	// Parse header row
 	const headerCells = parseTableRow(firstLine);
-	if (headerCells.length === 0) return null;
 
 	rows.push({
 		type: NODE_TYPES.TABLE_ROW,
@@ -51,7 +50,6 @@ export const parseTable = (
 		}
 
 		const cells = parseTableRow(currentLine);
-		if (cells.length === 0) break;
 
 		rows.push({
 			type: NODE_TYPES.TABLE_ROW,

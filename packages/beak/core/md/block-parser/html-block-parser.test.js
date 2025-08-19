@@ -260,6 +260,30 @@ describe("HTML Block Parser", () => {
 				"<div>\n  This has **bold** and *italic* text\n  But it should be preserved as-is\n</div>",
 			);
 		});
+
+		it("should handle safety check for very long unclosed HTML blocks", () => {
+			// Create a test case with more than 50 lines to trigger the safety check
+			const lines = ["<div>"];
+			// Add 60 lines of content to exceed the 50-line safety limit
+			for (let i = 0; i < 60; i++) {
+				lines.push(`  Line ${i + 1} of content`);
+			}
+
+			const result = parseHTMLBlock(lines, 0);
+
+			assert.ok(result);
+			// Should only contain the first line due to safety check
+			assert.equal(result.node.html, "<div>");
+			assert.equal(result.end, 1);
+		});
+
+		it("should return null when start position is beyond array length", () => {
+			// Test case for line 23: start >= lines.length
+			const lines = ["<div>Some content</div>"];
+			const result = parseHTMLBlock(lines, 5);
+
+			assert.equal(result, null);
+		});
 	});
 
 	describe("isBlockLevelElement", () => {

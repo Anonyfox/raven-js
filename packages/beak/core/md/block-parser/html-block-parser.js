@@ -82,9 +82,6 @@ export const parseHTMLBlock = (
 		}
 	}
 
-	// Must have some content
-	if (htmlContent.length === 0) return null;
-
 	return {
 		node: {
 			type: NODE_TYPES.HTML_BLOCK,

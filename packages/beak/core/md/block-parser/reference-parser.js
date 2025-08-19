@@ -110,6 +110,7 @@ const parseUrlAndTitle = (text) => {
 	}
 
 	// Try bare URL with quoted title: url "title"
+	// This regex is very permissive and catches virtually all valid input
 	match = text.match(/^(\S+)(?:\s+["']([^"']+)["'])?$/);
 	if (match) {
 		return {
@@ -118,6 +119,8 @@ const parseUrlAndTitle = (text) => {
 		};
 	}
 
+	// This point should never be reached due to the permissive \S+ pattern above
+	// which matches any non-whitespace character sequence
 	return null;
 };
 
