@@ -1,6 +1,35 @@
 import assert from "node:assert";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import * as rules from "./index.js";
+
+/**
+ * Find workspace root by walking up from current directory
+ * @param {string} startPath - Starting path to search from
+ * @returns {string} Workspace root path
+ */
+function findWorkspaceRoot(startPath) {
+	let currentPath = startPath;
+
+	while (currentPath !== dirname(currentPath)) {
+		const packageJsonPath = join(currentPath, "package.json");
+		if (existsSync(packageJsonPath)) {
+			try {
+				const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+				if (packageJson.workspaces && Array.isArray(packageJson.workspaces)) {
+					return currentPath;
+				}
+			} catch {
+				// Continue searching if package.json is invalid
+			}
+		}
+		currentPath = dirname(currentPath);
+	}
+
+	// If no workspace found, return the original path
+	return startPath;
+}
 
 describe("lib/rules/index.js", () => {
 	it("should export main validation functions", () => {
@@ -63,8 +92,8 @@ describe("lib/rules/index.js", () => {
 	});
 
 	it("should validateWorkspaceRoot with actual workspace", () => {
-		// Test with actual workspace root path
-		const workspaceRoot = "/Users/fox/projects/github.com/Anonyfox/ravenjs";
+		// Test with actual workspace root path - find it dynamically
+		const workspaceRoot = findWorkspaceRoot(process.cwd());
 
 		// This should pass since the workspace root should be valid
 		const result = rules.validateWorkspaceRoot(workspaceRoot);
@@ -77,7 +106,7 @@ describe("lib/rules/index.js", () => {
 
 	it("should validate function with actual workspace", () => {
 		// Test the main validate function with workspace - disable output for testing
-		const workspaceRoot = "/Users/fox/projects/github.com/Anonyfox/ravenjs";
+		const workspaceRoot = findWorkspaceRoot(process.cwd());
 
 		// Test validation function structure (may not pass due to missing JSDoc headers)
 		const result = rules.validate(workspaceRoot, false);
