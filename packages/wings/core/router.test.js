@@ -66,6 +66,37 @@ describe("Router", () => {
 				assert.strictEqual(router.listRoutes(httpMethod)[0].path, "///test///");
 			});
 		});
+
+		it("should add COMMAND route and return router for chaining", () => {
+			const handler = async (ctx) => {
+				ctx.body = "command test";
+			};
+
+			const result = router.cmd("/test", handler);
+
+			assert.strictEqual(result, router);
+			assert.strictEqual(router.listRoutes(HTTP_METHODS.COMMAND).length, 1);
+
+			const route = router.listRoutes(HTTP_METHODS.COMMAND)[0];
+			assert.strictEqual(route.method, HTTP_METHODS.COMMAND);
+			assert.strictEqual(route.path, "/test");
+			assert.strictEqual(route.handler, handler);
+		});
+
+		it("should handle COMMAND route with leading/trailing slashes", () => {
+			const handler = async (ctx) => {
+				ctx.body = "command test";
+			};
+
+			const result = router.cmd("//test//", handler);
+
+			assert.strictEqual(result, router);
+			assert.strictEqual(router.listRoutes(HTTP_METHODS.COMMAND).length, 1);
+
+			const route = router.listRoutes(HTTP_METHODS.COMMAND)[0];
+			assert.strictEqual(route.method, HTTP_METHODS.COMMAND);
+			assert.strictEqual(route.path, "//test//"); // Path is stored as-is, normalization happens during routing
+		});
 	});
 
 	describe("addRoute", () => {
@@ -797,6 +828,61 @@ describe("Router", () => {
 			assert.strictEqual(result, ctx);
 			assert.strictEqual(ctx.responseStatusCode, 500); // Should be 500 due to after callback error
 			assert.strictEqual(ctx.errors.length, 0); // Errors should be cleared after printing
+		});
+	});
+
+	describe("path segment caching", () => {
+		it("should trigger cache eviction when exceeding PATH_CACHE_LIMIT", async () => {
+			// The path segments cache limit is 100, so we need more than 100 unique paths
+			// to trigger the cache eviction logic in #getPathSegments() method
+			// This will test lines 750-752 which handle LRU cache eviction
+
+			const router = new Router();
+
+			// Generate 105 unique paths to exceed the limit of 100
+			const promises = [];
+			for (let i = 0; i < 105; i++) {
+				const path = `/test-path-${i}`;
+				const handler = async (ctx) => {
+					ctx.body = `Response for path ${i}`;
+				};
+
+				// Add the route
+				router.get(path, handler);
+
+				// Create context and process the request to trigger path segment processing
+				const url = new URL(`http://localhost${path}`);
+				const ctx = new Context("GET", url, new Headers());
+				promises.push(router.handleRequest(ctx));
+			}
+
+			// Process all requests to trigger cache usage and eviction
+			const results = await Promise.all(promises);
+
+			// Verify all requests were processed successfully
+			assert.equal(results.length, 105);
+
+			// Each result should be the corresponding context
+			results.forEach((result, i) => {
+				assert.ok(result instanceof Context);
+				assert.equal(result.body, `Response for path ${i}`);
+				assert.equal(result.responseStatusCode, 200);
+			});
+
+			// Test that cache still works after eviction by making some requests again
+			const url1 = new URL("http://localhost/test-path-100");
+			const ctx1 = new Context("GET", url1, new Headers());
+			const result1 = await router.handleRequest(ctx1);
+
+			assert.equal(result1.body, "Response for path 100");
+			assert.equal(result1.responseStatusCode, 200);
+
+			const url2 = new URL("http://localhost/test-path-104");
+			const ctx2 = new Context("GET", url2, new Headers());
+			const result2 = await router.handleRequest(ctx2);
+
+			assert.equal(result2.body, "Response for path 104");
+			assert.equal(result2.responseStatusCode, 200);
 		});
 	});
 });

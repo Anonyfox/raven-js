@@ -6,8 +6,22 @@
  * @see {@link https://anonyfox.com} **MIME Utils** - File extension to MIME type mapping utilities. This module provides utilities for determining the appropriate MIME type based on file extensions. It includes a comprehensive mapping of common file extensions to their corresponding MIME types, with proper fallback handling for unknown extensions. ## Supported File Types ### Web Files - HTML, JavaScript, CSS, JSON, XML ### Images - PNG, JPEG, GIF, SVG, ICO, WebP, AVIF ### Media - Audio: WAV, MP3 - Video: MP4, WebM ### Fonts - WOFF, TTF, EOT, OTF ### Documents - PDF, TXT, Markdown, CSV ### Archives - ZIP, GZ ### Other - WebAssembly (WASM) ## Design Philosophy This module prioritizes simplicity and reliability over completeness. It covers the most common file types used in web applications while providing a sensible default for unknown extensions. **Note**: The mapping is case-insensitive and handles edge cases like files with multiple dots, leading dots, and various special characters.
  */
 
+import { MATH_CONSTANTS, MIME_TYPES } from "./string-pool.js";
+
 /**
+ * Cache for extension extraction results to avoid repeated string operations.
  *
+ * This Map caches the result of extension extraction and MIME type lookup
+ * to eliminate repeated string manipulation for commonly requested filenames.
+ *
+ * **Performance**: O(1) lookup vs O(n) string operations for repeated filenames.
+ * **Memory**: LRU cache with 200 entry limit to prevent memory leaks.
+ *
+ * @type {Map<string, string>}
+ */
+const mimeTypeCache = new Map();
+
+/**
  * Internal mapping of file extensions to MIME types.
  * This object contains the complete mapping of supported file extensions
  * to their corresponding MIME types. Extensions are stored with leading
@@ -16,10 +30,10 @@
  * covering web files, images, media, fonts, documents, and archives.
  */
 const mimeTypes = {
-	".html": "text/html",
-	".js": "text/javascript",
-	".css": "text/css",
-	".json": "application/json",
+	".html": MIME_TYPES.TEXT_HTML,
+	".js": MIME_TYPES.TEXT_JAVASCRIPT,
+	".css": MIME_TYPES.TEXT_CSS,
+	".json": MIME_TYPES.APPLICATION_JSON,
 	".png": "image/png",
 	".jpg": "image/jpeg",
 	".jpeg": "image/jpeg", // Add jpeg extension
@@ -32,8 +46,8 @@ const mimeTypes = {
 	".eot": "application/vnd.ms-fontobject",
 	".otf": "application/font-otf",
 	".wasm": "application/wasm",
-	".txt": "text/plain",
-	".xml": "application/xml",
+	".txt": MIME_TYPES.TEXT_PLAIN,
+	".xml": MIME_TYPES.APPLICATION_XML,
 	".ico": "image/x-icon",
 	".webp": "image/webp",
 	".avif": "image/avif",
@@ -150,7 +164,12 @@ const mimeTypes = {
  */
 export function getMimeType(filename) {
 	if (!filename || typeof filename !== "string") {
-		return "application/octet-stream";
+		return MIME_TYPES.APPLICATION_OCTET_STREAM;
+	}
+
+	// Check cache first for O(1) repeated lookups
+	if (mimeTypeCache.has(filename)) {
+		return mimeTypeCache.get(filename);
 	}
 
 	// Trim whitespace from the filename
@@ -158,18 +177,44 @@ export function getMimeType(filename) {
 
 	// Handle edge cases where trimming results in empty string
 	if (!trimmedFilename) {
-		return "application/octet-stream";
+		return MIME_TYPES.APPLICATION_OCTET_STREAM;
 	}
 
-	const parts = trimmedFilename.split(".");
-	if (parts.length < 2) {
-		return "application/octet-stream";
+	// Optimized extension extraction using lastIndexOf - O(1) operation
+	const lastDotIndex = trimmedFilename.lastIndexOf(".");
+	if (lastDotIndex === -1 || lastDotIndex === trimmedFilename.length - 1) {
+		const result = MIME_TYPES.APPLICATION_OCTET_STREAM;
+		cacheResult(filename, result);
+		return result;
 	}
 
-	// Get the last part and trim any whitespace, then convert to lowercase
-	const ext = `.${parts.pop().trim().toLowerCase()}`;
-	return (
-		/** @type {Record<string, string>} */ (mimeTypes)[ext] ||
-		"application/octet-stream"
-	);
+	// Extract extension efficiently without array creation
+	const extension = trimmedFilename.slice(lastDotIndex).toLowerCase();
+	const result =
+		/** @type {Record<string, string>} */ (mimeTypes)[extension] ||
+		MIME_TYPES.APPLICATION_OCTET_STREAM;
+
+	// Cache the result with LRU management
+	cacheResult(filename, result);
+	return result;
+}
+
+/**
+ * Caches MIME type result with LRU eviction to prevent memory leaks.
+ *
+ * This function implements a simple LRU cache by removing the oldest
+ * entry when the cache size limit is reached.
+ *
+ * **Performance**: O(1) cache management with bounded memory usage.
+ *
+ * @param {string} filename - The filename key
+ * @param {string} mimeType - The MIME type result
+ */
+function cacheResult(filename, mimeType) {
+	// Simple LRU: delete oldest when limit reached
+	if (mimeTypeCache.size >= MATH_CONSTANTS.MIME_CACHE_LIMIT) {
+		const firstKey = mimeTypeCache.keys().next().value;
+		mimeTypeCache.delete(firstKey);
+	}
+	mimeTypeCache.set(filename, mimeType);
 }

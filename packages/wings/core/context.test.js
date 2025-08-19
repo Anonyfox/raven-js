@@ -872,4 +872,66 @@ describe("Context", () => {
 			assert.equal(ctx.responseHeaders.get("x-special"), "Hello World\tTest");
 		});
 	});
+
+	describe("cache and status code coverage", () => {
+		it("should cache parsed body results for multiple calls", () => {
+			// Test the body parsing cache to cover lines 232-233
+			const jsonBody = Buffer.from('{"name":"test","value":42}');
+			const jsonCtx = new Context("POST", url, headers, jsonBody);
+
+			// First call should parse the body
+			const firstCall = jsonCtx.requestBody();
+			assert.equal(firstCall.name, "test");
+			assert.equal(firstCall.value, 42);
+
+			// Second call should return cached result (covers lines 232-233)
+			const secondCall = jsonCtx.requestBody();
+			assert.equal(secondCall.name, "test");
+			assert.equal(secondCall.value, 42);
+
+			// Should be the same reference due to caching
+			assert.strictEqual(firstCall, secondCall);
+
+			// Test with form data too
+			const formHeaders = new Headers({
+				"content-type": "application/x-www-form-urlencoded",
+			});
+			const formBody = Buffer.from("name=test&value=42");
+			const formCtx = new Context("POST", url, formHeaders, formBody);
+
+			const firstFormCall = formCtx.requestBody();
+			const secondFormCall = formCtx.requestBody();
+			assert.strictEqual(firstFormCall, secondFormCall);
+		});
+
+		it("should correctly identify 404 responses with isNotFound()", () => {
+			// Test the isNotFound() method to cover lines 693-694
+			const ctx = new Context("GET", url, headers);
+
+			// Initially should not be 404
+			assert.equal(ctx.isNotFound(), false);
+
+			// Set to 404 and test
+			ctx.notFound("Resource not found");
+			assert.equal(ctx.isNotFound(), true);
+			assert.equal(ctx.responseStatusCode, 404);
+
+			// Set to different status and test again
+			ctx.text("Found it");
+			ctx.responseStatusCode = 200;
+			assert.equal(ctx.isNotFound(), false);
+			assert.equal(ctx.responseStatusCode, 200);
+
+			// Test with explicit status code setting
+			ctx.responseStatusCode = 404;
+			assert.equal(ctx.isNotFound(), true);
+
+			// Test with other error status codes
+			ctx.responseStatusCode = 500;
+			assert.equal(ctx.isNotFound(), false);
+
+			ctx.responseStatusCode = 403;
+			assert.equal(ctx.isNotFound(), false);
+		});
+	});
 });

@@ -7,10 +7,10 @@
  */
 export class Trie {
 	/**
- *
- * Unique identifier for the route, -1 (or < 0 actually) means no route.
- * So if this is set, this is a leaf node representing a route.
- */
+	 *
+	 * Unique identifier for the route, -1 (or < 0 actually) means no route.
+	 * So if this is set, this is a leaf node representing a route.
+	 */
 	id = -1;
 
 	/**
@@ -26,15 +26,18 @@ export class Trie {
 	 *
 	 * @type {Object<string, Trie>}
 	 */
-	fixed = {};
+	fixed = Object.create(null);
 
 	/**
 	 * Children: Dynamic path segments with a named parameter or wildcards.
 	 * Their segment name actually is the name of the named parameter.
 	 *
+	 * V8 optimization: Object.create(null) creates cleaner object shapes
+	 * without prototype pollution for faster property access.
+	 *
 	 * @type {Object<string, Trie>}
 	 */
-	dynamic = {};
+	dynamic = Object.create(null);
 
 	/**
 	 * Wildcard segment, only one per route segment is allowed.
@@ -55,23 +58,22 @@ export class Trie {
 	/**
 	 * @param {string[]} pathSegments
 	 * @param {number} id
+	 * @param {number} [startIndex=0] - Index to start processing from (optimization to avoid array copying)
 	 */
-	register(pathSegments, id) {
-		// Create a copy to avoid mutating the input array
-		const segments = [...pathSegments];
-
+	register(pathSegments, id, startIndex = 0) {
 		// stop recursion if there are no more path segments, this is a leaf node then
-		if (segments.length === 0) {
+		if (startIndex >= pathSegments.length) {
 			this.id = id;
 			return;
 		}
 
 		// handle the next path segment
-		const segment = segments.shift();
+		const segment = pathSegments[startIndex];
 
 		// handle wildcard segment - validate it's the last segment
 		if (segment === "*") {
-			if (segments.length > 0) {
+			const remainingSegments = pathSegments.length - startIndex - 1;
+			if (remainingSegments > 0) {
 				throw new Error("Wildcard must be the last segment in a route");
 			}
 			if (this.wildcard >= 0) {
@@ -85,13 +87,13 @@ export class Trie {
 		if (segment.startsWith(":") || segment.startsWith("*")) {
 			const name = segment.slice(1); // empty string for wildcards suffices here
 			if (!this.dynamic[name]) this.dynamic[name] = new Trie(name);
-			this.dynamic[name].register(segments, id);
+			this.dynamic[name].register(pathSegments, id, startIndex + 1);
 			return;
 		}
 
 		// handle normal "static" segment
 		if (!this.fixed[segment]) this.fixed[segment] = new Trie(segment);
-		this.fixed[segment].register(segments, id);
+		this.fixed[segment].register(pathSegments, id, startIndex + 1);
 	}
 
 	/**
@@ -114,12 +116,16 @@ export class Trie {
 			return this.fixed[segment].match(nextSegments, params);
 		}
 
-		// prio 2: named parameter match
-		for (const [paramName, paramTrie] of Object.entries(this.dynamic)) {
-			const result = paramTrie.match(nextSegments, {
-				...params,
-				[paramName]: segment,
-			});
+		// prio 2: named parameter match - optimized for V8 inline caching
+		for (const paramName in this.dynamic) {
+			// V8 optimization: for...in is faster than Object.entries() array creation
+			const paramTrie = this.dynamic[paramName];
+
+			// Optimize by avoiding object spread - clone once then set property
+			const newParams = Object.assign({}, params);
+			newParams[paramName] = segment;
+
+			const result = paramTrie.match(nextSegments, newParams);
 			if (result.id !== undefined) {
 				return result;
 			}

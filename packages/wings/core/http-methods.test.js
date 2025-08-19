@@ -5,6 +5,7 @@ import {
 	HTTP_METHODS,
 	HTTP_METHODS_LIST,
 	isValidHttpMethod,
+	isValidHttpMethodFast,
 } from "./http-methods.js";
 
 describe("HTTP Methods", () => {
@@ -332,6 +333,101 @@ describe("HTTP Methods", () => {
 			assert.equal(
 				Object.getOwnPropertyDescriptor(HTTP_METHODS_LIST, "length").writable,
 				true,
+			);
+		});
+	});
+
+	describe("isValidHttpMethodFast", () => {
+		it("should validate standard HTTP methods with bit operations", () => {
+			assert.ok(isValidHttpMethodFast("GET"));
+			assert.ok(isValidHttpMethodFast("POST"));
+			assert.ok(isValidHttpMethodFast("PUT"));
+			assert.ok(isValidHttpMethodFast("DELETE"));
+			assert.ok(isValidHttpMethodFast("PATCH"));
+			assert.ok(isValidHttpMethodFast("HEAD"));
+			assert.ok(isValidHttpMethodFast("OPTIONS"));
+		});
+
+		it("should validate CLI command method", () => {
+			assert.ok(isValidHttpMethodFast("COMMAND"));
+		});
+
+		it("should reject invalid methods with bit operations", () => {
+			assert.equal(isValidHttpMethodFast("INVALID"), false);
+			assert.equal(isValidHttpMethodFast("get"), false); // lowercase
+			assert.equal(isValidHttpMethodFast(""), false);
+			assert.equal(isValidHttpMethodFast(null), false);
+			assert.equal(isValidHttpMethodFast(undefined), false);
+			assert.equal(isValidHttpMethodFast(123), false);
+		});
+
+		it("should produce identical results to regular validation", () => {
+			const testMethods = [
+				"GET",
+				"POST",
+				"PUT",
+				"DELETE",
+				"PATCH",
+				"HEAD",
+				"OPTIONS",
+				"COMMAND",
+				"INVALID",
+				"get",
+				"",
+				null,
+				undefined,
+				123,
+			];
+
+			for (const method of testMethods) {
+				const regular = isValidHttpMethod(method);
+				const fast = isValidHttpMethodFast(method);
+				assert.equal(regular, fast, `Results differ for method: ${method}`);
+			}
+		});
+
+		it("should handle all edge case inputs consistently", () => {
+			const edgeCases = [
+				null,
+				undefined,
+				123,
+				0,
+				-1,
+				NaN,
+				Infinity,
+				true,
+				false,
+				{},
+				[],
+				() => {},
+				new Date(),
+				"",
+				"get",
+				"Get",
+				"POST ",
+				" POST",
+				"CONNECT",
+				"INVALID",
+			];
+
+			for (const input of edgeCases) {
+				const regular = isValidHttpMethod(input);
+				const fast = isValidHttpMethodFast(input);
+				assert.equal(
+					regular,
+					fast,
+					`Results differ for input: ${String(input)}`,
+				);
+			}
+
+			// Test Symbol separately to avoid conversion issues
+			const symbolInput = Symbol("GET");
+			const regularSymbol = isValidHttpMethod(symbolInput);
+			const fastSymbol = isValidHttpMethodFast(symbolInput);
+			assert.equal(
+				regularSymbol,
+				fastSymbol,
+				"Results differ for Symbol input",
 			);
 		});
 	});

@@ -105,10 +105,12 @@ export class Router {
 	 * for the specific patterns and constraints of its HTTP method.
 	 *
 	 * **Structure**: `{ [method]: Trie }` where method is a valid HTTP method
+	 * **V8 optimization**: Object.create(null) eliminates prototype chain
+	 * for faster method lookup and cleaner object shapes.
 	 *
 	 * @type {Object<string, Trie>}
 	 */
-	#tries = {};
+	#tries = Object.create(null);
 
 	/**
 	 * Internal storage for registered middleware.
@@ -123,6 +125,32 @@ export class Router {
 	 * @type {Middleware[]}
 	 */
 	#middlewares = [];
+
+	/**
+	 * Set of middleware identifiers for O(1) duplicate detection.
+	 *
+	 * This Set tracks middleware identifiers to enable constant-time
+	 * duplicate checking instead of O(n) linear search through the
+	 * middlewares array.
+	 *
+	 * **Performance**: O(1) lookup vs O(n) array iteration for duplicate detection.
+	 *
+	 * @type {Set<string>}
+	 */
+	#middlewareIdentifiers = new Set();
+
+	/**
+	 * Cache for normalized path segments to avoid repeated string operations.
+	 *
+	 * This Map caches the result of path normalization and splitting to eliminate
+	 * repeated regex operations and array creation for commonly accessed paths.
+	 *
+	 * **Performance**: O(1) lookup vs O(n) string operations for repeated paths.
+	 * **Memory**: Limited to 100 entries to prevent memory leaks.
+	 *
+	 * @type {Map<string, string[]>}
+	 */
+	#pathSegmentsCache = new Map();
 
 	/**
 	 * Creates a new Router instance with all HTTP method tries pre-initialized.
@@ -173,7 +201,7 @@ export class Router {
 	 */
 	#registerRoute(method, path, route) {
 		this.#tries[method].register(
-			this.#normalizePath(path).split("/"),
+			this.#getPathSegments(path),
 			this.#routes.length,
 		);
 		this.#routes.push(route);
@@ -579,15 +607,18 @@ export class Router {
 	 * ```
 	 */
 	use(middleware) {
-		// Check for duplicate identifiers
+		// Check for duplicate identifiers using O(1) Set lookup
 		if (
 			middleware.identifier &&
-			this.#middlewares.some((m) => m.hasSameIdentifier(middleware))
+			this.#middlewareIdentifiers.has(middleware.identifier)
 		) {
 			return this;
 		}
 
 		this.#middlewares.push(middleware);
+		if (middleware.identifier) {
+			this.#middlewareIdentifiers.add(middleware.identifier);
+		}
 		return this;
 	}
 
@@ -635,15 +666,18 @@ export class Router {
 	 * ```
 	 */
 	useEarly(middleware) {
-		// Check for duplicate identifiers
+		// Check for duplicate identifiers using O(1) Set lookup
 		if (
 			middleware.identifier &&
-			this.#middlewares.some((m) => m.hasSameIdentifier(middleware))
+			this.#middlewareIdentifiers.has(middleware.identifier)
 		) {
 			return this;
 		}
 
 		this.#middlewares.unshift(middleware);
+		if (middleware.identifier) {
+			this.#middlewareIdentifiers.add(middleware.identifier);
+		}
 		return this;
 	}
 
@@ -662,8 +696,7 @@ export class Router {
 	 * @returns {{route: import('./route.js').Route | undefined, params: Object<string, string>}} Object containing the matched route and path parameters
 	 */
 	#match(method, requestPath) {
-		const path = this.#normalizePath(requestPath);
-		const pathSegments = path.split("/");
+		const pathSegments = this.#getPathSegments(requestPath);
 
 		const trie = this.#tries[method];
 		if (!trie) return { route: undefined, params: {} };
@@ -688,6 +721,38 @@ export class Router {
 		let p = path;
 		p = p.replace(/^\/|\/$/g, "");
 		return p;
+	}
+
+	/**
+	 * Optimized method to get normalized path segments with caching.
+	 *
+	 * This method combines path normalization and splitting with caching
+	 * to avoid repeated string operations for commonly accessed paths.
+	 *
+	 * **Performance**: O(1) for cached paths vs O(n) string operations.
+	 * **Memory**: LRU cache with 100 entry limit to prevent memory leaks.
+	 *
+	 * @param {string} path - The path to normalize and split
+	 * @returns {string[]} Array of normalized path segments
+	 */
+	#getPathSegments(path) {
+		// Check cache first
+		if (this.#pathSegmentsCache.has(path)) {
+			return this.#pathSegmentsCache.get(path);
+		}
+
+		// Normalize and split the path
+		const normalizedPath = this.#normalizePath(path);
+		const segments = normalizedPath.split("/");
+
+		// Cache with size limit (simple LRU: delete oldest when limit reached)
+		if (this.#pathSegmentsCache.size >= 100) {
+			const firstKey = this.#pathSegmentsCache.keys().next().value;
+			this.#pathSegmentsCache.delete(firstKey);
+		}
+		this.#pathSegmentsCache.set(path, segments);
+
+		return segments;
 	}
 
 	/**

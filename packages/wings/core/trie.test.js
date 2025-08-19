@@ -14,8 +14,8 @@ describe("Trie", () => {
 		it("should initialize with default values", () => {
 			assert.equal(trie.id, -1);
 			assert.equal(trie.name, undefined);
-			assert.deepEqual(trie.fixed, {});
-			assert.deepEqual(trie.dynamic, {});
+			assert.deepEqual(trie.fixed, Object.create(null));
+			assert.deepEqual(trie.dynamic, Object.create(null));
 			assert.equal(trie.wildcard, -1);
 		});
 
@@ -132,7 +132,7 @@ describe("Trie", () => {
 		});
 
 		it("should handle segments with special regex characters", () => {
-			const specialChars = ".*+?^$" + "{}()|[\\]";
+			const specialChars = ".*+?^$\\{\\}()|[\\\\]";
 			trie.register([specialChars, "regex"], 1);
 			const result = trie.match([specialChars, "regex"]);
 			assert.equal(result.id, 1);

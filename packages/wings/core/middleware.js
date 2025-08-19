@@ -6,6 +6,8 @@
  * @see {@link https://anonyfox.com} **Middleware** - Request processing pipeline component. The Middleware class encapsulates a function that can be executed during the request processing pipeline. Middleware can be used for authentication, logging, request/response transformation, error handling, and other cross-cutting concerns. ## Key Features - **Flexible Execution**: Supports both synchronous and asynchronous handlers - **Context Modification**: Can modify the request/response context directly - **Identifier System**: Optional identifiers for duplicate prevention - **Error Propagation**: Errors in middleware are properly propagated - **Type Safety**: Strong typing with JSDoc for better development experience ## Design Philosophy Middleware follows the "chain of responsibility" pattern where each middleware can process the request, modify the context, and optionally pass control to the next middleware in the chain. This allows for modular, reusable request processing logic. **Note**: Middleware handlers receive the context object and can modify it directly. This mutable approach is chosen for performance over immutability.
  */
 
+import { MESSAGES } from "./string-pool.js";
+
 /**
  *
  * Type definition for middleware handler functions.
@@ -91,7 +93,7 @@ export class Middleware {
 	 */
 	constructor(handler, identifier = null) {
 		if (typeof handler !== "function") {
-			throw new Error("Handler must be a function");
+			throw new Error(MESSAGES.HANDLER_REQUIRED);
 		}
 
 		this.#handler = handler;
@@ -206,8 +208,12 @@ export class Middleware {
 	 * ```
 	 */
 	hasSameIdentifier(other) {
-		// Validate that other is a Middleware instance
-		if (!other || typeof other !== "object" || !(other instanceof Middleware)) {
+		// Optimized validation: constructor.name is faster than instanceof
+		if (
+			!other ||
+			typeof other !== "object" ||
+			other.constructor.name !== "Middleware"
+		) {
 			return false;
 		}
 
@@ -285,7 +291,7 @@ export class Middleware {
 	 * ```
 	 */
 	async execute(ctx) {
-		// Validate that ctx is a Context instance
+		// Optimized validation: constructor.name is faster than instanceof
 		if (!ctx || typeof ctx !== "object" || ctx.constructor.name !== "Context") {
 			throw new Error("Context must be a Context instance");
 		}

@@ -297,5 +297,33 @@ describe("mime-utils", () => {
 			assert.equal(getMimeType("\v"), "application/octet-stream");
 			assert.equal(getMimeType(" \t\n\r\f\v "), "application/octet-stream");
 		});
+
+		it("should trigger cache eviction when exceeding MIME_CACHE_LIMIT", () => {
+			// The MIME_CACHE_LIMIT is 200, so we need more than 200 unique filenames
+			// to trigger the cache eviction logic in cacheResult() function
+			// This will test lines 216-218 which handle LRU cache eviction
+
+			const results = [];
+
+			// Generate 205 unique filenames to exceed the limit of 200
+			for (let i = 0; i < 205; i++) {
+				const filename = `test-file-${i}.txt`;
+				const result = getMimeType(filename);
+				results.push(result);
+				// All should return text/plain since .txt extension is mapped
+				assert.equal(result, "text/plain");
+			}
+
+			// Verify we got the expected number of results
+			assert.equal(results.length, 205);
+
+			// All results should be the same
+			assert.ok(results.every((result) => result === "text/plain"));
+
+			// Also test with some cache hits by repeating a filename
+			// This ensures the cache is working after eviction
+			assert.equal(getMimeType("test-file-200.txt"), "text/plain");
+			assert.equal(getMimeType("test-file-200.txt"), "text/plain");
+		});
 	});
 });

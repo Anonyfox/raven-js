@@ -12,6 +12,13 @@
  */
 
 import { isValidHttpMethod } from "./http-methods.js";
+import {
+	HEADER_NAMES,
+	MATH_CONSTANTS,
+	MESSAGES,
+	MIME_TYPES,
+	STATUS_CODES,
+} from "./string-pool.js";
 
 /**
  * **Context** - The core HTTP request/response lifecycle abstraction.
@@ -125,6 +132,54 @@ export class Context {
 	#requestBody = null;
 
 	/**
+	 * Cached parsed body to avoid repeated parsing operations.
+	 *
+	 * This cache stores the result of the first requestBody() call to eliminate
+	 * repeated content-type parsing, JSON parsing, and form data parsing.
+	 *
+	 * **Performance**: Avoids O(n) string operations and parsing on subsequent calls.
+	 *
+	 * @type {Object|Array<*>|Buffer|null|undefined}
+	 */
+	#parsedBodyCache = undefined;
+
+	/**
+	 * Cached response body byte length to avoid repeated Buffer.byteLength calculations.
+	 *
+	 * This cache stores the byte length of the current response body to eliminate
+	 * repeated Buffer.byteLength() calls in hot path response methods.
+	 *
+	 * **Performance**: O(1) cached lookup vs O(n) Buffer byte scanning per response.
+	 *
+	 * @type {number|null}
+	 */
+	#responseBodyByteLength = null;
+
+	/**
+	 * Index counter for before callbacks to avoid expensive shift() operations.
+	 *
+	 * This counter tracks the current position in the before callbacks array,
+	 * enabling O(1) iteration vs O(n) array shift operations.
+	 *
+	 * **Performance**: Direct array indexing vs array re-indexing on each shift.
+	 *
+	 * @type {number}
+	 */
+	#beforeCallbackIndex = 0;
+
+	/**
+	 * Index counter for after callbacks to avoid expensive shift() operations.
+	 *
+	 * This counter tracks the current position in the after callbacks array,
+	 * enabling O(1) iteration vs O(n) array shift operations.
+	 *
+	 * **Performance**: Direct array indexing vs array re-indexing on each shift.
+	 *
+	 * @type {number}
+	 */
+	#afterCallbackIndex = 0;
+
+	/**
 	 * Parses and returns the request body based on the content-type header.
 	 *
 	 * This method automatically handles different content types:
@@ -172,22 +227,39 @@ export class Context {
 	 * ```
 	 */
 	requestBody() {
-		if (!this.#requestBody) return null;
-		const ct = this.requestHeaders.get("content-type");
-		if (!ct) return this.#requestBody;
+		// Return cached result if already parsed
+		if (this.#parsedBodyCache !== undefined) {
+			return this.#parsedBodyCache;
+		}
+
+		// Parse and cache the body
+		if (!this.#requestBody) {
+			this.#parsedBodyCache = null;
+			return null;
+		}
+
+		const ct = this.requestHeaders.get(HEADER_NAMES.CONTENT_TYPE);
+		if (!ct) {
+			this.#parsedBodyCache = this.#requestBody;
+			return this.#parsedBodyCache;
+		}
 
 		const contentType = ct.toLowerCase();
-		if (contentType.includes("application/json")) {
+		if (contentType.includes(MIME_TYPES.APPLICATION_JSON)) {
 			const jsonString = this.#requestBody.toString("utf8");
-			return jsonString.trim() === "" ? null : JSON.parse(jsonString);
-		}
-		if (contentType.includes("application/x-www-form-urlencoded")) {
+			this.#parsedBodyCache =
+				jsonString.trim() === "" ? null : JSON.parse(jsonString);
+		} else if (contentType.includes(MIME_TYPES.APPLICATION_FORM_URLENCODED)) {
 			const formString = this.#requestBody.toString("utf8");
-			return formString.trim() === ""
-				? {}
-				: Object.fromEntries(new URLSearchParams(formString));
+			this.#parsedBodyCache =
+				formString.trim() === ""
+					? {}
+					: Object.fromEntries(new URLSearchParams(formString));
+		} else {
+			this.#parsedBodyCache = this.#requestBody;
 		}
-		return this.#requestBody;
+
+		return this.#parsedBodyCache;
 	}
 
 	/**
@@ -427,7 +499,7 @@ export class Context {
 	 * ctx.error(); // Sets 500
 	 * ```
 	 */
-	responseStatusCode = 200;
+	responseStatusCode = STATUS_CODES.OK;
 
 	/**
 	 * Flag indicating whether the response has been finalized.
@@ -482,6 +554,9 @@ export class Context {
 	 * **Note**: This data is request-scoped and will be garbage collected
 	 * after the request completes.
 	 *
+	 * **V8 optimization**: Object.create(null) eliminates prototype chain
+	 * for faster property access and cleaner object shapes.
+	 *
 	 * @type {Object.<string, any>}
 	 *
 	 * @example
@@ -518,7 +593,7 @@ export class Context {
 	 * });
 	 * ```
 	 */
-	data = {};
+	data = Object.create(null);
 
 	/**
 	 * Collection of errors that occurred during the request lifecycle.
@@ -615,7 +690,7 @@ export class Context {
 	 * ```
 	 */
 	isNotFound() {
-		return this.responseStatusCode === 404;
+		return this.responseStatusCode === STATUS_CODES.NOT_FOUND;
 	}
 
 	/**
@@ -760,9 +835,9 @@ export class Context {
 	 * ```
 	 */
 	async runBeforeCallbacks() {
-		while (this.#beforeCallbacks.length > 0) {
+		while (this.#beforeCallbackIndex < this.#beforeCallbacks.length) {
 			if (this.responseEnded) break;
-			const middleware = this.#beforeCallbacks.shift();
+			const middleware = this.#beforeCallbacks[this.#beforeCallbackIndex++];
 			await middleware.execute(this);
 		}
 	}
@@ -915,9 +990,9 @@ export class Context {
 	 * ```
 	 */
 	async runAfterCallbacks() {
-		while (this.#afterCallbacks.length > 0) {
+		while (this.#afterCallbackIndex < this.#afterCallbacks.length) {
 			if (this.responseEnded) break;
-			const middleware = this.#afterCallbacks.shift();
+			const middleware = this.#afterCallbacks[this.#afterCallbackIndex++];
 			await middleware.execute(this);
 		}
 	}
@@ -997,7 +1072,8 @@ export class Context {
 
 		// security check to prevent CPU exhaustion attacks
 		const pathSegments = path.split("/");
-		if (pathSegments.length > 100) throw new Error("Path too long");
+		if (pathSegments.length > MATH_CONSTANTS.MAX_PATH_SEGMENTS)
+			throw new Error("Path too long");
 
 		this.#path = path;
 
@@ -1007,6 +1083,39 @@ export class Context {
 
 		// set the body if given
 		if (body) this.#requestBody = body;
+	}
+
+	/**
+	 * Gets the cached byte length of the response body, calculating if necessary.
+	 *
+	 * This method provides O(1) cached access to response body byte length,
+	 * eliminating repeated Buffer.byteLength() calculations in hot paths.
+	 *
+	 * **Performance**: Cached result vs O(n) Buffer byte scanning per call.
+	 * **Hot Path**: Called by every response method (text, html, json, etc.)
+	 *
+	 * @returns {string} The byte length as a string for Content-Length header
+	 */
+	#getResponseBodyByteLength() {
+		if (this.#responseBodyByteLength === null) {
+			this.#responseBodyByteLength = Buffer.byteLength(this.responseBody || "");
+		}
+		return this.#responseBodyByteLength.toString();
+	}
+
+	/**
+	 * Updates response body and invalidates byte length cache.
+	 *
+	 * This method ensures the byte length cache stays synchronized with
+	 * response body changes for optimal performance.
+	 *
+	 * **Performance**: Cache invalidation prevents stale byte length values.
+	 *
+	 * @param {string|Buffer} body - The new response body
+	 */
+	#setResponseBodyWithCache(body) {
+		this.responseBody = body || "";
+		this.#responseBodyByteLength = null; // Invalidate cache
 	}
 
 	/**
@@ -1042,12 +1151,12 @@ export class Context {
 	 * ```
 	 */
 	text(data) {
-		this.responseStatusCode = 200;
-		this.responseHeaders.set("content-type", "text/plain");
-		this.responseBody = data || "";
+		this.responseStatusCode = STATUS_CODES.OK;
+		this.responseHeaders.set(HEADER_NAMES.CONTENT_TYPE, MIME_TYPES.TEXT_PLAIN);
+		this.#setResponseBodyWithCache(data);
 		this.responseHeaders.set(
-			"Content-Length",
-			Buffer.byteLength(this.responseBody).toString(),
+			HEADER_NAMES.CONTENT_LENGTH,
+			this.#getResponseBodyByteLength(),
 		);
 		return this;
 	}
@@ -1081,12 +1190,12 @@ export class Context {
 	 * ```
 	 */
 	html(data) {
-		this.responseStatusCode = 200;
-		this.responseHeaders.set("content-type", "text/html");
-		this.responseBody = data || "";
+		this.responseStatusCode = STATUS_CODES.OK;
+		this.responseHeaders.set(HEADER_NAMES.CONTENT_TYPE, MIME_TYPES.TEXT_HTML);
+		this.#setResponseBodyWithCache(data);
 		this.responseHeaders.set(
-			"Content-Length",
-			Buffer.byteLength(this.responseBody).toString(),
+			HEADER_NAMES.CONTENT_LENGTH,
+			this.#getResponseBodyByteLength(),
 		);
 		return this;
 	}
@@ -1126,12 +1235,15 @@ export class Context {
 	 * ```
 	 */
 	xml(data) {
-		this.responseStatusCode = 200;
-		this.responseHeaders.set("content-type", "application/xml");
-		this.responseBody = data || "";
+		this.responseStatusCode = STATUS_CODES.OK;
 		this.responseHeaders.set(
-			"Content-Length",
-			Buffer.byteLength(this.responseBody).toString(),
+			HEADER_NAMES.CONTENT_TYPE,
+			MIME_TYPES.APPLICATION_XML,
+		);
+		this.#setResponseBodyWithCache(data);
+		this.responseHeaders.set(
+			HEADER_NAMES.CONTENT_LENGTH,
+			this.#getResponseBodyByteLength(),
 		);
 		return this;
 	}
@@ -1198,12 +1310,15 @@ export class Context {
 	 * ```
 	 */
 	json(data) {
-		this.responseStatusCode = 200;
-		this.responseHeaders.set("content-type", "application/json");
-		this.responseBody = JSON.stringify(data);
+		this.responseStatusCode = STATUS_CODES.OK;
 		this.responseHeaders.set(
-			"Content-Length",
-			Buffer.byteLength(this.responseBody).toString(),
+			HEADER_NAMES.CONTENT_TYPE,
+			MIME_TYPES.APPLICATION_JSON,
+		);
+		this.#setResponseBodyWithCache(JSON.stringify(data));
+		this.responseHeaders.set(
+			HEADER_NAMES.CONTENT_LENGTH,
+			this.#getResponseBodyByteLength(),
 		);
 		return this;
 	}
@@ -1241,12 +1356,15 @@ export class Context {
 	 * ```
 	 */
 	js(data) {
-		this.responseStatusCode = 200;
-		this.responseHeaders.set("content-type", "application/javascript");
-		this.responseBody = data || "";
+		this.responseStatusCode = STATUS_CODES.OK;
 		this.responseHeaders.set(
-			"Content-Length",
-			Buffer.byteLength(this.responseBody).toString(),
+			HEADER_NAMES.CONTENT_TYPE,
+			MIME_TYPES.APPLICATION_JAVASCRIPT,
+		);
+		this.#setResponseBodyWithCache(data);
+		this.responseHeaders.set(
+			HEADER_NAMES.CONTENT_LENGTH,
+			this.#getResponseBodyByteLength(),
 		);
 		return this;
 	}
@@ -1296,7 +1414,7 @@ export class Context {
 	 */
 	redirect(url, status = 302) {
 		this.responseStatusCode = status;
-		this.responseHeaders.set("Location", url);
+		this.responseHeaders.set(HEADER_NAMES.LOCATION, url);
 		return this;
 	}
 
@@ -1341,13 +1459,13 @@ export class Context {
 	 * }
 	 * ```
 	 */
-	notFound(message = "Not Found") {
-		this.responseStatusCode = 404;
-		this.responseHeaders.set("content-type", "text/plain");
-		this.responseBody = message || "";
+	notFound(message = MESSAGES.NOT_FOUND) {
+		this.responseStatusCode = STATUS_CODES.NOT_FOUND;
+		this.responseHeaders.set(HEADER_NAMES.CONTENT_TYPE, MIME_TYPES.TEXT_PLAIN);
+		this.#setResponseBodyWithCache(message);
 		this.responseHeaders.set(
-			"Content-Length",
-			Buffer.byteLength(this.responseBody).toString(),
+			HEADER_NAMES.CONTENT_LENGTH,
+			this.#getResponseBodyByteLength(),
 		);
 		return this;
 	}
@@ -1406,13 +1524,13 @@ export class Context {
 	 * });
 	 * ```
 	 */
-	error(message = "Internal Server Error") {
-		this.responseStatusCode = 500;
-		this.responseHeaders.set("content-type", "text/plain");
-		this.responseBody = message || "";
+	error(message = MESSAGES.INTERNAL_SERVER_ERROR) {
+		this.responseStatusCode = STATUS_CODES.INTERNAL_SERVER_ERROR;
+		this.responseHeaders.set(HEADER_NAMES.CONTENT_TYPE, MIME_TYPES.TEXT_PLAIN);
+		this.#setResponseBodyWithCache(message);
 		this.responseHeaders.set(
-			"Content-Length",
-			Buffer.byteLength(this.responseBody).toString(),
+			HEADER_NAMES.CONTENT_LENGTH,
+			this.#getResponseBodyByteLength(),
 		);
 		return this;
 	}
