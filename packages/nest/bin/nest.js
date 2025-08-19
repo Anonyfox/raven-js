@@ -55,7 +55,7 @@ import {
 } from "../lib/docs/index.js";
 import { bumpVersion, updatePackageVersions } from "../lib/index.js";
 import { PackageJsonListPublicPackages } from "../lib/queries/index.js";
-import { validate } from "../lib/rules/index.js";
+import { validate } from "../lib/validations/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
