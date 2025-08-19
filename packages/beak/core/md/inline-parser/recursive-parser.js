@@ -21,8 +21,31 @@ import {
 	handleTextContent,
 } from "./utils.js";
 
+// Raven-fast first-character dispatch table for O(1) inline parser selection
+/** @type {Map<string, any>|null} */
+let INLINE_PARSER_DISPATCH = null;
+
 /**
- * Parses inline markdown elements from text (recursive version)
+ * Initialize dispatch table lazily to avoid module loading order issues
+ * @returns {Map<string, any>}
+ */
+const getDispatchTable = () => {
+	if (!INLINE_PARSER_DISPATCH) {
+		INLINE_PARSER_DISPATCH = new Map();
+		INLINE_PARSER_DISPATCH.set("*", tryParseBold); // Also handles italic - parser disambiguates
+		INLINE_PARSER_DISPATCH.set("~", tryParseStrikethrough);
+		INLINE_PARSER_DISPATCH.set("`", tryParseInlineCode);
+		INLINE_PARSER_DISPATCH.set("[", tryParseReferenceLink);
+		INLINE_PARSER_DISPATCH.set("!", tryParseReferenceImage);
+		INLINE_PARSER_DISPATCH.set("<", tryParseInlineHTML);
+		INLINE_PARSER_DISPATCH.set("h", tryParseAutolink); // For http/https autolinks
+	}
+	return INLINE_PARSER_DISPATCH;
+};
+
+/**
+ * Parses inline markdown elements using raven-fast first-character dispatch
+ * **Performance:** O(1) parser selection instead of O(p) sequential attempts
  *
  * @param {string} text - Text to parse
  * @param {Object<string, {url: string, title?: string}>} [references={}] - Reference definitions
@@ -47,21 +70,29 @@ export const parseInlineRecursive = (
 	const maxIterations = text.length; // Prevent infinite loops
 	let iterations = 0;
 
+	// Raven-fast dispatch table - cache once to eliminate function call overhead
+	const dispatch = getDispatchTable();
+
 	// Deterministic parsing with bounded iteration
 	while (current < text.length && iterations < maxIterations) {
 		iterations++;
 		const startPosition = current;
+		const char = text[current];
 
-		// Try to match each inline element type in order of precedence
-		const node =
-			tryParseBold(text, current, references) ||
-			tryParseItalic(text, current, references) ||
-			tryParseStrikethrough(text, current, references) ||
-			tryParseInlineCode(text, current) ||
-			tryParseReferenceLink(text, current, references) ||
-			tryParseReferenceImage(text, current, references) ||
-			tryParseAutolink(text, current) ||
-			tryParseInlineHTML(text, current);
+		// O(1) first-character dispatch
+		let node = null;
+		if (dispatch.has(char)) {
+			const parser = dispatch.get(char);
+
+			// Special handling for '*' which can be bold or italic
+			if (char === "*") {
+				node =
+					tryParseBold(text, current, references) ||
+					tryParseItalic(text, current, references);
+			} else {
+				node = parser(text, current, references);
+			}
+		}
 
 		if (node) {
 			// Add any text before the matched element

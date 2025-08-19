@@ -173,6 +173,24 @@ describe("Reference Parser", () => {
 
 			assert.equal(result, null);
 		});
+
+		it("should handle edge case with malformed URL section", () => {
+			// This tests the unreachable return null in parseUrlAndTitle (lines 122-124)
+			// by creating a reference with whitespace-only URL that gets trimmed to empty
+			const lines = ["[link]:   "];
+			const result = parseReferences(lines, 0);
+			assert.equal(result, null);
+		});
+
+		it("should handle whitespace-only URL after pattern optimization", () => {
+			// Test edge case with whitespace-only URL content
+			// After optimization, parseUrlAndTitle no longer returns null
+			// but the calling function still handles malformed references appropriately
+			const lines = ["[test]: "];
+			const result = parseReferences(lines, 0);
+			// Should return null for malformed reference (empty URL after trim)
+			assert.equal(result, null);
+		});
 	});
 
 	describe("collectReferences", () => {

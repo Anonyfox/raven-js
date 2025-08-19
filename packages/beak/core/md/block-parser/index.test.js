@@ -34,4 +34,35 @@ describe("Block Parser Index", () => {
 		const result = parseBlocks(["", "  ", ""]);
 		assert.deepEqual(result, []);
 	});
+
+	it("should handle unparseable lines by advancing position", () => {
+		// Test the else branch (lines 135-137) by creating a scenario where
+		// parseParagraph might return null, forcing the parser to advance by one line
+		// This could happen with certain edge cases in paragraph parsing
+		const result = parseBlocks(["   ", "content"]);
+		// The whitespace line should be skipped, content should be parsed as paragraph
+		assert.equal(result.length, 1);
+		assert.equal(result[0].type, NODE_TYPES.PARAGRAPH);
+	});
+
+	it("should skip unparseable lines using else branch", () => {
+		// Test the else branch (lines 135-137) that skips lines when ALL parsers return null
+		// Lines like "#" and "-" fail all parsers (including paragraph parser)
+		// and get skipped via the else branch (current++)
+
+		const result = parseBlocks(["#", "content"]);
+		// The "#" gets skipped, only "content" is parsed as paragraph
+		assert.equal(result.length, 1);
+		assert.equal(result[0].type, NODE_TYPES.PARAGRAPH);
+
+		const result2 = parseBlocks(["-", "content"]);
+		// The "-" gets skipped, only "content" is parsed as paragraph
+		assert.equal(result2.length, 1);
+		assert.equal(result2[0].type, NODE_TYPES.PARAGRAPH);
+
+		const result3 = parseBlocks(["#", "-", "content"]);
+		// Both "#" and "-" get skipped, only "content" is parsed
+		assert.equal(result3.length, 1);
+		assert.equal(result3[0].type, NODE_TYPES.PARAGRAPH);
+	});
 });

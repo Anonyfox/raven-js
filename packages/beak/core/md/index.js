@@ -142,10 +142,24 @@ import { markdownToHTML } from "./html-transformer/index.js";
  * @returns {string}
  */
 export const md = (strings, ...values) => {
-	const markdown = strings.reduce(
-		/** @param {string} acc @param {string} str @param {number} i @returns {string} */
-		(acc, str, i) => acc + str + (i < values.length ? values[i] : ""),
-		"",
-	);
+	// Raven-fast template literal joining - O(n) with pre-allocated array
+	if (values.length === 0) {
+		return markdownToHTML(strings[0]);
+	}
+
+	// Pre-allocate array for optimal memory usage
+	const parts = new Array(strings.length + values.length);
+	let index = 0;
+
+	// Interleave strings and values efficiently
+	for (let i = 0; i < strings.length; i++) {
+		parts[index++] = strings[i];
+		if (i < values.length) {
+			parts[index++] = values[i];
+		}
+	}
+
+	// Single join operation for maximum performance
+	const markdown = parts.join("");
 	return markdownToHTML(markdown);
 };

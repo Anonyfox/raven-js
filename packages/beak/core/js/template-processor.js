@@ -8,6 +8,10 @@
 
 import { stringify } from "./stringify.js";
 
+// Raven-fast value validation - extracted for V8 optimization
+const isValidJSValue = (/** @type {any} */ value) =>
+	value === 0 || Boolean(value);
+
 /**
  * @file High-performance JavaScript template literal processor.
  *
@@ -23,6 +27,7 @@ import { stringify } from "./stringify.js";
  * - Single value: Optimized concat operation
  * - 2-3 values: StringBuilder pattern
  * - 4+ values: Pre-allocated array with exact sizing
+ * - Extracted validation: Monomorphic function for V8 JIT optimization
  *
  * @filtering
  * Includes: 0 (zero), truthy values
@@ -48,8 +53,8 @@ export const processJSTemplate = (
 	// Fast path: single value
 	if (valuesLength === 1) {
 		const value = values[0];
-		// Optimized validation check: value === 0 || Boolean(value)
-		if (value !== 0 && !value) {
+		// Raven-fast validation with extracted function
+		if (!isValidJSValue(value)) {
 			return strings[0].concat(strings[1]).trim();
 		}
 		// Use concat for better performance than string concatenation
@@ -61,8 +66,8 @@ export const processJSTemplate = (
 		const builder = [strings[0]];
 		for (let i = 0; i < valuesLength; i++) {
 			const value = values[i];
-			// Optimized validation check: value === 0 || Boolean(value)
-			if (value === 0 || value) {
+			// Raven-fast validation with extracted function
+			if (isValidJSValue(value)) {
 				builder.push(stringify(value));
 			}
 			builder.push(strings[i + 1]);
@@ -73,8 +78,8 @@ export const processJSTemplate = (
 	// Count valid values to pre-allocate exact array size
 	let validCount = 0;
 	for (let i = 0; i < valuesLength; i++) {
-		// Optimized validation check: value === 0 || Boolean(value)
-		if (values[i] === 0 || values[i]) {
+		// Raven-fast validation with extracted function
+		if (isValidJSValue(values[i])) {
 			validCount++;
 		}
 	}
@@ -88,8 +93,8 @@ export const processJSTemplate = (
 
 	for (let i = 0; i < valuesLength; i++) {
 		const value = values[i];
-		// Optimized validation check: value === 0 || Boolean(value)
-		if (value === 0 || value) {
+		// Raven-fast validation with extracted function
+		if (isValidJSValue(value)) {
 			parts[partsIndex++] = stringify(value);
 		}
 		parts[partsIndex++] = strings[i + 1];

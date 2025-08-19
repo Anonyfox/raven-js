@@ -8,6 +8,14 @@
 
 import { escapeSql } from "./escape-sql.js";
 
+// Raven-fast trim detection - extracted for V8 optimization
+const needsTrim = (/** @type {string} */ str) =>
+	str.charAt(0) <= " " || str.charAt(str.length - 1) <= " ";
+
+// Raven-fast string conversion - extracted for V8 optimization
+const fastStringify = (/** @type {unknown} */ value) =>
+	typeof value === "string" ? value : String(value);
+
 /**
  * Processes SQL template literals with automatic value escaping and performance optimization.
  *
@@ -20,6 +28,7 @@ import { escapeSql } from "./escape-sql.js";
  * - 1 value: String concatenation (fastest for single interpolation)
  * - 2-3 values: StringBuilder pattern (optimal for few values)
  * - 4+ values: Pre-sized array join (scales with many interpolations)
+ * - Extracted functions: Monomorphic patterns for V8 JIT optimization
  *
  * **Security**: All dynamic values pass through escapeSql() automatically.
  * **Whitespace**: Trims leading/trailing whitespace only when detected (performance).
@@ -60,23 +69,19 @@ export const processSQLTemplate = (
 	// Performance tier 1: Zero interpolations - direct string path
 	if (valuesLength === 0) {
 		const result = strings[0];
-		// Conditional trim: check edge characters before expensive trim operation
-		return result.charAt(0) <= " " || result.charAt(result.length - 1) <= " "
-			? result.trim()
-			: result;
+		// Raven-fast conditional trim with extracted function
+		return needsTrim(result) ? result.trim() : result;
 	}
 
 	// Performance tier 2: Single interpolation - concatenation (fastest)
 	if (valuesLength === 1) {
 		const value = values[0];
-		// Type-aware string conversion: avoid String() overhead for strings
-		const stringValue = typeof value === "string" ? value : String(value);
+		// Raven-fast string conversion with extracted function
+		const stringValue = fastStringify(value);
 		const escapedValue = escapeSql(stringValue);
 		const result = strings[0].concat(escapedValue, strings[1]);
-		// Conditional trim optimization
-		return result.charAt(0) <= " " || result.charAt(result.length - 1) <= " "
-			? result.trim()
-			: result;
+		// Raven-fast conditional trim with extracted function
+		return needsTrim(result) ? result.trim() : result;
 	}
 
 	// Performance tier 3: Few interpolations - StringBuilder pattern (2-3 values)
@@ -84,14 +89,13 @@ export const processSQLTemplate = (
 		let result = strings[0];
 		for (let i = 0; i < valuesLength; i++) {
 			const value = values[i];
-			const stringValue = typeof value === "string" ? value : String(value);
+			// Raven-fast string conversion with extracted function
+			const stringValue = fastStringify(value);
 			const escapedValue = escapeSql(stringValue);
 			result += escapedValue + strings[i + 1];
 		}
-		// Conditional trim optimization
-		return result.charAt(0) <= " " || result.charAt(result.length - 1) <= " "
-			? result.trim()
-			: result;
+		// Raven-fast conditional trim with extracted function
+		return needsTrim(result) ? result.trim() : result;
 	}
 
 	// Performance tier 4: Many interpolations - pre-sized array join (4+ values)
@@ -104,17 +108,15 @@ export const processSQLTemplate = (
 
 	for (let i = 0; i < valuesLength; i++) {
 		const value = values[i];
-		// Type-aware string conversion
-		const stringValue = typeof value === "string" ? value : String(value);
+		// Raven-fast string conversion with extracted function
+		const stringValue = fastStringify(value);
 		const escapedValue = escapeSql(stringValue);
 		// Alternating pattern: value, then next static string
 		parts[partsIndex++] = escapedValue;
 		parts[partsIndex++] = strings[i + 1];
 	}
 
-	// Array join with conditional trim
+	// Array join with raven-fast conditional trim
 	const result = parts.join("");
-	return result.charAt(0) <= " " || result.charAt(result.length - 1) <= " "
-		? result.trim()
-		: result;
+	return needsTrim(result) ? result.trim() : result;
 };

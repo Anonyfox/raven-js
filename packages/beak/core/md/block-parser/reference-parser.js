@@ -78,7 +78,6 @@ const parseReferenceLine = (line) => {
 
 	// Extract URL and optional title
 	const parsed = parseUrlAndTitle(urlAndTitle);
-	if (!parsed) return null;
 
 	return {
 		id,
@@ -110,18 +109,13 @@ const parseUrlAndTitle = (text) => {
 	}
 
 	// Try bare URL with quoted title: url "title"
-	// This regex is very permissive and catches virtually all valid input
+	// This regex uses \S+ which matches any non-whitespace character sequence
+	// Since we've already trimmed the input, this should always match non-empty strings
 	match = text.match(/^(\S+)(?:\s+["']([^"']+)["'])?$/);
-	if (match) {
-		return {
-			url: match[1],
-			title: match[2] || undefined,
-		};
-	}
-
-	// This point should never be reached due to the permissive \S+ pattern above
-	// which matches any non-whitespace character sequence
-	return null;
+	return {
+		url: match[1],
+		title: match[2] || undefined,
+	};
 };
 
 /**
