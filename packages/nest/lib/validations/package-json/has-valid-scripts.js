@@ -61,17 +61,21 @@ export const HasValidScripts = (packagePath) => {
 	const isNestPackage = packageData.name === "@raven-js/nest";
 
 	// Required scripts with exact values
+	/** @type {Record<string, string>} */
 	const requiredScripts = {
-		"nest:validate": "",
-		"nest:docs": "",
 		test: isNestPackage
 			? "npm run test:types && npm run test:style && npm run test:code"
 			: "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
-		"test:code": "",
-		"test:style": "",
 		"test:types": "tsc --noEmit --project jsconfig.json",
 	};
 
+	// Add nest-specific scripts for non-nest packages
+	if (!isNestPackage) {
+		requiredScripts["nest:validate"] = "";
+		requiredScripts["nest:docs"] = "";
+	}
+
+	// Check required scripts with exact values
 	for (const [scriptName, requiredValue] of Object.entries(requiredScripts)) {
 		const scriptValue = scripts[scriptName];
 
@@ -91,6 +95,45 @@ export const HasValidScripts = (packagePath) => {
 				`Script "${scriptName}" must be "${requiredValue}" in package.json at ${packageJsonPath}`,
 			);
 		}
+	}
+
+	// Validate test:code script format (must use dot reporter, no coverage)
+	const testCodeScript = scripts["test:code"];
+	if (!testCodeScript) {
+		throw new Error(
+			`Script "test:code" is required in package.json at ${packageJsonPath}`,
+		);
+	}
+	if (!testCodeScript.includes("--test-reporter=dot")) {
+		throw new Error(
+			`Script "test:code" must use --test-reporter=dot in package.json at ${packageJsonPath}`,
+		);
+	}
+	if (testCodeScript.includes("--experimental-test-coverage")) {
+		throw new Error(
+			`Script "test:code" must not include coverage options in package.json at ${packageJsonPath}`,
+		);
+	}
+
+	// Validate test:coverage script exists and has coverage options
+	const testCoverageScript = scripts["test:coverage"];
+	if (!testCoverageScript) {
+		throw new Error(
+			`Script "test:coverage" is required in package.json at ${packageJsonPath}`,
+		);
+	}
+	if (!testCoverageScript.includes("--experimental-test-coverage")) {
+		throw new Error(
+			`Script "test:coverage" must include --experimental-test-coverage in package.json at ${packageJsonPath}`,
+		);
+	}
+
+	// Validate test:style script exists
+	const testStyleScript = scripts["test:style"];
+	if (!testStyleScript) {
+		throw new Error(
+			`Script "test:style" is required in package.json at ${packageJsonPath}`,
+		);
 	}
 
 	return true;

@@ -10,7 +10,8 @@
   },
   "scripts": {
     "test": "npm run test:types && npm run test:style && npm run test:code",
-    "test:code": "node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js' --test-coverage-include='lib/**/*.js'",
+    "test:code": "node --no-warnings --test --test-reporter=dot",
+    "test:coverage": "node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js' --test-coverage-include='lib/**/*.js'",
     "test:style": "npx biome lint --error-on-warnings .",
     "test:types": "tsc --noEmit --project jsconfig.json",
     "nest:validate": "node bin/nest.js validate",

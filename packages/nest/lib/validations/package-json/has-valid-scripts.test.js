@@ -13,8 +13,10 @@ describe("HasValidScripts", () => {
 			scripts: {
 				"nest:validate": "some command",
 				"nest:docs": "another command",
-				test: "npm run test:types && npm run test:style && npm run test:code",
-				"test:code": "node --test",
+				test: "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
+				"test:code": "node --no-warnings --test --test-reporter=dot",
+				"test:coverage":
+					"node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
 				"test:style": "biome check",
 				"test:types": "tsc --noEmit --project jsconfig.json",
 			},
@@ -71,6 +73,7 @@ describe("HasValidScripts", () => {
 			"nest:docs",
 			"test",
 			"test:code",
+			"test:coverage",
 			"test:style",
 			"test:types",
 		];
@@ -80,8 +83,10 @@ describe("HasValidScripts", () => {
 			const scripts = {
 				"nest:validate": "command",
 				"nest:docs": "command",
-				test: "npm run test:types && npm run test:style && npm run test:code",
-				"test:code": "command",
+				test: "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
+				"test:code": "node --no-warnings --test --test-reporter=dot",
+				"test:coverage":
+					"node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
 				"test:style": "command",
 				"test:types": "tsc --noEmit --project jsconfig.json",
 			};
@@ -93,7 +98,9 @@ describe("HasValidScripts", () => {
 			try {
 				assert.throws(
 					() => HasValidScripts(tempDir),
-					new RegExp(`Script "${missingScript}" must be a non-empty string`),
+					new RegExp(
+						`Script "${missingScript.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}".*required|must be a non-empty string`,
+					),
 					`Should throw for missing script: ${missingScript}`,
 				);
 			} finally {
@@ -109,8 +116,10 @@ describe("HasValidScripts", () => {
 			scripts: {
 				"nest:validate": "",
 				"nest:docs": "command",
-				test: "npm run test:types && npm run test:style && npm run test:code",
-				"test:code": "command",
+				test: "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
+				"test:code": "node --no-warnings --test --test-reporter=dot",
+				"test:coverage":
+					"node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
 				"test:style": "command",
 				"test:types": "tsc --noEmit --project jsconfig.json",
 			},
@@ -133,7 +142,7 @@ describe("HasValidScripts", () => {
 			{
 				name: "test",
 				expected:
-					"npm run test:types && npm run test:style && npm run test:code",
+					"npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
 			},
 			{ name: "test:types", expected: "tsc --noEmit --project jsconfig.json" },
 		];
@@ -143,8 +152,10 @@ describe("HasValidScripts", () => {
 			const scripts = {
 				"nest:validate": "command",
 				"nest:docs": "command",
-				test: "npm run test:types && npm run test:style && npm run test:code",
-				"test:code": "command",
+				test: "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
+				"test:code": "node --no-warnings --test --test-reporter=dot",
+				"test:coverage":
+					"node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
 				"test:style": "command",
 				"test:types": "tsc --noEmit --project jsconfig.json",
 			};
@@ -165,6 +176,113 @@ describe("HasValidScripts", () => {
 				rmSync(tempDir, { recursive: true, force: true });
 			}
 		});
+	});
+
+	test("should throw error for test:code without dot reporter", () => {
+		const tempDir = mkdtempSync(join(tmpdir(), "test-code-no-dot-reporter-"));
+		const packageJson = {
+			name: "test-package",
+			scripts: {
+				"nest:validate": "some command",
+				"nest:docs": "another command",
+				test: "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
+				"test:code": "node --no-warnings --test",
+				"test:coverage":
+					"node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
+				"test:style": "biome check",
+				"test:types": "tsc --noEmit --project jsconfig.json",
+			},
+		};
+		writeFileSync(join(tempDir, "package.json"), JSON.stringify(packageJson));
+
+		try {
+			assert.throws(
+				() => HasValidScripts(tempDir),
+				/Script "test:code" must use --test-reporter=dot/,
+				"Should throw for test:code without dot reporter",
+			);
+		} finally {
+			rmSync(tempDir, { recursive: true, force: true });
+		}
+	});
+
+	test("should throw error for test:code with coverage options", () => {
+		const tempDir = mkdtempSync(join(tmpdir(), "test-code-with-coverage-"));
+		const packageJson = {
+			name: "test-package",
+			scripts: {
+				"nest:validate": "some command",
+				"nest:docs": "another command",
+				test: "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
+				"test:code":
+					"node --no-warnings --test --test-reporter=dot --experimental-test-coverage",
+				"test:coverage":
+					"node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
+				"test:style": "biome check",
+				"test:types": "tsc --noEmit --project jsconfig.json",
+			},
+		};
+		writeFileSync(join(tempDir, "package.json"), JSON.stringify(packageJson));
+
+		try {
+			assert.throws(
+				() => HasValidScripts(tempDir),
+				/Script "test:code" must not include coverage options/,
+				"Should throw for test:code with coverage options",
+			);
+		} finally {
+			rmSync(tempDir, { recursive: true, force: true });
+		}
+	});
+
+	test("should throw error for test:coverage without coverage options", () => {
+		const tempDir = mkdtempSync(join(tmpdir(), "test-coverage-no-coverage-"));
+		const packageJson = {
+			name: "test-package",
+			scripts: {
+				"nest:validate": "some command",
+				"nest:docs": "another command",
+				test: "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
+				"test:code": "node --no-warnings --test --test-reporter=dot",
+				"test:coverage": "node --no-warnings --test",
+				"test:style": "biome check",
+				"test:types": "tsc --noEmit --project jsconfig.json",
+			},
+		};
+		writeFileSync(join(tempDir, "package.json"), JSON.stringify(packageJson));
+
+		try {
+			assert.throws(
+				() => HasValidScripts(tempDir),
+				/Script "test:coverage" must include --experimental-test-coverage/,
+				"Should throw for test:coverage without coverage options",
+			);
+		} finally {
+			rmSync(tempDir, { recursive: true, force: true });
+		}
+	});
+
+	test("should handle nest package correctly (no nest:validate/nest:docs required)", () => {
+		const tempDir = mkdtempSync(join(tmpdir(), "nest-package-test-"));
+		const packageJson = {
+			name: "@raven-js/nest",
+			scripts: {
+				test: "npm run test:types && npm run test:style && npm run test:code",
+				"test:code": "node --no-warnings --test --test-reporter=dot",
+				"test:coverage":
+					"node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
+				"test:style": "biome check",
+				"test:types": "tsc --noEmit --project jsconfig.json",
+			},
+		};
+		writeFileSync(join(tempDir, "package.json"), JSON.stringify(packageJson));
+
+		try {
+			const result = HasValidScripts(tempDir);
+			assert.equal(result, true);
+		} finally {
+			rmSync(tempDir, { recursive: true, force: true });
+		}
 	});
 
 	test("should throw error for invalid input types", () => {
