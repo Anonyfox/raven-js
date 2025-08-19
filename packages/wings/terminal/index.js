@@ -55,4 +55,5 @@
  * - **Type-aware**: Intelligent detection of boolean vs string flags
  */
 
+export * from "./runtime.js";
 export * from "./transform-pattern.js";

@@ -52,12 +52,12 @@
  */
 
 /**
- * Type definition for valid HTTP methods.
+ * Type definition for valid HTTP methods and CLI commands.
  *
- * This typedef ensures type safety when working with HTTP methods throughout
- * the codebase. It restricts the allowed values to only the supported HTTP methods.
+ * This typedef ensures type safety when working with HTTP methods and CLI commands
+ * throughout the codebase. It restricts the allowed values to only the supported methods.
  *
- * @typedef {'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS'} HttpMethod
+ * @typedef {'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS' | 'COMMAND'} HttpMethod
  */
 
 /**
@@ -98,6 +98,7 @@ export const HTTP_METHODS = {
 	PATCH: "PATCH",
 	HEAD: "HEAD",
 	OPTIONS: "OPTIONS",
+	COMMAND: "COMMAND",
 };
 
 /**

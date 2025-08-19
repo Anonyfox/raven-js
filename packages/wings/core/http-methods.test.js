@@ -17,6 +17,7 @@ describe("HTTP Methods", () => {
 			PATCH: "PATCH",
 			HEAD: "HEAD",
 			OPTIONS: "OPTIONS",
+			COMMAND: "COMMAND",
 		});
 	});
 
@@ -29,6 +30,7 @@ describe("HTTP Methods", () => {
 			"PATCH",
 			"HEAD",
 			"OPTIONS",
+			"COMMAND",
 		]);
 	});
 
@@ -41,6 +43,7 @@ describe("HTTP Methods", () => {
 		assert.equal(isValidHttpMethod("PATCH"), true);
 		assert.equal(isValidHttpMethod("HEAD"), true);
 		assert.equal(isValidHttpMethod("OPTIONS"), true);
+		assert.equal(isValidHttpMethod("COMMAND"), true);
 
 		// Invalid methods
 		assert.equal(isValidHttpMethod("get"), false);
@@ -60,14 +63,14 @@ describe("HTTP Methods", () => {
 
 		// Modifying the returned array shouldn't affect the original
 		methods.push("INVALID");
-		assert.equal(HTTP_METHODS_LIST.length, 7);
-		assert.equal(methods.length, 8);
+		assert.equal(HTTP_METHODS_LIST.length, 8);
+		assert.equal(methods.length, 9);
 	});
 
 	it("should have consistent method count", () => {
-		assert.equal(HTTP_METHODS_LIST.length, 7);
-		assert.equal(Object.keys(HTTP_METHODS).length, 7);
-		assert.equal(getHttpMethods().length, 7);
+		assert.equal(HTTP_METHODS_LIST.length, 8);
+		assert.equal(Object.keys(HTTP_METHODS).length, 8);
+		assert.equal(getHttpMethods().length, 8);
 	});
 
 	describe("isValidHttpMethod edge cases", () => {
@@ -240,9 +243,9 @@ describe("HTTP Methods", () => {
 
 			// Array methods should work on copy
 			methods1.splice(0, 1);
-			assert.equal(methods1.length, 6);
-			assert.equal(methods2.length, 7);
-			assert.equal(HTTP_METHODS_LIST.length, 7);
+			assert.equal(methods1.length, 7);
+			assert.equal(methods2.length, 8);
+			assert.equal(HTTP_METHODS_LIST.length, 8);
 		});
 
 		it("should return consistent results across multiple calls", () => {
@@ -296,8 +299,8 @@ describe("HTTP Methods", () => {
 			assert.equal(Object.isExtensible(HTTP_METHODS), true);
 
 			// Should have exactly 7 properties
-			assert.equal(Object.keys(HTTP_METHODS).length, 7);
-			assert.equal(Object.getOwnPropertyNames(HTTP_METHODS).length, 7);
+			assert.equal(Object.keys(HTTP_METHODS).length, 8);
+			assert.equal(Object.getOwnPropertyNames(HTTP_METHODS).length, 8);
 		});
 	});
 
@@ -308,7 +311,7 @@ describe("HTTP Methods", () => {
 		});
 
 		it("should have correct length and content", () => {
-			assert.equal(HTTP_METHODS_LIST.length, 7);
+			assert.equal(HTTP_METHODS_LIST.length, 8);
 			assert.deepEqual(HTTP_METHODS_LIST, [
 				"GET",
 				"POST",
@@ -317,6 +320,7 @@ describe("HTTP Methods", () => {
 				"PATCH",
 				"HEAD",
 				"OPTIONS",
+				"COMMAND",
 			]);
 		});
 

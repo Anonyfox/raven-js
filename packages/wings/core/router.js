@@ -444,6 +444,48 @@ export class Router {
 	}
 
 	/**
+	 * Adds a new COMMAND route to the router.
+	 *
+	 * This method creates and registers a COMMAND route with the specified path
+	 * and handler function. COMMAND routes are used for CLI command execution,
+	 * enabling unified handling of both HTTP requests and CLI operations.
+	 *
+	 * **COMMAND Method**: Used for CLI command execution. COMMAND routes
+	 * handle terminal commands through the Wings routing system, allowing
+	 * the same middleware and routing logic to work for both web and CLI.
+	 *
+	 * @param {string} path - The command path pattern (e.g., '/git/commit')
+	 * @param {import('./middleware.js').Handler} handler - The function to handle COMMAND requests
+	 * @returns {Router} The Router instance for method chaining
+	 *
+	 * @example
+	 * ```javascript
+	 * // Basic COMMAND route
+	 * router.cmd('/git/commit', async (ctx) => {
+	 *   const message = ctx.queryParams.get('message') || 'Default commit message';
+	 *   await executeGitCommit(message);
+	 *   ctx.text('✅ Committed successfully');
+	 * });
+	 *
+	 * // COMMAND route with path parameters
+	 * router.cmd('/deploy/:environment', (ctx) => {
+	 *   const env = ctx.pathParams.environment;
+	 *   console.log(`Deploying to ${env}...`);
+	 *   ctx.text(`✅ Deployed to ${env}`);
+	 * });
+	 *
+	 * // Method chaining
+	 * router
+	 *   .cmd('/git/status', gitStatusHandler)
+	 *   .cmd('/git/commit', gitCommitHandler)
+	 *   .cmd('/deploy/:env', deployHandler);
+	 * ```
+	 */
+	cmd(path, handler) {
+		return this.#addMethodRoute(HTTP_METHODS.COMMAND, path, handler);
+	}
+
+	/**
 	 * Adds a pre-configured Route instance to the router.
 	 *
 	 * This method provides a more flexible way to add routes by accepting

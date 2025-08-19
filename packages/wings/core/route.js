@@ -407,6 +407,63 @@ export class Route {
 	}
 
 	/**
+	 * Creates a new COMMAND route with the specified path and handler.
+	 *
+	 * This is a convenience factory method for creating COMMAND routes.
+	 * It automatically sets the HTTP method to COMMAND and configures
+	 * the route with the provided options.
+	 *
+	 * **COMMAND Method**: Used for CLI command execution. COMMAND routes
+	 * handle terminal commands through the Wings routing system, enabling
+	 * unified handling of both HTTP requests and CLI operations.
+	 *
+	 * @param {string} path - The command path pattern (e.g., '/git/commit')
+	 * @param {import('./middleware.js').Handler} handler - The function to handle the command
+	 * @param {RouteOptions} [options] - Optional route configuration
+	 * @returns {Route} A new Route instance configured for COMMAND execution
+	 *
+	 * @example
+	 * ```javascript
+	 * // Basic COMMAND route
+	 * const gitCommitRoute = Route.COMMAND('/git/commit', async (ctx) => {
+	 *   const message = ctx.queryParams.get('message') || 'Default commit message';
+	 *   await executeGitCommit(message);
+	 *   ctx.text('✅ Committed successfully');
+	 * });
+	 *
+	 * // COMMAND route with interactive input
+	 * const interactiveRoute = Route.COMMAND('/user/create', async (ctx) => {
+	 *   let name = ctx.queryParams.get('name');
+	 *   if (!name) {
+	 *     name = await readline.question('Enter username: ');
+	 *   }
+	 *   const user = await createUser(name);
+	 *   ctx.json(user);
+	 * });
+	 *
+	 * // COMMAND route with validation
+	 * const validatedRoute = Route.COMMAND('/deploy/:environment', (ctx) => {
+	 *   const env = ctx.pathParams.environment;
+	 *   console.log(`Deploying to ${env}...`);
+	 *   ctx.text(`✅ Deployed to ${env}`);
+	 * }, {
+	 *   constraints: { environment: 'staging|production' },
+	 *   description: 'Deploy application to specified environment'
+	 * });
+	 * ```
+	 */
+	static COMMAND(path, handler, options = {}) {
+		const route = new Route();
+		route.method = HTTP_METHODS.COMMAND;
+		route.path = path;
+		route.handler = handler;
+		route.middleware = (options?.middleware || []).filter(Boolean);
+		route.constraints = options?.constraints || {};
+		route.description = options?.description || "";
+		return route;
+	}
+
+	/**
 	 * The HTTP method for this route.
 	 *
 	 * This property specifies which HTTP method this route handles.
