@@ -22,7 +22,8 @@ Achieve 100% branch coverage with lean, efficient test suites. Target: mathemati
 
 **Step 3: Iterative Coverage Achievement**
 
-- Achieve 100% branch coverage before advancing, you can use `npm run test:coverage` or `npx c8` in packages. Non-negotiable.
+- Achieve 100% branch coverage before advancing, Non-negotiable. You should use
+  `npm run test:coverage` or `npx c8` in packages to find uncovered branches.
 - Line-by-line analysis: identify every conditional, loop, exception handler, logical branch
 - Explicitly document uncovered branches and required test scenarios
 - Iterate: add tests → run coverage → verify progress → repeat until 100%
