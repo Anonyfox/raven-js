@@ -57,11 +57,16 @@ export const HasValidScripts = (packagePath) => {
 
 	const scripts = packageData.scripts;
 
+	// Check if this is the nest package itself
+	const isNestPackage = packageData.name === "@raven-js/nest";
+
 	// Required scripts with exact values
 	const requiredScripts = {
 		"nest:validate": "",
 		"nest:docs": "",
-		test: "npm run test:types && npm run test:style && npm run test:code",
+		test: isNestPackage
+			? "npm run test:types && npm run test:style && npm run test:code"
+			: "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
 		"test:code": "",
 		"test:style": "",
 		"test:types": "tsc --noEmit --project jsconfig.json",
