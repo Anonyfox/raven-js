@@ -9,35 +9,48 @@
 import { listFilesRecursive } from "./file-operations.js";
 
 /**
+ * @file Asset list loading strategies for multi-source support.
  *
+ * Provides specialized loaders for each asset serving mode with source-specific
+ * optimization and security filtering. Critical for transparent mode operation.
+ */
+
+/**
  * Magic filename for SEA asset manifests.
- * This file should contain a JSON array of public asset paths.
- * Convention: Only paths starting with '/' are served as public assets.
+ *
+ * Standard location for embedded asset lists in Single Executable Applications.
+ * Must contain JSON array of public asset paths for security compliance.
+ *
+ * @constant {string}
  */
 export const SEA_ASSETS_MANIFEST = "@raven-js/assets.json";
 
 /**
  * Load asset list from SEA embedded manifest.
- * Reads the magic file containing the list of public assets.
  *
- * This function attempts to load the asset manifest from a Single Executable
- * Application using the node:sea module. It validates the manifest format
- * and filters assets to only include public assets (those starting with '/').
+ * Extracts asset paths from Single Executable Application manifest using
+ * node:sea module. Applies security filtering to prevent exposure of
+ * internal files - only public assets (paths starting with '/') are included.
  *
- * @returns {string[]} Array of asset paths from SEA manifest
+ * @returns {string[]} Array of validated public asset paths
  *
- * @example
+ * @example SEA Manifest Loading
  * ```javascript
- * // In SEA environment with manifest:
+ * // With valid SEA manifest:
+ * // @raven-js/assets.json: ["/css/style.css", "/js/app.js", "internal.cfg"]
+ *
  * const assets = loadSEAAssetsList();
- * console.log(assets); // ['/css/style.css', '/js/app.js']
+ * console.log(assets); // → ['/css/style.css', '/js/app.js']
+ * // Note: 'internal.cfg' filtered out (security)
  * ```
  *
- * @example Error Handling
+ * @example Error Resilience
  * ```javascript
- * // When SEA is not available or manifest is invalid:
- * const assets = loadSEAAssetsList();
- * console.log(assets); // [] (empty array)
+ * // Graceful handling of missing/invalid manifest
+ * const assets = loadSEAAssetsList(); // → [] (never throws)
+ *
+ * // Invalid JSON in manifest
+ * const assets = loadSEAAssetsList(); // → [] (parsing errors caught)
  * ```
  */
 export function loadSEAAssetsList() {
@@ -61,34 +74,35 @@ export function loadSEAAssetsList() {
 
 /**
  * Load asset list from global variables.
- * Extracts paths from the globalThis.RavenJS.assets object.
  *
- * This function reads asset paths from the global JavaScript object where
- * assets are embedded as key-value pairs. It validates the structure and
- * filters to only include public assets for security.
+ * Extracts asset paths from globalThis.RavenJS.assets object used for
+ * JavaScript-embedded assets. Applies same security filtering as other
+ * modes to maintain consistent access control.
  *
- * @returns {string[]} Array of asset paths from global variables
+ * @returns {string[]} Array of validated public asset paths from global object
  *
- * @example
+ * @example Global Assets Extraction
  * ```javascript
- * // With global assets defined:
  * globalThis.RavenJS = {
  *   assets: {
- *     '/css/style.css': 'body { color: red; }',
- *     '/js/app.js': 'console.log("app");',
- *     'private.txt': 'secret'  // This will be filtered out
+ *     '/css/style.css': 'body { margin: 0; }',
+ *     '/js/app.js': 'console.log("loaded");',
+ *     'config.json': '{"secret": true}'  // Filtered out
  *   }
  * };
  *
  * const assets = loadGlobalAssetsList();
- * console.log(assets); // ['/css/style.css', '/js/app.js']
+ * console.log(assets); // → ['/css/style.css', '/js/app.js']
  * ```
  *
- * @example Error Handling
+ * @example Security Filtering
  * ```javascript
- * // When global assets are not available:
- * const assets = loadGlobalAssetsList();
- * console.log(assets); // [] (empty array)
+ * // Only public paths (starting with '/') are included
+ * globalThis.RavenJS.assets = {
+ *   '/public.css': 'content',     // → included
+ *   'private.txt': 'secret',      // → filtered out
+ *   '../escape.js': 'attack'      // → filtered out
+ * };
  * ```
  */
 export function loadGlobalAssetsList() {
@@ -109,34 +123,45 @@ export function loadGlobalAssetsList() {
 
 /**
  * Load asset list from file system.
- * Scans the configured directory and builds a list of available files.
  *
- * This function performs an asynchronous scan of the file system directory
- * to build a comprehensive list of available assets. It handles errors
- * gracefully and returns an empty array if the directory cannot be accessed.
+ * Performs asynchronous directory scan to build comprehensive asset inventory.
+ * Most expensive operation among loading strategies but provides complete
+ * file system reflection for development and traditional deployments.
  *
- * @param {string} assetsPath - Full path to the assets directory
- * @returns {Promise<string[]>} Promise resolving to array of asset paths
+ * @param {string} assetsPath - Full filesystem path to assets directory
+ * @returns {Promise<string[]>} Promise resolving to web-normalized asset paths
  *
- * @example
+ * @example Directory Scanning
  * ```javascript
- * // Scan a directory for assets:
+ * // Comprehensive directory scan:
  * const assets = await loadFileSystemAssetsList('./public');
- * console.log(assets); // ['/css/style.css', '/js/app.js', '/images/logo.png']
+ * console.log(assets);
+ * // → ['/css/style.css', '/js/app.js', '/images/logo.png']
+ *
+ * // All files found recursively and normalized
  * ```
  *
- * @example Error Handling
+ * @example Performance Characteristics
  * ```javascript
- * // When directory doesn't exist:
- * const assets = await loadFileSystemAssetsList('./nonexistent');
- * console.log(assets); // [] (empty array, no error thrown)
+ * // Async operation - does not block initialization
+ * const startTime = Date.now();
+ * const assets = await loadFileSystemAssetsList('./large-assets');
+ * console.log(`Scan completed in ${Date.now() - startTime}ms`);
+ *
+ * // Large directories may take time but won't block server startup
+ * ```
+ *
+ * @example Error Resilience
+ * ```javascript
+ * // Missing directory handling
+ * const missing = await loadFileSystemAssetsList('./nonexistent');
+ * console.log(missing); // → [] (graceful degradation)
+ *
+ * // Permission errors also return empty array
+ * const restricted = await loadFileSystemAssetsList('/root');
+ * console.log(restricted); // → [] (no exception)
  * ```
  */
 export async function loadFileSystemAssetsList(assetsPath) {
-	try {
-		return await listFilesRecursive(assetsPath);
-	} catch {
-		// Directory doesn't exist or can't be read
-		return [];
-	}
+	return await listFilesRecursive(assetsPath);
 }

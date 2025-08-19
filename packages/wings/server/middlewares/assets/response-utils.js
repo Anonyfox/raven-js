@@ -9,27 +9,50 @@
 import { getMimeType } from "../../../core/mime-utils.js";
 
 /**
+ * @file HTTP response utilities for asset serving.
  *
+ * Provides standardized response setup with proper MIME types and caching headers.
+ * Critical for consistent asset delivery across all serving modes.
+ */
+
+/**
  * Set the response for a successfully found asset.
- * Configures all necessary headers and response body for asset serving.
- * This function sets up the complete HTTP response for serving an asset,
- * including proper Content-Type header based on file extension, Content-Length
- * header for the response size, basic caching headers, and the response body.
+ *
+ * Configures complete HTTP response with appropriate headers for asset delivery.
+ * Handles MIME type detection, content length calculation, and caching directives.
+ * Terminal operation that finalizes the response pipeline.
+ *
+ * @param {import('../../../core/context.js').Context} ctx - Request context to modify
+ * @param {Buffer} buffer - Asset content as Buffer
+ * @param {string} assetPath - Asset path for MIME type detection
+ *
+ * @example CSS Asset Response
  * ```javascript
- * import { setAssetResponse } from './response-utils.js';
- * // Set response for CSS file
- * const cssContent = Buffer.from('body { color: red; }');
+ * const cssContent = Buffer.from('body { margin: 0; }');
  * setAssetResponse(ctx, cssContent, '/css/style.css');
- * // → Sets Content-Type: text/css, Content-Length, and response body
+ * // → Content-Type: text/css; charset=utf-8
+ * // → Content-Length: 17
+ * // → Cache-Control: public, max-age=3600
  * ```
+ *
+ * @example Binary Asset Response
  * ```javascript
- * // Set response for image file
  * const imageBuffer = await fs.readFile('./logo.png');
  * setAssetResponse(ctx, imageBuffer, '/images/logo.png');
- * // → Sets Content-Type: image/png, Content-Length, and response body
+ * // → Content-Type: image/png
+ * // → Content-Length: [buffer.length]
+ * // → Cache-Control: public, max-age=3600
+ * ```
+ *
+ * @example Response Finalization
+ * ```javascript
+ * // After calling setAssetResponse:
+ * console.log(ctx.responseEnded); // → true
+ * console.log(ctx.responseStatusCode); // → 200
+ * // Response is ready for transmission
  * ```
  */
-export function setAssetResponse(/** @type {any} */ ctx, /** @type {Buffer} */ buffer, /** @type {string} */ assetPath) {
+export function setAssetResponse(ctx, buffer, assetPath) {
 	const mimeType = getMimeType(assetPath);
 
 	ctx.responseHeaders.set("content-type", mimeType);

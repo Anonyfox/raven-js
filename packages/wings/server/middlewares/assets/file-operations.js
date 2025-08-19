@@ -10,38 +10,55 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 
 /**
+ * @file Filesystem operations for asset discovery.
  *
+ * Provides recursive directory scanning with web-compatible path normalization.
+ * Essential for filesystem mode asset list generation.
+ */
+
+/**
  * Recursively list all files in a directory with relative paths.
- * Returns paths in web format (forward slashes, starting with /).
- * This function scans a directory tree and returns all file paths in a format
- * suitable for web serving. It handles directory traversal gracefully and
- * normalizes paths to use forward slashes with leading slash for consistency.
+ *
+ * Scans directory tree and normalizes paths for web serving compatibility.
+ * Critical for filesystem mode initialization - converts OS-specific paths
+ * to web-standard format with forward slashes and leading slash.
+ *
+ * @param {string} dirPath - Directory path to scan recursively
+ * @param {string} [basePath=''] - Base path for relative URL construction
+ * @returns {Promise<string[]>} Array of web-normalized file paths
+ *
+ * @example Directory Scanning
  * ```javascript
  * // Directory structure:
  * // public/
  * //   ├── css/styles.css
  * //   ├── js/app.js
- * //   └── images/
- * //       └── logo.png
+ * //   └── images/logo.png
+ *
  * const files = await listFilesRecursive('./public');
  * console.log(files);
- * // ['/css/styles.css', '/js/app.js', '/images/logo.png']
+ * // → ['/css/styles.css', '/js/app.js', '/images/logo.png']
  * ```
+ *
+ * @example Error Resilience
  * ```javascript
- * // If directory doesn't exist or can't be read
+ * // Graceful handling of missing directories
  * const files = await listFilesRecursive('./nonexistent');
- * console.log(files); // [] (empty array, no error thrown)
+ * console.log(files); // → [] (no error thrown)
+ *
+ * // Permission errors also return empty array
+ * const restricted = await listFilesRecursive('/root/.ssh');
+ * console.log(restricted); // → [] (safe fallback)
+ * ```
+ *
+ * @example Path Normalization
+ * ```javascript
+ * // Windows paths converted to web format
+ * // Input: 'css\\style.css' → Output: '/css/style.css'
+ * // Always uses forward slashes regardless of OS
  * ```
  */
-/**
- * @param {string} dirPath - Directory path to scan
- * @param {string} basePath - Base path for relative URLs
- * @returns {Promise<string[]>} Array of file paths
- */
-export async function listFilesRecursive(
-	/** @type {string} */ dirPath,
-	/** @type {string} */ basePath = "",
-) {
+export async function listFilesRecursive(dirPath, basePath = "") {
 	try {
 		const entries = await fs.readdir(dirPath, { withFileTypes: true });
 		const files = [];

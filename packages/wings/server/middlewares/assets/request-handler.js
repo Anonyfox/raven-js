@@ -14,34 +14,65 @@ import {
 import { isValidAssetPath } from "./path-validation.js";
 
 /**
+ * @file Asset request orchestration and pipeline coordination.
  *
+ * Main entry point for asset serving with comprehensive error handling
+ * and mode-agnostic request processing. Critical middleware boundary.
+ */
+
+/**
  * Handle an asset request using the current mode.
- * This is the main entry point for asset serving.
- * This function orchestrates the entire asset serving pipeline:
- * 1. Validates that a response hasn't already been sent
- * 2. Decodes the URL path to handle unicode characters
- * 3. Validates the request path for security
- * 4. Checks if the asset exists in the current mode
- * 5. Serves the asset using the appropriate mode-specific handler
- * 6. Handles errors gracefully without breaking the request pipeline
+ *
+ * Orchestrates complete asset serving pipeline with defense-in-depth
+ * validation and graceful error collection. Central coordination point
+ * that delegates to mode-specific handlers while maintaining consistent
+ * security and error handling across all modes.
+ *
+ * @param {import('../../../core/context.js').Context} ctx - Request context to process
+ * @param {AssetConfig} assetConfig - Asset configuration object with mode and paths
+ *
+ * @typedef {Object} AssetConfig
+ * @property {'sea'|'global'|'filesystem'|'uninitialized'} mode - Asset serving mode
+ * @property {string[]} assetsList - Cached list of available assets
+ * @property {string|null} assetsPath - Full path to assets directory (filesystem mode only)
+ *
+ * @example Pipeline Execution
  * ```javascript
- * import { handleAssetRequest } from './request-handler.js';
  * const config = {
- * mode: 'filesystem',
- * assetsList: ['/css/style.css', '/js/app.js'],
- * assetsPath: '/path/to/assets'
+ *   mode: 'filesystem',
+ *   assetsList: ['/css/style.css', '/js/app.js'],
+ *   assetsPath: '/path/to/public'
  * };
+ *
  * await handleAssetRequest(ctx, config);
+ * // → Path decoded and validated
+ * // → Asset existence checked
+ * // → Mode-specific handler invoked
+ * // → Response finalized or graceful fallthrough
  * ```
+ *
+ * @example Error Collection
  * ```javascript
- * // Errors are collected in ctx.errors for logging
+ * // Errors collected in ctx.errors without breaking pipeline
  * await handleAssetRequest(ctx, config);
  * if (ctx.errors.length > 0) {
- * console.log('Asset serving errors:', ctx.errors);
+ *   ctx.errors.forEach(err => {
+ *     console.log(`Asset Error: ${err.message}`);
+ *     console.log(`Mode: ${err.mode}, Path: ${err.path}`);
+ *   });
  * }
  * ```
+ *
+ * @example Graceful Fallthrough
+ * ```javascript
+ * // When asset not found or mode uninitialized
+ * await handleAssetRequest(ctx, config);
+ * // → ctx.responseEnded remains false
+ * // → Other middleware can handle the request
+ * // → No exceptions thrown, pipeline continues
+ * ```
  */
-export async function handleAssetRequest(/** @type {any} */ ctx, /** @type {any} */ assetConfig) {
+export async function handleAssetRequest(ctx, assetConfig) {
 	try {
 		// Skip if response already handled or no response body expected
 		if (ctx.responseEnded) return;
@@ -102,37 +133,47 @@ export async function handleAssetRequest(/** @type {any} */ ctx, /** @type {any}
 /**
  * Check if an asset exists in the current mode.
  *
- * This function determines whether an asset is available based on the current
- * serving mode. For filesystem mode, it may return true even if the asset list
- * isn't loaded yet, allowing the file system to make the final determination.
+ * Performs mode-specific existence checking with filesystem fallback handling.
+ * Critical for preventing unnecessary mode-specific handler invocation while
+ * maintaining filesystem mode's lazy loading capability.
  *
- * @param {string} assetPath - The asset path to check
- * @param {Object} assetConfig - Asset configuration object
- * @param {string} assetConfig.mode - Current asset serving mode
- * @param {string[]} assetConfig.assetsList - Cached list of available assets
- * @returns {boolean} True if the asset exists or might exist
+ * @param {string} assetPath - Decoded asset path to verify
+ * @param {AssetConfig} assetConfig - Asset configuration for mode-specific checking
+ * @returns {boolean} True when asset exists or filesystem mode allows discovery
  *
- * @example
+ * @example Definitive Asset Lists
  * ```javascript
- * const config = {
+ * // SEA and Global modes have complete asset lists
+ * const globalConfig = {
  *   mode: 'global',
  *   assetsList: ['/css/style.css', '/js/app.js'],
  *   assetsPath: null
  * };
  *
- * hasAsset('/css/style.css', config);  // → true
- * hasAsset('/missing.css', config);    // → false
+ * hasAsset('/css/style.css', globalConfig); // → true (found in list)
+ * hasAsset('/missing.css', globalConfig);   // → false (not in list)
  * ```
  *
- * @example Filesystem Fallback
+ * @example Filesystem Lazy Loading
  * ```javascript
- * const config = {
+ * // Filesystem mode allows discovery when list not loaded
+ * const fsConfig = {
  *   mode: 'filesystem',
- *   assetsList: [],  // Not loaded yet
- *   assetsPath: '/path/to/assets'
+ *   assetsList: [], // Empty during async loading
+ *   assetsPath: '/path/to/public'
  * };
  *
- * hasAsset('/style.css', config);  // → true (let filesystem decide)
+ * hasAsset('/unknown.css', fsConfig); // → true (let fs handler decide)
+ * // Prevents blocking during asset list generation
+ * ```
+ *
+ * @example Performance Optimization
+ * ```javascript
+ * // Avoids expensive handler calls for missing assets
+ * if (hasAsset(path, config)) {
+ *   await serveAssetHandler(ctx, path, config); // Only called when needed
+ * }
+ * // Reduces I/O and processing overhead
  * ```
  */
 export function hasAsset(assetPath, assetConfig) {

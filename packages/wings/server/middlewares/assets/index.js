@@ -7,10 +7,11 @@
  */
 
 /**
+ * @file Assets middleware public API export.
  *
- * This file exports the same public API as the original monolithic assets.js file,
- * ensuring backward compatibility while providing the benefits of the modular
- * architecture underneath.
+ * Provides clean re-export of Assets class maintaining backward compatibility
+ * with monolithic architecture while enabling internal modular design.
+ * Primary import point for Wings asset serving middleware.
  */
 
 export { Assets } from "./assets.js";

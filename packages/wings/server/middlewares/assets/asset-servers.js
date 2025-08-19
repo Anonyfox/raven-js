@@ -11,24 +11,39 @@ import path from "node:path";
 import { setAssetResponse } from "./response-utils.js";
 
 /**
+ * @file Asset serving implementations for different source modes.
  *
+ * Provides mode-specific asset serving with consistent error handling and
+ * response finalization. Each function handles its source type optimally.
+ */
+
+/**
  * Serve an asset from SEA embedded resources.
- * This function retrieves assets from Single Executable Application embedded
- * resources using the node:sea module. It handles the conversion from the
- * embedded format to a Buffer and sets up the appropriate HTTP response.
+ *
+ * Retrieves assets from Single Executable Application using node:sea module.
+ * Fastest serving mode due to in-memory embedded resources. Handles
+ * format conversion from embedded data to HTTP response.
+ *
+ * @param {import('../../../core/context.js').Context} ctx - Request context to modify
+ * @param {string} assetPath - Decoded asset path to serve from SEA resources
+ *
+ * @example SEA Asset Serving
  * ```javascript
- * import { serveAssetSEA } from './asset-servers.js';
- * // In SEA environment, serve embedded asset
+ * // In SEA environment with embedded assets
  * await serveAssetSEA(ctx, '/css/style.css');
- * // → Retrieves from SEA resources and sets response
+ * // → Retrieves from SEA, sets Content-Type and response body
+ * // → ctx.responseEnded = true, ready for transmission
  * ```
+ *
+ * @example Graceful Fallthrough
  * ```javascript
- * // When asset doesn't exist in SEA
- * await serveAssetSEA(ctx, '/nonexistent.css');
- * // → Returns without setting response (allows fallthrough)
+ * // When asset not found in SEA resources
+ * await serveAssetSEA(ctx, '/missing.css');
+ * // → Returns silently, ctx.responseEnded remains false
+ * // → Allows other middleware/routes to handle the request
  * ```
  */
-export async function serveAssetSEA(/** @type {any} */ ctx, /** @type {string} */ assetPath) {
+export async function serveAssetSEA(ctx, assetPath) {
 	try {
 		const sea = require("node:sea");
 		const content = sea.getAsset(assetPath);
@@ -44,35 +59,41 @@ export async function serveAssetSEA(/** @type {any} */ ctx, /** @type {string} *
 /**
  * Serve an asset from global variables.
  *
- * This function retrieves assets from the globalThis.RavenJS.assets object
- * where assets are embedded as JavaScript variables. It handles both string
- * and Buffer content types and sets up the appropriate HTTP response.
+ * Retrieves assets from globalThis.RavenJS.assets object where content
+ * is embedded as JavaScript variables. Handles both string and Buffer
+ * content with automatic type conversion for consistent Buffer responses.
  *
- * @param {import('../../../core/context.js').Context} ctx - Request context
- * @param {string} assetPath - Decoded asset path to serve
+ * @param {import('../../../core/context.js').Context} ctx - Request context to modify
+ * @param {string} assetPath - Decoded asset path to serve from global object
  *
- * @example
+ * @example Global Asset Serving
  * ```javascript
- * import { serveAssetGlobal } from './asset-servers.js';
- *
- * // With global assets available
  * globalThis.RavenJS = {
  *   assets: {
- *     '/css/style.css': 'body { color: red; }'
+ *     '/css/style.css': 'body { margin: 0; }',
+ *     '/data.json': '{"key": "value"}'
  *   }
  * };
  *
  * await serveAssetGlobal(ctx, '/css/style.css');
- * // → Retrieves from global object and sets response
+ * // → String converted to Buffer, Content-Type set, response finalized
  * ```
  *
- * @example Different Content Types
+ * @example Mixed Content Types
  * ```javascript
- * // Handles both strings and Buffers
+ * // Automatic type handling
  * globalThis.RavenJS.assets = {
- *   '/text.txt': 'string content',        // String content
- *   '/image.png': Buffer.from([...])      // Buffer content
+ *   '/text.txt': 'string content',           // → Buffer.from(content, 'utf8')
+ *   '/binary.png': Buffer.from([0x89, ...]) // → Used directly as Buffer
  * };
+ *
+ * // Both types result in Buffer responses with proper Content-Type
+ * ```
+ *
+ * @example Missing Asset Handling
+ * ```javascript
+ * await serveAssetGlobal(ctx, '/nonexistent.css');
+ * // → Returns early, no response set (allows fallthrough)
  * ```
  */
 export async function serveAssetGlobal(ctx, assetPath) {
@@ -90,29 +111,40 @@ export async function serveAssetGlobal(ctx, assetPath) {
 /**
  * Serve an asset from the file system.
  *
- * This function reads assets from the local file system using the configured
- * assets directory. It includes additional security checks to prevent path
- * traversal attacks and handles file reading errors gracefully.
+ * Reads assets from local filesystem with defense-in-depth security.
+ * Slowest serving mode due to disk I/O but provides complete file system
+ * reflection. Implements additional path traversal protection beyond
+ * initial validation.
  *
- * @param {import('../../../core/context.js').Context} ctx - Request context
- * @param {string} assetPath - Decoded asset path to serve
- * @param {string} assetsPath - Full path to the assets directory
+ * @param {import('../../../core/context.js').Context} ctx - Request context to modify
+ * @param {string} assetPath - Decoded asset path to serve from filesystem
+ * @param {string} assetsPath - Full resolved path to assets directory
  *
- * @example
+ * @example Filesystem Asset Serving
  * ```javascript
- * import { serveAssetFileSystem } from './asset-servers.js';
- *
- * // Serve from file system
  * const assetsPath = path.resolve('./public');
  * await serveAssetFileSystem(ctx, '/css/style.css', assetsPath);
- * // → Reads ./public/css/style.css and sets response
+ * // → Reads ./public/css/style.css
+ * // → Sets Content-Type based on extension
+ * // → Finalizes response with file contents
  * ```
  *
- * @example Security
+ * @example Security Protection
  * ```javascript
- * // Path traversal attempts are blocked
- * await serveAssetFileSystem(ctx, '/../secret.txt', assetsPath);
- * // → Returns without serving (security check fails)
+ * // Double-layer path traversal protection
+ * await serveAssetFileSystem(ctx, '/../etc/passwd', assetsPath);
+ * // → path.resolve() check prevents directory escape
+ * // → Returns early without serving, no error thrown
+ *
+ * // Symlink attacks also prevented by resolved path validation
+ * ```
+ *
+ * @example Error Handling
+ * ```javascript
+ * // File not found or permission denied
+ * await serveAssetFileSystem(ctx, '/missing.css', assetsPath);
+ * // → fs.readFile() throws, caught silently
+ * // → Returns without setting response (graceful degradation)
  * ```
  */
 export async function serveAssetFileSystem(ctx, assetPath, assetsPath) {

@@ -7,27 +7,45 @@
  */
 
 /**
+ * @file Path validation for secure asset serving.
  *
+ * Implements defense-in-depth security model preventing path traversal attacks
+ * and unauthorized access to internal files. Critical security boundary.
+ */
+
+/**
  * Validate that a request path is safe for asset serving.
- * Implements security checks to prevent path traversal and unauthorized access.
- * Security rules enforced:
- * - Must be a string
- * - Must start with '/' for public access (security requirement)
- * - Must not contain '..' to prevent path traversal attacks
- * - Must not contain backslashes to prevent Windows path traversal
- * - Must not contain null bytes or other control characters
- * - Must not be just a slash (root path)
+ *
+ * Implements comprehensive security checks preventing common web application
+ * vulnerabilities. Only paths passing all validation rules are eligible
+ * for asset serving, ensuring no internal files are exposed.
+ *
+ * @param {string} requestPath - URL path to validate
+ * @returns {boolean} True when path is safe for asset serving
+ *
+ * @example Valid Asset Paths
  * ```javascript
- * isValidAssetPath('/css/style.css')   // → true
- * isValidAssetPath('/js/app.js')       // → true
- * isValidAssetPath('/../secret.txt')   // → false (path traversal)
- * isValidAssetPath('/app\\..\\file')   // → false (backslash traversal)
- * isValidAssetPath('/')                // → false (root path)
- * isValidAssetPath('')                 // → false (empty)
- * isValidAssetPath(null)               // → false (not string)
+ * isValidAssetPath('/css/style.css');    // → true
+ * isValidAssetPath('/js/app.js');        // → true
+ * isValidAssetPath('/images/logo.png');  // → true
+ * ```
+ *
+ * @example Path Traversal Prevention
+ * ```javascript
+ * isValidAssetPath('/../secret.txt');    // → false (traversal)
+ * isValidAssetPath('/app\\..\\file');    // → false (backslash)
+ * isValidAssetPath('/file\0');           // → false (null byte)
+ * ```
+ *
+ * @example Access Control
+ * ```javascript
+ * isValidAssetPath('app.js');            // → false (no leading /)
+ * isValidAssetPath('/');                 // → false (root path)
+ * isValidAssetPath('');                  // → false (empty)
+ * isValidAssetPath(null);                // → false (type safety)
  * ```
  */
-export function isValidAssetPath(/** @type {string} */ requestPath) {
+export function isValidAssetPath(requestPath) {
 	// Must be a string
 	if (typeof requestPath !== "string") return false;
 

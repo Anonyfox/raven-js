@@ -31,6 +31,7 @@
  * @type {import('./config.js').RequestValidationConfig}
  */
 export const DEFAULT_VALIDATION = {
+	enabled: true,
 	maxBodySize: 1024 * 1024, // 1MB
 	maxHeaderSize: 8192, // 8KB
 	maxHeaders: 100,

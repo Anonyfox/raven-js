@@ -20,89 +20,143 @@ import {
 import { handleAssetRequest } from "./request-handler.js";
 
 /**
+ * @file Multi-source static asset serving middleware.
  *
- * Assets - Static file serving middleware with transparent multi-source support
- * This middleware automatically detects the best available asset source and serves
- * static files transparently. It supports modern deployment patterns while maintaining
- * backwards compatibility with traditional file-based serving.
- * The middleware operates in three modes with automatic priority-based selection:
- * 1. SEA mode: Serves from Single Executable Application embedded resources
- * 2. Global mode: Serves from JavaScript variables in globalThis.RavenJS.assets
- * 3. FileSystem mode: Serves from local file system (traditional approach)
- * Mode selection is completely transparent - the same public API works regardless
- * of the deployment method. This allows applications to be developed with file
- * system assets and deployed as bundled or executable applications without changes.
- * ## Security Model
- * All modes enforce the same security model:
- * - Only assets with paths starting with '/' are served (public assets)
- * - Path traversal attacks are prevented through validation
- * - Internal/private files are never exposed to the web
+ * Provides transparent asset serving across deployment environments with
+ * automatic source detection and consistent security model. Core middleware
+ * for Wings applications requiring static file delivery.
+ */
+
+/**
+ * @typedef {Object} AssetConfig
+ * @property {'sea'|'global'|'filesystem'|'uninitialized'} mode - Asset serving mode
+ * @property {string[]} assetsList - Cached list of available assets
+ * @property {string|null} assetsPath - Full path to assets directory (filesystem mode only)
+ */
+
+/**
+ * Assets - Multi-source static file serving middleware.
+ *
+ * Implements transparent asset serving with automatic source detection across
+ * three deployment modes: SEA embedded resources, JavaScript variables, and
+ * traditional filesystem. Zero-configuration operation with consistent security
+ * model and performance characteristics.
+ *
+ * **Priority-Based Mode Selection:**
+ * 1. SEA mode: Single Executable Application embedded resources (fastest)
+ * 2. Global mode: JavaScript variables in globalThis.RavenJS.assets (fast)
+ * 3. FileSystem mode: Traditional file system serving (flexible)
+ *
+ * **Security Model:**
+ * - Only paths starting with '/' are served (public assets)
+ * - Path traversal prevention across all modes
  * - Mode isolation prevents cross-contamination
- * ## Error Handling
- * The middleware follows Wings' error collection pattern:
- * - Asset serving errors are collected in ctx.errors for logging
- * - Missing assets return early (allowing router to handle 404s)
- * - Mode initialization failures fall back gracefully
- * - No unhandled exceptions break the request pipeline
+ * - Internal files never exposed
+ *
+ * **Error Handling:**
+ * - Errors collected in ctx.errors for observability
+ * - Graceful fallthrough for missing assets
+ * - No pipeline disruption on failures
+ *
+ * @extends {Middleware}
+ *
+ * @example Basic Usage
  * ```javascript
- * // Directory structure:
- * // public/
- * //   ├── css/styles.css
- * //   ├── js/app.js
- * //   └── images/logo.png
- * const assets = new Assets({ assetsDir: 'public' });
- * router.use(assets);
- * // GET /css/styles.css -> serves public/css/styles.css
- * // GET /js/app.js -> serves public/js/app.js
- * // GET /images/logo.png -> serves public/images/logo.png
- * ```
- * ```javascript
- * // Same code works in SEA mode:
- * const assets = new Assets(); // assetsDir ignored in SEA mode
- * router.use(assets);
- * // Assets served from embedded SEA resources automatically
- * // No code changes required!
- * ```
- * ```javascript
- * // Assets embedded as JavaScript:
- * globalThis.RavenJS = {
- * assets: {
- * '/css/styles.css': 'body { color: red; }',
- * '/js/app.js': 'console.log("Hello");',
- * '/images/logo.png': Buffer.from([...])
- * }
- * };
+ * import { Assets } from '@raven-js/wings/server/middlewares/assets';
+ *
+ * // Zero-config transparent operation
  * const assets = new Assets();
  * router.use(assets);
- * // Same public API, different source - completely transparent
+ *
+ * // Works identically across all deployment modes:
+ * // • Development: serves from ./public/
+ * // • SEA bundle: serves from embedded resources
+ * // • JS bundle: serves from globalThis.RavenJS.assets
+ * ```
+ *
+ * @example Custom Directory
+ * ```javascript
+ * // Custom assets directory (filesystem mode only)
+ * const assets = new Assets({ assetsDir: 'static' });
+ * router.use(assets);
+ *
+ * // Directory structure:
+ * // static/
+ * //   ├── css/app.css     → GET /css/app.css
+ * //   ├── js/bundle.js    → GET /js/bundle.js
+ * //   └── images/logo.png → GET /images/logo.png
+ * ```
+ *
+ * @example SEA Deployment
+ * ```javascript
+ * // SEA mode (automatic detection)
+ * const assets = new Assets(); // assetsDir ignored
+ * router.use(assets);
+ *
+ * // Assets served from embedded SEA resources
+ * // Fastest mode: in-memory access, no I/O
+ * // Manifest: @raven-js/assets.json lists public assets
+ * ```
+ *
+ * @example Global Variables Mode
+ * ```javascript
+ * // JavaScript-embedded assets
+ * globalThis.RavenJS = {
+ *   assets: {
+ *     '/css/app.css': 'body { margin: 0; }',
+ *     '/js/app.js': 'console.log("loaded");',
+ *     '/api/data.json': '{"version": "1.0"}'
+ *   }
+ * };
+ *
+ * const assets = new Assets();
+ * router.use(assets);
+ * // Fast mode: direct memory access, automatic type handling
  * ```
  */
 export class Assets extends Middleware {
 	/**
-	 * Create a new Assets middleware instance.
+	 * Create Assets middleware with automatic source detection.
 	 *
-	 * The middleware automatically detects the best available asset source
-	 * without requiring configuration. The assetsDir option only affects
-	 * file system mode and is ignored in SEA or global variable modes.
+	 * Performs environment probing to determine optimal asset serving mode.
+	 * Configuration applies only to filesystem mode - other modes ignore
+	 * options and operate based on environment capabilities.
 	 *
-	 * @param {Object} [options={}] - Configuration options
-	 * @param {string} [options.assetsDir='public'] - Directory for file system mode (ignored in other modes)
-	 * @param {string} [options.identifier='@raven-js/wings/assets'] - Middleware identifier
+	 * @param {AssetsOptions} [options] - Configuration options
 	 *
-	 * @throws {Error} When invalid configuration is provided
+	 * @typedef {Object} AssetsOptions
+	 * @property {string} [assetsDir='public'] - Filesystem assets directory (ignored in SEA/global modes)
+	 * @property {string} [identifier='@raven-js/wings/assets'] - Middleware identifier for debugging
 	 *
-	 * @example Basic Usage
+	 * @throws {Error} When assetsDir is invalid (non-string or empty)
+	 *
+	 * @example Zero Configuration
 	 * ```javascript
-	 * // Use defaults (public directory, auto-detection)
+	 * // Automatic mode detection with sensible defaults
 	 * const assets = new Assets();
+	 * router.use(assets);
+	 * // → Uses 'public' directory in filesystem mode
+	 * // → Auto-detects SEA/global modes when available
+	 * ```
+	 *
+	 * @example Custom Configuration
+	 * ```javascript
+	 * // Custom assets directory and identifier
+	 * const assets = new Assets({
+	 *   assetsDir: 'static',
+	 *   identifier: 'my-app/assets'
+	 * });
 	 * router.use(assets);
 	 * ```
 	 *
-	 * @example Custom Directory
+	 * @example Mode Independence
 	 * ```javascript
-	 * // Custom directory for file system mode
-	 * const assets = new Assets({ assetsDir: 'static' });
-	 * router.use(assets);
+	 * // Same constructor works across deployment modes
+	 * const assets = new Assets({ assetsDir: 'custom' });
+	 *
+	 * // Development:  serves from ./custom/
+	 * // SEA bundle:   ignores assetsDir, uses embedded assets
+	 * // JS bundle:    ignores assetsDir, uses globalThis.RavenJS.assets
 	 * ```
 	 */
 	constructor(options = {}) {
@@ -129,26 +183,43 @@ export class Assets extends Middleware {
 
 	/**
 	 * Current asset serving mode.
+	 *
+	 * Reflects the detected and active asset source. Set during initialization
+	 * based on environment capabilities and available sources.
+	 *
 	 * @type {'sea'|'global'|'filesystem'|'uninitialized'}
 	 */
 	mode = "uninitialized";
 
 	/**
 	 * Cached list of available assets.
+	 *
+	 * Contains web-normalized paths (starting with '/') of all discoverable
+	 * assets. Population strategy varies by mode: immediate for SEA/global,
+	 * asynchronous for filesystem.
+	 *
 	 * @type {string[]}
 	 */
 	assetsList = [];
 
 	/**
-	 * Full path to assets directory (filesystem mode only).
+	 * Full resolved path to assets directory.
+	 *
+	 * Only used in filesystem mode for file operations. Null in SEA/global
+	 * modes where assets are served from memory sources.
+	 *
 	 * @type {string|null}
 	 */
 	assetsPath = null;
 
 	/**
-	 * Get the current asset configuration for request handling.
+	 * Get current asset configuration for request handling.
 	 *
-	 * @returns {{ mode: string, assetsList: string[], assetsPath: string | null }} Asset configuration object
+	 * Provides immutable snapshot of asset serving state for use by
+	 * request handlers. Contains all information needed for mode-specific
+	 * asset serving operations.
+	 *
+	 * @returns {AssetConfig} Current asset configuration
 	 */
 	#getAssetConfig() {
 		return {
@@ -159,12 +230,17 @@ export class Assets extends Middleware {
 	}
 
 	/**
-	 * Initialize the asset source based on environment detection.
-	 * Implements the priority system: SEA > Global > FileSystem.
+	 * Initialize asset source using priority-based environment detection.
 	 *
-	 * This method is called during construction and sets up the appropriate
-	 * mode for asset serving. Mode detection is based on environment capabilities
-	 * rather than configuration, ensuring transparent operation.
+	 * Implements capability-based mode selection with graceful fallback.
+	 * Called during construction to establish serving mode and populate
+	 * initial asset inventory. Failure-resistant design ensures middleware
+	 * remains functional even when asset sources are unavailable.
+	 *
+	 * **Detection Priority:**
+	 * 1. SEA embedded resources (highest performance)
+	 * 2. Global JavaScript variables (fast memory access)
+	 * 3. Filesystem directory (maximum flexibility)
 	 */
 	#initializeAssetSource() {
 		try {
@@ -195,20 +271,17 @@ export class Assets extends Middleware {
 	}
 
 	/**
-	 * Load asset list from file system.
-	 * Scans the configured directory and builds a list of available files.
-	 * This method is async and sets assetsList when complete.
+	 * Load filesystem asset list asynchronously.
+	 *
+	 * Initiates background directory scan without blocking constructor.
+	 * Updates assetsList when scan completes. Allows middleware to begin
+	 * serving immediately with lazy asset discovery.
 	 */
 	#loadFileSystemAssetsList() {
 		// Load file system assets asynchronously
 		// We don't await this to avoid blocking the constructor
-		loadFileSystemAssetsList(this.assetsPath)
-			.then((files) => {
-				this.assetsList = files;
-			})
-			.catch(() => {
-				// Directory doesn't exist or can't be read
-				this.assetsList = [];
-			});
+		loadFileSystemAssetsList(this.assetsPath).then((files) => {
+			this.assetsList = files;
+		});
 	}
 }

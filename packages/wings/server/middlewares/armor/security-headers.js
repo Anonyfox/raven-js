@@ -55,6 +55,7 @@ export const DEFAULT_CSP_DIRECTIVES = {
  * @type {import('./config.js').SecurityHeadersConfig}
  */
 export const DEFAULT_HEADERS = {
+	enabled: true,
 	contentSecurityPolicy: DEFAULT_CSP_DIRECTIVES,
 	contentSecurityPolicyReportOnly: false,
 	frameOptions: "DENY",
@@ -76,6 +77,7 @@ export const DEFAULT_HEADERS = {
 	},
 	crossOriginEmbedderPolicy: "require-corp",
 	crossOriginOpenerPolicy: "same-origin",
+	crossOriginResourcePolicy: "same-origin",
 };
 
 /**
