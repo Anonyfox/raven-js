@@ -1,19 +1,49 @@
 # SPLIT
 
-Use this prompt template with a coding agent to refactor large, complex JavaScript files into maintainable, well-tested modules. The target file will be replaced with a folder structure that maintains the same public API while improving code organization and test coverage.
+Refactor monolithic JavaScript files into maintainable, well-tested modules. Target: identical public API with improved organization and coverage.
 
 ## Template
 
-This JavaScript file is large and complex, making it difficult to maintain and test. Please perform an incremental refactoring that replaces this monolithic file with a folder structure of the same name containing an index.js that exports the identical public API. The critical principle is to split functionality by feature and business concerns, not by technical type or layer. This means grouping related functionality together based on what the code accomplishes rather than how it's implemented. For example, instead of separating all validation functions into one file and all parsing functions into another, group all user authentication logic together, all data processing logic together, and all error handling logic together.
+**Algorithm: Feature-based architectural refactoring**
 
-Start by identifying all distinct features and concerns within the original file, then immediately create a detailed and rigorously in-depth checklist of all tasks that need to be accomplished during the entire refactoring journey. This checklist should include every module to extract, every test file to create, and every integration step required. Maintain this checklist actively throughout the process, checking off completed tasks and adding newly discovered tasks as they emerge during implementation. The checklist serves as both a roadmap and progress tracker, ensuring nothing is overlooked and providing visibility into the refactoring progress.
+**Core Principle: Business concerns, not technical layers**
 
-Create a step-by-step implementation plan ordering modules from simplest to most complex and least dependent to most dependent. For each extracted module, implement it as either pure functions when possible or classes when state management is necessary, ensuring clean separation of concerns and no circular dependencies. Every module must be minimal, lean, and optimized for runtime performance with no unnecessary abstractions or overhead.
+- Group by what code accomplishes, not how it's implemented
+- ✓ User authentication logic together, data processing together, error handling together
+- ✗ All validation functions separate, all parsing functions separate
 
-After creating each individual module file, you must achieve perfect 100% branch coverage in its test suite before moving to the next module. This is non-negotiable and requires a rigorous verification process. Once you've written the initial tests for a module, perform a meticulous line-by-line comparison between the original code section and your extracted module to identify any missing logic, edge cases, or branches. Write out explicitly what you found missing during this comparison, then iterate on both the module code and tests to address each identified gap one by one. Do not give up and do not proceed to the next module until you have verified 100% branch coverage is achieved and all identified gaps are resolved through this iterative process.
+**Step 1: Analysis → Strategic Decomposition**
 
-The test suites themselves must be equally lean and efficient, designed to run as fast as possible while maintaining comprehensive coverage. Use as few test blocks as possible by cleverly checking multiple related scenarios, edge cases, and behaviors within single test functions whenever logical. Each test should validate multiple aspects of functionality in one pass rather than creating separate tests for every minor variation. This approach keeps the test count minimal and meaningful while still achieving full 100% branch coverage through strategic test design.
+- Identify distinct features and concerns within original file
+- Create active checklist: every module to extract, test file to create, integration step required
+- Maintain throughout—roadmap and progress tracker
 
-Each module must have no linting errors, no type errors with accurate JSDoc types, and clean readable code structure optimized for both maintainability and performance. The test suite should validate all function contracts, edge cases, error conditions, and behavioral expectations efficiently and thoroughly. When all modules are complete with perfect test coverage, create the final index.js that imports all modules and assembles them to recreate the original public API with identical behavior. The refactored folder structure must export the exact same public interface and pass all existing tests while providing comprehensive test coverage across all modules.
+**Step 2: Dependency-Ordered Implementation Plan**
 
-Once everything works, always ensure type errors are properly resolved and the linter is happy.
+- Order modules: simple → complex, least dependent → most dependent
+- Target: pure functions when possible, classes only for state management
+- Ensure zero circular dependencies, minimal runtime overhead
+
+**Step 3: Iterative Module Extraction** (Per module, non-negotiable sequence)
+
+1. Extract module code
+2. Achieve 100% branch coverage in test suite
+3. **Critical**: Line-by-line comparison with original code section
+4. Explicitly document missing logic, edge cases, branches found during comparison
+5. Iterate module code + tests to address each identified gap
+6. Verify 100% coverage achieved before advancing
+
+**Step 4: Strategic Test Design** (Per module)
+
+- Lean efficiency: minimal test blocks, multiple scenarios per function
+- Validate multiple aspects in single passes
+- Fast execution with full coverage
+
+**Step 5: API Reconstruction**
+
+- Create final index.js importing all modules
+- Assemble to recreate original public API with identical behavior
+- **Requirement**: Exact same public interface, passes all existing tests
+- Verify comprehensive test coverage across all modules
+
+**Final: Zero errors, identical API behavior, improved maintainability through business-aligned architecture.**

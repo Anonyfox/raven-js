@@ -1,21 +1,46 @@
 # TEST
 
-Use this prompt template with a coding agent to achieve perfect test coverage for existing JavaScript files. Target files will be enhanced with comprehensive test suites that achieve 100% branch coverage while maintaining optimal performance and code quality.
+Achieve 100% branch coverage with lean, efficient test suites. Target: mathematical proof of code correctness through strategic test design.
 
 ## Template
 
-These JavaScript files lack complete test coverage, making them vulnerable to regressions and difficult to maintain with confidence. Please perform a comprehensive testing enhancement that achieves perfect 100% branch coverage for every file while fixing all linting and type errors. The critical principle is to test all code paths, edge cases, and error conditions systematically, ensuring every possible execution branch is validated through efficient and meaningful test scenarios.
+**Algorithm: Systematic branch coverage achievement**
 
-Start by analyzing all JavaScript files in the target directory or the specific file provided, then immediately create a detailed and rigorously in-depth checklist of all testing tasks that need to be accomplished. This checklist should include every file to test, every branch to cover, every lint error to fix, and every type error to resolve. Maintain this checklist actively throughout the process, checking off completed tasks and adding newly discovered issues as they emerge during implementation. The checklist serves as both a roadmap and progress tracker, ensuring complete coverage is achieved without overlooking any code paths.
+**Step 1: Analysis → Checklist**
 
-Create a step-by-step implementation plan ordering files from simplest to most complex, focusing on one file at a time to enable faster iteration cycles and precise coverage validation. For each JavaScript file, examine its existing test file if one exists, or create a new test file if none exists. Run the specific file and its test in complete isolation from other files to ensure accurate coverage reporting and faster feedback loops during development.
+- Analyze target files, create active checklist
+- List every file, branch, lint error, type error requiring resolution
+- Maintain checklist throughout—roadmap and progress tracker
 
-After analyzing each file's current test coverage, you must achieve perfect 100% branch coverage before moving to the next file. This is non-negotiable and requires a rigorous verification process. Perform a meticulous line-by-line analysis of the source code to identify every conditional statement, loop, exception handler, and logical branch that requires testing. Write out explicitly what branches are currently uncovered and what specific test scenarios are needed to exercise each missing code path. Then iterate on the test suite to address each identified gap one by one, running coverage reports after each addition to verify progress. Do not give up and do not proceed to the next file until you have verified 100% branch coverage is achieved and all identified gaps are resolved through this iterative process.
+**Step 2: Implementation Plan**
 
-The test suites must be lean and efficient, designed to run as fast as possible while maintaining comprehensive coverage. Use as few test blocks as possible by cleverly checking multiple related scenarios, edge cases, and behaviors within single test functions whenever logical. Each test should validate multiple aspects of functionality in one pass rather than creating separate tests for every minor variation. This approach keeps the test count minimal and meaningful while still achieving full 100% branch coverage through strategic test design.
+- Order files simple → complex
+- Focus one file at time for precise validation
+- Run each file + test in isolation for accurate coverage reporting
 
-Every file must have no linting errors, no type errors with accurate JSDoc types, and clean readable code structure optimized for both maintainability and performance. The test suite should validate all function contracts, edge cases, error conditions, exception scenarios, and behavioral expectations efficiently and thoroughly. Fix any existing linting or type errors in both the source files and test files as part of this process. When all files are complete with perfect test coverage and zero errors, verify that the entire test suite runs quickly and provides comprehensive protection against regressions across all code paths.
+**Step 3: Iterative Coverage Achievement**
 
-and if you really cannot find the very unused branches, be bold and start to remove code branches from the source code temporarily and see if they change the result, and as long as the tests still pass, remove them one by one when you are reaonably sure this code path actually never can happen in the real world. Also remember yo ucan temporarily modify the source code to add strategic console.log statements to verify which branches are hit or not in the testrun outputs.
+- Achieve 100% branch coverage before advancing. Non-negotiable.
+- Line-by-line analysis: identify every conditional, loop, exception handler, logical branch
+- Explicitly document uncovered branches and required test scenarios
+- Iterate: add tests → run coverage → verify progress → repeat until 100%
 
-Once everything works, always ensure type errors are properly resolved and the linter is happy.
+**Step 4: Strategic Test Design**
+
+- Lean efficiency: minimal test blocks checking multiple scenarios per function
+- Validate multiple aspects in single passes
+- Combine related edge cases, behaviors, error conditions logically
+
+**Step 5: Error Resolution**
+
+- Fix all linting errors, type errors, JSDoc accuracy
+- Optimize code structure for maintainability and performance
+- Verify fast test suite execution
+
+**Step 6: Dead Code Elimination** (when branches prove unreachable)
+
+- Temporarily remove suspected dead branches—verify tests still pass
+- Add strategic console.log statements to identify hit/miss branches
+- Remove proven unreachable code paths permanently
+
+**Final: Complete verification—fast test suite, zero errors, regression protection across all code paths.**
