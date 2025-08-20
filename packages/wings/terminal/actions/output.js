@@ -3,12 +3,45 @@
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
  * @see {@link https://ravenjs.dev}
- * @see {@link https://anonyfox.com} Pure functions for displaying colored messages in terminal applications. Uses ANSI escape codes for cross-platform color support.
+ * @see {@link https://anonyfox.com}
  */
 
 /**
+ * @file Colored message output functions for terminal applications.
  *
- * ANSI color codes for terminal output.
+ * **Purpose**: Display semantic messages with colors and symbols.
+ * Pure functions using ANSI escape codes for cross-platform color support.
+ *
+ * **Message Types**:
+ * - Plain text output (stdout)
+ * - Success messages (green + ✅)
+ * - Error messages (red + ❌, stderr)
+ * - Warning messages (yellow + ⚠️)
+ * - Info messages (blue + ℹ️)
+ *
+ * **Performance**: Synchronous stdout/stderr writes, minimal overhead.
+ * Uses platform-native ANSI codes, no external dependencies.
+ *
+ * **Color Support**: Works on most modern terminals. Graceful fallback
+ * to text-only on unsupported terminals (symbols remain visible).
+ */
+
+/**
+ * ANSI color codes and reset sequences.
+ *
+ * **Standard Colors**: Basic 16-color palette for maximum compatibility.
+ * **Formatting**: Bright/dim modifiers, reset sequence for cleanup.
+ *
+ * @type {{
+ *   reset: string,
+ *   bright: string,
+ *   dim: string,
+ *   red: string,
+ *   green: string,
+ *   yellow: string,
+ *   blue: string,
+ *   gray: string
+ * }}
  */
 const colors = {
 	reset: "\x1b[0m",
@@ -23,8 +56,17 @@ const colors = {
 };
 
 /**
- * Unicode symbols for different message types.
- * @private
+ * Unicode symbols for semantic message types.
+ *
+ * **Cross-Platform**: UTF-8 emoji symbols with universal support.
+ * **Visual Distinction**: Clear semantic meaning at a glance.
+ *
+ * @type {{
+ *   success: string,
+ *   error: string,
+ *   warning: string,
+ *   info: string
+ * }}
  */
 const symbols = {
 	success: "✅",
@@ -34,23 +76,13 @@ const symbols = {
 };
 
 /**
- * Print plain message to stdout.
+ * Output plain text to stdout without formatting.
  *
- * This function outputs a message without any formatting or colors.
- * It's the base function for all other output functions.
+ * **Base Function**: Foundation for all other output functions.
+ * **Behavior**: Direct stdout write with newline appended.
  *
- * **Pure Function**: No side effects except stdout write.
- * **Synchronous**: Returns immediately after writing.
- *
- * @param {string} message - Message to print
- *
- * @example
- * ```javascript
- * import { print } from '@raven-js/wings/terminal';
- *
- * print('Hello, world!');
- * print('Processing file: data.json');
- * ```
+ * @param {string} message - Text to output
+ * @throws {TypeError} Message parameter must be string
  */
 export function print(message) {
 	if (typeof message !== "string") {
@@ -60,24 +92,13 @@ export function print(message) {
 }
 
 /**
- * Print success message in green with checkmark.
+ * Output success message with green color and checkmark symbol.
  *
- * This function displays a success message with green color
- * and a checkmark symbol for positive feedback.
+ * **Format**: ✅ {message} in green
+ * **Target**: stdout
  *
- * **Color**: Green text
- * **Symbol**: ✅ checkmark
- *
- * @param {string} message - Success message to display
- *
- * @example
- * ```javascript
- * import { success } from '@raven-js/wings/terminal';
- *
- * success('File uploaded successfully!');
- * success('All tests passed');
- * success('Deployment completed');
- * ```
+ * @param {string} message - Success message text
+ * @throws {TypeError} Message parameter must be string
  */
 export function success(message) {
 	if (typeof message !== "string") {
@@ -88,25 +109,13 @@ export function success(message) {
 }
 
 /**
- * Print error message in red with X mark.
+ * Output error message with red color and X symbol.
  *
- * This function displays an error message with red color
- * and an X symbol for negative feedback.
+ * **Format**: ❌ {message} in red
+ * **Target**: stderr (proper error stream)
  *
- * **Color**: Red text
- * **Symbol**: ❌ X mark
- * **Output**: stderr (standard error stream)
- *
- * @param {string} message - Error message to display
- *
- * @example
- * ```javascript
- * import { error } from '@raven-js/wings/terminal';
- *
- * error('File not found');
- * error('Network connection failed');
- * error('Invalid configuration');
- * ```
+ * @param {string} message - Error message text
+ * @throws {TypeError} Message parameter must be string
  */
 export function error(message) {
 	if (typeof message !== "string") {
@@ -117,24 +126,13 @@ export function error(message) {
 }
 
 /**
- * Print warning message in yellow with warning symbol.
+ * Output warning message with yellow color and warning symbol.
  *
- * This function displays a warning message with yellow color
- * and a warning triangle symbol for cautionary feedback.
+ * **Format**: ⚠️ {message} in yellow
+ * **Target**: stdout
  *
- * **Color**: Yellow text
- * **Symbol**: ⚠️ warning triangle
- *
- * @param {string} message - Warning message to display
- *
- * @example
- * ```javascript
- * import { warning } from '@raven-js/wings/terminal';
- *
- * warning('Deprecated feature used');
- * warning('Low disk space');
- * warning('API rate limit approaching');
- * ```
+ * @param {string} message - Warning message text
+ * @throws {TypeError} Message parameter must be string
  */
 export function warning(message) {
 	if (typeof message !== "string") {
@@ -145,24 +143,13 @@ export function warning(message) {
 }
 
 /**
- * Print info message in blue with info symbol.
+ * Output info message with blue color and info symbol.
  *
- * This function displays an informational message with blue color
- * and an info symbol for neutral information.
+ * **Format**: ℹ️ {message} in blue
+ * **Target**: stdout
  *
- * **Color**: Blue text
- * **Symbol**: ℹ️ info circle
- *
- * @param {string} message - Info message to display
- *
- * @example
- * ```javascript
- * import { info } from '@raven-js/wings/terminal';
- *
- * info('Starting server on port 3000');
- * info('Found 15 files to process');
- * info('Using configuration from .env file');
- * ```
+ * @param {string} message - Info message text
+ * @throws {TypeError} Message parameter must be string
  */
 export function info(message) {
 	if (typeof message !== "string") {

@@ -3,33 +3,58 @@
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
  * @see {@link https://ravenjs.dev}
- * @see {@link https://anonyfox.com} Pure functions for gathering user input in terminal applications. Uses Node.js built-in readline module for cross-platform compatibility.
+ * @see {@link https://anonyfox.com}
  */
 
 /**
- * Module-level readline provider for testability.
- * The getReadline property can be replaced in tests while keeping source code simple.
+ * @file User input gathering functions for interactive CLI applications.
+ *
+ * **Purpose**: Collect user input through platform-native readline interface.
+ * Pure functions with controlled side effects (terminal I/O only).
+ *
+ * **Key Features**:
+ * - Text input with trimmed responses
+ * - Yes/no confirmation with flexible input formats
+ * - Default value support for confirmations
+ * - Input validation and retry loops
+ * - Automatic readline cleanup
+ *
+ * **Performance**: Async operations block until user input received.
+ * Uses Node.js built-in readline for cross-platform compatibility.
+ *
+ * **Testing**: Provider abstraction enables readline mocking in tests.
+ */
+
+/**
+ * Readline module provider for test mocking.
+ *
+ * **Purpose**: Enable deterministic testing while preserving source simplicity.
+ * Replace getReadline function in tests to mock user input behavior.
+ *
+ * @type {{ getReadline: () => Promise<typeof import('node:readline')> }}
  */
 export const readlineProvider = {
 	getReadline: async () => await import("node:readline"),
 };
 
 /**
+ * Prompt user for text input with automatic cleanup.
  *
- * Ask user for text input with a prompt.
- * This function creates a readline interface, displays a prompt,
- * and waits for user input. It automatically handles cleanup
- * and returns the trimmed input as a string.
- * **Pure Function**: No side effects except terminal I/O.
- * **Platform**: Works on all platforms supported by Node.js.
+ * **Behavior**: Create readline interface, display prompt, await input,
+ * trim whitespace, cleanup interface. Blocks until user responds.
+ *
+ * **Error Handling**: Throws TypeError for non-string prompts.
+ * Readline errors propagated to caller.
+ *
+ * @param {string} question - Prompt text displayed to user
+ * @returns {Promise<string>} Trimmed user input
+ * @throws {TypeError} Question parameter must be string
+ *
+ * @example
  * ```javascript
- * import { ask } from '@raven-js/wings/terminal';
- * const name = await ask('What is your name? ');
- * console.log(`Hello, ${name}!`);
- * const email = await ask('Enter your email: ');
- * if (!email.includes('@')) {
- * console.log('Invalid email format');
- * }
+ * const name = await ask('Name: ');
+ * const email = await ask('Email: ');
+ * if (!email.includes('@')) throw new Error('Invalid email');
  * ```
  */
 export async function ask(/** @type {string} */ question) {
@@ -55,32 +80,25 @@ export async function ask(/** @type {string} */ question) {
 }
 
 /**
- * Ask user for yes/no confirmation.
+ * Prompt user for yes/no confirmation with input validation.
  *
- * This function prompts the user with a yes/no question and
- * returns a boolean based on their response. Accepts various
- * forms of yes/no input (y/n, yes/no, case insensitive).
+ * **Behavior**: Display question with [Y/n] or [y/N] suffix based on default.
+ * Accept y/yes/n/no (case insensitive), empty input uses default.
+ * Retry loop until valid input received.
  *
- * **Default**: If user just presses enter, returns the defaultValue.
- * **Validation**: Keeps asking until valid input is received.
+ * **Validation**: Rejects invalid input with instruction message.
+ * Empty input resolves to defaultValue immediately.
  *
- * @param {string} question - The confirmation prompt to display
- * @param {boolean} [defaultValue=false] - Default value if user presses enter
- * @returns {Promise<boolean>} true for yes, false for no
+ * @param {string} question - Confirmation prompt text
+ * @param {boolean} [defaultValue=false] - Value returned for empty input
+ * @returns {Promise<boolean>} User's boolean choice
+ * @throws {TypeError} Question parameter must be string
  *
  * @example
  * ```javascript
- * import { confirm } from '@raven-js/wings/terminal';
- *
- * const shouldDeploy = await confirm('Deploy to production? ');
- * if (shouldDeploy) {
- *   console.log('Deploying...');
- * } else {
- *   console.log('Deployment cancelled');
- * }
- *
- * // With default value
- * const shouldContinue = await confirm('Continue? ', true);
+ * const deploy = await confirm('Deploy? '); // [y/N]
+ * const force = await confirm('Force? ', true); // [Y/n]
+ * if (deploy && !force) console.log('Safe deployment');
  * ```
  */
 export async function confirm(question, defaultValue = false) {

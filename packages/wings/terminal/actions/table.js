@@ -3,35 +3,59 @@
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
  * @see {@link https://ravenjs.dev}
- * @see {@link https://anonyfox.com} Pure function for displaying tabular data in terminal applications. Uses simple ASCII characters for cross-platform compatibility.
+ * @see {@link https://anonyfox.com}
  */
 
 /**
+ * @file Tabular data display function for terminal applications.
  *
- * Display data in a formatted table.
- * This function takes an array of objects and displays them as a
- * formatted table with headers and aligned columns. It automatically
- * calculates column widths and handles text alignment.
- * **Pure Function**: No side effects except stdout write.
- * **Alignment**: Left-aligned text, handles varying column widths.
- * **Headers**: Uses object keys as column headers.
+ * **Purpose**: Render structured data as formatted tables with Unicode borders.
+ * Automatically calculates column widths, handles varying data types.
+ *
+ * **Key Features**:
+ * - Auto-sizing columns based on content width
+ * - Unicode box-drawing characters for clean borders
+ * - Custom header support or auto-generated from object keys
+ * - Left-aligned text with configurable padding
+ * - Handles empty arrays and missing data gracefully
+ *
+ * **Performance**: O(n*m) complexity where n=rows, m=columns.
+ * String operations for width calculation, console.log for output.
+ *
+ * **Compatibility**: Unicode box-drawing requires UTF-8 terminal support.
+ */
+
+/**
+ * Render array of objects as formatted table with Unicode borders.
+ *
+ * **Algorithm**: Calculate max column widths, generate border/data rows,
+ * output via console.log. Uses object keys as default headers.
+ *
+ * **Column Width**: Max of header length and longest data value per column.
+ * **Data Handling**: Missing properties become empty strings.
+ * **Edge Cases**: Empty arrays, no columns, all-null values handled.
+ *
+ * @param {Object[]} data - Array of objects to display as table rows
+ * @param {Object} [options={}] - Configuration options
+ * @param {string[]} [options.headers] - Custom column headers (defaults to object keys)
+ * @param {number} [options.padding=2] - Cell padding spaces
+ * @returns {void} Outputs table directly to console
+ * @throws {TypeError} Data parameter must be array
+ *
+ * @example
  * ```javascript
- * import { table } from '@raven-js/wings/terminal';
  * const users = [
- * { name: 'John', age: 30, city: 'New York' },
- * { name: 'Jane', age: 25, city: 'Los Angeles' },
- * { name: 'Bob', age: 35, city: 'Chicago' }
+ *   { name: 'John', age: 30, city: 'NYC' },
+ *   { name: 'Jane', age: 25, city: 'LA' }
  * ];
  * table(users);
- * // Output:
- * // ┌──────┬─────┬─────────────┐
- * // │ name │ age │ city        │
- * // ├──────┼─────┼─────────────┤
- * // │ John │ 30  │ New York    │
- * // │ Jane │ 25  │ Los Angeles │
- * // │ Bob  │ 35  │ Chicago     │
- * // └──────┴─────┴─────────────┘
- * // With custom headers
+ * // ┌──────┬─────┬─────┐
+ * // │ name │ age │ city│
+ * // ├──────┼─────┼─────┤
+ * // │ John │ 30  │ NYC │
+ * // │ Jane │ 25  │ LA  │
+ * // └──────┴─────┴─────┘
+ *
  * table(users, { headers: ['Name', 'Age', 'Location'] });
  * ```
  */

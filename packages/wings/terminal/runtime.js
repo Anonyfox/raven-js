@@ -3,15 +3,55 @@
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
  * @see {@link https://ravenjs.dev}
- * @see {@link https://anonyfox.com} Terminal runtime that enables CLI command execution through the Wings routing system. This creates a unified interface where the same routes and middleware can handle both HTTP requests and CLI commands.
+ * @see {@link https://anonyfox.com}
+ */
+
+/**
+ * @file CLI command execution runtime for Wings routing system.
+ *
+ * **Purpose**: Execute CLI commands through unified HTTP-like abstractions.
+ * Transform command-line arguments into Context objects, route through Wings
+ * middleware pipeline, interpret results for terminal output.
+ *
+ * **Key Architecture**: Reuses HTTP Context/Router abstractions for CLI.
+ * - CLI args → URL patterns via ArgsToUrl transformation
+ * - COMMAND method enables route reuse between HTTP/CLI
+ * - responseBody → stdout, responseStatusCode → exit code
+ * - stdin pipe support for Unix-style data processing
+ *
+ * **Integration**: Same routes handle web requests and terminal commands.
+ * Middleware pipeline works identically. Zero external dependencies.
+ *
+ * **Performance**: Minimal overhead—direct Node.js primitives for I/O.
+ * Async operations support interactive CLI patterns without blocking.
  */
 
 import { Context } from "../core/index.js";
 import { ArgsToUrl } from "./transform-pattern.js";
 
 /**
- * Module-level process provider for testability.
- * Can be replaced in tests while keeping source code simple.
+ * Process abstraction layer for testability.
+ *
+ * **Purpose**: Enable test mocking while preserving source simplicity.
+ * Replace entire object in tests for deterministic I/O behavior.
+ *
+ * **Platform Integration**: Direct Node.js process bindings.
+ * - stdin: TTY detection and event handling
+ * - stdout: Direct write operations
+ * - exit: Process termination with codes
+ * - error: stderr output for failures
+ *
+ * @type {{
+ *   stdin: {
+ *     readonly isTTY: boolean,
+ *     on: (event: string, handler: (...args: any[]) => void) => void
+ *   },
+ *   stdout: {
+ *     write: (data: string | Buffer) => void
+ *   },
+ *   exit: (code: number) => void,
+ *   error: (message: string) => void
+ * }}
  */
 export const processProvider = {
 	stdin: {
@@ -32,48 +72,36 @@ export const processProvider = {
 };
 
 /**
+ * CLI command execution runtime using Wings routing system.
  *
- * **Terminal** - CLI command execution runtime for Wings.
- * The Terminal class provides a lean, fast runtime that executes CLI commands
- * through the Wings routing system. It transforms command-line arguments into
- * HTTP-like Context objects, routes them through the same middleware pipeline,
- * and interprets the results for terminal output.
- * ## Key Features
- * - **Unified Routing**: Same routes and middleware for HTTP and CLI
- * - **Context Reuse**: Leverages existing Context abstraction
- * - **Platform Primitives**: Uses Node.js built-ins for stdin/stdout
- * - **Zero Dependencies**: Pure JavaScript with no external dependencies
- * - **Async Support**: Full support for interactive CLI commands
- * ## Design Philosophy
- * The Terminal runtime follows the Raven principle of "platform mastery over
- * abstraction layers" by reusing the existing HTTP abstractions but interpreting
- * them through CLI platform primitives.
+ * **Architecture**: Transform CLI args → Context → Router → terminal output.
+ * Same routes handle HTTP requests and CLI commands through unified abstractions.
+ *
  * **Context Mapping**:
- * - `responseBody` → stdout content
- * - `responseStatusCode` → exit code (200-299 = 0, others = 1)
- * - `responseHeaders` → ignored (CLI doesn't need headers)
- * - `requestBody` → stdin input (if piped)
+ * - CLI args → URL via ArgsToUrl transformation
+ * - stdin data → requestBody (Unix pipe support)
+ * - responseBody → stdout content
+ * - responseStatusCode → exit code (200-299=0, else=1)
+ * - COMMAND method enables route reuse
+ *
+ * **Performance**: Zero overhead abstraction—direct Node.js I/O primitives.
+ * Async stdin reading supports interactive patterns without blocking.
+ *
+ * @example
  * ```javascript
  * import { Router } from '@raven-js/wings/core';
  * import { Terminal } from '@raven-js/wings/terminal';
- * // Create router with command routes
+ *
  * const router = new Router();
- * router.cmd('/git/status', (ctx) => {
- * ctx.text('On branch main\nnothing to commit, working tree clean');
- * });
+ * router.cmd('/git/status', (ctx) => ctx.text('Clean working tree'));
  * router.cmd('/git/commit', async (ctx) => {
- * const message = ctx.queryParams.get('message');
- * if (!message) {
- * ctx.responseStatusCode = 400;
- * ctx.text('Error: commit message required');
- * return;
- * }
- * await performCommit(message);
- * ctx.text('✅ Committed successfully');
+ *   const msg = ctx.queryParams.get('message');
+ *   if (!msg) return ctx.status(400).text('Missing message');
+ *   await performCommit(msg);
+ *   ctx.text('✅ Committed');
  * });
- * // Create and run terminal
- * const terminal = new Terminal(router);
- * await terminal.run(process.argv.slice(2));
+ *
+ * await new Terminal(router).run(process.argv.slice(2));
  * ```
  */
 export class Terminal {
@@ -85,21 +113,10 @@ export class Terminal {
 	#router;
 
 	/**
-	 * Create a new Terminal runtime instance.
+	 * Create Terminal runtime with Wings router.
 	 *
-	 * @param {import('../core/router.js').Router} router - Wings router to handle commands
-	 * @throws {TypeError} When router is invalid
-	 *
-	 * @example
-	 * ```javascript
-	 * import { Router } from '@raven-js/wings/core';
-	 * import { Terminal } from '@raven-js/wings/terminal';
-	 *
-	 * const router = new Router();
-	 * router.cmd('/hello', (ctx) => ctx.text('Hello World!'));
-	 *
-	 * const terminal = new Terminal(router);
-	 * ```
+	 * @param {import('../core/router.js').Router} router - Wings router for command handling
+	 * @throws {TypeError} Router missing or invalid (no handleRequest method)
 	 */
 	constructor(router) {
 		if (!router || typeof router.handleRequest !== "function") {
@@ -109,33 +126,17 @@ export class Terminal {
 	}
 
 	/**
-	 * Execute a CLI command through the router.
+	 * Execute CLI command through Wings router.
 	 *
-	 * This method transforms CLI arguments into a Context object, routes it
-	 * through the Wings router, and interprets the results for terminal output.
-	 * It handles stdout/stderr output and sets appropriate exit codes.
+	 * **Flow**: CLI args → URL → Context → Router → stdout + exit code.
+	 * Detects stdin pipe data, routes through middleware, maps HTTP status to exit codes.
 	 *
-	 * **Process Flow**:
-	 * 1. Transform CLI args to URL using ArgsToUrl
-	 * 2. Detect stdin input (if piped)
-	 * 3. Create Context with COMMAND method
-	 * 4. Route through Wings router with middleware
-	 * 5. Write responseBody to stdout
-	 * 6. Set exit code based on responseStatusCode
-	 *
-	 * **Exit Code Mapping**:
-	 * - HTTP 200-299 → exit code 0 (success)
-	 * - HTTP 400+ → exit code 1 (error)
+	 * **Exit Codes**: 200-299 → 0 (success), others → 1 (error).
+	 * **Stdin**: Reads piped data when !isTTY, null otherwise.
+	 * **Error Handling**: Unexpected errors → stderr + exit(1).
 	 *
 	 * @param {string[]} args - Command line arguments
-	 * @returns {Promise<void>} Resolves when command execution completes
-	 *
-	 * @example
-	 * ```javascript
-	 * // Execute: myapp git commit --message "Initial commit"
-	 * const args = ['git', 'commit', '--message', 'Initial commit'];
-	 * await terminal.run(args);
-	 * ```
+	 * @returns {Promise<void>} Resolves after execution, process.exit() called
 	 */
 	async run(args) {
 		try {
@@ -173,13 +174,12 @@ export class Terminal {
 	}
 
 	/**
-	 * Read stdin input for piped data.
+	 * Read stdin for Unix pipe support.
 	 *
-	 * This method reads all data from stdin when it's available (not a TTY).
-	 * It's used to support Unix pipe patterns like `echo "data" | myapp process`.
+	 * **Purpose**: Collect piped data for commands like `echo "data" | myapp process`.
+	 * **Behavior**: Accumulate chunks until 'end' event, handle errors gracefully.
 	 *
-	 * @returns {Promise<Buffer|null>} stdin data or null if TTY
-
+	 * @returns {Promise<Buffer|null>} Concatenated stdin data or null if empty
 	 */
 	async #readStdin() {
 		return new Promise((resolve) => {
@@ -205,9 +205,10 @@ export class Terminal {
 	}
 
 	/**
-	 * Get the Wings router instance.
+	 * Wings router instance for route inspection or modification.
 	 *
-	 * @returns {import('../core/router.js').Router} Wings router
+	 * @returns {import('../core/router.js').Router} Current router instance
+	 * @readonly
 	 */
 	get router() {
 		return this.#router;
