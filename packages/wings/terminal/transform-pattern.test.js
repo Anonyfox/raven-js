@@ -147,6 +147,16 @@ describe("ArgsToUrl", () => {
 			assert.equal(ArgsToUrl(["command", "-"]), "/command/-");
 			assert.equal(ArgsToUrl(["command", "--"]), "/command/--");
 		});
+
+		it("should handle flags without command (empty path segments)", () => {
+			// This tests the case where pathSegments.length === 0 but we have flags
+			assert.equal(ArgsToUrl(["--help"]), "/?help=true");
+			assert.equal(ArgsToUrl(["-v"]), "/?v=true");
+			assert.equal(
+				ArgsToUrl(["--version", "--debug"]),
+				"/?version=true&debug=true",
+			);
+		});
 	});
 });
 

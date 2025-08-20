@@ -10,6 +10,24 @@ import { Context } from "../core/index.js";
 import { ArgsToUrl } from "./transform-pattern.js";
 
 /**
+ * Module-level process provider for testability.
+ * Can be replaced in tests while keeping source code simple.
+ */
+export const processProvider = {
+	stdin: {
+		get isTTY() {
+			return process.stdin.isTTY;
+		},
+		on: (event, handler) => process.stdin.on(event, handler),
+	},
+	stdout: {
+		write: (data) => process.stdout.write(data),
+	},
+	exit: (code) => process.exit(code),
+	error: (message) => console.error(message),
+};
+
+/**
  *
  * **Terminal** - CLI command execution runtime for Wings.
  * The Terminal class provides a lean, fast runtime that executes CLI commands
@@ -122,7 +140,9 @@ export class Terminal {
 			const urlObj = new URL(url, "file://localhost");
 
 			// Detect stdin input
-			const stdinData = process.stdin.isTTY ? null : await this.#readStdin();
+			const stdinData = processProvider.stdin.isTTY
+				? null
+				: await this.#readStdin();
 
 			// Create Context for COMMAND method
 			const context = new Context("COMMAND", urlObj, new Headers(), stdinData);
@@ -132,7 +152,7 @@ export class Terminal {
 
 			// Output to terminal
 			if (context.responseBody) {
-				process.stdout.write(context.responseBody);
+				processProvider.stdout.write(context.responseBody);
 			}
 
 			// Set exit code based on HTTP status
@@ -140,11 +160,11 @@ export class Terminal {
 				context.responseStatusCode >= 200 && context.responseStatusCode < 300
 					? 0
 					: 1;
-			process.exit(exitCode);
+			processProvider.exit(exitCode);
 		} catch (error) {
 			// Handle unexpected errors
-			console.error(`Error: ${error.message}`);
-			process.exit(1);
+			processProvider.error(`Error: ${error.message}`);
+			processProvider.exit(1);
 		}
 	}
 
@@ -162,16 +182,16 @@ export class Terminal {
 			/** @type {Buffer[]} */
 			const chunks = [];
 
-			process.stdin.on("data", (chunk) => {
+			processProvider.stdin.on("data", (chunk) => {
 				chunks.push(chunk);
 			});
 
-			process.stdin.on("end", () => {
+			processProvider.stdin.on("end", () => {
 				resolve(chunks.length > 0 ? Buffer.concat(chunks) : null);
 			});
 
 			// Handle cases where stdin is immediately available
-			process.stdin.on("error", () => {
+			processProvider.stdin.on("error", () => {
 				resolve(null);
 			});
 		});

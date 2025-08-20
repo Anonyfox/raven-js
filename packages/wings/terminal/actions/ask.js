@@ -6,7 +6,13 @@
  * @see {@link https://anonyfox.com} Pure functions for gathering user input in terminal applications. Uses Node.js built-in readline module for cross-platform compatibility.
  */
 
-import readline from "node:readline";
+/**
+ * Module-level readline provider for testability.
+ * The getReadline property can be replaced in tests while keeping source code simple.
+ */
+export const readlineProvider = {
+	getReadline: async () => await import("node:readline"),
+};
 
 /**
  *
@@ -31,17 +37,21 @@ export async function ask(/** @type {string} */ question) {
 		throw new TypeError("Question must be a string");
 	}
 
+	const readline = await readlineProvider.getReadline();
 	const rl = readline.createInterface({
 		input: process.stdin,
 		output: process.stdout,
 	});
 
-	return new Promise((resolve) => {
-		rl.question(question, (answer) => {
-			rl.close();
-			resolve(answer.trim());
+	try {
+		const answer = await new Promise((resolve, reject) => {
+			rl.question(question, resolve);
+			rl.on("error", reject);
 		});
-	});
+		return answer.trim();
+	} finally {
+		rl.close();
+	}
 }
 
 /**
