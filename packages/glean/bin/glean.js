@@ -14,16 +14,61 @@
  * JSDoc analysis and beautiful documentation generation for modern JavaScript projects.
  */
 
-import { parseArguments, processCodebase, showBanner } from "../index.js";
+import {
+	parseArguments,
+	processCodebase,
+	runAnalyzeCommand,
+	runBuildCommand,
+	runExtractCommand,
+	runRenderCommand,
+	showBanner,
+	showHelp,
+} from "../index.js";
 
 /**
  * Main CLI execution
  */
 async function main() {
 	try {
+		const rawArgs = process.argv.slice(2);
+
+		// Handle help
+		if (
+			rawArgs.length === 0 ||
+			rawArgs.includes("--help") ||
+			rawArgs.includes("-h")
+		) {
+			showBanner();
+			showHelp();
+			return;
+		}
+
+		// Parse subcommand
+		const subcommand = rawArgs[0];
+		const subArgs = rawArgs.slice(1);
+
 		showBanner();
-		const args = parseArguments(process.argv.slice(2));
-		await processCodebase(args);
+
+		switch (subcommand) {
+			case "analyze":
+				await runAnalyzeCommand(subArgs);
+				break;
+			case "extract":
+				await runExtractCommand(subArgs);
+				break;
+			case "render":
+				await runRenderCommand(subArgs);
+				break;
+			case "build":
+				await runBuildCommand(subArgs);
+				break;
+			default: {
+				// Fallback to legacy processing for backwards compatibility
+				const args = parseArguments(rawArgs);
+				await processCodebase(args);
+				break;
+			}
+		}
 	} catch (error) {
 		console.error(`🚨 Error: ${error.message}`);
 		process.exit(1);
