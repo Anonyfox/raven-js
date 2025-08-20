@@ -1060,4 +1060,35 @@ test("readBody", async (t) => {
 			}
 		},
 	);
+
+	await t.test(
+		"should handle race condition - multiple resolutions",
+		async () => {
+			const mockRequest = new EventEmitter();
+			let cleanupCallCount = 0;
+
+			// Mock the setTimeout to trigger immediately
+			const mockTimer = {
+				create: (callback) => {
+					// Call immediately to resolve, then call again to test duplicate resolution guard
+					callback();
+					// This second call should hit the "if (isResolved) return;" branch in line 357
+					setImmediate(() => {
+						cleanupCallCount++;
+						callback();
+					});
+					return "timer-id";
+				},
+				clear: () => {},
+			};
+
+			const result = await readBody(mockRequest, { timerImpl: mockTimer });
+
+			// Wait a bit to ensure the setImmediate callback has run
+			await new Promise((resolve) => setImmediate(resolve));
+
+			assert.strictEqual(result, undefined);
+			assert.strictEqual(cleanupCallCount, 1); // Should only increment once due to guard
+		},
+	);
 });

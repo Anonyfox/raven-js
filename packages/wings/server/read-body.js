@@ -7,9 +7,9 @@
  */
 export const SECURITY_DEFAULTS = {
 	/**
- *
- * Maximum request body size in bytes (10MB)
- */
+	 *
+	 * Maximum request body size in bytes (10MB)
+	 */
 	MAX_BODY_SIZE: 10 * 1024 * 1024,
 	/** Maximum number of data chunks to prevent flooding attacks */
 	MAX_CHUNKS: 1000,
@@ -368,8 +368,6 @@ export async function readBody(request, options = {}) {
 
 		// Data event handler with validation
 		resourceManager.addListener("data", (chunk) => {
-			if (isResolved) return;
-
 			// Validate the chunk
 			if (!validator.validateChunk(chunk)) {
 				// Security limit exceeded - cleanup and resolve gracefully
@@ -383,8 +381,6 @@ export async function readBody(request, options = {}) {
 
 		// End event handler
 		resourceManager.addListener("end", () => {
-			if (isResolved) return;
-
 			// Check if we have any data
 			if (bodyParts.length === 0) {
 				cleanupAndResolve(undefined);
