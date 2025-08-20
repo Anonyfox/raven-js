@@ -13,7 +13,7 @@
  * file system reconnaissance, and dependency analysis into unified discovery.
  */
 
-import { deepStrictEqual, strictEqual } from "node:assert";
+import assert, { strictEqual } from "node:assert";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -77,12 +77,9 @@ describe("Discovery Orchestration", () => {
 		strictEqual(typeof extractImports, "function");
 	});
 
-	it("handles missing package gracefully", async () => {
-		const result = await discoverPackage("/nonexistent/path");
-
-		strictEqual(result.packageJson, null);
-		deepStrictEqual(result.entryPoints, []); // no package.json means no entry points determined
-		deepStrictEqual(result.files, []); // no files found
-		deepStrictEqual(result.readmes, []); // no readmes found
+	it("throws error for missing package directory", async () => {
+		await assert.rejects(async () => {
+			await discoverPackage("/nonexistent/path");
+		}, /Directory not found/);
 	});
 });

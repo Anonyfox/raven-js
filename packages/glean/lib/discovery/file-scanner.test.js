@@ -10,7 +10,7 @@
  * @file File system reconnaissance tests - 100% branch coverage.
  */
 
-import { deepStrictEqual } from "node:assert";
+import assert, { deepStrictEqual } from "node:assert";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -229,5 +229,21 @@ describe("File System Reconnaissance", () => {
 
 		// Cleanup
 		await rm(tempDir, { recursive: true });
+	});
+
+	it("scanJavaScriptFiles: throws error when throwOnMissing is true", async () => {
+		const nonExistentPath = join(tmpdir(), "definitely-does-not-exist");
+
+		await assert.rejects(async () => {
+			await scanJavaScriptFiles(nonExistentPath, undefined, true);
+		}, /Directory not found/);
+	});
+
+	it("findReadmeFiles: throws error when throwOnMissing is true", async () => {
+		const nonExistentPath = join(tmpdir(), "definitely-does-not-exist");
+
+		await assert.rejects(async () => {
+			await findReadmeFiles(nonExistentPath, true);
+		}, /Directory not found/);
 	});
 });

@@ -31,11 +31,11 @@ export async function discoverPackage(packagePath) {
 	const packageJson = await parsePackageJson(absolutePath);
 	const entryPoints = packageJson ? extractEntryPoints(packageJson) : [];
 
-	// Scan all JavaScript files recursively
-	const files = await scanJavaScriptFiles(absolutePath);
+	// Scan all JavaScript files recursively (throw on main directory missing for CLI commands)
+	const files = await scanJavaScriptFiles(absolutePath, undefined, true);
 
-	// Find README files
-	const readmes = await findReadmeFiles(absolutePath);
+	// Find README files (graceful for subdirectories, but throw on main directory missing)
+	const readmes = await findReadmeFiles(absolutePath, true);
 
 	return {
 		files,

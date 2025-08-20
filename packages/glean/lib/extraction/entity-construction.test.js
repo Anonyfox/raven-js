@@ -60,7 +60,7 @@ export function processData(input, flag) {
 					{ type: "string", name: "input", description: "The input data" },
 					{ type: "boolean", name: "flag", description: "Processing flag" },
 				],
-				returns: { type: "Object", description: "Processed result /" },
+				returns: { type: "Object", description: "Processed result" },
 			},
 		},
 		references: [],

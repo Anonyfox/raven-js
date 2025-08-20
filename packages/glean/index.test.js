@@ -11,7 +11,7 @@
  */
 
 import { strict as assert } from "node:assert";
-import { mkdir, rmdir, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -94,7 +94,7 @@ test("runAnalyzeCommand handles empty directories", async () => {
 			await runAnalyzeCommand([tempDir]);
 		});
 	} finally {
-		await rmdir(tempDir, { recursive: true });
+		await rm(tempDir, { recursive: true });
 	}
 });
 
@@ -138,7 +138,7 @@ function undocumented() {
 			await runAnalyzeCommand(["-v", tempDir]);
 		});
 	} finally {
-		await rmdir(tempDir, { recursive: true });
+		await rm(tempDir, { recursive: true });
 	}
 });
 
@@ -171,7 +171,7 @@ test("runAnalyzeCommand parses arguments correctly", async () => {
 			await runAnalyzeCommand(["--verbose"]);
 		});
 	} finally {
-		await rmdir(tempDir, { recursive: true });
+		await rm(tempDir, { recursive: true });
 	}
 });
 
@@ -197,7 +197,7 @@ test("runAnalyzeCommand handles various argument patterns", async () => {
 			await runAnalyzeCommand([tempDir]);
 		});
 	} finally {
-		await rmdir(tempDir, { recursive: true });
+		await rm(tempDir, { recursive: true });
 	}
 });
 
@@ -211,7 +211,7 @@ test("runExtractCommand handles empty directories", async () => {
 			await runExtractCommand([tempDir]);
 		});
 	} finally {
-		await rmdir(tempDir, { recursive: true });
+		await rm(tempDir, { recursive: true });
 	}
 });
 
@@ -280,7 +280,7 @@ export { helper };
 		assert.ok(graph.entities);
 		assert.ok(graph.readmes);
 	} finally {
-		await rmdir(tempDir, { recursive: true });
+		await rm(tempDir, { recursive: true });
 	}
 });
 
@@ -314,6 +314,6 @@ test("runExtractCommand parses arguments correctly", async () => {
 			await runExtractCommand([tempDir, "-o", outputFile]);
 		});
 	} finally {
-		await rmdir(tempDir, { recursive: true });
+		await rm(tempDir, { recursive: true });
 	}
 });

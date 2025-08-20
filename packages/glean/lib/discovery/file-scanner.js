@@ -21,11 +21,13 @@ import { extname, join } from "node:path";
  * Recursively scan for JavaScript files in a directory
  * @param {string} dirPath - Directory path to scan
  * @param {string[]} excludeDirs - Directory names to exclude
+ * @param {boolean} throwOnMissing - Whether to throw on missing directories
  * @returns {Promise<string[]>} Array of JavaScript file paths
  */
 export async function scanJavaScriptFiles(
 	dirPath,
 	excludeDirs = ["node_modules", ".git", "dist", "build"],
+	throwOnMissing = false,
 ) {
 	const files = [];
 
@@ -39,7 +41,11 @@ export async function scanJavaScriptFiles(
 			if (stats.isDirectory()) {
 				// Skip excluded directories
 				if (!excludeDirs.includes(entry)) {
-					const subFiles = await scanJavaScriptFiles(fullPath, excludeDirs);
+					const subFiles = await scanJavaScriptFiles(
+						fullPath,
+						excludeDirs,
+						throwOnMissing,
+					);
 					files.push(...subFiles);
 				}
 			} else if (stats.isFile()) {
@@ -50,9 +56,12 @@ export async function scanJavaScriptFiles(
 				}
 			}
 		}
-	} catch (_error) {
-		// Gracefully handle permission errors or missing directories
-		// Return empty array - ravens adapt to hostile territory
+	} catch (error) {
+		// Re-throw for critical errors like ENOENT (directory doesn't exist) - but only if explicitly requested
+		if (error.code === "ENOENT" && throwOnMissing) {
+			throw new Error(`Directory not found: ${dirPath}`);
+		}
+		// Gracefully handle permission errors or missing directories - ravens adapt to hostile territory
 	}
 
 	return files;
@@ -61,9 +70,10 @@ export async function scanJavaScriptFiles(
 /**
  * Find README files in directory tree
  * @param {string} dirPath - Directory path to scan
+ * @param {boolean} throwOnMissing - Whether to throw on missing directories
  * @returns {Promise<string[]>} Array of README file paths
  */
-export async function findReadmeFiles(dirPath) {
+export async function findReadmeFiles(dirPath, throwOnMissing = false) {
 	const readmes = [];
 
 	try {
@@ -76,7 +86,7 @@ export async function findReadmeFiles(dirPath) {
 			if (stats.isDirectory()) {
 				// Skip node_modules and other build directories
 				if (!["node_modules", ".git", "dist", "build"].includes(entry)) {
-					const subReadmes = await findReadmeFiles(fullPath);
+					const subReadmes = await findReadmeFiles(fullPath, throwOnMissing);
 					readmes.push(...subReadmes);
 				}
 			} else if (stats.isFile()) {
@@ -87,7 +97,11 @@ export async function findReadmeFiles(dirPath) {
 				}
 			}
 		}
-	} catch (_error) {
+	} catch (error) {
+		// Re-throw for critical errors like ENOENT (directory doesn't exist) - but only if explicitly requested
+		if (error.code === "ENOENT" && throwOnMissing) {
+			throw new Error(`Directory not found: ${dirPath}`);
+		}
 		// Graceful degradation - territory might be hostile
 	}
 
