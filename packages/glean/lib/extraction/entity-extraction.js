@@ -15,9 +15,17 @@
  */
 
 /**
+ * @typedef {Object} CodeEntity
+ * @property {string} type - Entity type (function, class, variable)
+ * @property {string} name - Entity name
+ * @property {number} line - Line number where entity is defined
+ * @property {boolean} exported - Whether entity is exported
+ */
+
+/**
  * Extract code entities (functions, classes, exports) from JavaScript content
  * @param {string} content - JavaScript file content
- * @returns {import('./types.js').CodeEntity[]} Array of extracted entities
+ * @returns {CodeEntity[]} Array of extracted entities
  */
 export function extractCodeEntities(content) {
 	const entities = [];

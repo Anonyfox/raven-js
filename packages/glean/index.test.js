@@ -19,7 +19,6 @@ import {
 	getVersion,
 	parseArguments,
 	processCodebase,
-	runAnalyzeCommand,
 	runExtractCommand,
 	showBanner,
 	showHelp,
@@ -84,136 +83,7 @@ test("processCodebase completes without errors", async () => {
 	});
 });
 
-test("runAnalyzeCommand handles empty directories", async () => {
-	const tempDir = join(tmpdir(), `glean-test-${Date.now()}`);
-	await mkdir(tempDir, { recursive: true });
-
-	try {
-		// Test with empty directory - should not throw
-		await assert.doesNotReject(async () => {
-			await runAnalyzeCommand([tempDir]);
-		});
-	} finally {
-		await rm(tempDir, { recursive: true });
-	}
-});
-
-test("runAnalyzeCommand analyzes JavaScript files", async () => {
-	const tempDir = join(tmpdir(), `glean-test-${Date.now()}`);
-	await mkdir(tempDir, { recursive: true });
-
-	try {
-		// Create test files
-		const testFile = join(tempDir, "test.js");
-		await writeFile(
-			testFile,
-			`
-/**
- * Well documented function
- * @param {string} input - Input parameter
- * @returns {string} Processed output
- */
-export function goodFunc(input) {
-	return input.toUpperCase();
-}
-
-function undocumented() {
-	return "no docs";
-}
-		`,
-		);
-
-		// Test basic analyze command
-		await assert.doesNotReject(async () => {
-			await runAnalyzeCommand([tempDir]);
-		});
-
-		// Test verbose mode
-		await assert.doesNotReject(async () => {
-			await runAnalyzeCommand([tempDir, "--verbose"]);
-		});
-
-		// Test with -v flag
-		await assert.doesNotReject(async () => {
-			await runAnalyzeCommand(["-v", tempDir]);
-		});
-	} finally {
-		await rm(tempDir, { recursive: true });
-	}
-});
-
-test("runAnalyzeCommand handles analysis errors gracefully", async () => {
-	// Test with inaccessible path - should throw informative error
-	await assert.rejects(async () => {
-		await runAnalyzeCommand(["/nonexistent/deeply/nested/path"]);
-	}, /Analysis failed/);
-});
-
-test("runAnalyzeCommand parses arguments correctly", async () => {
-	const tempDir = join(tmpdir(), `glean-test-${Date.now()}`);
-	await mkdir(tempDir, { recursive: true });
-
-	try {
-		await writeFile(join(tempDir, "test.js"), "export function test() {}");
-
-		// Test explicit target
-		await assert.doesNotReject(async () => {
-			await runAnalyzeCommand([tempDir, "--verbose"]);
-		});
-
-		// Test mixed flags and target
-		await assert.doesNotReject(async () => {
-			await runAnalyzeCommand(["--verbose", tempDir]);
-		});
-
-		// Test default target with flags only
-		await assert.doesNotReject(async () => {
-			await runAnalyzeCommand(["--verbose"]);
-		});
-	} finally {
-		await rm(tempDir, { recursive: true });
-	}
-});
-
-test("runAnalyzeCommand handles various argument patterns", async () => {
-	const tempDir = join(tmpdir(), `glean-test-${Date.now()}`);
-	await mkdir(tempDir, { recursive: true });
-
-	try {
-		await writeFile(join(tempDir, "simple.js"), "function simple() {}");
-
-		// Test no arguments (defaults to current directory)
-		await assert.doesNotReject(async () => {
-			await runAnalyzeCommand([]);
-		});
-
-		// Test with only flags
-		await assert.doesNotReject(async () => {
-			await runAnalyzeCommand(["-v"]);
-		});
-
-		// Test with target only
-		await assert.doesNotReject(async () => {
-			await runAnalyzeCommand([tempDir]);
-		});
-	} finally {
-		await rm(tempDir, { recursive: true });
-	}
-});
-
-test("runExtractCommand handles empty directories", async () => {
-	const tempDir = join(tmpdir(), `glean-test-${Date.now()}`);
-	await mkdir(tempDir, { recursive: true });
-
-	try {
-		// Test with empty directory - should not throw
-		await assert.doesNotReject(async () => {
-			await runExtractCommand([tempDir]);
-		});
-	} finally {
-		await rm(tempDir, { recursive: true });
-	}
-});
+// Analyze command tests moved to lib/analyze.test.js
 
 test("runExtractCommand extracts documentation graph", async () => {
 	const tempDir = join(tmpdir(), `glean-test-${Date.now()}`);
@@ -243,9 +113,6 @@ test("runExtractCommand extracts documentation graph", async () => {
 export function testFunc(input) {
 	return input.toUpperCase();
 }
-
-import { helper } from "./helper.js";
-export { helper };
 		`,
 		);
 

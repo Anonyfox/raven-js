@@ -14,7 +14,7 @@
  */
 
 import { relative } from "node:path";
-import { findPrecedingJSDoc } from "../validation/index.js";
+import { findPrecedingJSDoc } from "./jsdoc-parsing.js";
 import { parseJSDocToStructured } from "./jsdoc-processing.js";
 import { determineExportType } from "./module-relationships.js";
 import { extractSourceSnippet } from "./source-analysis.js";

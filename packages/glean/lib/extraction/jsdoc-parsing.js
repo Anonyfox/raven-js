@@ -15,10 +15,18 @@
  */
 
 /**
+ * @typedef {Object} JSDocComment
+ * @property {string} description - Main description text
+ * @property {any} tags - JSDoc tags and their content
+ * @property {number} startLine - Starting line number
+ * @property {number} endLine - Ending line number
+ */
+
+/**
  * Find JSDoc comment preceding a line number
  * @param {string[]} lines - Array of file lines
  * @param {number} lineIndex - Line index to search backwards from
- * @returns {import('./types.js').JSDocComment|null} Parsed JSDoc comment or null
+ * @returns {JSDocComment|null} Parsed JSDoc comment or null
  */
 export function findPrecedingJSDoc(lines, lineIndex) {
 	// Look backwards for JSDoc comment
@@ -67,7 +75,7 @@ export function findPrecedingJSDoc(lines, lineIndex) {
  * Parse JSDoc comment lines into structured data
  * @param {string[]} commentLines - Lines of JSDoc comment
  * @param {number} startLine - Starting line number
- * @returns {import('./types.js').JSDocComment} Parsed JSDoc structure
+ * @returns {JSDocComment} Parsed JSDoc structure
  */
 export function parseJSDocComment(commentLines, startLine) {
 	const comment = {

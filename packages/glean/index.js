@@ -21,7 +21,6 @@
 import { discoverPackage } from "./lib/discovery/index.js";
 import { extractDocumentationGraph } from "./lib/extraction/index.js";
 import { generateStaticSite } from "./lib/rendering/index.js";
-import { analyzeFiles } from "./lib/validation/index.js";
 
 /**
  * Get the current version of Glean
@@ -104,131 +103,8 @@ export async function processCodebase(options) {
 	console.log("🎉 Glean complete!");
 }
 
-/**
- * Run the analyze command for JSDoc validation
- * @param {string[]} args - Command arguments
- * @returns {Promise<void>}
- */
-export async function runAnalyzeCommand(args) {
-	const verbose = args.includes("--verbose") || args.includes("-v");
-	const target = args.find((arg) => !arg.startsWith("-")) || ".";
-
-	console.log(`📊 Analyzing JSDoc quality in: ${target}`);
-
-	try {
-		// Discover package structure
-		const { files } = await discoverPackage(target);
-
-		if (files.length === 0) {
-			console.log("⚠️  No JavaScript files found in target directory");
-			return;
-		}
-
-		if (verbose) {
-			console.log(`📁 Found ${files.length} JavaScript files`);
-		}
-
-		// Analyze documentation quality
-		const report = await analyzeFiles(files);
-
-		// Display results
-		displayAnalysisReport(report, verbose);
-	} catch (error) {
-		throw new Error(`Analysis failed: ${error.message}`);
-	}
-}
-
-/**
- * Display analysis report in terminal
- * @param {any} report - Analysis report
- * @param {boolean} verbose - Show detailed output
- */
-function displayAnalysisReport(report, verbose) {
-	const { summary, files } = report;
-
-	console.log(`\n📈 Analysis Results:`);
-	console.log(`   Files analyzed: ${summary.filesAnalyzed}`);
-	console.log(`   Overall score: ${summary.overallScore}/100`);
-	console.log(`   Total issues: ${summary.totalIssues}`);
-	console.log(`   Files with issues: ${summary.filesWithIssues}`);
-
-	// Show score interpretation
-	if (summary.overallScore >= 90) {
-		console.log(`   Quality: ✅ Excellent`);
-	} else if (summary.overallScore >= 70) {
-		console.log(`   Quality: ⚠️  Good`);
-	} else if (summary.overallScore >= 50) {
-		console.log(`   Quality: 🔶 Needs improvement`);
-	} else {
-		console.log(`   Quality: ❌ Poor`);
-	}
-
-	// List files with issues
-	const filesWithIssues = files.filter(
-		/** @param {any} f */ (f) => f.issues.length > 0,
-	);
-
-	if (filesWithIssues.length > 0) {
-		console.log(`\n📝 Issues found:`);
-
-		for (const file of filesWithIssues) {
-			const relativePath = file.file.replace(process.cwd(), ".");
-			console.log(`\n   ${relativePath} (score: ${file.score}/100)`);
-
-			// Group issues by severity
-			const errors = file.issues.filter(
-				/** @param {any} i */ (i) => i.severity === "error",
-			);
-			const warnings = file.issues.filter(
-				/** @param {any} i */ (i) => i.severity === "warning",
-			);
-			const info = file.issues.filter(
-				/** @param {any} i */ (i) => i.severity === "info",
-			);
-
-			if (errors.length > 0) {
-				console.log(`     ❌ ${errors.length} error(s)`);
-				if (verbose) {
-					errors.forEach(
-						/** @param {any} issue */ (issue) => {
-							console.log(`        Line ${issue.line}: ${issue.message}`);
-						},
-					);
-				}
-			}
-
-			if (warnings.length > 0) {
-				console.log(`     ⚠️  ${warnings.length} warning(s)`);
-				if (verbose) {
-					warnings.forEach(
-						/** @param {any} issue */ (issue) => {
-							console.log(`        Line ${issue.line}: ${issue.message}`);
-						},
-					);
-				}
-			}
-
-			if (info.length > 0) {
-				console.log(`     ℹ️  ${info.length} info`);
-				if (verbose) {
-					info.forEach(
-						/** @param {any} issue */ (issue) => {
-							console.log(`        Line ${issue.line}: ${issue.message}`);
-						},
-					);
-				}
-			}
-		}
-
-		if (!verbose) {
-			console.log(`\n   💡 Use --verbose for detailed issue descriptions`);
-		}
-	} else {
-		console.log(`\n✅ No documentation issues found!`);
-	}
-
-	console.log(`\n🎉 Analysis complete!`);
-}
+// Export analyze command from dedicated module
+export { runAnalyzeCommand } from "./lib/analyze.js";
 
 /**
  * Run the extract command for graph generation

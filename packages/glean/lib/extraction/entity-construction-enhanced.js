@@ -32,7 +32,7 @@ import { MethodEntity } from "../models/method-entity.js";
 import { PropertyEntity } from "../models/property-entity.js";
 import { TypedefEntity } from "../models/typedef-entity.js";
 import { VariableEntity } from "../models/variable-entity.js";
-import { findPrecedingJSDoc } from "../validation/index.js";
+import { findPrecedingJSDoc } from "./jsdoc-parsing.js";
 import { determineExportType } from "./module-relationships.js";
 import { extractSourceSnippet } from "./source-analysis.js";
 

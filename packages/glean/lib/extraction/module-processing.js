@@ -16,8 +16,8 @@
 import { readFile } from "node:fs/promises";
 import { relative } from "node:path";
 import { ModuleEntity } from "../models/module-entity.js";
-import { extractCodeEntities } from "../validation/index.js";
 import { buildEnhancedEntity } from "./entity-construction-enhanced.js";
+import { extractCodeEntities } from "./entity-extraction.js";
 import { generateModuleId } from "./id-generators.js";
 import {
 	extractModuleExports,
