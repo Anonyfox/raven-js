@@ -18,7 +18,7 @@
  * from JSDoc comments with surgical precision and zero dependencies.
  */
 
-import { discoverPackage } from "./lib/discovery.js";
+import { discoverPackage } from "./lib/discovery/index.js";
 import { extractDocumentationGraph } from "./lib/extraction.js";
 import { generateStaticSite } from "./lib/rendering.js";
 import { analyzeFiles } from "./lib/validation.js";
