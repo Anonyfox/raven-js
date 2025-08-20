@@ -20,7 +20,7 @@
 
 import { discoverPackage } from "./lib/discovery/index.js";
 import { extractDocumentationGraph } from "./lib/extraction/index.js";
-import { generateStaticSite } from "./lib/rendering.js";
+import { generateStaticSite } from "./lib/rendering/index.js";
 import { analyzeFiles } from "./lib/validation.js";
 
 /**
