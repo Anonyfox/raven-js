@@ -5,8 +5,10 @@
     "moduleResolution": "NodeNext",
     "target": "ESNext",
     "noImplicitAny": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "maxNodeModuleJsDepth": 0
   },
-  "include": ["*.js", "bin/**/*.js"],
+  "include": ["*.js", "bin/**/*.js", "lib/**/*.js"],
   "exclude": ["**/*.test.js"]
 }

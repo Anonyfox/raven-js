@@ -15,6 +15,6 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!docs", "!plugins/vscode"]
+    "includes": ["**", "!docs", "!plugins/vscode", "!**/bin/*.min.js"]
   }
 }

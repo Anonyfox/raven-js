@@ -5,23 +5,27 @@
   "type": "module",
   "main": "index.js",
   "bin": {
-    "glean": "bin/glean.js"
+    "glean": "bin/glean.min.js"
   },
   "files": [
-    "*.js",
-    "*.d.ts",
-    "bin/**/*.js",
+    "index.js",
+    "types.d.ts",
+    "bin/glean.min.js",
+    "lib/**/!(*.test).js",
     "LICENSE",
     "README.md"
   ],
   "exports": {
     ".": {
-      "import": "./index.js"
+      "import": "./index.js",
+      "types": "./types.d.ts"
     }
   },
   "scripts": {
     "nest:validate": "node ../nest/bin/nest.js validate",
     "nest:docs": "node ../nest/bin/nest.js build-docs",
+    "build": "esbuild bin/glean.js --bundle --minify --platform=node --format=esm --outfile=bin/glean.min.js",
+    "prepublishOnly": "npm run build && npm run test",
     "test": "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
     "test:code": "timeout 10s node --no-warnings --test --test-concurrency=1 --test-reporter=dot",
     "test:coverage": "timeout 10s node --no-warnings --test --test-concurrency=1 --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
@@ -40,7 +44,13 @@
     "esm",
     "development-tools",
     "toolkit",
-    "raven"
+    "raven",
+    "api-docs",
+    "static-analysis",
+    "code-documentation",
+    "typescript",
+    "docs-generator",
+    "developer-tools"
   ],
   "author": {
     "name": "Anonyfox",
@@ -66,5 +76,8 @@
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/Anonyfox"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.9"
   }
 }
