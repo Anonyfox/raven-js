@@ -21,7 +21,7 @@
 import { discoverPackage } from "./lib/discovery/index.js";
 import { extractDocumentationGraph } from "./lib/extraction/index.js";
 import { generateStaticSite } from "./lib/rendering/index.js";
-import { analyzeFiles } from "./lib/validation.js";
+import { analyzeFiles } from "./lib/validation/index.js";
 
 /**
  * Get the current version of Glean
