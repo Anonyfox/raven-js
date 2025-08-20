@@ -18,12 +18,16 @@ export const processProvider = {
 		get isTTY() {
 			return process.stdin.isTTY;
 		},
+		/** @param {string} event @param {(...args: any[]) => void} handler */
 		on: (event, handler) => process.stdin.on(event, handler),
 	},
 	stdout: {
+		/** @param {string | Buffer} data */
 		write: (data) => process.stdout.write(data),
 	},
+	/** @param {number} code */
 	exit: (code) => process.exit(code),
+	/** @param {string} message */
 	error: (message) => console.error(message),
 };
 
@@ -182,9 +186,12 @@ export class Terminal {
 			/** @type {Buffer[]} */
 			const chunks = [];
 
-			processProvider.stdin.on("data", (chunk) => {
-				chunks.push(chunk);
-			});
+			processProvider.stdin.on(
+				"data",
+				/** @param {Buffer} chunk */ (chunk) => {
+					chunks.push(chunk);
+				},
+			);
 
 			processProvider.stdin.on("end", () => {
 				resolve(chunks.length > 0 ? Buffer.concat(chunks) : null);

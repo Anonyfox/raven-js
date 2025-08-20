@@ -11,5 +11,5 @@
  */
 
 export * from "./actions/index.js";
-export * from "./runtime.js";
-export * from "./transform-pattern.js";
+export { Terminal } from "./runtime.js";
+export { ArgsToUrl, UrlToArgs } from "./transform-pattern.js";

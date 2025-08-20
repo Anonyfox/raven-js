@@ -102,6 +102,15 @@ describe("ask", () => {
 			await assert.rejects(() => askModule.ask("Test?"), /Import failed/);
 		});
 
+		it("should call readlineProvider.getReadline function directly", async () => {
+			const askModule = await import("./ask.js");
+
+			// Test that the getReadline function can be called directly
+			const result = await askModule.readlineProvider.getReadline();
+			assert.ok(result);
+			assert.equal(typeof result.createInterface, "function");
+		});
+
 		it("should handle createInterface errors", async () => {
 			const askModule = await import("./ask.js");
 

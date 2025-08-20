@@ -13,11 +13,11 @@
  */
 
 // Input functions (async)
-export * from "./ask.js";
+export { ask, confirm } from "./ask.js";
 // Formatting functions (sync)
-export * from "./format.js";
+export { bold, dim, italic, underline } from "./format.js";
 // Output functions (sync)
-export * from "./output.js";
+export { error, info, print, success, warning } from "./output.js";
 
 // Table display function (sync)
-export * from "./table.js";
+export { table } from "./table.js";

@@ -20,8 +20,6 @@ describe("actions module", () => {
 		"underline",
 		// Table function
 		"table",
-		// Internal testing utilities (not part of public API)
-		"readlineProvider",
 	];
 
 	it("should export all expected action functions", () => {
