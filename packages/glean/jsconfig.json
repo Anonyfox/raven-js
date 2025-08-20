@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "checkJs": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ESNext",
+    "noImplicitAny": true,
+    "resolveJsonModule": true
+  },
+  "include": ["*.js", "bin/**/*.js"],
+  "exclude": ["**/*.test.js"]
+}

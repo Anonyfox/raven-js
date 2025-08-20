@@ -1,0 +1,70 @@
+{
+  "name": "@raven-js/glean",
+  "version": "0.1.0",
+  "description": "Glean documentation gold from your codebase - JSDoc parsing, validation, and beautiful doc generation",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "glean": "bin/glean.js"
+  },
+  "files": [
+    "*.js",
+    "*.d.ts",
+    "bin/**/*.js",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "import": "./index.js"
+    }
+  },
+  "scripts": {
+    "nest:validate": "node ../nest/bin/nest.js validate",
+    "nest:docs": "node ../nest/bin/nest.js build-docs",
+    "test": "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
+    "test:code": "timeout 10s node --no-warnings --experimental-test-module-mocks --test --test-reporter=dot",
+    "test:coverage": "timeout 10s node --no-warnings --experimental-test-module-mocks --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
+    "test:style": "npx biome lint --error-on-warnings .",
+    "test:types": "tsc --noEmit --project jsconfig.json"
+  },
+  "keywords": [
+    "jsdoc",
+    "documentation",
+    "parsing",
+    "validation",
+    "cli",
+    "activity",
+    "zero-dependency",
+    "modern-javascript",
+    "esm",
+    "development-tools",
+    "toolkit",
+    "raven"
+  ],
+  "author": {
+    "name": "Anonyfox",
+    "email": "max@anonyfox.com",
+    "url": "https://anonyfox.com"
+  },
+  "license": "MIT",
+  "homepage": "https://ravenjs.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Anonyfox/raven-js.git",
+    "directory": "packages/glean"
+  },
+  "bugs": {
+    "url": "https://github.com/Anonyfox/raven-js/issues"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/Anonyfox"
+  }
+}
