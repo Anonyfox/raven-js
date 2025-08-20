@@ -274,11 +274,11 @@ export { helper };
 		const graph = JSON.parse(outputContent);
 
 		// Verify graph structure
-		assert.ok(graph.package);
-		assert.equal(graph.package.name, "test-extract");
-		assert.ok(graph.modules);
-		assert.ok(graph.entities);
-		assert.ok(graph.readmes);
+		assert.ok(graph.__data.package);
+		assert.equal(graph.__data.package.name, "test-extract");
+		assert.ok(graph.__data.modules);
+		assert.ok(graph.__data.entities);
+		assert.ok(graph.__data.content);
 	} finally {
 		await rm(tempDir, { recursive: true });
 	}

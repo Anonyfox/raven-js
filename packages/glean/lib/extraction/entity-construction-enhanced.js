@@ -277,11 +277,72 @@ export async function buildTypedefEntities(
 }
 
 /**
+ * Simple description tag implementation
+ */
+class DescriptionTag {
+	/**
+	 * @param {string} content - Description content
+	 */
+	constructor(content) {
+		this.tagType = "description";
+		this.rawContent = content;
+		this.content = content;
+		this.isValidated = true;
+	}
+
+	/**
+	 * @protected
+	 */
+	parseContent() {
+		// No parsing needed for simple description
+	}
+
+	/**
+	 * @protected
+	 */
+	validate() {
+		this.isValidated = this.content && this.content.length > 0;
+	}
+
+	isValid() {
+		return this.isValidated;
+	}
+
+	/**
+	 * @protected
+	 */
+	getSerializableData() {
+		return { content: this.content };
+	}
+
+	toJSON() {
+		return {
+			__type: "description",
+			__data: { content: this.content },
+		};
+	}
+
+	toHTML() {
+		return `<p>${this.content}</p>`;
+	}
+
+	toMarkdown() {
+		return this.content;
+	}
+}
+
+/**
  * Attach JSDoc tags to an entity instance
  * @param {import('../models/entity-base.js').EntityBase} entity - Entity instance
  * @param {any} jsDocComment - JSDoc comment object
  */
 async function attachJSDocToEntity(entity, jsDocComment) {
+	// Handle description as a simple content tag
+	if (jsDocComment.description) {
+		const descriptionTag = new DescriptionTag(jsDocComment.description);
+		entity.addJSDocTag(/** @type {any} */ (descriptionTag));
+	}
+
 	if (!jsDocComment.tags) return;
 
 	for (const [tagName, tagValues] of Object.entries(jsDocComment.tags)) {

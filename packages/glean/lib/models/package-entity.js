@@ -36,28 +36,31 @@ export class PackageEntity {
 	 * @param {any} packageJson - Parsed package.json object
 	 */
 	constructor(packageJson = {}) {
+		// Handle null/undefined packageJson
+		const pkg = packageJson || {};
+
 		// Package identification
-		this.name = packageJson.name || "unknown";
-		this.version = packageJson.version || "0.0.0";
-		this.description = packageJson.description || "";
+		this.name = pkg.name || "unknown";
+		this.version = pkg.version || "0.0.0";
+		this.description = pkg.description || "";
 
 		// Entry points
-		this.main = packageJson.main;
-		this.module = packageJson.module;
-		this.exports = packageJson.exports || {};
+		this.main = pkg.main;
+		this.module = pkg.module;
+		this.exports = pkg.exports || {};
 
 		// Metadata
-		this.keywords = packageJson.keywords || [];
-		this.author = packageJson.author || "";
-		this.license = packageJson.license || "";
-		this.homepage = packageJson.homepage || "";
-		this.repository = packageJson.repository || {};
-		this.bugs = packageJson.bugs || {};
+		this.keywords = pkg.keywords || [];
+		this.author = pkg.author || "";
+		this.license = pkg.license || "";
+		this.homepage = pkg.homepage || "";
+		this.repository = pkg.repository || {};
+		this.bugs = pkg.bugs || {};
 
 		// Dependencies (optional for documentation)
-		this.dependencies = packageJson.dependencies || {};
-		this.devDependencies = packageJson.devDependencies || {};
-		this.peerDependencies = packageJson.peerDependencies || {};
+		this.dependencies = pkg.dependencies || {};
+		this.devDependencies = pkg.devDependencies || {};
+		this.peerDependencies = pkg.peerDependencies || {};
 
 		// Validation state
 		this.isValidated = false;
@@ -139,9 +142,10 @@ export class PackageEntity {
 
 	/**
 	 * Get all entry points from package configuration
-	 * @returns {Array<{type: string, path: string}>} Array of entry points
+	 * @returns {Array<{type: string, path: string, key?: string}>} Array of entry points
 	 */
 	getEntryPoints() {
+		/** @type {Array<{type: string, path: string, key?: string}>} */
 		const entryPoints = [];
 
 		if (this.main) {
@@ -163,7 +167,7 @@ export class PackageEntity {
 	/**
 	 * Extract entry points from exports configuration
 	 * @param {any} exports - Exports configuration
-	 * @param {Array<{type: string, path: string}>} entryPoints - Entry points array to populate
+	 * @param {Array<{type: string, path: string, key?: string}>} entryPoints - Entry points array to populate
 	 */
 	extractExportEntryPoints(exports, entryPoints) {
 		for (const [key, value] of Object.entries(exports)) {
@@ -259,7 +263,7 @@ export class PackageEntity {
 						? html`
 					<div class="package-keywords">
 						<h3>Keywords</h3>
-						${this.keywords.map((keyword) => html`<span class="keyword">${keyword}</span>`).join(" ")}
+						${this.keywords.map((/** @type {string} */ keyword) => html`<span class="keyword">${keyword}</span>`).join(" ")}
 					</div>
 				`
 						: ""

@@ -50,19 +50,7 @@ export { extractSourceSnippet, findClosingBrace } from "./source-analysis.js";
  */
 
 /**
- * @typedef {import('./graph-orchestration.js').DocumentationGraph} DocumentationGraph
- */
-
-/**
  * @typedef {import('./graph-orchestration.js').AssetData} AssetData
- */
-
-/**
- * @typedef {import('./package-metadata.js').PackageMetadata} PackageMetadata
- */
-
-/**
- * @typedef {import('./module-processing.js').ModuleData} ModuleData
  */
 
 /**
@@ -83,8 +71,4 @@ export { extractSourceSnippet, findClosingBrace } from "./source-analysis.js";
 
 /**
  * @typedef {import('./jsdoc-processing.js').ReturnTag} ReturnTag
- */
-
-/**
- * @typedef {import('./content-integration.js').ReadmeData} ReadmeData
  */

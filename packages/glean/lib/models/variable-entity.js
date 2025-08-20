@@ -58,6 +58,7 @@ export class VariableEntity extends EntityBase {
 	 */
 	isValidJSDocTag(tagType) {
 		const validTags = [
+			"description",
 			"type",
 			"readonly",
 			"since",

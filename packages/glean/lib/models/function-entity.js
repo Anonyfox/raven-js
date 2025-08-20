@@ -65,6 +65,7 @@ export class FunctionEntity extends EntityBase {
 	 */
 	isValidJSDocTag(tagType) {
 		const validTags = [
+			"description",
 			"param",
 			"returns",
 			"return",

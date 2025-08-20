@@ -197,7 +197,7 @@ export class EntityBase {
 	 * MAY be overridden by child classes to provide entity-specific
 	 * serializable data. Default implementation includes all common properties.
 	 *
-	 * @protected
+
 	 * @returns {Object} Serializable data object
 	 */
 	getSerializableData() {

@@ -70,6 +70,14 @@ export class DocumentationGraph {
 	}
 
 	/**
+	 * Compatibility getter for readmes (content) as Map
+	 * @returns {Map<string, import('./readme-content-entity.js').ReadmeContentEntity>} Content Map
+	 */
+	get readmes() {
+		return this.content;
+	}
+
+	/**
 	 * Get graph identifier (package name)
 	 * @returns {string} Graph identifier
 	 */
@@ -87,17 +95,22 @@ export class DocumentationGraph {
 
 	/**
 	 * Add entity to graph
-	 * @param {import('./entity-base.js').EntityBase} entity - Entity to add
+	 * @param {import('./entity-base.js').EntityBase|import('../extraction/entity-construction.js').EntityNode} entity - Entity to add
 	 */
 	addEntity(entity) {
-		this.entities.set(entity.getId(), entity);
+		// Handle both EntityBase instances (with getId() method) and EntityNode objects (with id property)
+		const entityId =
+			typeof (/** @type {any} */ (entity).getId) === "function"
+				? /** @type {any} */ (entity).getId()
+				: /** @type {any} */ (entity).id;
+		this.entities.set(entityId, /** @type {any} */ (entity));
 
 		// Initialize reference tracking
-		if (!this.references.has(entity.getId())) {
-			this.references.set(entity.getId(), new Set());
+		if (!this.references.has(entityId)) {
+			this.references.set(entityId, new Set());
 		}
-		if (!this.referencedBy.has(entity.getId())) {
-			this.referencedBy.set(entity.getId(), new Set());
+		if (!this.referencedBy.has(entityId)) {
+			this.referencedBy.set(entityId, new Set());
 		}
 	}
 
@@ -249,6 +262,7 @@ export class DocumentationGraph {
 	 * @returns {Record<string, number>} Entity count by type
 	 */
 	getEntityTypeDistribution() {
+		/** @type {Record<string, number>} */
 		const distribution = {};
 		for (const entity of this.entities.values()) {
 			const type = entity.entityType;
@@ -307,14 +321,22 @@ export class DocumentationGraph {
 
 		// Validate all entities
 		for (const entity of this.entities.values()) {
-			entity.validate();
-			if (!entity.isValid()) {
-				this.validationIssues.push({
-					type: "invalid_entity",
-					message: `Entity '${entity.getId()}' validation failed`,
-					entityId: entity.getId(),
-				});
+			// Handle both EntityBase instances (with validate() method) and EntityNode objects
+			if (typeof entity.validate === "function") {
+				entity.validate();
+				if (typeof entity.isValid === "function" && !entity.isValid()) {
+					const entityId =
+						typeof (/** @type {any} */ (entity).getId) === "function"
+							? /** @type {any} */ (entity).getId()
+							: /** @type {any} */ (entity).id;
+					this.validationIssues.push({
+						type: "invalid_entity",
+						message: `Entity '${entityId}' validation failed`,
+						entityId: entityId,
+					});
+				}
 			}
+			// EntityNode objects don't have validation methods, so we assume they're valid
 		}
 
 		// Validate all content
@@ -395,32 +417,41 @@ export class DocumentationGraph {
 	 */
 	getSerializableData() {
 		// Convert Maps to plain objects for serialization
+		/** @type {Record<string, any>} */
 		const moduleData = {};
 		for (const [id, module] of this.modules.entries()) {
 			moduleData[id] = module.getSerializableData();
 		}
 
+		/** @type {Record<string, any>} */
 		const entityData = {};
 		for (const [id, entity] of this.entities.entries()) {
-			entityData[id] = entity.getSerializableData();
+			entityData[id] =
+				typeof (/** @type {any} */ (entity).getSerializableData) === "function"
+					? /** @type {any} */ (entity).getSerializableData()
+					: entity;
 		}
 
+		/** @type {Record<string, any>} */
 		const contentData = {};
 		for (const [id, content] of this.content.entries()) {
 			contentData[id] = content.getSerializableData();
 		}
 
+		/** @type {Record<string, any>} */
 		const assetData = {};
 		for (const [id, asset] of this.assets.entries()) {
 			assetData[id] = asset.getSerializableData();
 		}
 
 		// Convert reference Maps to plain objects
+		/** @type {Record<string, string[]>} */
 		const referenceData = {};
 		for (const [id, refs] of this.references.entries()) {
 			referenceData[id] = Array.from(refs);
 		}
 
+		/** @type {Record<string, string[]>} */
 		const referencedByData = {};
 		for (const [id, refs] of this.referencedBy.entries()) {
 			referencedByData[id] = Array.from(refs);

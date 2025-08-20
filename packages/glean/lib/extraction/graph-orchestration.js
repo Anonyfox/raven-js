@@ -14,55 +14,55 @@
  * predatory precision and zero-waste efficiency.
  */
 
+import { DocumentationGraph } from "../models/documentation-graph.js";
+import { PackageEntity } from "../models/package-entity.js";
 import { extractReadmeData } from "./content-integration.js";
-import { generateReadmeId } from "./id-generators.js";
 import { extractModuleData } from "./module-processing.js";
-import { buildPackageMetadata } from "./package-metadata.js";
 
 /**
  * Extract complete documentation graph from package
  * @param {string} packagePath - Path to package directory
  * @param {{files: string[], readmes: string[], packageJson: any, entryPoints: string[]}} discovery - Discovery results
- * @returns {Promise<DocumentationGraph>} Complete documentation graph
+ * @returns {Promise<import('../models/documentation-graph.js').DocumentationGraph>} Complete documentation graph
  */
 export async function extractDocumentationGraph(packagePath, discovery) {
-	const graph = {
-		package: buildPackageMetadata(discovery.packageJson),
-		modules: /** @type {any} */ ({}),
-		entities: /** @type {any} */ ({}),
-		readmes: /** @type {any} */ ({}),
-		assets: /** @type {any} */ ({}),
-	};
+	const packageEntity = new PackageEntity(discovery.packageJson);
+	packageEntity.validate();
+
+	// Create documentation graph with package entity
+	const graph = new DocumentationGraph(packageEntity);
 
 	// Process each JavaScript file
 	for (const filePath of discovery.files) {
 		const moduleData = await extractModuleData(filePath, packagePath);
-		const moduleId = moduleData.module.id;
 
-		graph.modules[moduleId] = moduleData.module;
+		// Add module to graph
+		graph.addModule(moduleData.module);
 
 		// Add entities to graph
 		for (const entity of moduleData.entities) {
-			graph.entities[entity.id] = entity;
+			graph.addEntity(entity);
 		}
 	}
 
 	// Process README files
 	for (const readmePath of discovery.readmes) {
 		const readmeData = await extractReadmeData(readmePath, packagePath);
-		const readmeId = generateReadmeId(readmePath, packagePath);
-		graph.readmes[readmeId] = readmeData;
+		graph.addContent(readmeData);
 	}
 
 	// Build cross-references between entities
 	buildEntityReferences(graph);
+
+	// Validate the complete graph
+	graph.validate();
 
 	return graph;
 }
 
 /**
  * Build cross-references between entities
- * @param {DocumentationGraph} _graph - Documentation graph (unused for now)
+ * @param {import('../models/documentation-graph.js').DocumentationGraph} _graph - Documentation graph (unused for now)
  */
 export function buildEntityReferences(_graph) {
 	// TODO: Implement reference resolution in future enhancement
@@ -76,28 +76,7 @@ export function buildEntityReferences(_graph) {
 }
 
 /**
- * @typedef {import('./package-metadata.js').PackageMetadata} PackageMetadata
- */
-
-/**
- * @typedef {import('./module-processing.js').ModuleData} ModuleData
- */
-
-/**
  * @typedef {import('./entity-construction.js').EntityNode} EntityNode
- */
-
-/**
- * @typedef {import('./content-integration.js').ReadmeData} ReadmeData
- */
-
-/**
- * @typedef {Object} DocumentationGraph
- * @property {PackageMetadata} package - Package metadata
- * @property {Object<string, ModuleData>} modules - Module data by ID
- * @property {Object<string, EntityNode>} entities - Entity nodes by ID
- * @property {Object<string, ReadmeData>} readmes - README data by directory
- * @property {Object<string, AssetData>} assets - Asset data by ID
  */
 
 /**

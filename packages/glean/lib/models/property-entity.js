@@ -70,6 +70,7 @@ export class PropertyEntity extends EntityBase {
 	 */
 	isValidJSDocTag(tagType) {
 		const validTags = [
+			"description",
 			"type",
 			"readonly",
 			"static",

@@ -108,92 +108,110 @@ Utility functions and classes for processing data.
 		// Extract documentation graph
 		const graph = await extractDocumentationGraph(testPackage, discovery);
 
-		// Verify package metadata
-		deepStrictEqual(graph.package, {
-			name: "@test/package",
-			version: "1.0.0",
-			description: "Test package for graph orchestration",
-			exports: {
-				".": "./index.js",
-				"./utils": "./src/utils/index.js",
-			},
-			main: "./index.js",
-			module: undefined,
+		// Verify package metadata is now a PackageEntity
+		strictEqual(graph.package.constructor.name, "PackageEntity");
+		strictEqual(graph.package.name, "@test/package");
+		strictEqual(graph.package.version, "1.0.0");
+		strictEqual(
+			graph.package.description,
+			"Test package for graph orchestration",
+		);
+		deepStrictEqual(graph.package.exports, {
+			".": "./index.js",
+			"./utils": "./src/utils/index.js",
 		});
+		strictEqual(graph.package.main, "./index.js");
+		strictEqual(graph.package.module, undefined);
+		strictEqual(graph.package.isValidated, true);
+		strictEqual(graph.package.validationIssues.length, 0);
 
 		// Verify modules
-		strictEqual(Object.keys(graph.modules).length, 2);
-		strictEqual("index" in graph.modules, true);
-		strictEqual("src/utils/index" in graph.modules, true);
+		strictEqual(graph.modules.size, 2);
+		strictEqual(graph.modules.has("index"), true);
+		strictEqual(graph.modules.has("src/utils/index"), true);
 
 		// Verify index module
-		const indexModule = graph.modules.index;
+		const indexModule = graph.modules.get("index");
 		strictEqual(indexModule.id, "index");
 		strictEqual(indexModule.path, "index.js");
 		deepStrictEqual(indexModule.exports.sort(), ["VERSION", "welcome"]);
 		strictEqual(indexModule.imports.length, 0);
 
 		// Verify utils module
-		const utilsModule = graph.modules["src/utils/index"];
+		const utilsModule = graph.modules.get("src/utils/index");
 		strictEqual(utilsModule.id, "src/utils/index");
 		strictEqual(utilsModule.path, "src/utils/index.js");
 		deepStrictEqual(utilsModule.exports.sort(), ["UtilsClass", "processInput"]);
 		strictEqual(utilsModule.imports.length, 1);
 		deepStrictEqual(utilsModule.imports[0], {
-			path: "../../index.js",
-			names: ["VERSION"],
-			type: "static",
+			source: "../../index.js",
+			specifiers: [
+				{
+					type: "named",
+					imported: "VERSION",
+					local: "VERSION",
+				},
+			],
+			isDefault: false,
 		});
 
 		// Verify entities
-		const entityIds = Object.keys(graph.entities).sort();
+		const entityIds = Array.from(graph.entities.keys()).sort();
 		strictEqual(entityIds.length >= 4, true); // At least welcome, VERSION, processInput, UtilsClass
 
 		// Check specific entities
-		const welcomeEntity = graph.entities["index/welcome"];
-		strictEqual(welcomeEntity?.type, "function");
+		const welcomeEntity = graph.entities.get("index/welcome");
+		strictEqual(welcomeEntity?.entityType, "function");
 		strictEqual(welcomeEntity?.name, "welcome");
 		strictEqual(welcomeEntity?.moduleId, "index");
-		strictEqual(welcomeEntity?.jsdoc?.description, "Main entry point");
+		strictEqual(
+			welcomeEntity?.jsdocTags?.find((tag) => tag.tagType === "description")
+				?.content,
+			"Main entry point",
+		);
 
-		const versionEntity = graph.entities["index/VERSION"];
-		strictEqual(versionEntity?.type, "variable");
+		const versionEntity = graph.entities.get("index/VERSION");
+		strictEqual(versionEntity?.entityType, "variable");
 		strictEqual(versionEntity?.name, "VERSION");
 		strictEqual(versionEntity?.moduleId, "index");
 
-		const processInputEntity = graph.entities["src/utils/index/processInput"];
-		strictEqual(processInputEntity?.type, "function");
+		const processInputEntity = graph.entities.get(
+			"src/utils/index/processInput",
+		);
+		strictEqual(processInputEntity?.entityType, "function");
 		strictEqual(processInputEntity?.name, "processInput");
 		strictEqual(processInputEntity?.moduleId, "src/utils/index");
 		strictEqual(
-			processInputEntity?.jsdoc?.description,
+			processInputEntity?.jsdocTags?.find(
+				(tag) => tag.tagType === "description",
+			)?.content,
 			"Utility helper function",
 		);
 
-		const utilsClassEntity = graph.entities["src/utils/index/UtilsClass"];
-		strictEqual(utilsClassEntity?.type, "class");
+		const utilsClassEntity = graph.entities.get("src/utils/index/UtilsClass");
+		strictEqual(utilsClassEntity?.entityType, "class");
 		strictEqual(utilsClassEntity?.name, "UtilsClass");
 		strictEqual(utilsClassEntity?.moduleId, "src/utils/index");
 
 		// Verify README data
-		strictEqual(Object.keys(graph.readmes).length, 2);
-		strictEqual("root" in graph.readmes, true);
-		strictEqual("src/utils" in graph.readmes, true);
+		strictEqual(graph.readmes.size, 2);
+		strictEqual(graph.readmes.has("root"), true);
+		strictEqual(graph.readmes.has("src/utils"), true);
 
-		const rootReadmeData = graph.readmes.root;
+		const rootReadmeData = graph.readmes.get("root");
 		strictEqual(rootReadmeData.path, "README.md");
 		strictEqual(rootReadmeData.content, rootReadme);
 		strictEqual(rootReadmeData.directory, ".");
-		deepStrictEqual(rootReadmeData.assets, []);
+		deepStrictEqual(rootReadmeData.assetIds, []);
 
-		const utilsReadmeData = graph.readmes["src/utils"];
+		const utilsReadmeData = graph.readmes.get("src/utils");
 		strictEqual(utilsReadmeData.path, "src/utils/README.md");
 		strictEqual(utilsReadmeData.content, utilsReadme);
 		strictEqual(utilsReadmeData.directory, "src/utils");
-		deepStrictEqual(utilsReadmeData.assets, []);
+		deepStrictEqual(utilsReadmeData.assetIds, []);
 
 		// Verify assets (should be empty for now)
-		deepStrictEqual(graph.assets, {});
+		strictEqual(graph.assets.size, 0);
 
 		// Test empty package
 		const emptyPackage = "/tmp/glean-empty-test";
@@ -219,10 +237,10 @@ Utility functions and classes for processing data.
 
 		strictEqual(emptyGraph.package.name, "empty-package");
 		strictEqual(emptyGraph.package.version, "0.0.1");
-		deepStrictEqual(emptyGraph.modules, {});
-		deepStrictEqual(emptyGraph.entities, {});
-		deepStrictEqual(emptyGraph.readmes, {});
-		deepStrictEqual(emptyGraph.assets, {});
+		strictEqual(emptyGraph.modules.size, 0);
+		strictEqual(emptyGraph.entities.size, 0);
+		strictEqual(emptyGraph.readmes.size, 0);
+		strictEqual(emptyGraph.assets.size, 0);
 
 		await rm(emptyPackage, { recursive: true, force: true });
 
@@ -239,14 +257,14 @@ Utility functions and classes for processing data.
 			noPackageJsonDiscovery,
 		);
 
-		deepStrictEqual(noPackageJsonGraph.package, {
-			name: "unknown",
-			version: "0.0.0",
-			description: "",
-			exports: {},
-			main: undefined,
-			module: undefined,
-		});
+		// Verify package metadata with null packageJson
+		strictEqual(noPackageJsonGraph.package.constructor.name, "PackageEntity");
+		strictEqual(noPackageJsonGraph.package.name, "unknown");
+		strictEqual(noPackageJsonGraph.package.version, "0.0.0");
+		strictEqual(noPackageJsonGraph.package.description, "");
+		deepStrictEqual(noPackageJsonGraph.package.exports, {});
+		strictEqual(noPackageJsonGraph.package.main, undefined);
+		strictEqual(noPackageJsonGraph.package.module, undefined);
 	} finally {
 		// Cleanup
 		await rm(testPackage, { recursive: true, force: true });

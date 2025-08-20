@@ -75,6 +75,7 @@ export class MethodEntity extends EntityBase {
 	 */
 	isValidJSDocTag(tagType) {
 		const validTags = [
+			"description",
 			"param",
 			"returns",
 			"return",

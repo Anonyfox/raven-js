@@ -6,7 +6,7 @@
  * @see {@link https://anonyfox.com}
  */
 
-import { deepStrictEqual } from "node:assert";
+import { deepStrictEqual, strictEqual } from "node:assert";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -25,12 +25,11 @@ test("extractReadmeData - comprehensive branch coverage", async () => {
 		await writeFile(rootReadmePath, rootContent);
 
 		const rootResult = await extractReadmeData(rootReadmePath, testDir);
-		deepStrictEqual(rootResult, {
-			path: "README.md",
-			content: rootContent,
-			assets: [],
-			directory: ".",
-		});
+		strictEqual(rootResult.path, "README.md");
+		strictEqual(rootResult.content, rootContent);
+		deepStrictEqual(rootResult.assetIds, []);
+		strictEqual(rootResult.directory, ".");
+		strictEqual(rootResult.id, "root");
 
 		// Test nested directory README
 		const nestedDir = join(testDir, "src", "components");
@@ -40,12 +39,11 @@ test("extractReadmeData - comprehensive branch coverage", async () => {
 		await writeFile(nestedReadmePath, nestedContent);
 
 		const nestedResult = await extractReadmeData(nestedReadmePath, testDir);
-		deepStrictEqual(nestedResult, {
-			path: "src/components/README.md",
-			content: nestedContent,
-			assets: [],
-			directory: "src/components",
-		});
+		strictEqual(nestedResult.path, "src/components/README.md");
+		strictEqual(nestedResult.content, nestedContent);
+		deepStrictEqual(nestedResult.assetIds, []);
+		strictEqual(nestedResult.directory, "src/components");
+		strictEqual(nestedResult.id, "src/components");
 
 		// Test deeply nested README
 		const deepDir = join(testDir, "docs", "api", "v1", "guides");
@@ -55,12 +53,11 @@ test("extractReadmeData - comprehensive branch coverage", async () => {
 		await writeFile(deepReadmePath, deepContent);
 
 		const deepResult = await extractReadmeData(deepReadmePath, testDir);
-		deepStrictEqual(deepResult, {
-			path: "docs/api/v1/guides/README.md",
-			content: deepContent,
-			assets: [],
-			directory: "docs/api/v1/guides",
-		});
+		strictEqual(deepResult.path, "docs/api/v1/guides/README.md");
+		strictEqual(deepResult.content, deepContent);
+		deepStrictEqual(deepResult.assetIds, []);
+		strictEqual(deepResult.directory, "docs/api/v1/guides");
+		strictEqual(deepResult.id, "docs/api/v1/guides");
 
 		// Test README with complex content
 		const complexContent = `# Complex README
@@ -92,12 +89,11 @@ Final section.`;
 		await writeFile(complexReadmePath, complexContent);
 
 		const complexResult = await extractReadmeData(complexReadmePath, testDir);
-		deepStrictEqual(complexResult, {
-			path: "lib/README.md",
-			content: complexContent,
-			assets: [],
-			directory: "lib",
-		});
+		strictEqual(complexResult.path, "lib/README.md");
+		strictEqual(complexResult.content, complexContent);
+		deepStrictEqual(complexResult.assetIds, []);
+		strictEqual(complexResult.directory, "lib");
+		strictEqual(complexResult.id, "lib");
 
 		// Test empty README
 		const emptyReadmePath = join(testDir, "empty", "README.md");
@@ -105,12 +101,11 @@ Final section.`;
 		await writeFile(emptyReadmePath, "");
 
 		const emptyResult = await extractReadmeData(emptyReadmePath, testDir);
-		deepStrictEqual(emptyResult, {
-			path: "empty/README.md",
-			content: "",
-			assets: [],
-			directory: "empty",
-		});
+		strictEqual(emptyResult.path, "empty/README.md");
+		strictEqual(emptyResult.content, "");
+		deepStrictEqual(emptyResult.assetIds, []);
+		strictEqual(emptyResult.directory, "empty");
+		strictEqual(emptyResult.id, "empty");
 
 		// Test different README filename
 		const altReadmePath = join(testDir, "alt", "readme.txt");
@@ -119,12 +114,11 @@ Final section.`;
 		await writeFile(altReadmePath, altContent);
 
 		const altResult = await extractReadmeData(altReadmePath, testDir);
-		deepStrictEqual(altResult, {
-			path: "alt/readme.txt",
-			content: altContent,
-			assets: [],
-			directory: "alt",
-		});
+		strictEqual(altResult.path, "alt/readme.txt");
+		strictEqual(altResult.content, altContent);
+		deepStrictEqual(altResult.assetIds, []);
+		strictEqual(altResult.directory, "alt");
+		strictEqual(altResult.id, "alt");
 
 		// Test README with special characters
 		const specialContent = `# README with Special Characters
@@ -142,12 +136,11 @@ Non-ASCII paths and content.`;
 		await writeFile(specialReadmePath, specialContent);
 
 		const specialResult = await extractReadmeData(specialReadmePath, testDir);
-		deepStrictEqual(specialResult, {
-			path: "special/README.md",
-			content: specialContent,
-			assets: [],
-			directory: "special",
-		});
+		strictEqual(specialResult.path, "special/README.md");
+		strictEqual(specialResult.content, specialContent);
+		deepStrictEqual(specialResult.assetIds, []);
+		strictEqual(specialResult.directory, "special");
+		strictEqual(specialResult.id, "special");
 
 		// Test README in package root (current directory case)
 		const currentDirContent = "# Current Directory README";
@@ -155,12 +148,11 @@ Non-ASCII paths and content.`;
 		await writeFile(currentDirPath, currentDirContent);
 
 		const currentResult = await extractReadmeData(currentDirPath, testDir);
-		deepStrictEqual(currentResult, {
-			path: "current.md",
-			content: currentDirContent,
-			assets: [],
-			directory: ".",
-		});
+		strictEqual(currentResult.path, "current.md");
+		strictEqual(currentResult.content, currentDirContent);
+		deepStrictEqual(currentResult.assetIds, []);
+		strictEqual(currentResult.directory, ".");
+		strictEqual(currentResult.id, "root");
 	} finally {
 		// Cleanup
 		await rm(testDir, { recursive: true, force: true });

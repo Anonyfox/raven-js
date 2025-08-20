@@ -79,19 +79,37 @@ export default TestClass;
 		// Verify imports
 		strictEqual(complexResult.module.imports.length, 3);
 		deepStrictEqual(complexResult.module.imports[0], {
-			path: "./base",
-			names: ["BaseClass"],
-			type: "static",
+			source: "./base",
+			specifiers: [
+				{
+					type: "named",
+					imported: "BaseClass",
+					local: "BaseClass",
+				},
+			],
+			isDefault: false,
 		});
 		deepStrictEqual(complexResult.module.imports[1], {
-			path: "./utils",
-			names: ["utils"],
-			type: "static",
+			source: "./utils",
+			specifiers: [
+				{
+					type: "named",
+					imported: "utils",
+					local: "utils",
+				},
+			],
+			isDefault: false,
 		});
 		deepStrictEqual(complexResult.module.imports[2], {
-			path: "./default",
-			names: ["defaultExport"],
-			type: "static",
+			source: "./default",
+			specifiers: [
+				{
+					type: "named",
+					imported: "defaultExport",
+					local: "defaultExport",
+				},
+			],
+			isDefault: false,
 		});
 
 		// Verify entities (should find 3: processInput, TestClass, CONSTANT_VALUE)
@@ -110,18 +128,21 @@ export default TestClass;
 		);
 
 		// Verify processInput entity
-		strictEqual(processInputEntity?.type, "function");
+		strictEqual(processInputEntity?.entityType, "function");
 		strictEqual(processInputEntity?.moduleId, "src/complex");
 		deepStrictEqual(processInputEntity?.exports, ["named"]);
-		strictEqual(processInputEntity?.jsdoc?.description, "A utility function");
+		strictEqual(
+			processInputEntity?.jsdocTags?.find((tag) => tag.content)?.content,
+			"A utility function",
+		);
 
 		// Verify TestClass entity
-		strictEqual(testClassEntity?.type, "class");
+		strictEqual(testClassEntity?.entityType, "class");
 		strictEqual(testClassEntity?.moduleId, "src/complex");
 		deepStrictEqual(testClassEntity?.exports, ["default"]); // Default export wins
 
 		// Verify CONSTANT_VALUE entity
-		strictEqual(constantEntity?.type, "variable");
+		strictEqual(constantEntity?.entityType, "variable");
 		strictEqual(constantEntity?.moduleId, "src/complex");
 		deepStrictEqual(constantEntity?.exports, ["named"]);
 
@@ -207,7 +228,7 @@ console.log("Module loaded");`;
 		strictEqual(nestedResult.entities.length, 1);
 		strictEqual(nestedResult.entities[0].name, "nestedFunction");
 		strictEqual(
-			nestedResult.entities[0].id,
+			nestedResult.entities[0].getId(),
 			"deep/nested/structure/module/nestedFunction",
 		);
 

@@ -15,8 +15,9 @@
 
 import { readFile } from "node:fs/promises";
 import { relative } from "node:path";
+import { ModuleEntity } from "../models/module-entity.js";
 import { extractCodeEntities } from "../validation/index.js";
-import { buildEntityNode } from "./entity-construction.js";
+import { buildEnhancedEntity } from "./entity-construction-enhanced.js";
 import { generateModuleId } from "./id-generators.js";
 import {
 	extractModuleExports,
@@ -27,28 +28,49 @@ import {
  * Extract module data and entities from a JavaScript file
  * @param {string} filePath - Path to JavaScript file
  * @param {string} packagePath - Package root path
- * @returns {Promise<{module: ModuleData, entities: import('./entity-construction.js').EntityNode[]}>} Module and entity data
+ * @returns {Promise<{module: import('../models/module-entity.js').ModuleEntity, entities: import('../models/entity-base.js').EntityBase[]}>} Module and enhanced entity instances
  */
 export async function extractModuleData(filePath, packagePath) {
 	const content = await readFile(filePath, "utf-8");
 	const lines = content.split("\n");
 	const relativePath = relative(packagePath, filePath);
 
-	// Create module data
+	// Create module entity
 	const moduleId = generateModuleId(filePath, packagePath);
-	const module = {
-		id: moduleId,
-		path: relativePath,
-		exports: extractModuleExports(content),
-		imports: extractModuleImports(content),
-	};
+	const module = new ModuleEntity(moduleId, relativePath);
+
+	// Set module metadata
+	module.setMetadata({
+		fileSize: Buffer.byteLength(content, "utf8"),
+		lineCount: lines.length,
+		lastModified: new Date(),
+	});
+
+	// Add exports and imports
+	const exports = extractModuleExports(content);
+	for (const exportName of exports) {
+		module.addExport(exportName);
+	}
+
+	const imports = extractModuleImports(content);
+	for (const imp of imports) {
+		module.addImport(
+			imp.path,
+			imp.names.map((name) => ({
+				type: "named",
+				imported: name,
+				local: name,
+			})),
+			imp.type === "default",
+		);
+	}
 
 	// Extract entities from the file
 	const codeEntities = extractCodeEntities(content);
 	const entities = [];
 
 	for (const codeEntity of codeEntities) {
-		const entity = await buildEntityNode(
+		const entity = await buildEnhancedEntity(
 			codeEntity,
 			content,
 			lines,
@@ -57,19 +79,17 @@ export async function extractModuleData(filePath, packagePath) {
 			moduleId,
 		);
 		entities.push(entity);
+
+		// Add entity to module
+		module.addEntity(entity.getId());
 	}
+
+	// Validate module
+	module.validate();
 
 	return { module, entities };
 }
 
 /**
  * @typedef {import('./module-relationships.js').ModuleImport} ModuleImport
- */
-
-/**
- * @typedef {Object} ModuleData
- * @property {string} id - Module ID
- * @property {string} path - Relative path to module file
- * @property {string[]} exports - Exported names
- * @property {ModuleImport[]} imports - Import data
  */

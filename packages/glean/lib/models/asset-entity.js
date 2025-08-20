@@ -257,6 +257,7 @@ export class AssetEntity {
 	 */
 	validateMimeType() {
 		const extension = this.getFileExtension();
+		/** @type {Record<string, string>} */
 		const expectedMimeTypes = {
 			jpg: "image/jpeg",
 			jpeg: "image/jpeg",

@@ -66,6 +66,7 @@ export class ClassEntity extends EntityBase {
 	 */
 	isValidJSDocTag(tagType) {
 		const validTags = [
+			"description",
 			"extends",
 			"implements",
 			"abstract",

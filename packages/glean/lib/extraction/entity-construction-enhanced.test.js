@@ -64,7 +64,7 @@ export function testFunction(name, age = 25) {
 
 	// Verify JSDoc attachment
 	const jsdocTags = entity.getAllJSDocTags();
-	strictEqual(jsdocTags.length, 3); // 2 params + 1 returns
+	strictEqual(jsdocTags.length, 4); // 1 description + 2 params + 1 returns
 
 	const paramTags = jsdocTags.filter((tag) => tag.tagType === "param");
 	strictEqual(paramTags.length, 2);
