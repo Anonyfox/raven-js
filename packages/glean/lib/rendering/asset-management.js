@@ -13,14 +13,45 @@
  * and static file management. Zero transformations, maximum performance.
  */
 
-import { copyFile } from "node:fs/promises";
+import { copyFile, readdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-// Get the path to ravenjs media folder
+// Get the path to glean static folder
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const RAVENJS_MEDIA_PATH = join(__dirname, "../../../..", "media");
+const GLEAN_STATIC_PATH = join(__dirname, "../..", "static");
+
+/**
+ * Copy static files recursively from source to destination
+ * @param {string} sourceDir - Source directory path
+ * @param {string} destDir - Destination directory path
+ * @returns {Promise<void>}
+ */
+async function copyStaticFiles(sourceDir, destDir) {
+	const { mkdir } = await import("node:fs/promises");
+
+	try {
+		const entries = await readdir(sourceDir, { withFileTypes: true });
+
+		for (const entry of entries) {
+			const sourcePath = join(sourceDir, entry.name);
+			const destPath = join(destDir, entry.name);
+
+			if (entry.isDirectory()) {
+				await mkdir(destPath, { recursive: true });
+				await copyStaticFiles(sourcePath, destPath);
+			} else {
+				await copyFile(sourcePath, destPath);
+			}
+		}
+	} catch (error) {
+		console.warn(
+			`Warning: Could not copy static files from ${sourceDir}:`,
+			error.message,
+		);
+	}
+}
 
 /**
  * Generate and copy all static assets for documentation site
@@ -39,14 +70,8 @@ export async function generateAssets(outputDir) {
 	const cssContent = generateCSSContent();
 	await writeFile(join(assetsDir, "styles.css"), cssContent, "utf8");
 
-	// Copy favicon from ravenjs/media
-	try {
-		const faviconSource = join(RAVENJS_MEDIA_PATH, "favicon.ico");
-		const faviconDest = join(outputDir, "favicon.ico");
-		await copyFile(faviconSource, faviconDest);
-	} catch (error) {
-		console.warn("Warning: Could not copy favicon.ico:", error.message);
-	}
+	// Copy all static files (including favicon, bootstrap, etc.) to assets directory
+	await copyStaticFiles(GLEAN_STATIC_PATH, assetsDir);
 }
 
 /**

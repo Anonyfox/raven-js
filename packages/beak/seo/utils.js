@@ -15,7 +15,10 @@
  * absoluteUrl('', 'example.com'); // 'https://example.com'
  * absoluteUrl('path', 'example.com'); // 'https://example.com/path'
  */
-export const absoluteUrl = (/** @type {string} */ url, /** @type {string} */ domain) => {
+export const absoluteUrl = (
+	/** @type {string} */ url,
+	/** @type {string} */ domain,
+) => {
 	if (url.startsWith("http")) {
 		return url;
 	}

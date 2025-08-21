@@ -52,12 +52,14 @@ Commands:
   build <path> <output>       Generate documentation site
 
 Options:
+  --domain <domain>          Domain for SEO tags (e.g. --domain example.com)
   --verbose, -v              Show detailed output
   --help, -h                 Show this help message
 
 Examples:
   glean analyze .            Analyze current directory
   glean build . ./docs       Generate documentation site
+  glean build . ./docs --domain example.com    Build with custom domain
 
 Documentation: https://ravenjs.dev/packages/glean
 `);
@@ -108,6 +110,12 @@ export { runAnalyzeCommand } from "./lib/analyze.js";
  */
 export async function runBuildCommand(args) {
 	const verbose = args.includes("--verbose") || args.includes("-v");
+
+	// Parse domain flag
+	const domainIndex = args.indexOf("--domain");
+	const domain =
+		domainIndex !== -1 && args[domainIndex + 1] ? args[domainIndex + 1] : null;
+
 	const sourceDir = args.find((arg) => !arg.startsWith("-"));
 	const outputDir = args.find(
 		(arg, index) => !arg.startsWith("-") && index > args.indexOf(sourceDir),
@@ -119,6 +127,9 @@ export async function runBuildCommand(args) {
 
 	console.log(`🏗️ Building documentation from: ${sourceDir}`);
 	console.log(`📁 Output directory: ${outputDir}`);
+	if (domain) {
+		console.log(`🌐 Using domain for SEO: ${domain}`);
+	}
 
 	try {
 		// Extract graph
@@ -137,15 +148,13 @@ export async function runBuildCommand(args) {
 		const graph = await extractDocumentationGraph(sourceDir, discovery);
 
 		// Generate static site
-		await generateStaticSite(graph, outputDir);
+		await generateStaticSite(graph, outputDir, { domain });
 
 		console.log(`\n📈 Build Results:`);
 		console.log(`   Package: ${graph.package.name} v${graph.package.version}`);
-		console.log(`   Modules: ${Object.keys(graph.modules).length}`);
-		console.log(`   Entities: ${Object.keys(graph.entities).length}`);
-		console.log(
-			`   Pages: ${Object.keys(graph.modules).length + Object.keys(graph.entities).length + 1}`,
-		);
+		console.log(`   Modules: ${graph.modules.size}`);
+		console.log(`   Entities: ${graph.entities.size}`);
+		console.log(`   Pages: ${graph.modules.size + graph.entities.size + 1}`);
 		console.log(`   Output: ${outputDir}`);
 
 		console.log(`\n🎉 Build complete!`);

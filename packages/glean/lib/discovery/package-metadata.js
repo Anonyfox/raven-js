@@ -35,11 +35,16 @@ export async function parsePackageJson(packagePath) {
 
 /**
  * Extract entry points from package.json exports field
- * @param {any} packageJson - Parsed package.json content
+ * @param {any} packageJson - Parsed package.json content (can be null)
  * @returns {string[]} Array of entry point file paths
  */
 export function extractEntryPoints(packageJson) {
 	const entryPoints = [];
+
+	// Handle null/missing package.json
+	if (!packageJson) {
+		return ["index.js"]; // Default fallback
+	}
 
 	// Handle main field
 	if (packageJson.main) {
@@ -62,7 +67,7 @@ export function extractEntryPoints(packageJson) {
 		}
 	}
 
-	// Default fallback
+	// Default fallback for packages with explicit structure
 	if (entryPoints.length === 0) {
 		entryPoints.push("index.js");
 	}

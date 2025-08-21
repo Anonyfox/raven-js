@@ -46,20 +46,23 @@ async function scanEntryPointDependencies(packagePath, entryPoints) {
 
 			// Read and analyze the file
 			const content = await readFile(filePath, "utf-8");
-			const imports = extractImports(content, packagePath);
+			const imports = extractImports(content, dirname(filePath));
 
 			// Process each import recursively
 			for (const importPath of imports) {
-				// Only include local imports (not node modules)
 				if (importPath.startsWith("./") || importPath.startsWith("../")) {
-					// Resolve path relative to the current file's directory
+					// Handle relative imports - resolve them relative to current file's directory
 					const currentFileDir = dirname(filePath);
 					const resolvedPath = resolve(
 						currentFileDir,
 						importPath.endsWith(".js") ? importPath : `${importPath}.js`,
 					);
 					await processFile(resolvedPath);
+				} else if (importPath.startsWith("/")) {
+					// Handle absolute imports - use as-is
+					await processFile(importPath);
 				}
+				// Skip node module imports (no ./ ../ or /)
 			}
 		} catch (error) {
 			console.warn(`Could not analyze file ${filePath}:`, error.message);
@@ -91,8 +94,34 @@ export async function discoverPackage(packagePath) {
 	// For packages without exports, fall back to scanning all files
 	let files;
 	if (entryPoints.length > 0) {
-		// Only analyze entry points and their dependency tree
-		files = await scanEntryPointDependencies(absolutePath, entryPoints);
+		// Check if the entry points actually exist before using them
+		const { existsSync } = await import("node:fs");
+		const existingEntryPoints = entryPoints.filter((ep) => {
+			const fullPath = resolve(absolutePath, ep);
+			return existsSync(fullPath);
+		});
+
+		if (existingEntryPoints.length > 0) {
+			// Only analyze existing entry points and their dependency tree
+			files = await scanEntryPointDependencies(
+				absolutePath,
+				existingEntryPoints,
+			);
+		} else {
+			// Entry points don't exist, fall back to full scan
+			files = await scanJavaScriptFiles(
+				absolutePath,
+				["node_modules", ".git", "dist", "build", "test", "tests", "__tests__"],
+				true,
+			);
+			// Filter out test files if no explicit entry points
+			files = files.filter(
+				(file) =>
+					!file.includes(".test.") &&
+					!file.includes("test.js") &&
+					!file.includes(".spec."),
+			);
+		}
 	} else {
 		// Fallback: scan all JavaScript files recursively (excluding tests)
 		files = await scanJavaScriptFiles(

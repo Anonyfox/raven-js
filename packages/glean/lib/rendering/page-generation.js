@@ -55,21 +55,72 @@ function getCorrectReadmeId(moduleId, availableContent) {
 }
 
 /**
+ * Extract domain from package.json or provide fallback
+ * @param {Object} packageInfo - Package information
+ * @param {string} [packageInfo.homepage] - Homepage URL from package.json
+ * @param {Object} [packageInfo.repository] - Repository information
+ * @param {string} [packageInfo.repository.url] - Repository URL
+ * @returns {string} Domain for SEO tags
+ */
+function extractDomainFromPackage(packageInfo) {
+	// Try to extract domain from homepage URL
+	if (packageInfo.homepage) {
+		try {
+			const url = new URL(packageInfo.homepage);
+			return url.hostname;
+		} catch {
+			// Invalid URL, continue to fallback
+		}
+	}
+
+	// Try to extract from repository URL (for GitHub Pages, etc.)
+	if (
+		packageInfo.repository &&
+		typeof packageInfo.repository === "object" &&
+		packageInfo.repository.url
+	) {
+		const repoUrl = packageInfo.repository.url;
+		if (repoUrl.includes("github.com")) {
+			// Extract GitHub username/repo for potential GitHub Pages
+			const match = repoUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/);
+			if (match) {
+				const [, username, repo] = match;
+				return `${username}.github.io/${repo}`;
+			}
+		}
+	}
+
+	// Fallback to localhost for development
+	return "localhost:3000";
+}
+
+/**
  * Generate SEO meta tags for documentation pages
  * @param {Object} config - SEO configuration
  * @param {string} config.title - Page title
  * @param {string} config.description - Page description
  * @param {string} config.packageName - Package name for suffix
- * @param {string} [config.domain] - Domain for canonical URLs
+ * @param {Object} [config.packageInfo] - Package information for domain extraction
+ * @param {string} [config.domain] - Domain override for canonical URLs
  * @param {string} [config.path] - Page path
  * @returns {string} HTML meta tags
  */
-function generateSEOTags({ title, description, packageName, domain, path }) {
+function generateSEOTags({
+	title,
+	description,
+	packageName,
+	packageInfo,
+	domain,
+	path,
+}) {
+	// Domain precedence: CLI flag > package.json extraction > fallback
+	const finalDomain = domain || extractDomainFromPackage(packageInfo || {});
+
 	const seoConfig = {
 		title,
 		description,
 		suffix: `${packageName} Documentation`,
-		domain,
+		domain: finalDomain,
 		path,
 	};
 
@@ -77,7 +128,7 @@ function generateSEOTags({ title, description, packageName, domain, path }) {
 		title: `${title} | ${packageName} Documentation`,
 		description,
 		type: "website",
-		domain,
+		domain: finalDomain,
 		path,
 	};
 
@@ -85,7 +136,7 @@ function generateSEOTags({ title, description, packageName, domain, path }) {
 		title: `${title} | ${packageName} Documentation`,
 		description,
 		card: "summary",
-		domain,
+		domain: finalDomain,
 		path,
 	};
 
@@ -93,7 +144,7 @@ function generateSEOTags({ title, description, packageName, domain, path }) {
 		${general(seoConfig)}
 		${openGraph(ogConfig)}
 		${twitter(twitterConfig)}
-		<link rel="icon" type="image/x-icon" href="${path ? "../favicon.ico" : "./favicon.ico"}">
+		<link rel="icon" type="image/x-icon" href="${path ? "../assets/favicon.ico" : "./assets/favicon.ico"}">
 	`;
 }
 
@@ -101,9 +152,11 @@ function generateSEOTags({ title, description, packageName, domain, path }) {
  * Generate main index page
  * @param {any} graph - Documentation graph
  * @param {string} outputDir - Output directory
+ * @param {Object} [options] - Generation options
+ * @param {string} [options.domain] - Custom domain for SEO tags
  * @returns {Promise<void>}
  */
-export async function generateIndexPage(graph, outputDir) {
+export async function generateIndexPage(graph, outputDir, options = {}) {
 	const packageInfo = graph.package || {};
 	const packageName = packageInfo.name || "Documentation";
 	const packageVersion = packageInfo.version || "1.0.0";
@@ -138,6 +191,8 @@ export async function generateIndexPage(graph, outputDir) {
 		description:
 			packageDescription || `Complete documentation for ${packageName}`,
 		packageName,
+		packageInfo,
+		domain: options.domain, // CLI domain takes precedence
 		path: "/",
 	});
 
@@ -148,6 +203,7 @@ export async function generateIndexPage(graph, outputDir) {
 				<meta charset="UTF-8">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 						${seoTags}
+		<link rel="stylesheet" href="./assets/bootstrap.min.css">
 		<link rel="stylesheet" href="./assets/styles.css">
 			</head>
 			<body>
@@ -282,6 +338,8 @@ export async function generateIndexPage(graph, outputDir) {
 						}
 					});
 				</script>
+				<script src="./assets/popper.js"></script>
+				<script src="./assets/bootstrap.esm.js" type="module"></script>
 			</body>
 		</html>
 	`;
@@ -297,6 +355,8 @@ export async function generateIndexPage(graph, outputDir) {
  * @param {string} moduleId - Module identifier
  * @param {any} moduleData - Module data
  * @param {string} outputDir - Output directory
+ * @param {Object} [options] - Generation options
+ * @param {string} [options.domain] - Custom domain for SEO tags
  * @returns {Promise<void>}
  */
 export async function generateModulePage(
@@ -304,6 +364,7 @@ export async function generateModulePage(
 	moduleId,
 	moduleData,
 	outputDir,
+	options = {},
 ) {
 	const packageInfo = graph.package || {};
 	const packageName = packageInfo.name || "Documentation";
@@ -370,6 +431,8 @@ export async function generateModulePage(
 		title: `${moduleName} - ${packageName}`,
 		description: `Documentation for ${moduleName} module`,
 		packageName,
+		packageInfo: graph.package,
+		domain: options.domain, // CLI domain takes precedence
 		path: `/modules/${moduleId.replace(/\//g, "-")}.html`,
 	});
 
@@ -380,6 +443,7 @@ export async function generateModulePage(
 				<meta charset="UTF-8">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 						${seoTags}
+		<link rel="stylesheet" href="../assets/bootstrap.min.css">
 		<link rel="stylesheet" href="../assets/styles.css">
 			</head>
 			<body>
@@ -417,6 +481,8 @@ export async function generateModulePage(
 					`
 					}
 				</div>
+				<script src="../assets/popper.js"></script>
+				<script src="../assets/bootstrap.esm.js" type="module"></script>
 			</body>
 		</html>
 	`;
@@ -437,6 +503,8 @@ export async function generateModulePage(
  * @param {string} entityId - Entity identifier
  * @param {any} entityData - Entity data
  * @param {string} outputDir - Output directory
+ * @param {Object} [options] - Generation options
+ * @param {string} [options.domain] - Custom domain for SEO tags
  * @returns {Promise<void>}
  */
 export async function generateEntityPage(
@@ -444,6 +512,7 @@ export async function generateEntityPage(
 	entityId,
 	entityData,
 	outputDir,
+	options = {},
 ) {
 	const packageInfo = graph.package || {};
 	const packageName = packageInfo.name || "Documentation";
@@ -462,6 +531,8 @@ export async function generateEntityPage(
 		title: `${entityName} - ${packageName}`,
 		description: entityDescription,
 		packageName,
+		packageInfo: graph.package,
+		domain: options.domain, // CLI domain takes precedence
 		path: `/entities/${entityId.replace(/\//g, "-")}.html`,
 	});
 
@@ -472,6 +543,7 @@ export async function generateEntityPage(
 				<meta charset="UTF-8">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 						${seoTags}
+		<link rel="stylesheet" href="../assets/bootstrap.min.css">
 		<link rel="stylesheet" href="../assets/styles.css">
 			</head>
 			<body>
@@ -487,6 +559,8 @@ export async function generateEntityPage(
 
 					${entityDetailsHtml}
 				</div>
+				<script src="../assets/popper.js"></script>
+				<script src="../assets/bootstrap.esm.js" type="module"></script>
 			</body>
 		</html>
 	`;

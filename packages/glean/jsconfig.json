@@ -10,5 +10,5 @@
     "maxNodeModuleJsDepth": 0
   },
   "include": ["*.js", "bin/**/*.js", "lib/**/*.js"],
-  "exclude": ["**/*.test.js"]
+  "exclude": ["**/*.test.js", "static/**/*"]
 }

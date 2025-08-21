@@ -27,9 +27,11 @@ import {
  * Generate static documentation site from documentation graph
  * @param {any} graph - Documentation graph object
  * @param {string} outputDir - Output directory path
+ * @param {Object} [options] - Generation options
+ * @param {string} [options.domain] - Custom domain for SEO tags
  * @returns {Promise<void>}
  */
-export async function generateStaticSite(graph, outputDir) {
+export async function generateStaticSite(graph, outputDir, options = {}) {
 	// Create output directory
 	await mkdir(outputDir, { recursive: true });
 
@@ -37,7 +39,7 @@ export async function generateStaticSite(graph, outputDir) {
 	await generateAssets(outputDir);
 
 	// Generate main index page
-	await generateIndexPage(graph, outputDir);
+	await generateIndexPage(graph, outputDir, options);
 
 	// Generate module pages
 	const modules =
@@ -45,7 +47,7 @@ export async function generateStaticSite(graph, outputDir) {
 			? graph.modules
 			: new Map(Object.entries(graph.modules || {}));
 	for (const [moduleId, moduleData] of modules) {
-		await generateModulePage(graph, moduleId, moduleData, outputDir);
+		await generateModulePage(graph, moduleId, moduleData, outputDir, options);
 	}
 
 	// Generate entity pages
@@ -54,7 +56,7 @@ export async function generateStaticSite(graph, outputDir) {
 			? graph.entities
 			: new Map(Object.entries(graph.entities || {}));
 	for (const [entityId, entityData] of entities) {
-		await generateEntityPage(graph, entityId, entityData, outputDir);
+		await generateEntityPage(graph, entityId, entityData, outputDir, options);
 	}
 
 	// TODO: Generate sitemap.xml (temporarily disabled due to URL processing issues)

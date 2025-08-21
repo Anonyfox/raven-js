@@ -57,6 +57,11 @@ export const shouldHaveJSDocHeader = (filePath) => {
 		return false;
 	}
 
+	// Skip files in static folders (third-party assets don't need JSDoc headers)
+	if (filePath.includes("/static/") || filePath.startsWith("static/")) {
+		return false;
+	}
+
 	return true;
 };
 

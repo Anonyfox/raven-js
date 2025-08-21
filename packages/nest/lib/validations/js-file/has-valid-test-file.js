@@ -49,5 +49,10 @@ export const shouldHaveTestFile = (filePath) => {
 		return false;
 	}
 
+	// Skip files in static folders (third-party assets don't need tests)
+	if (filePath.includes("/static/") || filePath.startsWith("static/")) {
+		return false;
+	}
+
 	return true;
 };

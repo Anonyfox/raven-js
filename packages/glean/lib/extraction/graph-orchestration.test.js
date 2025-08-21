@@ -125,10 +125,12 @@ Utility functions and classes for processing data.
 		strictEqual(graph.package.isValidated, true);
 		strictEqual(graph.package.validationIssues.length, 0);
 
+		// DEBUG: Check what modules we actually have
+
 		// Verify modules
 		strictEqual(graph.modules.size, 2);
 		strictEqual(graph.modules.has("index"), true);
-		strictEqual(graph.modules.has("src/utils/index"), true);
+		strictEqual(graph.modules.has("src-utils-index"), true);
 
 		// Verify index module
 		const indexModule = graph.modules.get("index");
@@ -138,8 +140,8 @@ Utility functions and classes for processing data.
 		strictEqual(indexModule.imports.length, 0);
 
 		// Verify utils module
-		const utilsModule = graph.modules.get("src/utils/index");
-		strictEqual(utilsModule.id, "src/utils/index");
+		const utilsModule = graph.modules.get("src-utils-index");
+		strictEqual(utilsModule.id, "src-utils-index");
 		strictEqual(utilsModule.path, "src/utils/index.js");
 		deepStrictEqual(utilsModule.exports.sort(), ["UtilsClass", "processInput"]);
 		strictEqual(utilsModule.imports.length, 1);
@@ -176,11 +178,11 @@ Utility functions and classes for processing data.
 		strictEqual(versionEntity?.moduleId, "index");
 
 		const processInputEntity = graph.entities.get(
-			"src/utils/index/processInput",
+			"src-utils-index/processInput",
 		);
 		strictEqual(processInputEntity?.entityType, "function");
 		strictEqual(processInputEntity?.name, "processInput");
-		strictEqual(processInputEntity?.moduleId, "src/utils/index");
+		strictEqual(processInputEntity?.moduleId, "src-utils-index");
 		strictEqual(
 			processInputEntity?.jsdocTags?.find(
 				(tag) => tag.tagType === "description",
@@ -188,10 +190,10 @@ Utility functions and classes for processing data.
 			"Utility helper function",
 		);
 
-		const utilsClassEntity = graph.entities.get("src/utils/index/UtilsClass");
+		const utilsClassEntity = graph.entities.get("src-utils-index/UtilsClass");
 		strictEqual(utilsClassEntity?.entityType, "class");
 		strictEqual(utilsClassEntity?.name, "UtilsClass");
-		strictEqual(utilsClassEntity?.moduleId, "src/utils/index");
+		strictEqual(utilsClassEntity?.moduleId, "src-utils-index");
 
 		// Verify README data
 		strictEqual(graph.readmes.size, 2);

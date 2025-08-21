@@ -12,6 +12,7 @@
     "types.d.ts",
     "bin/glean.min.js",
     "lib/**/!(*.test).js",
+    "static/**/*",
     "LICENSE",
     "README.md"
   ],

@@ -48,18 +48,31 @@ export function extractCodeEntities(content) {
 			});
 		}
 
-		// Arrow function exports
+		// Arrow function exports - handle multi-line patterns
 		const arrowMatch = line.match(
-			/^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\(/,
+			/^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*/,
 		);
-		if (arrowMatch) {
-			entities.push({
-				type: "function",
-				name: arrowMatch[1],
-				line: lineNumber,
-				exported: line.includes("export"),
-			});
-			continue; // Skip other patterns to avoid double-matching
+		if (arrowMatch && !line.includes("function")) {
+			// Check if this looks like a function (has arrow, async, or function keywords)
+			// Only look within the current line or statement, not across different statements
+			const hasArrow = line.includes("=>");
+			const hasAsync = line.includes("async");
+			const hasParenAfterEquals = line.match(/=\s*(?:async\s+)?\(/);
+			const isNotPrimitive = !line.match(/=\s*[0-9"'`[{]/); // Not number, string, array, object
+
+			const isFunction =
+				hasArrow || hasAsync || (hasParenAfterEquals && isNotPrimitive);
+
+			if (isFunction) {
+				entities.push({
+					type: "function",
+					name: arrowMatch[1],
+					line: lineNumber,
+					exported: line.includes("export"),
+				});
+				continue; // Skip other patterns to avoid double-matching
+			}
+			// If it matched the pattern but is NOT a function, continue to check other patterns
 		}
 
 		// Class declarations
@@ -85,6 +98,59 @@ export function extractCodeEntities(content) {
 				line: lineNumber,
 				exported: true,
 			});
+		}
+
+		// Export blocks like: export { MAX_SIZE };
+		const exportBlockMatch = line.match(/^export\s*\{\s*([^}]+)\s*\}/);
+		if (exportBlockMatch) {
+			const exportNames = exportBlockMatch[1]
+				.split(",")
+				.map((name) => name.trim());
+			for (const exportName of exportNames) {
+				entities.push({
+					type: "variable",
+					name: exportName,
+					line: lineNumber,
+					exported: true,
+				});
+			}
+		}
+
+		// Destructured exports like: export const { process } = helpers;
+		const destructuredExportMatch = line.match(
+			/^export\s+const\s*\{\s*([^}]+)\s*\}\s*=/,
+		);
+		if (destructuredExportMatch) {
+			const destructuredNames = destructuredExportMatch[1]
+				.split(",")
+				.map((name) => name.trim());
+			for (const destructuredName of destructuredNames) {
+				entities.push({
+					type: "variable",
+					name: destructuredName,
+					line: lineNumber,
+					exported: true,
+				});
+			}
+		}
+
+		// Export default statements: export default functionName;
+		const defaultExportMatch = line.match(/^export\s+default\s+(\w+);?$/);
+		if (defaultExportMatch) {
+			const defaultName = defaultExportMatch[1];
+			// Mark existing entity as default or create a new one
+			const existingEntity = entities.find((e) => e.name === defaultName);
+			if (existingEntity) {
+				existingEntity.isDefault = true;
+			} else {
+				entities.push({
+					type: "function", // Assume function for default exports
+					name: defaultName,
+					line: lineNumber,
+					exported: true,
+					isDefault: true,
+				});
+			}
 		}
 	}
 
