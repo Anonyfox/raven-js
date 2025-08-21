@@ -26,6 +26,8 @@ class MockEntity {
 		this.validationIssues = [];
 		this.isValidated = false;
 		this.location = { file: "/test/file.js", line: 1 };
+		this._referenceIds = [];
+		this._referencedByIds = [];
 	}
 
 	getId() {
@@ -40,8 +42,37 @@ class MockEntity {
 		return this.isValidated;
 	}
 
-	addReference() {}
-	addReferencedBy() {}
+	addReference(entityOrId) {
+		if (typeof entityOrId === "string") {
+			if (!this._referenceIds.includes(entityOrId)) {
+				this._referenceIds.push(entityOrId);
+			}
+		} else {
+			if (!this._referenceIds.includes(entityOrId.getId())) {
+				this._referenceIds.push(entityOrId.getId());
+			}
+		}
+	}
+
+	addReferencedBy(entityOrId) {
+		if (typeof entityOrId === "string") {
+			if (!this._referencedByIds.includes(entityOrId)) {
+				this._referencedByIds.push(entityOrId);
+			}
+		} else {
+			if (!this._referencedByIds.includes(entityOrId.getId())) {
+				this._referencedByIds.push(entityOrId.getId());
+			}
+		}
+	}
+
+	getReferenceIds() {
+		return this._referenceIds.slice();
+	}
+
+	getReferencedByIds() {
+		return this._referencedByIds.slice();
+	}
 }
 
 test("DocumentationGraph - constructor initialization", () => {
@@ -467,9 +498,24 @@ test("DocumentationGraph - validateReferences with inconsistent reference", () =
 	});
 	const graph = new DocumentationGraph(packageEntity);
 
-	// Manually create inconsistent reference state
-	graph.referencedBy.set("entity1", new Set(["entity2"]));
-	// Don't set the forward reference
+	// Create entities with inconsistent reference states
+	class InconsistentEntity {
+		constructor(id, references = [], referencedBy = []) {
+			this.id = id;
+			this.references = references;
+			this.referencedBy = referencedBy;
+		}
+		getId() {
+			return this.id;
+		}
+	}
+
+	// entity1 says it's referenced by entity2, but entity2 doesn't reference entity1
+	const entity1 = new InconsistentEntity("entity1", [], ["entity2"]);
+	const entity2 = new InconsistentEntity("entity2", [], []); // No reference to entity1
+
+	graph.addEntity(entity1);
+	graph.addEntity(entity2);
 
 	graph.validate();
 

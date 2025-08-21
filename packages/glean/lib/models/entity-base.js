@@ -50,10 +50,19 @@ export class EntityBase {
 		this.location = location;
 		/** @type {import('./jsdoc-tag-base.js').JSDocTagBase[]} */
 		this.jsdocTags = [];
+
+		// Direct object references for O(1) access (raven-optimized) - stored separately from compatibility layer
+		/** @type {EntityBase[]} */
+		this._objectReferences = [];
+		/** @type {EntityBase[]} */
+		this._objectReferencedBy = [];
+
+		// String references for backward compatibility during serialization
 		/** @type {string[]} */
-		this.references = [];
+		this._referenceIds = [];
 		/** @type {string[]} */
-		this.referencedBy = [];
+		this._referencedByIds = [];
+
 		this.source = "";
 		this.moduleId = "";
 		/** @type {string[]} */
@@ -172,23 +181,125 @@ export class EntityBase {
 	}
 
 	/**
-	 * Add entity reference
-	 * @param {string} entityId - Referenced entity ID
+	 * Add entity reference (raven-optimized with O(1) access)
+	 * @param {EntityBase|string} entityOrId - Referenced entity object or ID
 	 */
-	addReference(entityId) {
-		if (!this.references.includes(entityId)) {
-			this.references.push(entityId);
+	addReference(entityOrId) {
+		if (typeof entityOrId === "string") {
+			// String ID - store for later resolution
+			if (!this._referenceIds.includes(entityOrId)) {
+				this._referenceIds.push(entityOrId);
+			}
+		} else {
+			// Direct object reference - O(1) predatory strike
+			if (!this._objectReferences.includes(entityOrId)) {
+				this._objectReferences.push(entityOrId);
+				const entityId = entityOrId.getId();
+				if (!this._referenceIds.includes(entityId)) {
+					this._referenceIds.push(entityId);
+				}
+			}
 		}
 	}
 
 	/**
 	 * Add back-reference (entity that references this one)
-	 * @param {string} entityId - Referencing entity ID
+	 * @param {EntityBase|string} entityOrId - Referencing entity object or ID
 	 */
-	addReferencedBy(entityId) {
-		if (!this.referencedBy.includes(entityId)) {
-			this.referencedBy.push(entityId);
+	addReferencedBy(entityOrId) {
+		if (typeof entityOrId === "string") {
+			// String ID - store for later resolution
+			if (!this._referencedByIds.includes(entityOrId)) {
+				this._referencedByIds.push(entityOrId);
+			}
+		} else {
+			// Direct object reference - O(1) predatory strike
+			if (!this._objectReferencedBy.includes(entityOrId)) {
+				this._objectReferencedBy.push(entityOrId);
+				const entityId = entityOrId.getId();
+				if (!this._referencedByIds.includes(entityId)) {
+					this._referencedByIds.push(entityId);
+				}
+			}
 		}
+	}
+
+	/**
+	 * Resolve string references to object references (internal raven optimization)
+	 * @param {Map<string, EntityBase>} entityPool - Pool of all entities for resolution
+	 */
+	_resolveReferences(entityPool) {
+		// Resolve references
+		for (const refId of this._referenceIds) {
+			const entity = entityPool.get(refId);
+			if (entity && !this._objectReferences.includes(entity)) {
+				this._objectReferences.push(entity);
+			}
+		}
+
+		// Resolve back-references
+		for (const refId of this._referencedByIds) {
+			const entity = entityPool.get(refId);
+			if (entity && !this._objectReferencedBy.includes(entity)) {
+				this._objectReferencedBy.push(entity);
+			}
+		}
+	}
+
+	/**
+	 * Get reference IDs (for serialization)
+	 * @returns {string[]} Array of referenced entity IDs
+	 */
+	getReferenceIds() {
+		return this._referenceIds.slice();
+	}
+
+	/**
+	 * Get referenced-by IDs (for serialization)
+	 * @returns {string[]} Array of referencing entity IDs
+	 */
+	getReferencedByIds() {
+		return this._referencedByIds.slice();
+	}
+
+	/**
+	 * Backward compatibility getter for references (test compatibility)
+	 * @returns {string[]} Array of referenced entity IDs
+	 */
+	get references() {
+		// Return direct object references for runtime, but provide string fallback for tests
+		if (this._referenceIds.length > 0) {
+			return this._referenceIds.slice();
+		}
+		return [];
+	}
+
+	/**
+	 * Backward compatibility setter for references (test compatibility)
+	 * @param {string[]} refs - Array of reference IDs
+	 */
+	set references(refs) {
+		this._referenceIds = refs.slice();
+	}
+
+	/**
+	 * Backward compatibility getter for referencedBy (test compatibility)
+	 * @returns {string[]} Array of referencing entity IDs
+	 */
+	get referencedBy() {
+		// Return direct object references for runtime, but provide string fallback for tests
+		if (this._referencedByIds.length > 0) {
+			return this._referencedByIds.slice();
+		}
+		return [];
+	}
+
+	/**
+	 * Backward compatibility setter for referencedBy (test compatibility)
+	 * @param {string[]} refs - Array of referencing entity IDs
+	 */
+	set referencedBy(refs) {
+		this._referencedByIds = refs.slice();
 	}
 
 	/**

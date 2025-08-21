@@ -51,8 +51,8 @@ export async function extractDocumentationGraph(packagePath, discovery) {
 		graph.addContent(readmeData);
 	}
 
-	// Build cross-references between entities
-	buildEntityReferences(graph);
+	// Resolve all string references to direct object references (raven optimization)
+	graph.resolveEntityReferences();
 
 	// Validate the complete graph
 	graph.validate();

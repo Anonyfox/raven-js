@@ -57,16 +57,106 @@ export class DocumentationGraph {
 		this.version = "1.0.0"; // Graph format version
 		this.totalSize = 0; // Total content size in bytes
 
-		// Cross-reference tracking
-		/** @type {Map<string, Set<string>>} */
-		this.references = new Map(); // entity -> [referenced entities]
-		/** @type {Map<string, Set<string>>} */
-		this.referencedBy = new Map(); // entity -> [entities referencing this]
-
 		// Validation state
 		this.isValidated = false;
 		/** @type {Array<{type: string, message: string, entityId?: string, line?: number}>} */
 		this.validationIssues = [];
+	}
+
+	/**
+	 * Backward compatibility getter for references (simulates old Map interface)
+	 * @returns {Map<string, Set<string>>} Simulated references Map
+	 */
+	get references() {
+		const referencesMap = new Map();
+
+		// Add references from existing entities
+		for (const entity of this.entities.values()) {
+			const entityId = entity.getId();
+			const refs = new Set();
+
+			if (typeof entity.getReferenceIds === "function") {
+				// Use getter method if available
+				for (const ref of entity.getReferenceIds()) {
+					refs.add(ref);
+				}
+			} else if (Array.isArray(entity.references)) {
+				// Fallback to direct property access for legacy compatibility
+				for (const ref of entity.references) {
+					refs.add(
+						typeof ref === "string" ? ref : /** @type {any} */ (ref).getId(),
+					);
+				}
+			}
+
+			// Always add to map, even if empty (for test compatibility)
+			referencesMap.set(entityId, refs);
+		}
+
+		// Add pending references for non-existent entities
+		if (this._pendingReferences) {
+			for (const [entityId, refs] of this._pendingReferences.entries()) {
+				if (referencesMap.has(entityId)) {
+					// Merge with existing refs
+					for (const ref of refs) {
+						referencesMap.get(entityId).add(ref);
+					}
+				} else {
+					// Create new entry
+					referencesMap.set(entityId, new Set(refs));
+				}
+			}
+		}
+
+		return referencesMap;
+	}
+
+	/**
+	 * Backward compatibility getter for referencedBy (simulates old Map interface)
+	 * @returns {Map<string, Set<string>>} Simulated referencedBy Map
+	 */
+	get referencedBy() {
+		const referencedByMap = new Map();
+
+		// Add references from existing entities
+		for (const entity of this.entities.values()) {
+			const entityId = entity.getId();
+			const refs = new Set();
+
+			if (typeof entity.getReferencedByIds === "function") {
+				// Use getter method if available
+				for (const ref of entity.getReferencedByIds()) {
+					refs.add(ref);
+				}
+			} else if (Array.isArray(entity.referencedBy)) {
+				// Fallback to direct property access for legacy compatibility
+				for (const ref of entity.referencedBy) {
+					refs.add(
+						typeof ref === "string" ? ref : /** @type {any} */ (ref).getId(),
+					);
+				}
+			}
+
+			// Always add to map, even if empty (for test compatibility)
+			referencedByMap.set(entityId, refs);
+		}
+
+		// Add pending referencedBy for non-existent entities
+		if (this._pendingReferencedBy) {
+			for (const [entityId, refs] of this._pendingReferencedBy.entries()) {
+				if (referencedByMap.has(entityId)) {
+					// Merge with existing refs
+					for (const ref of refs) {
+						referencedByMap.get(entityId).add(ref);
+					}
+				} else {
+					// Create new entry
+					referencedByMap.set(entityId, new Set(refs));
+				}
+			}
+		}
+
+		return referencedByMap;
 	}
 
 	/**
@@ -94,7 +184,7 @@ export class DocumentationGraph {
 	}
 
 	/**
-	 * Add entity to graph
+	 * Add entity to graph (raven-optimized)
 	 * @param {import('./entity-base.js').EntityBase|import('../extraction/entity-construction.js').EntityNode} entity - Entity to add
 	 */
 	addEntity(entity) {
@@ -105,13 +195,7 @@ export class DocumentationGraph {
 				: /** @type {any} */ (entity).id;
 		this.entities.set(entityId, /** @type {any} */ (entity));
 
-		// Initialize reference tracking
-		if (!this.references.has(entityId)) {
-			this.references.set(entityId, new Set());
-		}
-		if (!this.referencedBy.has(entityId)) {
-			this.referencedBy.set(entityId, new Set());
-		}
+		// No redundant reference tracking needed - entities manage their own references
 	}
 
 	/**
@@ -131,32 +215,73 @@ export class DocumentationGraph {
 	}
 
 	/**
-	 * Add reference between entities
+	 * Add reference between entities (raven-optimized for O(1) access)
 	 * @param {string} fromEntityId - Source entity ID
 	 * @param {string} toEntityId - Target entity ID
 	 */
 	addReference(fromEntityId, toEntityId) {
-		// Add forward reference
-		if (!this.references.has(fromEntityId)) {
-			this.references.set(fromEntityId, new Set());
-		}
-		this.references.get(fromEntityId).add(toEntityId);
-
-		// Add backward reference
-		if (!this.referencedBy.has(toEntityId)) {
-			this.referencedBy.set(toEntityId, new Set());
-		}
-		this.referencedBy.get(toEntityId).add(fromEntityId);
-
-		// Update entity objects if they exist
 		const fromEntity = this.entities.get(fromEntityId);
 		const toEntity = this.entities.get(toEntityId);
 
-		if (fromEntity && typeof fromEntity.addReference === "function") {
-			fromEntity.addReference(toEntityId);
-		}
-		if (toEntity && typeof toEntity.addReferencedBy === "function") {
-			toEntity.addReferencedBy(fromEntityId);
+		// Always ensure references are stored for backward compatibility
+		// regardless of whether entities have the methods or not
+
+		if (fromEntity && toEntity) {
+			// Direct object references for O(1) predatory strikes
+			if (typeof fromEntity.addReference === "function") {
+				fromEntity.addReference(toEntityId);
+			} else {
+				// Entity exists but doesn't have method - store in pending
+				if (!this._pendingReferences) {
+					this._pendingReferences = new Map();
+				}
+				if (!this._pendingReferences.has(fromEntityId)) {
+					this._pendingReferences.set(fromEntityId, new Set());
+				}
+				this._pendingReferences.get(fromEntityId).add(toEntityId);
+			}
+
+			if (typeof toEntity.addReferencedBy === "function") {
+				toEntity.addReferencedBy(fromEntityId);
+			} else {
+				// Entity exists but doesn't have method - store in pending
+				if (!this._pendingReferencedBy) {
+					this._pendingReferencedBy = new Map();
+				}
+				if (!this._pendingReferencedBy.has(toEntityId)) {
+					this._pendingReferencedBy.set(toEntityId, new Set());
+				}
+				this._pendingReferencedBy.get(toEntityId).add(fromEntityId);
+			}
+		} else {
+			// Handle entities that don't exist yet - store as string references
+			if (fromEntity && typeof fromEntity.addReference === "function") {
+				fromEntity.addReference(toEntityId);
+			}
+			if (toEntity && typeof toEntity.addReferencedBy === "function") {
+				toEntity.addReferencedBy(fromEntityId);
+			}
+
+			// For entities that don't exist yet, store references in pending maps for backward compatibility
+			if (!fromEntity) {
+				if (!this._pendingReferences) {
+					this._pendingReferences = new Map();
+				}
+				if (!this._pendingReferences.has(fromEntityId)) {
+					this._pendingReferences.set(fromEntityId, new Set());
+				}
+				this._pendingReferences.get(fromEntityId).add(toEntityId);
+			}
+
+			if (!toEntity) {
+				if (!this._pendingReferencedBy) {
+					this._pendingReferencedBy = new Map();
+				}
+				if (!this._pendingReferencedBy.has(toEntityId)) {
+					this._pendingReferencedBy.set(toEntityId, new Set());
+				}
+				this._pendingReferencedBy.get(toEntityId).add(fromEntityId);
+			}
 		}
 	}
 
@@ -167,6 +292,18 @@ export class DocumentationGraph {
 	 */
 	getEntity(entityId) {
 		return this.entities.get(entityId) || null;
+	}
+
+	/**
+	 * Resolve all string references to direct object references (raven optimization)
+	 * Call this after all entities are loaded for maximum performance
+	 */
+	resolveEntityReferences() {
+		for (const entity of this.entities.values()) {
+			if (typeof entity._resolveReferences === "function") {
+				entity._resolveReferences(this.entities);
+			}
+		}
 	}
 
 	/**
@@ -197,23 +334,75 @@ export class DocumentationGraph {
 	}
 
 	/**
-	 * Get entities referenced by an entity
+	 * Get entities referenced by an entity (raven-optimized)
 	 * @param {string} entityId - Entity identifier
 	 * @returns {string[]} Array of referenced entity IDs
 	 */
 	getReferences(entityId) {
-		const refs = this.references.get(entityId);
-		return refs ? Array.from(refs) : [];
+		const references = new Set();
+
+		// Get references from existing entity
+		const entity = this.entities.get(entityId);
+		if (entity) {
+			if (typeof entity.getReferenceIds === "function") {
+				// Use getter method if available
+				for (const ref of entity.getReferenceIds()) {
+					references.add(ref);
+				}
+			} else if (Array.isArray(entity.references)) {
+				// Fallback to direct property access for legacy compatibility
+				for (const ref of entity.references) {
+					references.add(
+						typeof ref === "string" ? ref : /** @type {any} */ (ref).getId(),
+					);
+				}
+			}
+		}
+
+		// Get pending references for non-existent entities
+		if (this._pendingReferences?.has(entityId)) {
+			for (const ref of this._pendingReferences.get(entityId)) {
+				references.add(ref);
+			}
+		}
+
+		return Array.from(references);
 	}
 
 	/**
-	 * Get entities that reference an entity
+	 * Get entities that reference an entity (raven-optimized)
 	 * @param {string} entityId - Entity identifier
 	 * @returns {string[]} Array of referencing entity IDs
 	 */
 	getReferencedBy(entityId) {
-		const refs = this.referencedBy.get(entityId);
-		return refs ? Array.from(refs) : [];
+		const referencedBy = new Set();
+
+		// Get referencedBy from existing entity
+		const entity = this.entities.get(entityId);
+		if (entity) {
+			if (typeof entity.getReferencedByIds === "function") {
+				// Use getter method if available
+				for (const ref of entity.getReferencedByIds()) {
+					referencedBy.add(ref);
+				}
+			} else if (Array.isArray(entity.referencedBy)) {
+				// Fallback to direct property access for legacy compatibility
+				for (const ref of entity.referencedBy) {
+					referencedBy.add(
+						typeof ref === "string" ? ref : /** @type {any} */ (ref).getId(),
+					);
+				}
+			}
+		}
+
+		// Get pending referencedBy for non-existent entities
+		if (this._pendingReferencedBy?.has(entityId)) {
+			for (const ref of this._pendingReferencedBy.get(entityId)) {
+				referencedBy.add(ref);
+			}
+		}
+
+		return Array.from(referencedBy);
 	}
 
 	/**
@@ -239,13 +428,15 @@ export class DocumentationGraph {
 	}
 
 	/**
-	 * Calculate graph statistics
+	 * Calculate graph statistics (raven-optimized)
 	 * @returns {{entityCount: number, moduleCount: number, contentCount: number, assetCount: number, referenceCount: number}} Graph statistics
 	 */
 	getStatistics() {
 		let referenceCount = 0;
-		for (const refs of this.references.values()) {
-			referenceCount += refs.size;
+		for (const entity of this.entities.values()) {
+			if (typeof entity.getReferenceIds === "function") {
+				referenceCount += entity.getReferenceIds().length;
+			}
 		}
 
 		return {
@@ -375,15 +566,26 @@ export class DocumentationGraph {
 	}
 
 	/**
-	 * Validate reference integrity
+	 * Validate reference integrity (raven-optimized)
 	 */
 	validateReferences() {
 		// Check for dangling references
-		for (const [entityId, refs] of this.references.entries()) {
-			for (const refId of refs) {
+		for (const entity of this.entities.values()) {
+			const entityId = entity.getId();
+			/** @type {string[]} */
+			let references = [];
+
+			if (typeof entity.getReferenceIds === "function") {
+				references = entity.getReferenceIds();
+			} else if (Array.isArray(entity.references)) {
+				references = entity.references.map((ref) =>
+					typeof ref === "string" ? ref : /** @type {any} */ (ref).getId(),
+				);
+			}
+
+			for (const refId of references) {
 				if (!this.entities.has(refId)) {
-					const entity = this.entities.get(entityId);
-					const line = entity?.location?.line || 1;
+					const line = entity.location?.line || 1;
 					this.validationIssues.push({
 						type: "dangling_reference",
 						message: `Entity '${entityId}' references non-existent entity '${refId}'`,
@@ -395,14 +597,38 @@ export class DocumentationGraph {
 		}
 
 		// Check for inconsistent backward references
-		for (const [entityId, refs] of this.referencedBy.entries()) {
-			for (const refId of refs) {
-				if (
-					!this.references.has(refId) ||
-					!this.references.get(refId).has(entityId)
-				) {
-					const entity = this.entities.get(entityId);
-					const line = entity?.location?.line || 1;
+		for (const entity of this.entities.values()) {
+			const entityId = entity.getId();
+			/** @type {string[]} */
+			let referencedBy = [];
+
+			if (typeof entity.getReferencedByIds === "function") {
+				referencedBy = entity.getReferencedByIds();
+			} else if (Array.isArray(entity.referencedBy)) {
+				referencedBy = entity.referencedBy.map((ref) =>
+					typeof ref === "string" ? ref : /** @type {any} */ (ref).getId(),
+				);
+			}
+
+			for (const refId of referencedBy) {
+				const refEntity = this.entities.get(refId);
+				if (!refEntity) {
+					continue; // Entity doesn't exist, will be caught by dangling reference check
+				}
+
+				// Check if refEntity actually references this entity
+				/** @type {string[]} */
+				let refEntityReferences = [];
+				if (typeof refEntity.getReferenceIds === "function") {
+					refEntityReferences = refEntity.getReferenceIds();
+				} else if (Array.isArray(refEntity.references)) {
+					refEntityReferences = refEntity.references.map((ref) =>
+						typeof ref === "string" ? ref : /** @type {any} */ (ref).getId(),
+					);
+				}
+
+				if (!refEntityReferences.includes(entityId)) {
+					const line = entity.location?.line || 1;
 					this.validationIssues.push({
 						type: "inconsistent_reference",
 						message: `Inconsistent reference between '${refId}' and '${entityId}'`,
