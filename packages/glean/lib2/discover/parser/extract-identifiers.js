@@ -17,7 +17,7 @@
  * • Smart fast-path detection with inlined logic
  */
 
-import { Identifier } from "./identifier.js";
+import { Identifier } from "../models/identifier.js";
 
 // Pre-compiled regex patterns for V8 optimization
 const IMPORT_PATTERN =

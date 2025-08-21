@@ -7,8 +7,8 @@
  */
 
 import { dirname, join } from "node:path";
+import { pickEntrypointFile } from "../fsutils/pick-entrypoint-file.js";
 import { Identifier } from "./identifier.js";
-import { pickEntrypointFile } from "./pick-entrypoint-file.js";
 
 /**
  * Abstraction over a file in the file system.

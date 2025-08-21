@@ -15,8 +15,8 @@
  * - Returns normalized import paths to relative file paths
  */
 
-import { glob } from "./glob.js";
-import { pickEntrypointFile } from "./pick-entrypoint-file.js";
+import { glob } from "../fsutils/glob.js";
+import { pickEntrypointFile } from "../fsutils/pick-entrypoint-file.js";
 
 /**
  * Extracts and validates entry points from a package.json object, resolving

@@ -16,11 +16,11 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { extractIdentifiers } from "./extract-identifiers.js";
-import { File } from "./file.js";
-import { listFiles } from "./list-files.js";
-import { Module } from "./module.js";
-import { Package } from "./package.js";
+import { listFiles } from "./fsutils/list-files.js";
+import { File } from "./models/file.js";
+import { Module } from "./models/module.js";
+import { Package } from "./models/package.js";
+import { extractIdentifiers } from "./parser/extract-identifiers.js";
 
 /**
  * Discover the package and its modules.

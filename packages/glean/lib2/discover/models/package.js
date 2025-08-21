@@ -6,7 +6,7 @@
  * @see {@link https://anonyfox.com}
  */
 
-import { extractEntryPoints } from "./entry-points.js";
+import { extractEntryPoints } from "../parser/entry-points.js";
 import { File } from "./file.js";
 import { Module } from "./module.js";
 
