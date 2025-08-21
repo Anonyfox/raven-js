@@ -65,98 +65,106 @@ export class DocumentationGraph {
 
 	/**
 	 * Backward compatibility getter for references (simulates old Map interface)
+	 * Cached for O(1) predatory strikes - V8 optimized
 	 * @returns {Map<string, Set<string>>} Simulated references Map
 	 */
 	get references() {
-		const referencesMap = new Map();
+		// Cache references map for O(1) access on repeated calls
+		if (!this._referencesCache) {
+			this._referencesCache = new Map();
 
-		// Add references from existing entities
-		for (const entity of this.entities.values()) {
-			const entityId = entity.getId();
-			const refs = new Set();
+			// Build cache with stable object shapes for JIT optimization
+			for (const entity of this.entities.values()) {
+				const entityId = entity.getId();
+				const refs = new Set();
 
-			if (typeof entity.getReferenceIds === "function") {
-				// Use getter method if available
-				for (const ref of entity.getReferenceIds()) {
-					refs.add(ref);
-				}
-			} else if (Array.isArray(entity.references)) {
-				// Fallback to direct property access for legacy compatibility
-				for (const ref of entity.references) {
-					refs.add(
-						typeof ref === "string" ? ref : /** @type {any} */ (ref).getId(),
-					);
-				}
-			}
-
-			// Always add to map, even if empty (for test compatibility)
-			referencesMap.set(entityId, refs);
-		}
-
-		// Add pending references for non-existent entities
-		if (this._pendingReferences) {
-			for (const [entityId, refs] of this._pendingReferences.entries()) {
-				if (referencesMap.has(entityId)) {
-					// Merge with existing refs
-					for (const ref of refs) {
-						referencesMap.get(entityId).add(ref);
+				// Optimized path for entities with getReferenceIds method
+				if (typeof entity.getReferenceIds === "function") {
+					const referenceIds = entity.getReferenceIds();
+					for (let i = 0; i < referenceIds.length; i++) {
+						refs.add(referenceIds[i]);
 					}
-				} else {
-					// Create new entry
-					referencesMap.set(entityId, new Set(refs));
+				} else if (Array.isArray(entity.references)) {
+					// Fallback path - use native iteration for JIT
+					for (const ref of entity.references) {
+						refs.add(
+							typeof ref === "string" ? ref : /** @type {any} */ (ref).getId(),
+						);
+					}
+				}
+
+				this._referencesCache.set(entityId, refs);
+			}
+
+			// Merge pending references efficiently
+			if (this._pendingReferences) {
+				for (const [entityId, refs] of this._pendingReferences.entries()) {
+					const existingRefs = this._referencesCache.get(entityId);
+					if (existingRefs) {
+						// Merge sets with native performance
+						for (const ref of refs) {
+							existingRefs.add(ref);
+						}
+					} else {
+						this._referencesCache.set(entityId, new Set(refs));
+					}
 				}
 			}
 		}
 
-		return referencesMap;
+		return this._referencesCache;
 	}
 
 	/**
 	 * Backward compatibility getter for referencedBy (simulates old Map interface)
+	 * Cached for O(1) predatory strikes - V8 optimized
 	 * @returns {Map<string, Set<string>>} Simulated referencedBy Map
 	 */
 	get referencedBy() {
-		const referencedByMap = new Map();
+		// Cache referencedBy map for O(1) access on repeated calls
+		if (!this._referencedByCache) {
+			this._referencedByCache = new Map();
 
-		// Add references from existing entities
-		for (const entity of this.entities.values()) {
-			const entityId = entity.getId();
-			const refs = new Set();
+			// Build cache with stable object shapes for JIT optimization
+			for (const entity of this.entities.values()) {
+				const entityId = entity.getId();
+				const refs = new Set();
 
-			if (typeof entity.getReferencedByIds === "function") {
-				// Use getter method if available
-				for (const ref of entity.getReferencedByIds()) {
-					refs.add(ref);
-				}
-			} else if (Array.isArray(entity.referencedBy)) {
-				// Fallback to direct property access for legacy compatibility
-				for (const ref of entity.referencedBy) {
-					refs.add(
-						typeof ref === "string" ? ref : /** @type {any} */ (ref).getId(),
-					);
-				}
-			}
-
-			// Always add to map, even if empty (for test compatibility)
-			referencedByMap.set(entityId, refs);
-		}
-
-		// Add pending referencedBy for non-existent entities
-		if (this._pendingReferencedBy) {
-			for (const [entityId, refs] of this._pendingReferencedBy.entries()) {
-				if (referencedByMap.has(entityId)) {
-					// Merge with existing refs
-					for (const ref of refs) {
-						referencedByMap.get(entityId).add(ref);
+				// Optimized path for entities with getReferencedByIds method
+				if (typeof entity.getReferencedByIds === "function") {
+					const referencedByIds = entity.getReferencedByIds();
+					for (let i = 0; i < referencedByIds.length; i++) {
+						refs.add(referencedByIds[i]);
 					}
-				} else {
-					// Create new entry
-					referencedByMap.set(entityId, new Set(refs));
+				} else if (Array.isArray(entity.referencedBy)) {
+					// Fallback path - use native iteration for JIT
+					for (const ref of entity.referencedBy) {
+						refs.add(
+							typeof ref === "string" ? ref : /** @type {any} */ (ref).getId(),
+						);
+					}
+				}
+
+				this._referencedByCache.set(entityId, refs);
+			}
+
+			// Merge pending referencedBy efficiently
+			if (this._pendingReferencedBy) {
+				for (const [entityId, refs] of this._pendingReferencedBy.entries()) {
+					const existingRefs = this._referencedByCache.get(entityId);
+					if (existingRefs) {
+						// Merge sets with native performance
+						for (const ref of refs) {
+							existingRefs.add(ref);
+						}
+					} else {
+						this._referencedByCache.set(entityId, new Set(refs));
+					}
 				}
 			}
 		}
 
-		return referencedByMap;
+		return this._referencedByCache;
 	}
 
 	/**
@@ -195,7 +203,9 @@ export class DocumentationGraph {
 				: /** @type {any} */ (entity).id;
 		this.entities.set(entityId, /** @type {any} */ (entity));
 
-		// No redundant reference tracking needed - entities manage their own references
+		// Invalidate caches when entities are modified - maintain cache consistency
+		this._referencesCache = null;
+		this._referencedByCache = null;
 	}
 
 	/**
@@ -223,65 +233,37 @@ export class DocumentationGraph {
 		const fromEntity = this.entities.get(fromEntityId);
 		const toEntity = this.entities.get(toEntityId);
 
-		// Always ensure references are stored for backward compatibility
-		// regardless of whether entities have the methods or not
+		// Invalidate caches when references are modified - maintain cache consistency
+		this._referencesCache = null;
+		this._referencedByCache = null;
 
-		if (fromEntity && toEntity) {
-			// Direct object references for O(1) predatory strikes
-			if (typeof fromEntity.addReference === "function") {
-				fromEntity.addReference(toEntityId);
-			} else {
-				// Entity exists but doesn't have method - store in pending
-				if (!this._pendingReferences) {
-					this._pendingReferences = new Map();
-				}
-				if (!this._pendingReferences.has(fromEntityId)) {
-					this._pendingReferences.set(fromEntityId, new Set());
-				}
-				this._pendingReferences.get(fromEntityId).add(toEntityId);
-			}
+		// Initialize pending maps with stable object shapes for JIT
+		if (!this._pendingReferences) {
+			this._pendingReferences = new Map();
+		}
+		if (!this._pendingReferencedBy) {
+			this._pendingReferencedBy = new Map();
+		}
 
-			if (typeof toEntity.addReferencedBy === "function") {
-				toEntity.addReferencedBy(fromEntityId);
-			} else {
-				// Entity exists but doesn't have method - store in pending
-				if (!this._pendingReferencedBy) {
-					this._pendingReferencedBy = new Map();
-				}
-				if (!this._pendingReferencedBy.has(toEntityId)) {
-					this._pendingReferencedBy.set(toEntityId, new Set());
-				}
-				this._pendingReferencedBy.get(toEntityId).add(fromEntityId);
-			}
+		// Handle entities that exist
+		if (fromEntity && typeof fromEntity.addReference === "function") {
+			fromEntity.addReference(toEntityId);
 		} else {
-			// Handle entities that don't exist yet - store as string references
-			if (fromEntity && typeof fromEntity.addReference === "function") {
-				fromEntity.addReference(toEntityId);
+			// Store in pending references with Set for O(1) operations
+			if (!this._pendingReferences.has(fromEntityId)) {
+				this._pendingReferences.set(fromEntityId, new Set());
 			}
-			if (toEntity && typeof toEntity.addReferencedBy === "function") {
-				toEntity.addReferencedBy(fromEntityId);
-			}
+			this._pendingReferences.get(fromEntityId).add(toEntityId);
+		}
 
-			// For entities that don't exist yet, store references in pending maps for backward compatibility
-			if (!fromEntity) {
-				if (!this._pendingReferences) {
-					this._pendingReferences = new Map();
-				}
-				if (!this._pendingReferences.has(fromEntityId)) {
-					this._pendingReferences.set(fromEntityId, new Set());
-				}
-				this._pendingReferences.get(fromEntityId).add(toEntityId);
+		if (toEntity && typeof toEntity.addReferencedBy === "function") {
+			toEntity.addReferencedBy(fromEntityId);
+		} else {
+			// Store in pending referencedBy with Set for O(1) operations
+			if (!this._pendingReferencedBy.has(toEntityId)) {
+				this._pendingReferencedBy.set(toEntityId, new Set());
 			}
-
-			if (!toEntity) {
-				if (!this._pendingReferencedBy) {
-					this._pendingReferencedBy = new Map();
-				}
-				if (!this._pendingReferencedBy.has(toEntityId)) {
-					this._pendingReferencedBy.set(toEntityId, new Set());
-				}
-				this._pendingReferencedBy.get(toEntityId).add(fromEntityId);
-			}
+			this._pendingReferencedBy.get(toEntityId).add(fromEntityId);
 		}
 	}
 

@@ -51,17 +51,17 @@ export class EntityBase {
 		/** @type {import('./jsdoc-tag-base.js').JSDocTagBase[]} */
 		this.jsdocTags = [];
 
-		// Direct object references for O(1) access (raven-optimized) - stored separately from compatibility layer
-		/** @type {EntityBase[]} */
-		this._objectReferences = [];
-		/** @type {EntityBase[]} */
-		this._objectReferencedBy = [];
+		// V8-optimized Set storage for O(1) operations (raven-optimized)
+		/** @type {Set<EntityBase>} */
+		this._objectReferences = new Set();
+		/** @type {Set<EntityBase>} */
+		this._objectReferencedBy = new Set();
 
-		// String references for backward compatibility during serialization
-		/** @type {string[]} */
-		this._referenceIds = [];
-		/** @type {string[]} */
-		this._referencedByIds = [];
+		// String references as Sets for O(1) lookups and backward compatibility
+		/** @type {Set<string>} */
+		this._referenceIds = new Set();
+		/** @type {Set<string>} */
+		this._referencedByIds = new Set();
 
 		this.source = "";
 		this.moduleId = "";
@@ -186,19 +186,13 @@ export class EntityBase {
 	 */
 	addReference(entityOrId) {
 		if (typeof entityOrId === "string") {
-			// String ID - store for later resolution
-			if (!this._referenceIds.includes(entityOrId)) {
-				this._referenceIds.push(entityOrId);
-			}
+			// String ID - O(1) Set addition
+			this._referenceIds.add(entityOrId);
 		} else {
 			// Direct object reference - O(1) predatory strike
-			if (!this._objectReferences.includes(entityOrId)) {
-				this._objectReferences.push(entityOrId);
-				const entityId = entityOrId.getId();
-				if (!this._referenceIds.includes(entityId)) {
-					this._referenceIds.push(entityId);
-				}
-			}
+			this._objectReferences.add(entityOrId);
+			const entityId = entityOrId.getId();
+			this._referenceIds.add(entityId);
 		}
 	}
 
@@ -208,19 +202,13 @@ export class EntityBase {
 	 */
 	addReferencedBy(entityOrId) {
 		if (typeof entityOrId === "string") {
-			// String ID - store for later resolution
-			if (!this._referencedByIds.includes(entityOrId)) {
-				this._referencedByIds.push(entityOrId);
-			}
+			// String ID - O(1) Set addition
+			this._referencedByIds.add(entityOrId);
 		} else {
 			// Direct object reference - O(1) predatory strike
-			if (!this._objectReferencedBy.includes(entityOrId)) {
-				this._objectReferencedBy.push(entityOrId);
-				const entityId = entityOrId.getId();
-				if (!this._referencedByIds.includes(entityId)) {
-					this._referencedByIds.push(entityId);
-				}
-			}
+			this._objectReferencedBy.add(entityOrId);
+			const entityId = entityOrId.getId();
+			this._referencedByIds.add(entityId);
 		}
 	}
 
@@ -229,19 +217,19 @@ export class EntityBase {
 	 * @param {Map<string, EntityBase>} entityPool - Pool of all entities for resolution
 	 */
 	_resolveReferences(entityPool) {
-		// Resolve references
+		// Resolve references with O(1) Set operations
 		for (const refId of this._referenceIds) {
 			const entity = entityPool.get(refId);
-			if (entity && !this._objectReferences.includes(entity)) {
-				this._objectReferences.push(entity);
+			if (entity) {
+				this._objectReferences.add(entity);
 			}
 		}
 
-		// Resolve back-references
+		// Resolve back-references with O(1) Set operations
 		for (const refId of this._referencedByIds) {
 			const entity = entityPool.get(refId);
-			if (entity && !this._objectReferencedBy.includes(entity)) {
-				this._objectReferencedBy.push(entity);
+			if (entity) {
+				this._objectReferencedBy.add(entity);
 			}
 		}
 	}
@@ -251,7 +239,7 @@ export class EntityBase {
 	 * @returns {string[]} Array of referenced entity IDs
 	 */
 	getReferenceIds() {
-		return this._referenceIds.slice();
+		return Array.from(this._referenceIds);
 	}
 
 	/**
@@ -259,7 +247,7 @@ export class EntityBase {
 	 * @returns {string[]} Array of referencing entity IDs
 	 */
 	getReferencedByIds() {
-		return this._referencedByIds.slice();
+		return Array.from(this._referencedByIds);
 	}
 
 	/**
@@ -267,11 +255,8 @@ export class EntityBase {
 	 * @returns {string[]} Array of referenced entity IDs
 	 */
 	get references() {
-		// Return direct object references for runtime, but provide string fallback for tests
-		if (this._referenceIds.length > 0) {
-			return this._referenceIds.slice();
-		}
-		return [];
+		// Convert Set to Array for backward compatibility - V8 optimized
+		return Array.from(this._referenceIds);
 	}
 
 	/**
@@ -279,7 +264,8 @@ export class EntityBase {
 	 * @param {string[]} refs - Array of reference IDs
 	 */
 	set references(refs) {
-		this._referenceIds = refs.slice();
+		// Convert Array to Set for O(1) operations - V8 optimized
+		this._referenceIds = new Set(refs);
 	}
 
 	/**
@@ -287,11 +273,8 @@ export class EntityBase {
 	 * @returns {string[]} Array of referencing entity IDs
 	 */
 	get referencedBy() {
-		// Return direct object references for runtime, but provide string fallback for tests
-		if (this._referencedByIds.length > 0) {
-			return this._referencedByIds.slice();
-		}
-		return [];
+		// Convert Set to Array for backward compatibility - V8 optimized
+		return Array.from(this._referencedByIds);
 	}
 
 	/**
@@ -299,7 +282,8 @@ export class EntityBase {
 	 * @param {string[]} refs - Array of referencing entity IDs
 	 */
 	set referencedBy(refs) {
-		this._referencedByIds = refs.slice();
+		// Convert Array to Set for O(1) operations - V8 optimized
+		this._referencedByIds = new Set(refs);
 	}
 
 	/**

@@ -29,33 +29,38 @@ export async function scanJavaScriptFiles(
 	excludeDirs = ["node_modules", ".git", "dist", "build"],
 	throwOnMissing = false,
 ) {
-	const files = [];
+	// Convert to Set for O(1) lookups - V8 optimization
+	const excludeSet = new Set(excludeDirs);
 
 	try {
 		const entries = await readdir(dirPath);
 
-		for (const entry of entries) {
+		// Parallelize filesystem operations for predatory speed
+		const entryPromises = entries.map(async (entry) => {
 			const fullPath = join(dirPath, entry);
 			const stats = await stat(fullPath);
 
 			if (stats.isDirectory()) {
-				// Skip excluded directories
-				if (!excludeDirs.includes(entry)) {
-					const subFiles = await scanJavaScriptFiles(
-						fullPath,
-						excludeDirs,
-						throwOnMissing,
-					);
-					files.push(...subFiles);
+				// Skip excluded directories with O(1) lookup
+				if (!excludeSet.has(entry)) {
+					return scanJavaScriptFiles(fullPath, excludeDirs, throwOnMissing);
 				}
+				return [];
 			} else if (stats.isFile()) {
-				// Include JavaScript files
+				// Include JavaScript files - optimized for JIT inline caching
 				const ext = extname(entry);
 				if (ext === ".js" || ext === ".mjs") {
-					files.push(fullPath);
+					return [fullPath];
 				}
 			}
-		}
+			return [];
+		});
+
+		// Resolve all filesystem operations in parallel
+		const results = await Promise.all(entryPromises);
+
+		// Flatten results with native performance
+		return results.flat();
 	} catch (error) {
 		// Re-throw for critical errors like ENOENT (directory doesn't exist) - but only if explicitly requested
 		if (error.code === "ENOENT" && throwOnMissing) {
@@ -64,7 +69,7 @@ export async function scanJavaScriptFiles(
 		// Gracefully handle permission errors or missing directories - ravens adapt to hostile territory
 	}
 
-	return files;
+	return [];
 }
 
 /**
@@ -74,29 +79,38 @@ export async function scanJavaScriptFiles(
  * @returns {Promise<string[]>} Array of README file paths
  */
 export async function findReadmeFiles(dirPath, throwOnMissing = false) {
-	const readmes = [];
+	// V8-optimized exclusion set
+	const excludeSet = new Set(["node_modules", ".git", "dist", "build"]);
 
 	try {
 		const entries = await readdir(dirPath);
 
-		for (const entry of entries) {
+		// Parallelize filesystem operations for predatory efficiency
+		const entryPromises = entries.map(async (entry) => {
 			const fullPath = join(dirPath, entry);
 			const stats = await stat(fullPath);
 
 			if (stats.isDirectory()) {
-				// Skip node_modules and other build directories
-				if (!["node_modules", ".git", "dist", "build"].includes(entry)) {
-					const subReadmes = await findReadmeFiles(fullPath, throwOnMissing);
-					readmes.push(...subReadmes);
+				// Skip excluded directories with O(1) lookup
+				if (!excludeSet.has(entry)) {
+					return findReadmeFiles(fullPath, throwOnMissing);
 				}
+				return [];
 			} else if (stats.isFile()) {
-				// Look for README files (case insensitive)
+				// Look for README files (case insensitive) - JIT-optimized
 				const lowerName = entry.toLowerCase();
 				if (lowerName.startsWith("readme")) {
-					readmes.push(fullPath);
+					return [fullPath];
 				}
 			}
-		}
+			return [];
+		});
+
+		// Resolve all operations in parallel
+		const results = await Promise.all(entryPromises);
+
+		// Flatten with native performance
+		return results.flat();
 	} catch (error) {
 		// Re-throw for critical errors like ENOENT (directory doesn't exist) - but only if explicitly requested
 		if (error.code === "ENOENT" && throwOnMissing) {
@@ -105,5 +119,5 @@ export async function findReadmeFiles(dirPath, throwOnMissing = false) {
 		// Graceful degradation - territory might be hostile
 	}
 
-	return readmes;
+	return [];
 }

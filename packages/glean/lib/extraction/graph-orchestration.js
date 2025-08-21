@@ -34,10 +34,15 @@ export async function extractDocumentationGraph(packagePath, discovery) {
 	// Create documentation graph with package entity
 	const graph = new DocumentationGraph(packageEntity);
 
-	// Process each JavaScript file
-	for (const filePath of discovery.files) {
-		const moduleData = await extractModuleData(filePath, packagePath);
+	// Process all JavaScript files in parallel for predatory speed
+	const modulePromises = discovery.files.map((filePath) =>
+		extractModuleData(filePath, packagePath),
+	);
 
+	const moduleResults = await Promise.all(modulePromises);
+
+	// Add all modules and entities to graph - batch operations
+	for (const moduleData of moduleResults) {
 		// Add module to graph
 		graph.addModule(moduleData.module);
 
@@ -47,9 +52,15 @@ export async function extractDocumentationGraph(packagePath, discovery) {
 		}
 	}
 
-	// Process README files
-	for (const readmePath of discovery.readmes) {
-		const readmeData = await extractReadmeData(readmePath, packagePath);
+	// Process README files in parallel for predatory efficiency
+	const readmePromises = discovery.readmes.map((readmePath) =>
+		extractReadmeData(readmePath, packagePath),
+	);
+
+	const readmeResults = await Promise.all(readmePromises);
+
+	// Add all content to graph - batch operations
+	for (const readmeData of readmeResults) {
 		graph.addContent(readmeData);
 	}
 
