@@ -103,22 +103,7 @@ export class JSDocDeprecatedTag extends JSDocTagBase {
 	validate() {
 		// Deprecated tag is always valid - it's a marker tag that can be standalone
 		this.isValidated = true;
-	}
-
-	/**
-	 * Get serializable data for this tag
-	 * @returns {Object} Serializable data
-	 */
-	getSerializableData() {
-		return {
-			...super.getSerializableData(),
-			reason: this.reason || "",
-			deprecatedSince: this.deprecatedSince || "",
-			hasMigrationGuidance: this.hasMigrationGuidance || false,
-		};
-	}
-
-	/**
+	}/**
 	 * Generate HTML representation
 	 * @returns {string} HTML output
 	 */

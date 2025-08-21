@@ -324,34 +324,6 @@ test("ClassEntity - JSDoc extends validation", () => {
 	strictEqual(classEntity.validationIssues[0].actualClass, "ParentClass");
 });
 
-test("ClassEntity - serialization", () => {
-	const classEntity = new ClassEntity("TestClass", {
-		file: "test.js",
-		line: 1,
-		column: 0,
-	});
-	const rawEntity = { name: "TestClass", line: 1 };
-	const content = `class TestClass extends BaseClass {
-  constructor() {}
-  method() {}
-}`;
-
-	classEntity.parseEntity(rawEntity, content);
-	classEntity.setModuleContext("testModule", ["named"]);
-
-	const serialized = classEntity.getSerializableData();
-
-	strictEqual(serialized.entityType, "class");
-	strictEqual(serialized.extendsClass, "BaseClass");
-	strictEqual(serialized.hasConstructor, true);
-	strictEqual(serialized.methods.length, 2);
-	strictEqual(serialized.properties.length, 0);
-	strictEqual(serialized.isAbstract, false);
-	strictEqual(serialized.signature, "class TestClass extends BaseClass");
-	strictEqual(serialized.moduleId, "testModule");
-	strictEqual(typeof serialized.summary, "object");
-});
-
 test("ClassEntity - HTML output", () => {
 	const classEntity = new ClassEntity("TestClass", {
 		file: "test.js",

@@ -381,28 +381,6 @@ export class PropertyEntity extends EntityBase {
 	}
 
 	/**
-	 * Get serializable data for JSON export
-	 * @returns {Object} Property-specific serializable data
-	 */
-	getSerializableData() {
-		const baseData = super.getSerializableData();
-		return {
-			...baseData,
-			isStatic: this.isStatic,
-			isPrivate: this.isPrivate,
-			isReadonly: this.isReadonly,
-			hasInitializer: this.hasInitializer,
-			initializer: this.initializer,
-			inferredType: this.inferredType,
-			accessModifier: this.accessModifier,
-			parentClass: this.parentClass,
-			signature: this.getSignature(),
-			summary: this.getSummary(),
-			validationIssues: this.validationIssues || [],
-		};
-	}
-
-	/**
 	 * Generate HTML representation
 	 * @returns {string} HTML string for property documentation
 	 */

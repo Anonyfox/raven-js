@@ -696,36 +696,6 @@ test("MethodEntity - summary generation", () => {
 	strictEqual(summary.parentClass, "TestClass");
 });
 
-test("MethodEntity - serialization", () => {
-	const method = new MethodEntity("calculate", {
-		file: "test.js",
-		line: 10,
-		column: 2,
-	});
-
-	const rawMethod = {
-		type: "method",
-		signature: "calculate(a, b)",
-		isStatic: false,
-		isPrivate: false,
-	};
-
-	method.parseEntity(rawMethod, "");
-	method.setModuleContext("testModule", ["named"]);
-	method.setParentClass("Calculator");
-
-	const serialized = method.getSerializableData();
-
-	strictEqual(serialized.entityType, "method");
-	strictEqual(serialized.methodType, "method");
-	strictEqual(serialized.isStatic, false);
-	strictEqual(serialized.isPrivate, false);
-	strictEqual(serialized.parentClass, "Calculator");
-	strictEqual(serialized.parameters.length, 2);
-	strictEqual(serialized.moduleId, "testModule");
-	strictEqual(typeof serialized.summary, "object");
-});
-
 test("MethodEntity - HTML output", () => {
 	const method = new MethodEntity("calculate", {
 		file: "test.js",

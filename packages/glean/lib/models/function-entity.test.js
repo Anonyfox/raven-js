@@ -305,35 +305,6 @@ test("FunctionEntity - signature generation", () => {
 	strictEqual(func.getSignature(), "(x, y) => {}");
 });
 
-test("FunctionEntity - serialization", () => {
-	const func = new FunctionEntity("testFunction", {
-		file: "test.js",
-		line: 1,
-		column: 0,
-	});
-	const rawEntity = { name: "testFunction", line: 1 };
-	const content = "async function testFunction(name, age = 25) {}";
-
-	func.parseEntity(rawEntity, content);
-	func.setModuleContext("testModule", ["named"]);
-	func.addJSDocTag(new JSDocParamTag("{string} name The name"));
-	func.addJSDocTag(new JSDocReturnsTag("{Promise<boolean>} Success status"));
-
-	const serialized = func.getSerializableData();
-
-	strictEqual(serialized.entityType, "function");
-	strictEqual(serialized.functionType, "async");
-	strictEqual(serialized.isAsync, true);
-	strictEqual(serialized.isGenerator, false);
-	strictEqual(serialized.isArrow, false);
-	strictEqual(serialized.parameters.length, 2);
-	strictEqual(
-		serialized.signature,
-		"async function testFunction(name, age = 25)",
-	);
-	strictEqual(typeof serialized.jsdoc, "object");
-});
-
 test("FunctionEntity - HTML output", () => {
 	const func = new FunctionEntity("testFunction", {
 		file: "test.js",

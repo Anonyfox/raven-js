@@ -412,27 +412,6 @@ export class ClassEntity extends EntityBase {
 	}
 
 	/**
-	 * Get serializable data for JSON export
-	 * @returns {Object} Class-specific serializable data
-	 */
-	getSerializableData() {
-		const baseData = super.getSerializableData();
-		return {
-			...baseData,
-			extendsClass: this.extendsClass,
-			hasConstructor: this.hasConstructor,
-			constructorLine: this.constructorLine,
-			methods: this.methods,
-			properties: this.properties,
-			isAbstract: this.isAbstract,
-			implementsInterfaces: this.implementsInterfaces,
-			signature: this.getSignature(),
-			summary: this.getSummary(),
-			validationIssues: this.validationIssues || [],
-		};
-	}
-
-	/**
 	 * Generate HTML representation
 	 * @returns {string} HTML string for class documentation
 	 */

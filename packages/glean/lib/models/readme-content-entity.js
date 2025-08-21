@@ -7,286 +7,80 @@
  */
 
 /**
- * @file README content entity model - predatory content intelligence.
+ * @file README content entity model for documentation generation.
  *
- * Ravens parse README and markdown documentation with surgical precision.
- * Extracts asset references, analyzes content structure, and provides
- * comprehensive documentation content management.
+ * Ravens feast on documentation. This entity represents README and markdown
+ * content, parsing structure, extracting metadata, and providing rich
+ * content integration with surgical precision.
  */
 
-import { html, mdExtractStructuredContent } from "@raven-js/beak";
+import { html } from "@raven-js/beak";
 
 /**
- * README content entity implementation
+ * README content entity representing markdown documentation
  *
- * **Represents:** README.md files and other markdown documentation
+ * Handles README files and markdown content throughout the documentation
+ * ecosystem. Provides parsing, validation, and output generation for
+ * content-rich documentation assets.
  *
- * **Core Functionality:**
- * - Markdown content parsing and storage
- * - Asset reference extraction (images, links)
- * - Content structure analysis (headings, sections)
- * - Directory context tracking
- * - Cross-reference detection
- *
- * **Serialization:** Clean JSON with parsed content structure
+ * @class ReadmeContentEntity
  */
 export class ReadmeContentEntity {
 	/**
-	 * Create README content entity instance
-	 * @param {string} id - Content identifier
-	 * @param {string} path - Relative path to README file
-	 * @param {string} directory - Directory containing the README
+	 * Create a README content entity instance
+	 * @param {string} id - Unique content identifier
+	 * @param {string} path - Content file path
+	 * @param {string} directory - Directory context
 	 */
 	constructor(id, path, directory) {
-		// Content identification
 		this.id = id;
 		this.path = path;
 		this.directory = directory;
-
-		// Content data
 		this.content = "";
-		this.rawContent = ""; // Original unchanged content
-
-		// Parsed content structure
-		/** @type {Array<{level: number, title: string, id: string, line: number}>} */
-		this.headings = [];
-		/** @type {Array<{type: string, url: string, text: string, line: number}>} */
-		this.links = [];
-		/** @type {Array<{src: string, alt: string, line: number}>} */
-		this.images = [];
-		/** @type {Array<{language: string, content: string, line: number}>} */
-		this.codeBlocks = [];
-
-		// Asset references
-		/** @type {string[]} */
-		this.assetIds = []; // Referenced asset IDs
-		/** @type {string[]} */
-		this.missingAssets = []; // Assets that couldn't be found
-
-		// Content metadata
 		this.wordCount = 0;
 		this.lineCount = 0;
+		/** @type {Array<any>} */
+		this.headings = [];
+		/** @type {Array<any>} */
+		this.links = [];
 		this.lastModified = null;
-		this.language = "en"; // Content language
-
-		// Cross-references
-		/** @type {string[]} */
-		this.entityReferences = []; // Referenced entity IDs from links
-		/** @type {string[]} */
-		this.moduleReferences = []; // Referenced module IDs
-
-		// Validation state
+		this.language = "markdown";
 		this.isValidated = false;
-		/** @type {Array<{type: string, message: string, line?: number}>} */
+		/** @type {Array<any>} */
 		this.validationIssues = [];
+		/** @type {Array<string>} */
+		this.assetIds = [];
+		/** @type {Array<string>} */
+		this.missingAssets = [];
 	}
 
 	/**
-	 * Get content identifier
+	 * Set content and parse metadata
+	 * @param {string} content - Raw content string
+	 */
+	setContent(content) {
+		this.content = content;
+		this.parseMetadata();
+	}
+
+	/**
+	 * Set metadata properties
+	 * @param {Object} metadata - Content metadata
+	 * @param {Date} [metadata.lastModified] - Last modification date
+	 * @param {string} [metadata.language] - Content language
+	 */
+	setMetadata(metadata) {
+		if (metadata.lastModified !== undefined)
+			this.lastModified = metadata.lastModified;
+		if (metadata.language !== undefined) this.language = metadata.language;
+	}
+
+	/**
+	 * Get unique content identifier
 	 * @returns {string} Content ID
 	 */
 	getId() {
 		return this.id;
-	}
-
-	/**
-	 * Set content and trigger parsing
-	 * @param {string} content - Markdown content
-	 */
-	setContent(content) {
-		this.content = content;
-		this.rawContent = content;
-		this.parseContent();
-	}
-
-	/**
-	 * Parse markdown content to extract structure and references
-	 * Uses beak's internal markdown parser for comprehensive, reliable parsing
-	 */
-	parseContent() {
-		if (this.content === null || this.content === undefined) {
-			return;
-		}
-
-		// Use beak's internal parser for comprehensive markdown analysis
-		const parsed = mdExtractStructuredContent(this.content);
-
-		// Update counts
-		this.lineCount = parsed.lineCount;
-		this.wordCount = parsed.wordCount;
-
-		// Use parsed structure directly
-		this.headings = parsed.headings;
-		this.links = parsed.links;
-		this.images = parsed.images;
-		this.codeBlocks = parsed.codeBlocks;
-	}
-
-	/**
-	 * Add asset reference
-	 * @param {string} assetId - Asset identifier
-	 */
-	addAssetReference(assetId) {
-		if (!this.assetIds.includes(assetId)) {
-			this.assetIds.push(assetId);
-		}
-	}
-
-	/**
-	 * Add missing asset reference
-	 * @param {string} assetPath - Path to missing asset
-	 */
-	addMissingAsset(assetPath) {
-		if (!this.missingAssets.includes(assetPath)) {
-			this.missingAssets.push(assetPath);
-		}
-	}
-
-	/**
-	 * Add entity reference
-	 * @param {string} entityId - Referenced entity ID
-	 */
-	addEntityReference(entityId) {
-		if (!this.entityReferences.includes(entityId)) {
-			this.entityReferences.push(entityId);
-		}
-	}
-
-	/**
-	 * Add module reference
-	 * @param {string} moduleId - Referenced module ID
-	 */
-	addModuleReference(moduleId) {
-		if (!this.moduleReferences.includes(moduleId)) {
-			this.moduleReferences.push(moduleId);
-		}
-	}
-
-	/**
-	 * Set content metadata
-	 * @param {{lastModified?: Date, language?: string}} metadata - Content metadata
-	 */
-	setMetadata(metadata) {
-		if (metadata.lastModified !== undefined) {
-			this.lastModified = metadata.lastModified;
-		}
-		if (metadata.language !== undefined) {
-			this.language = metadata.language;
-		}
-	}
-
-	/**
-	 * Get content statistics
-	 * @returns {{headingCount: number, linkCount: number, imageCount: number, codeBlockCount: number, assetCount: number}} Content statistics
-	 */
-	getStatistics() {
-		return {
-			headingCount: this.headings.length,
-			linkCount: this.links.length,
-			imageCount: this.images.length,
-			codeBlockCount: this.codeBlocks.length,
-			assetCount: this.assetIds.length,
-		};
-	}
-
-	/**
-	 * Get table of contents from headings
-	 * @returns {Array<{level: number, title: string, id: string}>} Table of contents
-	 */
-	getTableOfContents() {
-		return this.headings.map((heading) => ({
-			level: heading.level,
-			title: heading.title,
-			id: heading.id,
-		}));
-	}
-
-	/**
-	 * Validate content structure and references
-	 */
-	validate() {
-		this.validationIssues = [];
-
-		// Validate required fields
-		if (!this.id || this.id.length === 0) {
-			this.validationIssues.push({
-				type: "missing_id",
-				message: "Content ID is missing or empty",
-			});
-		}
-
-		if (!this.path || this.path.length === 0) {
-			this.validationIssues.push({
-				type: "missing_path",
-				message: "Content path is missing or empty",
-			});
-		}
-
-		// Validate content structure
-		this.validateContentStructure();
-
-		// Validate links and references
-		this.validateReferences();
-
-		this.isValidated = this.validationIssues.length === 0;
-	}
-
-	/**
-	 * Validate content structure
-	 */
-	validateContentStructure() {
-		// Check for proper heading hierarchy
-		let previousLevel = 0;
-		for (const heading of this.headings) {
-			if (heading.level > previousLevel + 1 && previousLevel > 0) {
-				this.validationIssues.push({
-					type: "heading_hierarchy",
-					message: `Heading level jump from H${previousLevel} to H${heading.level} at line ${heading.line}`,
-					line: heading.line,
-				});
-			}
-			previousLevel = heading.level;
-		}
-
-		// Check for duplicate heading IDs
-		const headingIds = this.headings.map((h) => h.id);
-		const duplicates = headingIds.filter(
-			(id, index) => headingIds.indexOf(id) !== index,
-		);
-		if (duplicates.length > 0) {
-			this.validationIssues.push({
-				type: "duplicate_heading_ids",
-				message: `Duplicate heading IDs found: ${duplicates.join(", ")}`,
-			});
-		}
-	}
-
-	/**
-	 * Validate links and references
-	 */
-	validateReferences() {
-		// Check for broken internal anchor links
-		const anchorLinks = this.links.filter((link) => link.type === "anchor");
-		const headingIds = this.headings.map((h) => h.id);
-
-		for (const link of anchorLinks) {
-			const anchorId = link.url.substring(1); // Remove #
-			if (!headingIds.includes(anchorId)) {
-				this.validationIssues.push({
-					type: "broken_anchor",
-					message: `Broken anchor link '${link.url}' at line ${link.line}`,
-					line: link.line,
-				});
-			}
-		}
-
-		// Report missing assets
-		for (const missingAsset of this.missingAssets) {
-			this.validationIssues.push({
-				type: "missing_asset",
-				message: `Referenced asset not found: ${missingAsset}`,
-			});
-		}
 	}
 
 	/**
@@ -298,41 +92,140 @@ export class ReadmeContentEntity {
 	}
 
 	/**
-	 * Get serializable data for JSON export
-	 * @returns {Object} Content-specific serializable data
+	 * Parse content metadata and structure
+	 * @private
 	 */
-	getSerializableData() {
+	parseMetadata() {
+		this.lineCount = this.content.split("\n").length;
+		this.wordCount = this.content
+			.split(/\s+/)
+			.filter((word) => word.length > 0).length;
+		this.extractHeadings();
+		this.extractLinks();
+	}
+
+	/**
+	 * Extract headings from content
+	 * @private
+	 */
+	extractHeadings() {
+		this.headings = [];
+		const lines = this.content.split("\n");
+		for (const line of lines) {
+			const match = line.match(/^(#{1,6})\s+(.+)$/);
+			if (match) {
+				this.headings.push({
+					level: match[1].length,
+					text: match[2].trim(),
+					anchor: match[2].toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+				});
+			}
+		}
+	}
+
+	/**
+	 * Extract links from content
+	 * @private
+	 */
+	extractLinks() {
+		this.links = [];
+		const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+		let match = linkRegex.exec(this.content);
+		while (match !== null) {
+			this.links.push({
+				text: match[1],
+				url: match[2],
+				isExternal: match[2].startsWith("http"),
+			});
+			match = linkRegex.exec(this.content);
+		}
+	}
+
+	/**
+	 * Get table of contents from headings
+	 * @returns {Array<Object>} Table of contents items
+	 */
+	getTableOfContents() {
+		return this.headings.map((heading) => ({
+			level: heading.level,
+			text: heading.text,
+			anchor: heading.anchor,
+		}));
+	}
+
+	/**
+	 * Get content statistics
+	 * @returns {Object} Content statistics
+	 */
+	getStatistics() {
 		return {
 			id: this.id,
 			path: this.path,
 			directory: this.directory,
-			content: this.content,
-			headings: this.headings,
-			links: this.links,
-			images: this.images,
-			codeBlocks: this.codeBlocks,
-			assetIds: this.assetIds,
-			missingAssets: this.missingAssets,
-			entityReferences: this.entityReferences,
-			moduleReferences: this.moduleReferences,
 			wordCount: this.wordCount,
 			lineCount: this.lineCount,
-			lastModified: this.lastModified,
-			language: this.language,
-			statistics: this.getStatistics(),
-			validationIssues: this.validationIssues,
+			headingCount: this.headings.length,
+			linkCount: this.links.length,
+			imageCount: this.links.filter((link) =>
+				link.url?.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i),
+			).length,
+			codeBlockCount: (this.content.match(/```/g) || []).length / 2,
+			externalLinkCount: this.links.filter((link) => link.isExternal).length,
+			isValidated: this.isValidated,
+			issueCount: this.validationIssues.length,
 		};
 	}
 
 	/**
-	 * Serialize content to JSON format
-	 * @returns {Object} JSON representation
+	 * Validate content structure and accessibility
+	 * @returns {boolean} True if content is valid
 	 */
-	toJSON() {
-		return {
-			__type: "readme-content",
-			__data: this.getSerializableData(),
-		};
+	validate() {
+		this.validationIssues = [];
+
+		// Check required properties
+		if (!this.id?.trim()) {
+			this.validationIssues.push({
+				type: "missing_id",
+				message: "Content must have a valid ID",
+			});
+		}
+
+		if (!this.path?.trim()) {
+			this.validationIssues.push({
+				type: "missing_path",
+				message: "Content must have a valid path",
+			});
+		}
+
+		// Content quality checks
+		if (this.content.length === 0) {
+			this.validationIssues.push({
+				type: "empty_content",
+				message: "Content appears to be empty",
+			});
+		}
+
+		if (this.wordCount < 10) {
+			this.validationIssues.push({
+				type: "minimal_content",
+				message: "Content appears to be minimal (less than 10 words)",
+			});
+		}
+
+		// Check for basic README structure
+		if (
+			this.path.toLowerCase().includes("readme") &&
+			this.headings.length === 0
+		) {
+			this.validationIssues.push({
+				type: "missing_structure",
+				message: "README file lacks heading structure",
+			});
+		}
+
+		this.isValidated = this.validationIssues.length === 0;
+		return this.isValidated;
 	}
 
 	/**
@@ -340,8 +233,8 @@ export class ReadmeContentEntity {
 	 * @returns {string} HTML string for content documentation
 	 */
 	toHTML() {
-		const stats = this.getStatistics();
-		const toc = this.getTableOfContents();
+		const stats = /** @type {any} */ (this.getStatistics());
+		const toc = /** @type {any[]} */ (this.getTableOfContents());
 
 		return html`
 			<div class="readme-content-entity">
@@ -369,7 +262,7 @@ export class ReadmeContentEntity {
 								.map(
 									(item) => html`
 								<li class="toc-level-${item.level}">
-									<a href="#${item.id}">${item.title}</a>
+									<a href="#${item.anchor}">${item.text}</a>
 								</li>
 							`,
 								)
@@ -414,7 +307,7 @@ export class ReadmeContentEntity {
 	 * @returns {string} Markdown string for content documentation
 	 */
 	toMarkdown() {
-		const stats = this.getStatistics();
+		const stats = /** @type {any} */ (this.getStatistics());
 
 		let output = `## ${this.path}\n\n`;
 		output += `**Directory:** \`${this.directory}\`\n`;
@@ -427,12 +320,12 @@ export class ReadmeContentEntity {
 		output += `- Images: ${stats.imageCount}\n`;
 		output += `- Code Blocks: ${stats.codeBlockCount}\n\n`;
 
-		const toc = this.getTableOfContents();
+		const toc = /** @type {any[]} */ (this.getTableOfContents());
 		if (toc.length > 0) {
 			output += `**Table of Contents:**\n`;
 			for (const item of toc) {
 				const indent = "  ".repeat(item.level - 1);
-				output += `${indent}- [${item.title}](#${item.id})\n`;
+				output += `${indent}- [${item.text}](#${item.anchor})\n`;
 			}
 			output += `\n`;
 		}

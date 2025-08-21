@@ -123,23 +123,7 @@ export class JSDocTypedefTag extends JSDocTagBase {
 	 */
 	validate() {
 		this.isValidated = Boolean(this.name && this.name.length > 0);
-	}
-
-	/**
-	 * Get serializable data for JSON export
-	 * @returns {Object} Typedef-specific serializable data
-	 */
-	getSerializableData() {
-		return {
-			tagType: this.tagType,
-			rawContent: this.rawContent,
-			baseType: this.baseType,
-			name: this.name,
-			description: this.description,
-		};
-	}
-
-	/**
+	}/**
 	 * Generate HTML representation
 	 * @returns {string} HTML string for typedef documentation
 	 */

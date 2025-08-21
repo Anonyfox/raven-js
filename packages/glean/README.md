@@ -14,14 +14,17 @@ This is a **RavenJS Activity** - a focused CLI tool you run with your projects t
 ## Quick Start
 
 ```bash
-# Run on current directory
-npx @raven-js/glean
+# Analyze documentation quality
+npx @raven-js/glean analyze
 
 # Analyze specific directory
-npx @raven-js/glean ./src
+npx @raven-js/glean analyze ./src
+
+# Generate documentation site
+npx @raven-js/glean build ./src ./docs
 
 # Enable verbose output
-npx @raven-js/glean --verbose
+npx @raven-js/glean analyze --verbose
 ```
 
 ## Features
@@ -35,20 +38,18 @@ npx @raven-js/glean --verbose
 
 ## Usage
 
-Glean analyzes your codebase and processes JSDoc comments to generate comprehensive documentation. It validates syntax, checks for completeness, and outputs beautiful docs in your preferred format.
+Glean provides two core commands: **analyze** for validation and **build** for documentation generation. Both work directly with your codebase using an in-memory class tree for maximum performance.
 
 ```bash
-# Basic usage
-npx @raven-js/glean
+# Analyze documentation quality
+npx @raven-js/glean analyze ./src
 
-# Specify target directory
-npx @raven-js/glean ./packages/my-package
+# Build documentation site
+npx @raven-js/glean build ./src ./docs
 
 # Enable detailed logging
-npx @raven-js/glean --verbose
-
-# Check validation only (no output generation)
-npx @raven-js/glean --validate-only
+npx @raven-js/glean analyze --verbose
+npx @raven-js/glean build ./src ./docs --verbose
 ```
 
 ## Status

@@ -113,22 +113,7 @@ export class JSDocThrowsTag extends JSDocTagBase {
 			(this.errorType && this.errorType.length > 0) ||
 				(this.description && this.description.length > 0),
 		);
-	}
-
-	/**
-	 * Get serializable data for JSON export
-	 * @returns {Object} Throws-specific serializable data
-	 */
-	getSerializableData() {
-		return {
-			tagType: this.tagType,
-			rawContent: this.rawContent,
-			errorType: this.errorType,
-			description: this.description,
-		};
-	}
-
-	/**
+	}/**
 	 * Generate HTML representation
 	 * @returns {string} HTML string for throws documentation
 	 */

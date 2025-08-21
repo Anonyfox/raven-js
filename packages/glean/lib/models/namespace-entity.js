@@ -270,27 +270,6 @@ export class NamespaceEntity extends EntityBase {
 	}
 
 	/**
-	 * Get serializable data for JSON export
-	 * @returns {Object} Namespace-specific serializable data
-	 */
-	getSerializableData() {
-		const baseData = super.getSerializableData();
-		return {
-			...baseData,
-			description: this.description,
-			fullName: this.fullName,
-			parentNamespace: this.parentNamespace,
-			nestedLevel: this.nestedLevel,
-			isModuleNamespace: this.isModuleNamespace,
-			moduleName: this.moduleName,
-			members: this.members,
-			signature: this.getSignature(),
-			summary: this.getSummary(),
-			validationIssues: this.validationIssues || [],
-		};
-	}
-
-	/**
 	 * Generate HTML representation
 	 * @returns {string} HTML string for namespace documentation
 	 */

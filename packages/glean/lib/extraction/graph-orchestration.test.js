@@ -152,7 +152,7 @@ Utility functions and classes for processing data.
 					local: "VERSION",
 				},
 			],
-			isDefault: false,
+			type: "named",
 		});
 
 		// Verify entities

@@ -126,21 +126,7 @@ export class JSDocEnumTag extends JSDocTagBase {
 	validate() {
 		// Enum tag should have a type specified
 		this.isValidated = Boolean(this.type?.trim());
-	}
-
-	/**
-	 * Get serializable data for this tag
-	 * @returns {Object} Serializable data
-	 */
-	getSerializableData() {
-		return {
-			...super.getSerializableData(),
-			type: this.type || "",
-			description: this.description || "",
-		};
-	}
-
-	/**
+	}/**
 	 * Generate HTML representation
 	 * @returns {string} HTML output
 	 */

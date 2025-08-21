@@ -87,7 +87,7 @@ export default TestClass;
 					local: "BaseClass",
 				},
 			],
-			isDefault: false,
+			type: "named",
 		});
 		deepStrictEqual(complexResult.module.imports[1], {
 			source: "./utils",
@@ -98,7 +98,7 @@ export default TestClass;
 					local: "utils",
 				},
 			],
-			isDefault: false,
+			type: "named",
 		});
 		deepStrictEqual(complexResult.module.imports[2], {
 			source: "./default",
@@ -109,7 +109,7 @@ export default TestClass;
 					local: "defaultExport",
 				},
 			],
-			isDefault: false,
+			type: "named",
 		});
 
 		// Verify entities (should find 3: processInput, TestClass, CONSTANT_VALUE)

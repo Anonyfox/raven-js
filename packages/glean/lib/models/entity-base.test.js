@@ -140,41 +140,6 @@ test("EntityBase - reference management", () => {
 	deepStrictEqual(entity.referencedBy, ["module3/function2", "module4/class2"]);
 });
 
-test("EntityBase - serialization", () => {
-	const location = { file: "test.js", line: 42, column: 5 };
-	const entity = new TestEntity("testFunction", location);
-
-	entity.setModuleContext("testModule", ["named"]);
-	entity.setSource("function testFunction() {}");
-	entity.addReference("module1/function1");
-	entity.addReferencedBy("module2/class1");
-
-	// Add JSDoc tags
-	const paramTag = new JSDocParamTag("{string} name Parameter description");
-	entity.addJSDocTag(paramTag);
-
-	// Test serialization
-	const serialized = entity.getSerializableData();
-
-	strictEqual(serialized.entityType, "test");
-	strictEqual(serialized.name, "testFunction");
-	deepStrictEqual(serialized.location, location);
-	strictEqual(serialized.moduleId, "testModule");
-	deepStrictEqual(serialized.exports, ["named"]);
-	strictEqual(serialized.source, "function testFunction() {}");
-	deepStrictEqual(serialized.references, ["module1/function1"]);
-	deepStrictEqual(serialized.referencedBy, ["module2/class1"]);
-
-	// Verify JSDoc serialization
-	strictEqual(typeof serialized.jsdoc, "object");
-	strictEqual(serialized.jsdoc.param.__type, "param");
-
-	// Test JSON serialization
-	const json = entity.toJSON();
-	strictEqual(json.__type, "test");
-	deepStrictEqual(json.__data, serialized);
-});
-
 test("EntityBase - HTML output", () => {
 	const entity = new TestEntity("testFunction", {
 		file: "test.js",

@@ -90,22 +90,7 @@ export class JSDocReturnsTag extends JSDocTagBase {
 			(this.type && this.type.length > 0) ||
 				(this.description && this.description.length > 0),
 		);
-	}
-
-	/**
-	 * Get serializable data for JSON export
-	 * @returns {Object} Returns-specific serializable data
-	 */
-	getSerializableData() {
-		return {
-			tagType: this.tagType,
-			rawContent: this.rawContent,
-			type: this.type,
-			description: this.description,
-		};
-	}
-
-	/**
+	}/**
 	 * Generate HTML representation
 	 * @returns {string} HTML string for return value documentation
 	 */

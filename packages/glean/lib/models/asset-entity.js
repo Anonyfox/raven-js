@@ -7,276 +7,84 @@
  */
 
 /**
- * @file Asset entity model - predatory asset management.
+ * @file Asset entity model for documentation generation.
  *
- * Ravens collect and encode documentation assets with surgical precision.
- * Handles images, files, and media referenced in documentation with
- * base64 encoding for self-contained documentation graphs.
+ * Ravens track every resource in the ecosystem. This entity represents
+ * static assets like images, files, and other resources referenced in
+ * documentation with zero-waste precision.
  */
 
 import { html } from "@raven-js/beak";
 
 /**
- * Asset entity implementation
+ * Asset entity representing static files and resources
  *
- * **Represents:** Files referenced in documentation (images, documents, media)
+ * Tracks images, documents, and other assets referenced in documentation.
+ * Provides metadata extraction, validation, and output generation for
+ * assets across the documentation ecosystem.
  *
- * **Core Functionality:**
- * - Asset file path tracking
- * - Base64 content encoding for portability
- * - MIME type detection and validation
- * - Asset metadata (size, dimensions for images)
- * - Reference tracking from documentation
- *
- * **Serialization:** Self-contained base64 encoded assets in JSON
+ * @class AssetEntity
  */
 export class AssetEntity {
 	/**
-	 * Create asset entity instance
-	 * @param {string} id - Asset identifier
+	 * Create an asset entity instance
+	 * @param {string} id - Unique asset identifier
 	 * @param {string} path - Asset file path
+	 * @param {string} [originalPath] - Original path before processing
 	 */
-	constructor(id, path) {
-		// Asset identification
+	constructor(id, path, originalPath = path) {
 		this.id = id;
 		this.path = path;
-		this.originalPath = path; // Original path before any processing
-
-		// Asset content
-		this.content = ""; // Base64 encoded content
-		this.mimeType = "";
-		this.encoding = "base64";
-
-		// Asset metadata
-		this.fileSize = 0;
+		this.originalPath = originalPath;
+		this.directory = "";
+		this.size = 0;
+		this.type = "";
+		this.encoding = "";
 		this.lastModified = null;
-		this.checksum = ""; // For content integrity
-
-		// Image-specific metadata (if applicable)
+		this.checksum = "";
+		this.isValidated = false;
+		/** @type {Array<Object>} */
+		this.validationIssues = [];
+		this.mimeType = "";
 		this.width = null;
 		this.height = null;
-		this.format = null;
-
-		// Reference tracking
-		/** @type {string[]} */
-		this.referencedBy = []; // Entity IDs that reference this asset
-		/** @type {string[]} */
-		this.contexts = []; // Context where asset is used (README, JSDoc, etc.)
-
-		// Validation state
-		this.isValidated = false;
-		this.exists = false;
-		/** @type {Array<{type: string, message: string}>} */
-		this.validationIssues = [];
-	}
-
-	/**
-	 * Get asset identifier
-	 * @returns {string} Asset ID
-	 */
-	getId() {
-		return this.id;
-	}
-
-	/**
-	 * Set asset content with base64 encoding
-	 * @param {Buffer|string} content - Raw content or base64 string
-	 * @param {string} mimeType - MIME type of content
-	 */
-	setContent(content, mimeType) {
-		if (Buffer.isBuffer(content)) {
-			this.content = content.toString("base64");
-		} else {
-			this.content = content;
-		}
-		this.mimeType = mimeType;
-		this.exists = true;
+		this.content = null;
+		/** @type {Array<string>} */
+		this.contexts = [];
 	}
 
 	/**
 	 * Set asset metadata
-	 * @param {{fileSize?: number, lastModified?: Date, checksum?: string}} metadata - Asset metadata
+	 * @param {Object} metadata - Asset metadata
+	 * @param {number} [metadata.size] - File size in bytes
+	 * @param {string} [metadata.type] - MIME type
+	 * @param {string} [metadata.encoding] - File encoding
+	 * @param {Date} [metadata.lastModified] - Last modification date
+	 * @param {string} [metadata.checksum] - File checksum
 	 */
 	setMetadata(metadata) {
-		if (metadata.fileSize !== undefined) {
-			this.fileSize = metadata.fileSize;
-		}
-		if (metadata.lastModified !== undefined) {
+		if (metadata.size !== undefined) this.size = metadata.size;
+		if (metadata.type !== undefined) this.type = metadata.type;
+		if (metadata.encoding !== undefined) this.encoding = metadata.encoding;
+		if (metadata.lastModified !== undefined)
 			this.lastModified = metadata.lastModified;
-		}
-		if (metadata.checksum !== undefined) {
-			this.checksum = metadata.checksum;
-		}
+		if (metadata.checksum !== undefined) this.checksum = metadata.checksum;
 	}
 
 	/**
-	 * Set image-specific metadata
-	 * @param {{width?: number, height?: number, format?: string}} imageData - Image metadata
+	 * Set directory context
+	 * @param {string} directory - Directory path
 	 */
-	setImageMetadata(imageData) {
-		if (imageData.width !== undefined) {
-			this.width = imageData.width;
-		}
-		if (imageData.height !== undefined) {
-			this.height = imageData.height;
-		}
-		if (imageData.format !== undefined) {
-			this.format = imageData.format;
-		}
+	setDirectory(directory) {
+		this.directory = directory;
 	}
 
 	/**
-	 * Add reference to this asset
-	 * @param {string} entityId - Entity that references this asset
-	 * @param {string} context - Context of reference (README, JSDoc, etc.)
+	 * Get unique asset identifier
+	 * @returns {string} Asset ID
 	 */
-	addReference(entityId, context = "unknown") {
-		if (!this.referencedBy.includes(entityId)) {
-			this.referencedBy.push(entityId);
-		}
-		if (!this.contexts.includes(context)) {
-			this.contexts.push(context);
-		}
-	}
-
-	/**
-	 * Get asset file extension
-	 * @returns {string} File extension (without dot)
-	 */
-	getFileExtension() {
-		const match = this.path.match(/\.([^.]+)$/);
-		return match ? match[1].toLowerCase() : "";
-	}
-
-	/**
-	 * Check if asset is an image
-	 * @returns {boolean} True if asset is an image
-	 */
-	isImage() {
-		const imageTypes = [
-			"jpg",
-			"jpeg",
-			"png",
-			"gif",
-			"webp",
-			"svg",
-			"bmp",
-			"ico",
-		];
-		return imageTypes.includes(this.getFileExtension());
-	}
-
-	/**
-	 * Check if asset is a document
-	 * @returns {boolean} True if asset is a document
-	 */
-	isDocument() {
-		const docTypes = ["pdf", "doc", "docx", "txt", "md", "rtf"];
-		return docTypes.includes(this.getFileExtension());
-	}
-
-	/**
-	 * Get data URL for embedding
-	 * @returns {string} Data URL for direct embedding in HTML
-	 */
-	getDataURL() {
-		if (!this.content || !this.mimeType) {
-			return "";
-		}
-		return `data:${this.mimeType};base64,${this.content}`;
-	}
-
-	/**
-	 * Get human-readable file size
-	 * @returns {string} Formatted file size
-	 */
-	getFormattedSize() {
-		if (this.fileSize === 0) return "0 B";
-
-		const units = ["B", "KB", "MB", "GB"];
-		let size = this.fileSize;
-		let unitIndex = 0;
-
-		while (size >= 1024 && unitIndex < units.length - 1) {
-			size /= 1024;
-			unitIndex++;
-		}
-
-		return `${size.toFixed(1)} ${units[unitIndex]}`;
-	}
-
-	/**
-	 * Validate asset configuration
-	 */
-	validate() {
-		this.validationIssues = [];
-
-		// Validate required fields
-		if (!this.id || this.id.length === 0) {
-			this.validationIssues.push({
-				type: "missing_id",
-				message: "Asset ID is missing or empty",
-			});
-		}
-
-		if (!this.path || this.path.length === 0) {
-			this.validationIssues.push({
-				type: "missing_path",
-				message: "Asset path is missing or empty",
-			});
-		}
-
-		// Validate content if asset should exist
-		if (this.exists && (!this.content || this.content.length === 0)) {
-			this.validationIssues.push({
-				type: "missing_content",
-				message: "Asset marked as existing but has no content",
-			});
-		}
-
-		// Validate MIME type consistency
-		if (this.mimeType && this.exists) {
-			this.validateMimeType();
-		}
-
-		// Validate image metadata consistency
-		if (this.isImage() && this.width !== null && this.height !== null) {
-			if (this.width <= 0 || this.height <= 0) {
-				this.validationIssues.push({
-					type: "invalid_dimensions",
-					message: "Image dimensions must be positive numbers",
-				});
-			}
-		}
-
-		this.isValidated = this.validationIssues.length === 0;
-	}
-
-	/**
-	 * Validate MIME type consistency with file extension
-	 */
-	validateMimeType() {
-		const extension = this.getFileExtension();
-		/** @type {Record<string, string>} */
-		const expectedMimeTypes = {
-			jpg: "image/jpeg",
-			jpeg: "image/jpeg",
-			png: "image/png",
-			gif: "image/gif",
-			webp: "image/webp",
-			svg: "image/svg+xml",
-			pdf: "application/pdf",
-			txt: "text/plain",
-			md: "text/markdown",
-		};
-
-		const expected = expectedMimeTypes[extension];
-		if (expected && this.mimeType !== expected) {
-			this.validationIssues.push({
-				type: "mime_type_mismatch",
-				message: `MIME type '${this.mimeType}' doesn't match file extension '${extension}' (expected '${expected}')`,
-			});
-		}
+	getId() {
+		return this.id;
 	}
 
 	/**
@@ -288,52 +96,119 @@ export class AssetEntity {
 	}
 
 	/**
+	 * Validate asset integrity and accessibility
+	 * @returns {boolean} True if asset is valid
+	 */
+	validate() {
+		this.validationIssues = [];
+
+		// Check required properties
+		if (!this.id?.trim()) {
+			this.validationIssues.push({
+				type: "missing_id",
+				message: "Asset must have a valid ID",
+			});
+		}
+
+		if (!this.path?.trim()) {
+			this.validationIssues.push({
+				type: "missing_path",
+				message: "Asset must have a valid path",
+			});
+		}
+
+		// Validate file type
+		if (this.type && !this.isValidMimeType(this.type)) {
+			this.validationIssues.push({
+				type: "invalid_mime_type",
+				message: `Invalid MIME type: ${this.type}`,
+			});
+		}
+
+		// Check file size constraints
+		if (this.size < 0) {
+			this.validationIssues.push({
+				type: "invalid_size",
+				message: "Asset size cannot be negative",
+			});
+		}
+
+		// Large file warning (>10MB)
+		if (this.size > 10 * 1024 * 1024) {
+			this.validationIssues.push({
+				type: "large_file_warning",
+				message: "Asset is larger than 10MB - consider optimization",
+			});
+		}
+
+		this.isValidated = this.validationIssues.length === 0;
+		return this.isValidated;
+	}
+
+	/**
+	 * Check if MIME type is valid
+	 * @param {string} mimeType - MIME type to validate
+	 * @returns {boolean} True if valid
+	 * @private
+	 */
+	isValidMimeType(mimeType) {
+		// Basic MIME type validation
+		return /^[a-zA-Z0-9][a-zA-Z0-9!#$&\-^_]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&\-^_.]*$/i.test(
+			mimeType,
+		);
+	}
+
+	/**
 	 * Get asset statistics
-	 * @returns {{referenceCount: number, contextCount: number, sizeFormatted: string}} Asset statistics
+	 * @returns {Object} Asset statistics
 	 */
 	getStatistics() {
 		return {
-			referenceCount: this.referencedBy.length,
-			contextCount: this.contexts.length,
-			sizeFormatted: this.getFormattedSize(),
-		};
-	}
-
-	/**
-	 * Get serializable data for JSON export
-	 * @returns {Object} Asset-specific serializable data
-	 */
-	getSerializableData() {
-		return {
 			id: this.id,
 			path: this.path,
-			originalPath: this.originalPath,
-			content: this.content,
-			mimeType: this.mimeType,
+			directory: this.directory,
+			size: this.size,
+			sizeFormatted: this.formatSize(this.size),
+			type: this.type,
 			encoding: this.encoding,
-			fileSize: this.fileSize,
-			lastModified: this.lastModified,
-			checksum: this.checksum,
-			width: this.width,
-			height: this.height,
-			format: this.format,
-			referencedBy: this.referencedBy,
-			contexts: this.contexts,
-			exists: this.exists,
-			statistics: this.getStatistics(),
-			validationIssues: this.validationIssues,
+			hasChecksum: Boolean(this.checksum),
+			isValidated: this.isValidated,
+			issueCount: this.validationIssues.length,
+			referenceCount: this.contexts.length,
+			contextCount: this.contexts.length,
 		};
 	}
 
 	/**
-	 * Serialize asset to JSON format
-	 * @returns {Object} JSON representation
+	 * Format file size for display
+	 * @param {number} bytes - Size in bytes
+	 * @returns {string} Formatted size
 	 */
-	toJSON() {
-		return {
-			__type: "asset",
-			__data: this.getSerializableData(),
-		};
+	formatSize(bytes) {
+		if (bytes === 0) return "0 B";
+		const k = 1024;
+		const sizes = ["B", "KB", "MB", "GB"];
+		const i = Math.floor(Math.log(bytes) / Math.log(k));
+		return `${Math.round((bytes / k ** i) * 100) / 100} ${sizes[i]}`;
+	}
+
+	/**
+	 * Check if asset is an image
+	 * @returns {boolean} True if asset is an image
+	 */
+	isImage() {
+		return this.mimeType?.startsWith("image/") || false;
+	}
+
+	/**
+	 * Get data URL for inline embedding
+	 * @returns {string} Data URL
+	 */
+	getDataURL() {
+		if (this.content && this.mimeType) {
+			return `data:${this.mimeType};base64,${this.content}`;
+		}
+		return "";
 	}
 
 	/**
@@ -341,7 +216,7 @@ export class AssetEntity {
 	 * @returns {string} HTML string for asset information
 	 */
 	toHTML() {
-		const stats = this.getStatistics();
+		const stats = /** @type {any} */ (this.getStatistics());
 
 		return html`
 			<div class="asset-entity" data-type="${this.isImage() ? "image" : "file"}">
@@ -386,7 +261,7 @@ export class AssetEntity {
 	 * @returns {string} Markdown string for asset information
 	 */
 	toMarkdown() {
-		const stats = this.getStatistics();
+		const stats = /** @type {any} */ (this.getStatistics());
 
 		let output = `### ${this.path}\n\n`;
 		output += `**Type:** ${this.mimeType || "unknown"}\n`;

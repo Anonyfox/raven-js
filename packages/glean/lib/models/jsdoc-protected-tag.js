@@ -87,20 +87,7 @@ export class JSDocProtectedTag extends JSDocTagBase {
 	validate() {
 		// Protected tag is always valid - it's a marker tag
 		this.isValidated = true;
-	}
-
-	/**
-	 * Get serializable data for this tag
-	 * @returns {Object} Serializable data
-	 */
-	getSerializableData() {
-		return {
-			...super.getSerializableData(),
-			description: this.description || "",
-		};
-	}
-
-	/**
+	}/**
 	 * Generate HTML representation
 	 * @returns {string} HTML output
 	 */

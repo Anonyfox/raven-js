@@ -49,13 +49,21 @@ export async function generateIndexPage(graph, outputDir) {
 				<nav class="navigation">
 					<h2>Modules</h2>
 					<ul class="module-list">
-						${Object.keys(graph.modules)
-							.map(
-								(moduleId) => html`
+																										${(
+																											graph.modules instanceof
+																											Map
+																												? Array.from(
+																														graph.modules.keys(),
+																													)
+																												: Object.keys(
+																														graph.modules,
+																													)
+																										).map(
+																											(moduleId) => html`
 									<li><a href="./modules/${moduleId}.html">${moduleId}</a></li>
 								`,
-							)
-							.join("")}
+																										)}
+																					.join("")}
 					</ul>
 				</nav>
 
@@ -64,15 +72,15 @@ export async function generateIndexPage(graph, outputDir) {
 						<h2>Package Overview</h2>
 						<div class="stats">
 							<div class="stat">
-								<span class="stat-number">${Object.keys(graph.modules).length}</span>
+																						<span class="stat-number">${graph.modules instanceof Map ? graph.modules.size : Object.keys(graph.modules).length}</span>
 								<span class="stat-label">Modules</span>
 							</div>
 							<div class="stat">
-								<span class="stat-number">${Object.keys(graph.entities).length}</span>
+																						<span class="stat-number">${graph.entities instanceof Map ? graph.entities.size : Object.keys(graph.entities).length}</span>
 								<span class="stat-label">Entities</span>
 							</div>
 							<div class="stat">
-								<span class="stat-number">${Object.keys(graph.readmes).length}</span>
+																						<span class="stat-number">${graph.content instanceof Map ? graph.content.size : graph.content ? Object.keys(graph.content).length : 0}</span>
 								<span class="stat-label">READMEs</span>
 							</div>
 						</div>

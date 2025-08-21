@@ -189,43 +189,6 @@ export class PackageEntity {
 	}
 
 	/**
-	 * Get serializable data for JSON export
-	 * @returns {Object} Package-specific serializable data
-	 */
-	getSerializableData() {
-		return {
-			name: this.name,
-			version: this.version,
-			description: this.description,
-			main: this.main,
-			module: this.module,
-			exports: this.exports,
-			keywords: this.keywords,
-			author: this.author,
-			license: this.license,
-			homepage: this.homepage,
-			repository: this.repository,
-			bugs: this.bugs,
-			dependencies: this.dependencies,
-			devDependencies: this.devDependencies,
-			peerDependencies: this.peerDependencies,
-			entryPoints: this.getEntryPoints(),
-			validationIssues: this.validationIssues,
-		};
-	}
-
-	/**
-	 * Serialize package to JSON format
-	 * @returns {Object} JSON representation
-	 */
-	toJSON() {
-		return {
-			__type: "package",
-			__data: this.getSerializableData(),
-		};
-	}
-
-	/**
 	 * Generate HTML representation
 	 * @returns {string} HTML string for package information
 	 */

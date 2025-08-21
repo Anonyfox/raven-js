@@ -41,7 +41,7 @@ export async function extractModuleData(filePath, packagePath) {
 
 	// Set module metadata
 	module.setMetadata({
-		fileSize: Buffer.byteLength(content, "utf8"),
+		size: Buffer.byteLength(content, "utf8"),
 		lineCount: lines.length,
 		lastModified: new Date(),
 	});
@@ -54,15 +54,15 @@ export async function extractModuleData(filePath, packagePath) {
 
 	const imports = extractModuleImports(content);
 	for (const imp of imports) {
-		module.addImport(
-			imp.path,
-			imp.names.map((name) => ({
+		module.addImport({
+			type: imp.type === "default" ? "default" : "named",
+			source: imp.path,
+			specifiers: imp.names.map((name) => ({
 				type: "named",
 				imported: name,
 				local: name,
 			})),
-			imp.type === "default",
-		);
+		});
 	}
 
 	// Extract entities from the file

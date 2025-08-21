@@ -580,36 +580,6 @@ test("PropertyEntity - summary generation", () => {
 	strictEqual(summary.parentClass, "TestClass");
 });
 
-test("PropertyEntity - serialization", () => {
-	const property = new PropertyEntity("name", {
-		file: "test.js",
-		line: 5,
-		column: 2,
-	});
-
-	const rawProperty = {
-		signature: 'name = "John";',
-		isStatic: false,
-		isPrivate: false,
-	};
-
-	property.parseEntity(rawProperty, "");
-	property.setModuleContext("testModule", ["named"]);
-	property.setParentClass("Person");
-
-	const serialized = property.getSerializableData();
-
-	strictEqual(serialized.entityType, "property");
-	strictEqual(serialized.isStatic, false);
-	strictEqual(serialized.isPrivate, false);
-	strictEqual(serialized.hasInitializer, true);
-	strictEqual(serialized.initializer, '"John"');
-	strictEqual(serialized.inferredType, "string");
-	strictEqual(serialized.parentClass, "Person");
-	strictEqual(serialized.moduleId, "testModule");
-	strictEqual(typeof serialized.summary, "object");
-});
-
 test("PropertyEntity - HTML output", () => {
 	const property = new PropertyEntity("name", {
 		file: "test.js",

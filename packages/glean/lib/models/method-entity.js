@@ -475,28 +475,6 @@ export class MethodEntity extends EntityBase {
 	}
 
 	/**
-	 * Get serializable data for JSON export
-	 * @returns {Object} Method-specific serializable data
-	 */
-	getSerializableData() {
-		const baseData = super.getSerializableData();
-		return {
-			...baseData,
-			methodType: this.methodType,
-			isStatic: this.isStatic,
-			isPrivate: this.isPrivate,
-			isAsync: this.isAsync,
-			isGenerator: this.isGenerator,
-			parentClass: this.parentClass,
-			parameters: this.parameters,
-			returnType: this.returnType,
-			signature: this.getSignature(),
-			summary: this.getSummary(),
-			validationIssues: this.validationIssues || [],
-		};
-	}
-
-	/**
 	 * Generate HTML representation
 	 * @returns {string} HTML string for method documentation
 	 */

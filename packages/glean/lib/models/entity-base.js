@@ -20,7 +20,7 @@ import { html } from "@raven-js/beak";
  * Abstract base class for all JavaScript entity types
  *
  * Provides common functionality for entity composition, JSDoc tag management,
- * serialization, and output generation. Child classes implement entity-specific
+ * and output generation. Child classes implement entity-specific
  * parsing, validation, and rendering logic.
  *
  * **Core Philosophy:** Entities "have" JSDoc tags through composition, not inheritance.
@@ -189,55 +189,6 @@ export class EntityBase {
 		if (!this.referencedBy.includes(entityId)) {
 			this.referencedBy.push(entityId);
 		}
-	}
-
-	/**
-	 * Get serializable data for JSON export
-	 *
-	 * MAY be overridden by child classes to provide entity-specific
-	 * serializable data. Default implementation includes all common properties.
-	 *
-
-	 * @returns {Object} Serializable data object
-	 */
-	getSerializableData() {
-		/** @type {Record<string, any>} */
-		const jsdocData = {};
-		for (const tag of this.jsdocTags) {
-			// Group tags by type, storing multiple tags of same type as arrays
-			if (jsdocData[tag.tagType]) {
-				if (Array.isArray(jsdocData[tag.tagType])) {
-					jsdocData[tag.tagType].push(tag.toJSON());
-				} else {
-					jsdocData[tag.tagType] = [jsdocData[tag.tagType], tag.toJSON()];
-				}
-			} else {
-				jsdocData[tag.tagType] = tag.toJSON();
-			}
-		}
-
-		return {
-			entityType: this.entityType,
-			name: this.name,
-			location: this.location,
-			jsdoc: jsdocData,
-			references: this.references,
-			referencedBy: this.referencedBy,
-			source: this.source,
-			moduleId: this.moduleId,
-			exports: this.exports,
-		};
-	}
-
-	/**
-	 * Serialize entity to JSON format
-	 * @returns {Object} JSON representation with type metadata
-	 */
-	toJSON() {
-		return {
-			__type: this.entityType,
-			__data: this.getSerializableData(),
-		};
 	}
 
 	/**

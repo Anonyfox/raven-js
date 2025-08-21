@@ -122,23 +122,7 @@ export class JSDocPropertyTag extends JSDocTagBase {
 	 */
 	validate() {
 		this.isValidated = Boolean(this.name && this.name.length > 0);
-	}
-
-	/**
-	 * Get serializable data for JSON export
-	 * @returns {Object} Property-specific serializable data
-	 */
-	getSerializableData() {
-		return {
-			tagType: this.tagType,
-			rawContent: this.rawContent,
-			type: this.type,
-			name: this.name,
-			description: this.description,
-		};
-	}
-
-	/**
+	}/**
 	 * Generate HTML representation
 	 * @returns {string} HTML string for property documentation
 	 */

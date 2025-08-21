@@ -308,20 +308,6 @@ class DescriptionTag {
 		return this.isValidated;
 	}
 
-	/**
-	 * @protected
-	 */
-	getSerializableData() {
-		return { content: this.content };
-	}
-
-	toJSON() {
-		return {
-			__type: "description",
-			__data: { content: this.content },
-		};
-	}
-
 	toHTML() {
 		return `<p>${this.content}</p>`;
 	}

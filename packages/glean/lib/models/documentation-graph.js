@@ -285,7 +285,7 @@ export class DocumentationGraph {
 
 		// Add asset sizes
 		for (const asset of this.assets.values()) {
-			totalSize += asset.fileSize || 0;
+			totalSize += asset.size || 0;
 		}
 
 		this.totalSize = totalSize;
@@ -420,80 +420,6 @@ export class DocumentationGraph {
 	 */
 	isValid() {
 		return this.isValidated;
-	}
-
-	/**
-	 * Get serializable data for JSON export
-	 * @returns {Object} Graph-specific serializable data
-	 */
-	getSerializableData() {
-		// Convert Maps to plain objects for serialization
-		/** @type {Record<string, any>} */
-		const moduleData = {};
-		for (const [id, module] of this.modules.entries()) {
-			moduleData[id] = module.getSerializableData();
-		}
-
-		/** @type {Record<string, any>} */
-		const entityData = {};
-		for (const [id, entity] of this.entities.entries()) {
-			entityData[id] =
-				typeof (/** @type {any} */ (entity).getSerializableData) === "function"
-					? /** @type {any} */ (entity).getSerializableData()
-					: entity;
-		}
-
-		/** @type {Record<string, any>} */
-		const contentData = {};
-		for (const [id, content] of this.content.entries()) {
-			contentData[id] = content.getSerializableData();
-		}
-
-		/** @type {Record<string, any>} */
-		const assetData = {};
-		for (const [id, asset] of this.assets.entries()) {
-			assetData[id] = asset.getSerializableData();
-		}
-
-		// Convert reference Maps to plain objects
-		/** @type {Record<string, string[]>} */
-		const referenceData = {};
-		for (const [id, refs] of this.references.entries()) {
-			referenceData[id] = Array.from(refs);
-		}
-
-		/** @type {Record<string, string[]>} */
-		const referencedByData = {};
-		for (const [id, refs] of this.referencedBy.entries()) {
-			referencedByData[id] = Array.from(refs);
-		}
-
-		return {
-			package: this.package.getSerializableData(),
-			modules: moduleData,
-			entities: entityData,
-			content: contentData,
-			assets: assetData,
-			references: referenceData,
-			referencedBy: referencedByData,
-			generatedAt: this.generatedAt,
-			version: this.version,
-			totalSize: this.calculateSize(),
-			statistics: this.getStatistics(),
-			entityTypeDistribution: this.getEntityTypeDistribution(),
-			validationIssues: this.validationIssues,
-		};
-	}
-
-	/**
-	 * Serialize graph to JSON format
-	 * @returns {Object} JSON representation
-	 */
-	toJSON() {
-		return {
-			__type: "documentation-graph",
-			__data: this.getSerializableData(),
-		};
 	}
 
 	/**

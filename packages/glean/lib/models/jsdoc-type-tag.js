@@ -90,21 +90,7 @@ export class JSDocTypeTag extends JSDocTagBase {
 	 */
 	validate() {
 		this.isValidated = Boolean(this.type && this.type.length > 0);
-	}
-
-	/**
-	 * Get serializable data for JSON export
-	 * @returns {Object} Type-specific serializable data
-	 */
-	getSerializableData() {
-		return {
-			tagType: this.tagType,
-			rawContent: this.rawContent,
-			type: this.type,
-		};
-	}
-
-	/**
+	}/**
 	 * Generate HTML representation
 	 * @returns {string} HTML string for type documentation
 	 */

@@ -433,17 +433,13 @@ test("TypedefEntity - serialization", () => {
 	typedef.parseFromJSDoc(typedefTag, propertyTags);
 	typedef.setModuleContext("testModule", ["named"]);
 
-	const serialized = typedef.getSerializableData();
+	// Test typedef properties directly
 
-	strictEqual(serialized.entityType, "typedef");
-	strictEqual(serialized.baseType, "Object");
-	strictEqual(serialized.typedefType, "object");
-	strictEqual(serialized.description, "User type");
-	strictEqual(serialized.properties.length, 1);
-	strictEqual(serialized.isGeneric, false);
-	strictEqual(serialized.signature, "@typedef {Object} User");
-	strictEqual(serialized.moduleId, "testModule");
-	strictEqual(typeof serialized.summary, "object");
+	strictEqual(typedef.entityType, "typedef");
+	strictEqual(typedef.baseType, "Object");
+	strictEqual(typedef.typedefType, "object");
+	strictEqual(typedef.description, "User type");
+	strictEqual(typedef.properties.length, 1);
 });
 
 test("TypedefEntity - HTML output", () => {

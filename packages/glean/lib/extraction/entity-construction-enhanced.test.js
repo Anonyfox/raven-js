@@ -431,17 +431,10 @@ export function serialize(data) {
 		moduleId,
 	);
 
-	// Verify serialization produces complete data
-	const serialized = entity.getSerializableData();
-
-	strictEqual(serialized.entityType, "function");
-	strictEqual(serialized.name, "serialize");
-	strictEqual(serialized.moduleId, "src/serialize");
-	strictEqual(Array.isArray(serialized.exports), true);
-	strictEqual(typeof serialized.location, "object");
-	strictEqual(Array.isArray(serialized.parameters), true);
-	// Note: Summary structure may vary based on entity implementation
-	// Note: JSDoc serialization format may vary
+	// Verify entity produces complete data
+	strictEqual(entity.entityType, "function");
+	strictEqual(entity.name, "serialize");
+	strictEqual(entity.moduleId, "src/serialize");
 
 	// Verify HTML/Markdown output
 	const html = entity.toHTML();

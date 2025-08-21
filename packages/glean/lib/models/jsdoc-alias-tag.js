@@ -111,23 +111,7 @@ export class JSDocAliasTag extends JSDocTagBase {
 	validate() {
 		// Alias tag should have a name
 		this.isValidated = Boolean(this.aliasName?.trim());
-	}
-
-	/**
-	 * Get serializable data for this tag
-	 * @returns {Object} Serializable data
-	 */
-	getSerializableData() {
-		return {
-			...super.getSerializableData(),
-			aliasName: this.aliasName || "",
-			namespace: this.namespace || "",
-			isModuleAlias: this.isModuleAlias || false,
-			isNamespaced: this.isNamespaced || false,
-		};
-	}
-
-	/**
+	}/**
 	 * Generate HTML representation
 	 * @returns {string} HTML output
 	 */

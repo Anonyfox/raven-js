@@ -102,21 +102,7 @@ export class JSDocNamespaceTag extends JSDocTagBase {
 	validate() {
 		// Namespace tag should have a name
 		this.isValidated = Boolean(this.name && this.name.length > 0);
-	}
-
-	/**
-	 * Get serializable data for this tag
-	 * @returns {Object} Serializable data
-	 */
-	getSerializableData() {
-		return {
-			...super.getSerializableData(),
-			name: this.name || "",
-			description: this.description || "",
-		};
-	}
-
-	/**
+	}/**
 	 * Generate HTML representation
 	 * @returns {string} HTML output
 	 */

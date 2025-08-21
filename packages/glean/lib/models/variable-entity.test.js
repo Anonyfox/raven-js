@@ -253,30 +253,6 @@ test("VariableEntity - validation with empty name", () => {
 	strictEqual(variable.isValid(), false);
 });
 
-test("VariableEntity - serialization", () => {
-	const variable = new VariableEntity("testVar", {
-		file: "test.js",
-		line: 1,
-		column: 0,
-	});
-	const rawEntity = { name: "testVar", line: 1 };
-	const content = "const testVar = 42;";
-
-	variable.parseEntity(rawEntity, content);
-	variable.setModuleContext("testModule", ["named"]);
-
-	const serialized = variable.getSerializableData();
-
-	strictEqual(serialized.entityType, "variable");
-	strictEqual(serialized.declarationType, "const");
-	strictEqual(serialized.hasInitializer, true);
-	strictEqual(serialized.initializer, "42");
-	strictEqual(serialized.isReadonly, true);
-	strictEqual(serialized.inferredType, "number");
-	strictEqual(serialized.signature, "const testVar = 42");
-	strictEqual(serialized.moduleId, "testModule");
-});
-
 test("VariableEntity - HTML output", () => {
 	const variable = new VariableEntity("API_URL", {
 		file: "test.js",

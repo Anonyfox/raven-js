@@ -266,24 +266,6 @@ export class VariableEntity extends EntityBase {
 	}
 
 	/**
-	 * Get serializable data for JSON export
-	 * @returns {Object} Variable-specific serializable data
-	 */
-	getSerializableData() {
-		const baseData = super.getSerializableData();
-		return {
-			...baseData,
-			declarationType: this.declarationType,
-			hasInitializer: this.hasInitializer,
-			initializer: this.initializer,
-			isReadonly: this.isReadonly,
-			inferredType: this.inferredType,
-			signature: this.getSignature(),
-			validationIssues: this.validationIssues || [],
-		};
-	}
-
-	/**
 	 * Generate HTML representation
 	 * @returns {string} HTML string for variable documentation
 	 */

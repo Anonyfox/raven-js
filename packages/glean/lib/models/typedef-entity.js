@@ -335,28 +335,6 @@ export class TypedefEntity extends EntityBase {
 	}
 
 	/**
-	 * Get serializable data for JSON export
-	 * @returns {Object} Typedef-specific serializable data
-	 */
-	getSerializableData() {
-		const baseData = super.getSerializableData();
-		return {
-			...baseData,
-			baseType: this.baseType,
-			typedefType: this.typedefType,
-			properties: this.properties,
-			parameters: this.parameters,
-			returnType: this.returnType,
-			description: this.description,
-			isGeneric: this.isGeneric,
-			genericParameters: this.genericParameters,
-			signature: this.getSignature(),
-			summary: this.getSummary(),
-			validationIssues: this.validationIssues || [],
-		};
-	}
-
-	/**
 	 * Generate HTML representation
 	 * @returns {string} HTML string for typedef documentation
 	 */

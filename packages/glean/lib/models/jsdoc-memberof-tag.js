@@ -104,21 +104,7 @@ export class JSDocMemberofTag extends JSDocTagBase {
 	validate() {
 		// Memberof tag should have a parent name
 		this.isValidated = Boolean(this.parent && this.parent.length > 0);
-	}
-
-	/**
-	 * Get serializable data for this tag
-	 * @returns {Object} Serializable data
-	 */
-	getSerializableData() {
-		return {
-			...super.getSerializableData(),
-			parent: this.parent || "",
-			description: this.description || "",
-		};
-	}
-
-	/**
+	}/**
 	 * Generate HTML representation
 	 * @returns {string} HTML output
 	 */

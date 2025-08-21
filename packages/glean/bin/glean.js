@@ -19,9 +19,7 @@ import {
 	processCodebase,
 	runAnalyzeCommand,
 	runBuildCommand,
-	runExtractCommand,
-	runRenderCommand,
-	showBanner,
+			showBanner,
 	showHelp,
 } from "../index.js";
 
@@ -54,10 +52,10 @@ async function main() {
 				await runAnalyzeCommand(subArgs);
 				break;
 			case "extract":
-				await runExtractCommand(subArgs);
+				await (subArgs);
 				break;
 			case "render":
-				await runRenderCommand(subArgs);
+				await (subArgs);
 				break;
 			case "build":
 				await runBuildCommand(subArgs);

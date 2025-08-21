@@ -102,22 +102,7 @@ export class JSDocLicenseTag extends JSDocTagBase {
 	validate() {
 		// License tag should have some content
 		this.isValidated = Boolean(this.licenseInfo?.trim());
-	}
-
-	/**
-	 * Get serializable data for this tag
-	 * @returns {Object} Serializable data
-	 */
-	getSerializableData() {
-		return {
-			...super.getSerializableData(),
-			licenseInfo: this.licenseInfo || "",
-			isSpdxIdentifier: this.isSpdxIdentifier || false,
-			isUrl: this.isUrl || false,
-		};
-	}
-
-	/**
+	}/**
 	 * Generate HTML representation
 	 * @returns {string} HTML output
 	 */

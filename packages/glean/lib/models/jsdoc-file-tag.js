@@ -86,20 +86,7 @@ export class JSDocFileTag extends JSDocTagBase {
 	validate() {
 		// File tag should have some description content
 		this.isValidated = Boolean(this.description && this.description.length > 0);
-	}
-
-	/**
-	 * Get serializable data for this tag
-	 * @returns {Object} Serializable data
-	 */
-	getSerializableData() {
-		return {
-			...super.getSerializableData(),
-			description: this.description || "",
-		};
-	}
-
-	/**
+	}/**
 	 * Generate HTML representation
 	 * @returns {string} HTML output
 	 */

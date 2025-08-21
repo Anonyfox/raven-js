@@ -100,22 +100,7 @@ export class JSDocExampleTag extends JSDocTagBase {
 	 */
 	validate() {
 		this.isValidated = Boolean(this.code && this.code.length > 0);
-	}
-
-	/**
-	 * Get serializable data for JSON export
-	 * @returns {Object} Example-specific serializable data
-	 */
-	getSerializableData() {
-		return {
-			tagType: this.tagType,
-			rawContent: this.rawContent,
-			caption: this.caption,
-			code: this.code,
-		};
-	}
-
-	/**
+	}/**
 	 * Generate HTML representation
 	 * @returns {string} HTML string for example documentation
 	 */

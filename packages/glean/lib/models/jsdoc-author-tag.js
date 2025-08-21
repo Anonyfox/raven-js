@@ -107,23 +107,7 @@ export class JSDocAuthorTag extends JSDocTagBase {
 	validate() {
 		// Author tag should have some content
 		this.isValidated = Boolean(this.authorInfo?.trim());
-	}
-
-	/**
-	 * Get serializable data for this tag
-	 * @returns {Object} Serializable data
-	 */
-	getSerializableData() {
-		return {
-			...super.getSerializableData(),
-			authorInfo: this.authorInfo || "",
-			name: this.name || "",
-			email: this.email || "",
-			additional: this.additional || "",
-		};
-	}
-
-	/**
+	}/**
 	 * Generate HTML representation
 	 * @returns {string} HTML output
 	 */

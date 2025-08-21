@@ -336,25 +336,6 @@ export class FunctionEntity extends EntityBase {
 	}
 
 	/**
-	 * Get serializable data for JSON export
-	 * @returns {Object} Function-specific serializable data
-	 */
-	getSerializableData() {
-		const baseData = super.getSerializableData();
-		return {
-			...baseData,
-			functionType: this.functionType,
-			isAsync: this.isAsync,
-			isGenerator: this.isGenerator,
-			isArrow: this.isArrow,
-			parameters: this.parameters,
-			returnType: this.returnType,
-			signature: this.getSignature(),
-			validationIssues: this.validationIssues || [],
-		};
-	}
-
-	/**
 	 * Generate HTML representation
 	 * @returns {string} HTML string for function documentation
 	 */

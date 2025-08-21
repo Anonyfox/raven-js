@@ -280,24 +280,6 @@ export class CallbackEntity extends EntityBase {
 	}
 
 	/**
-	 * Get serializable data for JSON export
-	 * @returns {Object} Callback-specific serializable data
-	 */
-	getSerializableData() {
-		const baseData = super.getSerializableData();
-		return {
-			...baseData,
-			description: this.description,
-			parameters: this.parameters,
-			returnType: this.returnType,
-			throwsTypes: this.throwsTypes,
-			signature: this.getSignature(),
-			summary: this.getSummary(),
-			validationIssues: this.validationIssues || [],
-		};
-	}
-
-	/**
 	 * Generate HTML representation
 	 * @returns {string} HTML string for callback documentation
 	 */

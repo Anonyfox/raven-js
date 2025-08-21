@@ -150,23 +150,7 @@ export class JSDocSeeTag extends JSDocTagBase {
 	validate() {
 		// See tag should have some reference content
 		this.isValidated = Boolean(this.reference?.trim());
-	}
-
-	/**
-	 * Get serializable data for this tag
-	 * @returns {Object} Serializable data
-	 */
-	getSerializableData() {
-		return {
-			...super.getSerializableData(),
-			referenceType: this.referenceType || "symbol",
-			reference: this.reference || "",
-			description: this.description || "",
-			url: this.url || "",
-		};
-	}
-
-	/**
+	}/**
 	 * Generate HTML representation
 	 * @returns {string} HTML output
 	 */

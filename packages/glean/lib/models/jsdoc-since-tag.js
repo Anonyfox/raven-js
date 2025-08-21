@@ -139,22 +139,7 @@ export class JSDocSinceTag extends JSDocTagBase {
 	validate() {
 		// Since tag should have version content
 		this.isValidated = Boolean(this.version?.trim());
-	}
-
-	/**
-	 * Get serializable data for this tag
-	 * @returns {Object} Serializable data
-	 */
-	getSerializableData() {
-		return {
-			...super.getSerializableData(),
-			version: this.version || "",
-			description: this.description || "",
-			versionType: this.versionType || "unknown",
-		};
-	}
-
-	/**
+	}/**
 	 * Generate HTML representation
 	 * @returns {string} HTML output
 	 */

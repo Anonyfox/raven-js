@@ -36,12 +36,20 @@ export async function generateStaticSite(graph, outputDir) {
 	await generateIndexPage(graph, outputDir);
 
 	// Generate module pages
-	for (const [moduleId, moduleData] of Object.entries(graph.modules)) {
+	const moduleEntries =
+		graph.modules instanceof Map
+			? graph.modules.entries()
+			: Object.entries(graph.modules || {});
+	for (const [moduleId, moduleData] of moduleEntries) {
 		await generateModulePage(graph, moduleId, moduleData, outputDir);
 	}
 
 	// Generate entity pages
-	for (const [entityId, entityData] of Object.entries(graph.entities)) {
+	const entityEntries =
+		graph.entities instanceof Map
+			? graph.entities.entries()
+			: Object.entries(graph.entities || {});
+	for (const [entityId, entityData] of entityEntries) {
 		await generateEntityPage(graph, entityId, entityData, outputDir);
 	}
 
