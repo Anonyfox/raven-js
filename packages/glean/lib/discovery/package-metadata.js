@@ -67,7 +67,8 @@ export function extractEntryPoints(packageJson) {
 		entryPoints.push("index.js");
 	}
 
-	return [...new Set(entryPoints)]; // Remove duplicates
+	// Remove duplicates and filter out TypeScript definition files
+	return [...new Set(entryPoints)].filter((path) => !path.endsWith(".d.ts"));
 }
 
 /**

@@ -67,7 +67,7 @@ describe("Markdown Parser", () => {
 		const markdown = md`\`\`\`javascript\nconsole.log("Hello, world!");\n\`\`\``;
 		assert.equal(
 			markdown,
-			'<pre><code class="language-javascript">console.log("Hello, world!");</code></pre>',
+			'<pre><code class="language-javascript">console.log(&quot;Hello, world!&quot;);</code></pre>',
 		);
 	});
 
@@ -75,7 +75,7 @@ describe("Markdown Parser", () => {
 		const markdown = md`    function hello() {\n        console.log("Hello!");\n    }`;
 		assert.equal(
 			markdown,
-			'<pre><code>function hello() {\n    console.log("Hello!");\n}</code></pre>',
+			"<pre><code>function hello() {\n    console.log(&quot;Hello!&quot;);\n}</code></pre>",
 		);
 	});
 
@@ -166,7 +166,7 @@ console.log("Hello, world!");
 			`<h1>Heading</h1>
 <p>This is a <strong>bold</strong> text and this is an <em>italic</em> text.
 Here is a <a href="https://example.com">link</a>.</p>
-<pre><code class="language-javascript">console.log("Hello, world!");</code></pre>
+<pre><code class="language-javascript">console.log(&quot;Hello, world!&quot;);</code></pre>
 <ul><li>Item 1</li><li>Item 2</li><li>Item 3</li></ul>
 <blockquote><p>This is a blockquote.</p></blockquote>
 <p><img src="https://example.com/image.png" alt="image"></p>

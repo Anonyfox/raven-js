@@ -18,6 +18,20 @@ import { html } from "@raven-js/beak";
 import { JSDocTagBase } from "./jsdoc-tag-base.js";
 
 /**
+ * Escape HTML special characters to prevent XSS
+ * @param {string} str - String to escape
+ * @returns {string} Escaped string
+ */
+function escapeHTML(str) {
+	return String(str)
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#39;");
+}
+
+/**
  * JSDoc example tag implementation
  *
  * **Official JSDoc Tag:** Provides code examples demonstrating usage of documented items.
@@ -100,15 +114,15 @@ export class JSDocExampleTag extends JSDocTagBase {
 	 */
 	validate() {
 		this.isValidated = Boolean(this.code && this.code.length > 0);
-	}/**
+	} /**
 	 * Generate HTML representation
 	 * @returns {string} HTML string for example documentation
 	 */
 	toHTML() {
 		return html`
 			<div class="example-info">
-				${this.caption ? html`<div class="example-caption">${this.caption}</div>` : ""}
-				<pre class="example-code"><code>${this.code}</code></pre>
+				${this.caption ? html`<div class="example-caption">${escapeHTML(this.caption)}</div>` : ""}
+				<pre class="example-code"><code>${escapeHTML(this.code)}</code></pre>
 			</div>
 		`;
 	}

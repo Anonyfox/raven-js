@@ -45,7 +45,7 @@ export async function buildDependencyMap(files) {
  * @param {string} basePath - Base directory for resolving relative imports
  * @returns {string[]} Array of imported file paths
  */
-export function extractImports(content, basePath) {
+export function extractImports(content, /** @type {string} */ basePath) {
 	const imports = [];
 
 	// Match ES6 imports: import ... from "path"
@@ -58,26 +58,41 @@ export function extractImports(content, basePath) {
 
 		// Only process relative imports (starting with . or ..)
 		if (importPath.startsWith(".")) {
-			const resolvedPath = resolve(basePath, importPath);
-			imports.push(resolvedPath);
+			imports.push(resolve(basePath, importPath));
 		}
-
 		match = importRegex.exec(content);
+	}
+
+	// Match re-exports: export { foo } from "path" and export * from "path"
+	const reExportPatterns = [
+		/export\s+\{[^}]*\}\s+from\s+["']([^"']+)["']/g, // export { foo } from "path"
+		/export\s+\*\s+from\s+["']([^"']+)["']/g, // export * from "path"
+	];
+
+	for (const regex of reExportPatterns) {
+		let reMatch = regex.exec(content);
+		while (reMatch !== null) {
+			const importPath = reMatch[1];
+			// Only process relative imports (starting with . or ..)
+			if (importPath.startsWith(".")) {
+				imports.push(resolve(basePath, importPath));
+			}
+			reMatch = regex.exec(content);
+		}
 	}
 
 	// Match dynamic imports: import("path")
 	const dynamicImportRegex = /import\s*\(\s*["']([^"']+)["']\s*\)/g;
+	let dynamicMatch;
 
-	match = dynamicImportRegex.exec(content);
-	while (match !== null) {
-		const importPath = match[1];
+	dynamicMatch = dynamicImportRegex.exec(content);
+	while (dynamicMatch !== null) {
+		const importPath = dynamicMatch[1];
 
 		if (importPath.startsWith(".")) {
-			const resolvedPath = resolve(basePath, importPath);
-			imports.push(resolvedPath);
+			imports.push(resolve(basePath, importPath));
 		}
-
-		match = dynamicImportRegex.exec(content);
+		dynamicMatch = dynamicImportRegex.exec(content);
 	}
 
 	return imports;

@@ -9,12 +9,11 @@
 /**
  * @file Content rendering for documentation HTML generation.
  *
- * Pure HTML content generators that transform documentation data
- * into rendered HTML components. Handles entity lists, JSDoc sections,
- * entity details, and README markdown conversion.
+ * Pure HTML content generators using beak/md for markdown rendering.
+ * Leverages existing entity toHTML methods for maximum precision.
  */
 
-import { html } from "@raven-js/beak";
+import { html, md } from "@raven-js/beak";
 
 /**
  * Generate entity list HTML
@@ -22,21 +21,31 @@ import { html } from "@raven-js/beak";
  * @returns {string} HTML string
  */
 export function generateEntityList(entities) {
-	return html`
-		<div class="entity-grid">
-			${entities
-				.map(
-					(entity) => html`
-						<div class="entity-card">
-							<h4><a href="../entities/${entity.id.replace(/\//g, "-")}.html">${entity.name}</a></h4>
-							<span class="entity-type">${entity.type}</span>
-							${entity.jsdoc?.description ? html`<p class="entity-description">${entity.jsdoc.description}</p>` : ""}
-						</div>
-					`,
-				)
-				.join("")}
-		</div>
-	`;
+	if (!entities || entities.length === 0) {
+		return html`<div class="entity-grid"></div>`;
+	}
+
+	const entityCards = entities
+		.map((entity) => {
+			const entityType = entity.type || entity.entityType || "unknown";
+			const entityName = entity.name || "Unnamed";
+			// Use the full entity ID for the link, but entity name for display
+			const entityId = entity.id || entity.getId?.() || entityName;
+			const description = entity.jsdoc?.description || entity.description || "";
+
+			return html`
+			<div class="entity-card">
+				<h4>
+					<a href="../entities/${entityId.replace(/\//g, "-")}.html">${entityName}</a>
+				</h4>
+				<span class="entity-type">${entityType}</span>
+				${description ? html`<p class="entity-description">${description}</p>` : ""}
+			</div>
+		`;
+		})
+		.join("");
+
+	return html`<div class="entity-grid">${entityCards}</div>`;
 }
 
 /**
@@ -45,69 +54,145 @@ export function generateEntityList(entities) {
  * @returns {string} HTML string
  */
 export function generateEntityDetails(entityData) {
-	return html`
+	if (!entityData) {
+		return "";
+	}
+
+	const entityType = entityData.type || entityData.entityType || "unknown";
+	const entityName = entityData.name || "Unnamed";
+	const location = entityData.location || {};
+	const sourceFile = location.file || "";
+	const lineNumber = location.line || "";
+	const exports = entityData.exports || [];
+	const jsdoc = entityData.jsdoc || {};
+
+	let content = html`
 		<section class="entity-details">
 			<div class="entity-meta">
-				<p><strong>File:</strong> ${entityData.location.file}</p>
-				<p><strong>Line:</strong> ${entityData.location.line}</p>
-				${entityData.exports.length > 0 ? html`<p><strong>Export:</strong> ${entityData.exports.join(", ")}</p>` : ""}
+				<span class="entity-type">${entityType}</span>
+				${sourceFile ? html`<span class="entity-source">${sourceFile}${lineNumber ? `:${lineNumber}` : ""}</span>` : ""}
 			</div>
 
-			${entityData.jsdoc ? generateJSDocSection(entityData.jsdoc) : ""}
-
-			<section class="source-code">
-				<h3>Source Code</h3>
-				<pre><code>${entityData.source}</code></pre>
-			</section>
-		</section>
+			<div class="entity-header">
+				<h1 class="entity-name">${entityName}</h1>
+			</div>
 	`;
+
+	// Add exports info if available
+	if (exports.length > 0) {
+		content += html`<div class="entity-exports">Exports: ${exports.join(", ")}</div>`;
+	}
+
+	// Add JSDoc content if available
+	if (jsdoc) {
+		content += generateJSDocSection(jsdoc);
+	}
+
+	// Add source code if available
+	const source = entityData.source || "";
+	if (source) {
+		content += html`
+			<div class="jsdoc-section">
+				<h3>Source Code</h3>
+				<pre class="source-code"><code>${source}</code></pre>
+			</div>
+		`;
+	}
+
+	// Use entity's toHTML method if available, otherwise use our generated content
+	if (entityData.toHTML) {
+		return entityData.toHTML();
+	}
+
+	content += html`</section>`;
+	return content;
 }
 
 /**
- * Generate JSDoc documentation section
+ * Generate JSDoc section HTML
  * @param {any} jsdoc - JSDoc data
  * @returns {string} HTML string
  */
 export function generateJSDocSection(jsdoc) {
-	return html`
-		<section class="jsdoc">
-			<h3>Documentation</h3>
-			${jsdoc.description ? html`<p class="description">${jsdoc.description}</p>` : ""}
+	if (!jsdoc) {
+		return "";
+	}
 
-			${
-				jsdoc.tags?.param
-					? html`
-						<div class="parameters">
-							<h4>Parameters</h4>
-							<ul>
-								${jsdoc.tags.param
-									.map(
-										/** @param {any} param */ (param) => html`
-											<li>
-												<code>${param.name}</code> <span class="type">{${param.type}}</span>
-												${param.description ? html` - ${param.description}` : ""}
-											</li>
-										`,
-									)
-									.join("")}
-							</ul>
-						</div>
-					`
-					: ""
-			}
+	const description = jsdoc.description || "";
+	const params = jsdoc.tags?.param || jsdoc.params || [];
+	const returns = jsdoc.tags?.returns || jsdoc.returns || jsdoc.return || "";
+	const examples = jsdoc.tags?.examples || jsdoc.examples || [];
 
-			${
-				jsdoc.tags?.returns
-					? html`
-						<div class="returns">
-							<h4>Returns</h4>
-							<p><span class="type">{${jsdoc.tags.returns.type}}</span> ${jsdoc.tags.returns.description}</p>
-						</div>
-					`
-					: ""
-			}
-		</section>
-	`;
+	let content = "";
+
+	if (description) {
+		content += html`<div class="jsdoc-description">${description}</div>`;
+	}
+
+	if (params.length > 0) {
+		const paramRows = params
+			.map(
+				/** @param {any} param */
+				(param) => html`
+			<tr>
+				<td class="param-name">${param.name}</td>
+				<td class="param-type">${param.type || ""}</td>
+				<td>${param.description || ""}</td>
+			</tr>
+		`,
+			)
+			.join("");
+
+		content += html`
+			<div class="jsdoc-section">
+				<h3>Parameters</h3>
+				<table class="param-table">
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Type</th>
+							<th>Description</th>
+						</tr>
+					</thead>
+					<tbody>${paramRows}</tbody>
+				</table>
+			</div>
+		`;
+	}
+
+	if (returns) {
+		const returnType = returns.type || "";
+		const returnDesc = returns.description || returns;
+		content += html`
+			<div class="jsdoc-section">
+				<h3>Returns</h3>
+				<p>
+					${returnType ? html`<span class="param-type">${returnType}</span> ` : ""}
+					${returnDesc}
+				</p>
+			</div>
+		`;
+	}
+
+	if (examples.length > 0) {
+		const exampleBlocks = examples
+			.map(
+				/** @param {any} example */
+				(example) => html`
+			<pre class="source-code"><code>${example}</code></pre>
+		`,
+			)
+			.join("");
+
+		content += html`
+			<div class="jsdoc-section">
+				<h3>Examples</h3>
+				${exampleBlocks}
+			</div>
+		`;
+	}
+
+	return content;
 }
 
 /**
@@ -116,26 +201,36 @@ export function generateJSDocSection(jsdoc) {
  * @returns {string} HTML string
  */
 export function generateReadmeSection(readmeData) {
-	// Simple markdown-to-HTML conversion (basic implementation)
-	const htmlContent = readmeData.content
-		.replace(/^# (.+)$/gm, "<h2>$1</h2>")
-		.replace(/^## (.+)$/gm, "<h3>$1</h3>")
-		.replace(/^### (.+)$/gm, "<h4>$1</h4>")
-		.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-		.replace(/\*(.+?)\*/g, "<em>$1</em>")
-		.replace(/`(.+?)`/g, "<code>$1</code>")
-		.replace(/\n\n/g, "</p><p>")
-		.replace(/^(.+)$/gm, "<p>$1</p>")
-		.replace(/<p><h/g, "<h")
-		.replace(
-			/h[2-4]><\/p>/g,
-			/** @param {string} match */ (match) => match.replace("></p>", ">"),
-		);
+	if (!readmeData) {
+		return html`<div class="readme"></div>`;
+	}
 
-	return html`
-		<section class="readme">
-			<h2>README</h2>
-			<div class="readme-content">${htmlContent}</div>
-		</section>
-	`;
+	const content =
+		readmeData.content || readmeData.markdown || readmeData.text || "";
+
+	if (!content) {
+		return html`<div class="readme"></div>`;
+	}
+
+	// Use beak/md for GFM-like rendering
+	let renderedMarkdown = md`${content}`;
+
+	// Shift heading levels down by one (h1->h2, h2->h3, etc.) to fit under document structure
+	// Replace in reverse order to avoid conflicts
+	renderedMarkdown = renderedMarkdown
+		.replace(/<h5>/g, "<h6>")
+		.replace(/<\/h5>/g, "</h6>")
+		.replace(/<h4>/g, "<h5>")
+		.replace(/<\/h4>/g, "</h5>")
+		.replace(/<h3>/g, "<h4>")
+		.replace(/<\/h3>/g, "</h4>")
+		.replace(/<h2>/g, "<h3>")
+		.replace(/<\/h2>/g, "</h3>")
+		.replace(/<h1>/g, "<h2>")
+		.replace(/<\/h1>/g, "</h2>");
+
+	return html`<div class="readme">
+		<h2>README</h2>
+		${renderedMarkdown}
+	</div>`;
 }

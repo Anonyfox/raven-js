@@ -7,11 +7,11 @@
  */
 
 /**
- * @file Static documentation site generation - raven-powered architecture.
+ * @file Static documentation site generation using Beak templating.
  *
- * Transform documentation graphs into beautiful, SEO-optimized static sites.
- * Uses beak/md for markdown rendering, minimal CSS, and surgical precision
- * for maximum performance with zero external dependencies.
+ * Transform JSON documentation graphs into beautiful HTML documentation
+ * sites. Uses Beak for templating and generates complete static sites
+ * with navigation, cross-references, and embedded assets.
  */
 
 // Asset management (CSS and static files)

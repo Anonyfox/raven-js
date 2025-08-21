@@ -29,7 +29,6 @@ export class DevServer extends NodeHttp {
 	/**
 	 * WebSocket server port.
 	 * @type {number}
-	 * @readonly
 	 */
 	websocketServerPort;
 
@@ -92,7 +91,13 @@ export class DevServer extends NodeHttp {
 				this.websocketConnections.delete(socket);
 			});
 		});
-		this.websocketServer.listen(this.websocketServerPort, () => {});
+		this.websocketServer.listen(this.websocketServerPort, () => {
+			// Update port to actual listening port (important for port 0 which means "find available port")
+			const address = this.websocketServer.address();
+			if (typeof address === "object" && address !== null) {
+				this.websocketServerPort = address.port;
+			}
+		});
 	}
 
 	/**

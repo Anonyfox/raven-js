@@ -348,6 +348,7 @@ export class FunctionEntity extends EntityBase {
 		const exampleTags = this.getAllJSDocTags().filter(
 			(tag) => tag.tagType === "example",
 		);
+		const descriptionTag = this.getJSDocTag("description");
 
 		return html`
 			<div class="function-entity" data-type="${this.functionType}">
@@ -359,6 +360,15 @@ export class FunctionEntity extends EntityBase {
 				<div class="function-signature">
 					<code>${this.getSignature()}</code>
 				</div>
+				${
+					descriptionTag
+						? html`
+					<div class="function-description">
+						${descriptionTag.toHTML()}
+					</div>
+				`
+						: ""
+				}
 				${
 					paramTags.length > 0
 						? html`

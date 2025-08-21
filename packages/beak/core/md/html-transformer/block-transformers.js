@@ -6,6 +6,7 @@
  * @see {@link https://anonyfox.com}
  */
 
+import { escapeHTML } from "./escape-html.js";
 import { transformInlineNodes } from "./inline-transformers.js";
 
 /**
@@ -122,8 +123,9 @@ const transformBlockquote = (node) => {
 const transformCodeBlock = (node) => {
 	const language = node.language || "";
 	const content = typeof node.content === "string" ? node.content : "";
+	const escapedContent = escapeHTML(content);
 	const langAttr = language ? ` class="language-${language}"` : "";
-	return `<pre><code${langAttr}>${content}</code></pre>`;
+	return `<pre><code${langAttr}>${escapedContent}</code></pre>`;
 };
 
 /**

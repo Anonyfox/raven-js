@@ -15,9 +15,9 @@ describe("DevServer", () => {
 			ctx.html("<html><head></head><body><h1>Hello</h1></body></html>");
 		});
 
-		// Start server on non-privileged ports (above 1024)
-		server = new DevServer(router, { websocketPort: 8080 });
-		await server.listen(3000);
+		// Start server on random available ports
+		server = new DevServer(router, { websocketPort: 0 });
+		await server.listen(0);
 
 		mainPort = server.server.address().port;
 		wsPort = server.websocketServer.address().port;
@@ -39,7 +39,7 @@ describe("DevServer", () => {
 		assert.ok(html.includes("<script>"));
 		assert.ok(html.includes("WebSocket"));
 		assert.ok(html.includes("location.reload()"));
-		assert.ok(html.includes("8080")); // The custom port should be used in the script
+		assert.ok(html.includes(wsPort.toString())); // The WebSocket port should be used in the script
 		assert.ok(html.includes("</script>"));
 		assert.ok(html.includes("</body>"));
 
@@ -49,8 +49,8 @@ describe("DevServer", () => {
 		assert.strictEqual(wsResponse.headers.get("content-type"), "text/plain");
 		assert.strictEqual(await wsResponse.text(), "WebSocket server running");
 
-		// Test 3: Verify WebSocket server is running on the configured port
-		assert.strictEqual(wsPort, 8080);
+		// Test 3: Verify WebSocket server is running and accessible
+		assert.ok(wsPort > 0);
 
 		// Test 4: Non-HTML responses should not be modified
 		const jsonRouter = new Router();
@@ -58,11 +58,13 @@ describe("DevServer", () => {
 			ctx.json({ message: "Hello JSON" });
 		});
 
-		const jsonServer = new DevServer(jsonRouter, { websocketPort: 8083 });
-		await jsonServer.listen(3003);
+		const jsonServer = new DevServer(jsonRouter, { websocketPort: 0 });
+		await jsonServer.listen(0);
 
 		try {
-			const jsonResponse = await fetch(`http://localhost:3003/json`);
+			const jsonResponse = await fetch(
+				`http://localhost:${jsonServer.server.address().port}/json`,
+			);
 			assert.strictEqual(jsonResponse.status, 200);
 			assert.strictEqual(
 				jsonResponse.headers.get("content-type"),
@@ -82,11 +84,13 @@ describe("DevServer", () => {
 			ctx.responseHeaders.set("content-type", "text/plain"); // Override to non-HTML
 		});
 
-		const badHtmlServer = new DevServer(badHtmlRouter, { websocketPort: 8084 });
-		await badHtmlServer.listen(3004);
+		const badHtmlServer = new DevServer(badHtmlRouter, { websocketPort: 0 });
+		await badHtmlServer.listen(0);
 
 		try {
-			const badHtmlResponse = await fetch(`http://localhost:3004/bad-html`);
+			const badHtmlResponse = await fetch(
+				`http://localhost:${badHtmlServer.server.address().port}/bad-html`,
+			);
 			assert.strictEqual(badHtmlResponse.status, 200);
 			assert.strictEqual(
 				badHtmlResponse.headers.get("content-type"),
@@ -105,12 +109,14 @@ describe("DevServer", () => {
 		});
 
 		const nonStringServer = new DevServer(nonStringRouter, {
-			websocketPort: 8085,
+			websocketPort: 0,
 		});
-		await nonStringServer.listen(3005);
+		await nonStringServer.listen(0);
 
 		try {
-			const nonStringResponse = await fetch(`http://localhost:3005/non-string`);
+			const nonStringResponse = await fetch(
+				`http://localhost:${nonStringServer.server.address().port}/non-string`,
+			);
 			assert.strictEqual(nonStringResponse.status, 500); // Should error due to invalid type
 			const nonStringText = await nonStringResponse.text();
 			assert.ok(nonStringText.includes("Internal Server Error"));
@@ -124,11 +130,13 @@ describe("DevServer", () => {
 			ctx.html("This is not HTML"); // Doesn't start with '<'
 		});
 
-		const noTagServer = new DevServer(noTagRouter, { websocketPort: 8086 });
-		await noTagServer.listen(3006);
+		const noTagServer = new DevServer(noTagRouter, { websocketPort: 0 });
+		await noTagServer.listen(0);
 
 		try {
-			const noTagResponse = await fetch(`http://localhost:3006/no-tag`);
+			const noTagResponse = await fetch(
+				`http://localhost:${noTagServer.server.address().port}/no-tag`,
+			);
 			assert.strictEqual(noTagResponse.status, 200);
 			const noTagText = await noTagResponse.text();
 			assert.ok(!noTagText.includes("<script>"));
@@ -170,8 +178,8 @@ describe("DevServer", () => {
 			ctx.html("<html><body>Test</body></html>");
 		});
 
-		const testServer = new DevServer(router, { websocketPort: 8087 });
-		await testServer.listen(3007);
+		const testServer = new DevServer(router, { websocketPort: 0 });
+		await testServer.listen(0);
 
 		try {
 			// Verify connections set exists and is initially empty
@@ -285,11 +293,13 @@ describe("DevServer", () => {
 			throw new Error("Test error");
 		});
 
-		const errorServer = new DevServer(errorRouter, { websocketPort: 8081 });
-		await errorServer.listen(3001);
+		const errorServer = new DevServer(errorRouter, { websocketPort: 0 });
+		await errorServer.listen(0);
 
 		try {
-			const response = await fetch(`http://localhost:3001/error`);
+			const response = await fetch(
+				`http://localhost:${errorServer.server.address().port}/error`,
+			);
 			assert.strictEqual(response.status, 500);
 			assert.strictEqual(response.headers.get("content-type"), "text/plain");
 			const errorText = await response.text();
@@ -308,16 +318,18 @@ describe("DevServer", () => {
 		});
 
 		const injectionErrorServer = new DevServer(htmlRouter, {
-			websocketPort: 8082,
+			websocketPort: 0,
 		});
 		injectionErrorServer.injectAutoReloadScript = () => {
 			throw new Error("Injection error");
 		};
 
-		await injectionErrorServer.listen(3002);
+		await injectionErrorServer.listen(0);
 
 		try {
-			const response = await fetch(`http://localhost:3002/html`);
+			const response = await fetch(
+				`http://localhost:${injectionErrorServer.server.address().port}/html`,
+			);
 			assert.strictEqual(response.status, 500);
 			assert.strictEqual(response.headers.get("content-type"), "text/plain");
 			const errorText = await response.text();
@@ -337,8 +349,8 @@ describe("DevServer", () => {
 			ctx.html("<html><body>Test</body></html>");
 		});
 
-		const errorServer = new DevServer(router, { websocketPort: 8088 });
-		await errorServer.listen(3008);
+		const errorServer = new DevServer(router, { websocketPort: 0 });
+		await errorServer.listen(0);
 
 		try {
 			// Mock the WebSocket server's close method to simulate an error
