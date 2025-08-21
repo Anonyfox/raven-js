@@ -65,7 +65,7 @@ export class DocumentationGraph {
 
 		// Validation state
 		this.isValidated = false;
-		/** @type {Array<{type: string, message: string, entityId?: string}>} */
+		/** @type {Array<{type: string, message: string, entityId?: string, line?: number}>} */
 		this.validationIssues = [];
 	}
 
@@ -304,6 +304,7 @@ export class DocumentationGraph {
 			this.validationIssues.push({
 				type: "invalid_package",
 				message: "Package entity validation failed",
+				line: 1, // Package-level issue, use line 1
 			});
 		}
 
@@ -315,6 +316,7 @@ export class DocumentationGraph {
 					type: "invalid_module",
 					message: `Module '${module.getId()}' validation failed`,
 					entityId: module.getId(),
+					line: 1, // Module-level issue, use line 1
 				});
 			}
 		}
@@ -333,6 +335,7 @@ export class DocumentationGraph {
 						type: "invalid_entity",
 						message: `Entity '${entityId}' validation failed`,
 						entityId: entityId,
+						line: entity.location?.line || 1,
 					});
 				}
 			}
@@ -347,6 +350,7 @@ export class DocumentationGraph {
 					type: "invalid_content",
 					message: `Content '${content.getId()}' validation failed`,
 					entityId: content.getId(),
+					line: 1, // Content-level issue, use line 1
 				});
 			}
 		}
@@ -359,6 +363,7 @@ export class DocumentationGraph {
 					type: "invalid_asset",
 					message: `Asset '${asset.getId()}' validation failed`,
 					entityId: asset.getId(),
+					line: 1, // Asset-level issue, use line 1
 				});
 			}
 		}
@@ -377,10 +382,13 @@ export class DocumentationGraph {
 		for (const [entityId, refs] of this.references.entries()) {
 			for (const refId of refs) {
 				if (!this.entities.has(refId)) {
+					const entity = this.entities.get(entityId);
+					const line = entity?.location?.line || 1;
 					this.validationIssues.push({
 						type: "dangling_reference",
 						message: `Entity '${entityId}' references non-existent entity '${refId}'`,
 						entityId,
+						line,
 					});
 				}
 			}
@@ -393,10 +401,13 @@ export class DocumentationGraph {
 					!this.references.has(refId) ||
 					!this.references.get(refId).has(entityId)
 				) {
+					const entity = this.entities.get(entityId);
+					const line = entity?.location?.line || 1;
 					this.validationIssues.push({
 						type: "inconsistent_reference",
 						message: `Inconsistent reference between '${refId}' and '${entityId}'`,
 						entityId,
+						line,
 					});
 				}
 			}
