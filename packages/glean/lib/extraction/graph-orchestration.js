@@ -16,8 +16,10 @@
 
 import { DocumentationGraph } from "../models/documentation-graph.js";
 import { PackageEntity } from "../models/package-entity.js";
+import { discoverDocumentationAssets } from "./asset-collection.js";
 import { extractReadmeData } from "./content-integration.js";
 import { extractModuleData } from "./module-processing.js";
+import { buildEntityReferences as resolveEntityReferences } from "./reference-resolution.js";
 
 /**
  * Extract complete documentation graph from package
@@ -51,8 +53,20 @@ export async function extractDocumentationGraph(packagePath, discovery) {
 		graph.addContent(readmeData);
 	}
 
+	// Build cross-references between entities (Phase 3: Reference Resolution)
+	resolveEntityReferences(graph);
+
 	// Resolve all string references to direct object references (raven optimization)
 	graph.resolveEntityReferences();
+
+	// Discover and validate assets (Phase 4: Asset Collection)
+	const discoveredAssets = await discoverDocumentationAssets(
+		graph,
+		packagePath,
+	);
+	for (const asset of discoveredAssets) {
+		graph.addAsset(asset);
+	}
 
 	// Validate the complete graph
 	graph.validate();
@@ -61,18 +75,13 @@ export async function extractDocumentationGraph(packagePath, discovery) {
 }
 
 /**
- * Build cross-references between entities
- * @param {import('../models/documentation-graph.js').DocumentationGraph} _graph - Documentation graph (unused for now)
+ * Build cross-references between entities (legacy export - implementation moved to reference-resolution.js)
+ * @param {import('../models/documentation-graph.js').DocumentationGraph} graph - Documentation graph
+ * @deprecated Use buildEntityReferences from reference-resolution.js instead
  */
-export function buildEntityReferences(_graph) {
-	// TODO: Implement reference resolution in future enhancement
-	// For now, this is a placeholder that could analyze:
-	// - Function calls between entities
-	// - Class inheritance
-	// - Import/export relationships
-	// - JSDoc @see references
-	// This would require more sophisticated analysis of the code
-	// For Phase 2, we'll leave references empty and implement in Phase 3
+export function buildEntityReferences(graph) {
+	// Delegate to the new implementation
+	resolveEntityReferences(graph);
 }
 
 /**

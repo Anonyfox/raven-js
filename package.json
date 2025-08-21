@@ -53,7 +53,9 @@
   },
   "workspaces": [
     "packages/beak",
+    "packages/glean",
     "packages/nest",
+    "packages/reflex",
     "packages/wings"
   ],
   "engines": {

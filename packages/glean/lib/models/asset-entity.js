@@ -51,6 +51,14 @@ export class AssetEntity {
 		this.content = null;
 		/** @type {Array<string>} */
 		this.contexts = [];
+
+		// Asset discovery metadata
+		this.referenceType = "";
+		this.sourceFile = "";
+		this.altText = "";
+		this.linkText = "";
+		this.resolvedPath = "";
+		this.contentCategory = "";
 	}
 
 	/**

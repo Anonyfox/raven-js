@@ -1,0 +1,83 @@
+{
+  "name": "@raven-js/reflex",
+  "description": "Universal reactive signals for modern JavaScript - zero dependencies, SSR/hydration, DOM updates",
+  "version": "0.4.4",
+  "type": "module",
+  "files": [
+    "*.js",
+    "*.d.ts",
+    "core/**/*.js",
+    "universal/**/*.js",
+    "dom/**/*.js",
+    "types.*.d.ts",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "import": "./core/index.js",
+      "types": "./types.core.d.ts"
+    },
+    "./universal": {
+      "import": "./universal/index.js",
+      "types": "./types.universal.d.ts"
+    },
+    "./dom": {
+      "import": "./dom/index.js",
+      "types": "./types.dom.d.ts"
+    }
+  },
+  "scripts": {
+    "nest:validate": "node ../nest/bin/nest.js validate",
+    "nest:docs": "node ../nest/bin/nest.js build-docs",
+    "prepublishOnly": "npm run test && npm run test:style",
+    "test": "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
+    "test:code": "timeout 10s node --no-warnings --test --test-reporter=dot",
+    "test:coverage": "node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
+    "test:style": "npx biome lint --error-on-warnings ./core ./universal ./dom",
+    "test:types": "tsc --noEmit --project jsconfig.json"
+  },
+  "keywords": [
+    "reactive",
+    "signals",
+    "state-management",
+    "ssr",
+    "hydration",
+    "dom",
+    "effects",
+    "computed",
+    "universal",
+    "isomorphic",
+    "zero-dependency",
+    "modern-javascript",
+    "esm",
+    "web-development",
+    "library",
+    "toolkit",
+    "raven"
+  ],
+  "author": {
+    "name": "Anonyfox",
+    "email": "max@anonyfox.com",
+    "url": "https://anonyfox.com"
+  },
+  "license": "MIT",
+  "homepage": "https://ravenjs.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Anonyfox/raven-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Anonyfox/raven-js/issues"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/Anonyfox"
+  }
+}
