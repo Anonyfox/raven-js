@@ -80,7 +80,7 @@ describe("extractStructuredContent", () => {
 		assert.strictEqual(result.headings[0].title, "Main Title");
 		assert.strictEqual(result.headings[0].id, "main-title");
 		assert.strictEqual(result.headings[1].level, 2);
-		assert.strictEqual(result.headings[1].title, "Sub Title  "); // Parser preserves trailing whitespace
+		assert.strictEqual(result.headings[1].title, "Sub Title");
 		assert.strictEqual(result.headings[1].id, "sub-title");
 		assert.strictEqual(result.headings[2].level, 3);
 		assert.strictEqual(result.headings[2].title, "Third Level");
