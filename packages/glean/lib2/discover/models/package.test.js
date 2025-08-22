@@ -26,7 +26,7 @@ test("Package - valid package.json with files", () => {
 		},
 	});
 
-	const files = ["index.js", "lib/utils.js", "package.json"];
+	const files = new Set(["index.js", "lib/utils.js", "package.json"]);
 
 	const pkg = new Package(packageJson, files);
 
@@ -137,19 +137,19 @@ test("Package - throws on non-object JSON", () => {
 test("Package - throws on invalid files parameter", () => {
 	const validJson = JSON.stringify({ name: "test" });
 
-	throws(() => new Package(validJson, "not-an-array"), {
+	throws(() => new Package(validJson, "not-a-set"), {
 		name: "Error",
-		message: "Files parameter must be an array of file paths",
+		message: "Files parameter must be a Set of file paths",
 	});
 
 	throws(() => new Package(validJson, 123), {
 		name: "Error",
-		message: "Files parameter must be an array of file paths",
+		message: "Files parameter must be a Set of file paths",
 	});
 
 	throws(() => new Package(validJson, {}), {
 		name: "Error",
-		message: "Files parameter must be an array of file paths",
+		message: "Files parameter must be a Set of file paths",
 	});
 });
 
@@ -162,20 +162,20 @@ test("Package - handles entry points extraction", () => {
 		},
 	});
 
-	const files = [
+	const files = new Set([
 		"src/index.js",
 		"src/utils/format.js",
 		"src/utils/validate.js",
 		"package.json",
-	];
+	]);
 
 	const pkg = new Package(packageJson, files);
 
 	strictEqual(pkg.name, "entry-points-test");
 	deepStrictEqual(pkg.entryPoints, {
 		".": "src/index.js",
-		"./utils/format": "src/utils/format.js",
-		"./utils/validate": "src/utils/validate.js",
+		"./utils/format": "./src/utils/format.js",
+		"./utils/validate": "./src/utils/validate.js",
 	});
 });
 
@@ -190,8 +190,8 @@ test("Package - works without files parameter", () => {
 
 	strictEqual(pkg.name, "no-files-test");
 	strictEqual(pkg.version, "2.0.0");
-	// Without files, entry points should fall back to theoretical extraction
-	deepStrictEqual(pkg.entryPoints, { ".": "./index.js" });
+	// Without files, no entry points can be validated - returns empty
+	deepStrictEqual(pkg.entryPoints, {});
 });
 
 test("Package - handles complex real-world package.json", () => {
@@ -216,12 +216,12 @@ test("Package - handles complex real-world package.json", () => {
 		},
 	});
 
-	const files = [
+	const files = new Set([
 		"dist/esm/index.js",
 		"dist/cjs/index.js",
 		"dist/utils.js",
 		"package.json",
-	];
+	]);
 
 	const pkg = new Package(packageJson, files);
 

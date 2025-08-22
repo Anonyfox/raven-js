@@ -22,13 +22,37 @@ import { pickEntrypointFile } from "../fsutils/pick-entrypoint-file.js";
  * Extracts and validates entry points from a package.json object, resolving
  * wildcards and validating against actual files.
  *
+ * **Design Intent**: Entry points define how external code can import from a package.
+ * This function REQUIRES file validation to ensure only real, existing files are
+ * included in the results. This prevents broken imports and ensures the module
+ * graph accurately reflects the package's public API.
+ *
+ * **Mandatory Validation**: The availableFiles parameter is REQUIRED (not optional).
+ * This enforces that entry points are always validated against actual files,
+ * preventing theoretical or non-existent entry points from being returned.
+ *
+ * **Critical Rule**: Only returns entry points that correspond to actual files.
+ * If a package.json declares an entry point but the file doesn't exist, it's excluded
+ * from the results. This ensures consumers can reliably import from the returned paths.
+ *
  * @param {{exports?: any, main?: string, [key: string]: any}} packageJson - The parsed package.json object
- * @param {...(Set<string>)} rest - Optional array of available file paths
- * @returns {Record<string, string>} Map of import paths to actual file paths
+ * @param {Set<string>} availableFiles - MANDATORY set of available file paths for validation (throws if missing)
+ * @returns {Record<string, string>} Map of import paths to actual validated file paths
+ * @throws {TypeError} If availableFiles is not provided or not a Set
+ * @example
+ * // Given package.json with "main": "./lib/index.js"
+ * // and availableFiles containing "./lib/index.js"
+ * // Returns: { ".": "./lib/index.js" }
+ * //
+ * // If the file doesn't exist, returns: {}
  */
-export function extractEntryPoints(packageJson, ...rest) {
+export function extractEntryPoints(packageJson, availableFiles) {
 	if (!packageJson || typeof packageJson !== "object") {
 		return {};
+	}
+
+	if (!availableFiles || !(availableFiles instanceof Set)) {
+		throw new TypeError("availableFiles parameter must be a Set");
 	}
 
 	// Get theoretical entry points
@@ -44,17 +68,7 @@ export function extractEntryPoints(packageJson, ...rest) {
 		};
 	}
 
-	// Handle different validation modes:
-	// - No availableFiles provided: return theoretical entry points (backwards compatibility)
-	// - Empty availableFiles array: return empty (no files to validate against)
-	// - Available files provided: resolve and validate
-	if (rest.length === 0) {
-		// No availableFiles parameter provided - backwards compatibility mode
-		return entryPoints;
-	}
-
-	// availableFiles parameter provided - use validation mode
-	const availableFiles = rest[0] || new Set();
+	// Resolve and validate entry points against available files
 	return resolveEntryPoints(entryPoints, availableFiles);
 }
 

@@ -32,8 +32,8 @@ export class Package {
 	/** @type {Array<Module>} the modules in the package */
 	modules = [];
 
-	/** @type {Set<File>} the files in the package */
-	files = new Set();
+	/** @type {Array<File>} the files in the package */
+	files = [];
 
 	/**
 	 * @param {string} jsonString - the package.json content as a string
@@ -49,8 +49,8 @@ export class Package {
 			throw new Error("Package JSON string cannot be empty");
 		}
 
-		if (files !== undefined && !Array.isArray(files)) {
-			throw new Error("Files parameter must be an array of file paths");
+		if (files !== undefined && !(files instanceof Set)) {
+			throw new Error("Files parameter must be a Set of file paths");
 		}
 
 		// Parse JSON safely
@@ -72,11 +72,8 @@ export class Package {
 		this.description =
 			typeof json.description === "string" ? json.description : "";
 
-		// Extract entry points - only validate against files if explicitly provided
-		this.entryPoints =
-			files !== undefined
-				? extractEntryPoints(json, files)
-				: extractEntryPoints(json);
+		// Extract entry points - always validate against provided files or empty set
+		this.entryPoints = extractEntryPoints(json, files || new Set());
 	}
 
 	/**
@@ -86,11 +83,6 @@ export class Package {
 	 * @returns {File|undefined} the file if it exists
 	 */
 	getExistingFile(filePath) {
-		for (const file of this.files) {
-			if (file.path === filePath) {
-				return file;
-			}
-		}
-		return undefined;
+		return this.files.find((file) => file.path === filePath);
 	}
 }

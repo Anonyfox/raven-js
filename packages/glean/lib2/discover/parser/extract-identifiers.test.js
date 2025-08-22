@@ -12,8 +12,8 @@
 
 import { deepStrictEqual } from "node:assert";
 import { test } from "node:test";
+import { Identifier } from "../models/identifier.js";
 import { extractIdentifiers } from "./extract-identifiers.js";
-import { Identifier } from "./identifier.js";
 
 /**
  * Helper function to convert array of Identifiers to plain objects for testing.

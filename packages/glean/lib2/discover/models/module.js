@@ -32,10 +32,10 @@ export class Module {
 	readme = "";
 
 	/**
-	 * @type {Set<File>}
+	 * @type {Array<File>}
 	 * The files that are part of the module.
 	 */
-	files = new Set();
+	files = [];
 
 	/**
 	 * a module is the container of all entities ultimately exported together under
@@ -59,8 +59,12 @@ export class Module {
 	 * @param {File} file - the file to add
 	 */
 	addFile(file) {
-		this.files.add(file);
-		this.package.files.add(file);
+		if (this.includedFilePaths().has(file.path)) {
+			return;
+		}
+
+		this.files.push(file);
+		this.package.files.push(file);
 	}
 
 	/**
@@ -69,23 +73,19 @@ export class Module {
 	 * @returns {Set<string>} Set of unique file paths that are included in the module
 	 */
 	includedFilePaths() {
-		return new Set(Array.from(this.files).map((file) => file.path));
+		return new Set(this.files.map((file) => file.path));
 	}
 
 	/**
-	 * Returns the paths of all files that are imported by the module.
+	 * Returns the paths of all files that are imported identifiers in this modules' files.
 	 *
 	 * @param {Set<string>} files - the files in the package
 	 * @returns {Set<string>} Set of unique file paths that are imported by the module
 	 */
 	importedFilePaths(files) {
-		let importedFilePaths = new Set();
-		for (const file of this.files) {
-			importedFilePaths = importedFilePaths.union(
-				file.importedFilePaths(files),
-			);
-		}
-		return importedFilePaths;
+		return this.files
+			.map((f) => f.importedFilePaths(files))
+			.reduce((acc, curr) => acc.union(curr), new Set());
 	}
 
 	/**

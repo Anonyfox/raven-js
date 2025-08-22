@@ -22,7 +22,12 @@
  * @returns {string|null} Resolved file path or null if no match found
  */
 export function pickEntrypointFile(availableFiles, targetPath) {
-	if (availableFiles.size === 0 || typeof targetPath !== "string") {
+	if (
+		!availableFiles ||
+		!(availableFiles instanceof Set) ||
+		availableFiles.size === 0 ||
+		typeof targetPath !== "string"
+	) {
 		return null;
 	}
 

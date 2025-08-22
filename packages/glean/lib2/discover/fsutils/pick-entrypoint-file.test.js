@@ -16,19 +16,19 @@ import { pickEntrypointFile } from "./pick-entrypoint-file.js";
 
 test("pickEntrypointFile - invalid inputs", () => {
 	strictEqual(pickEntrypointFile(null, "index.js"), null);
-	strictEqual(pickEntrypointFile([], "index.js"), null);
-	strictEqual(pickEntrypointFile(["index.js"], null), null);
-	strictEqual(pickEntrypointFile(["index.js"], ""), null);
-	strictEqual(pickEntrypointFile("not-array", "index.js"), null);
+	strictEqual(pickEntrypointFile(new Set(), "index.js"), null);
+	strictEqual(pickEntrypointFile(new Set(["index.js"]), null), null);
+	strictEqual(pickEntrypointFile(new Set(["index.js"]), ""), null);
+	strictEqual(pickEntrypointFile("not-set", "index.js"), null);
 });
 
 test("pickEntrypointFile - exact matches", () => {
-	const files = [
+	const files = new Set([
 		"index.js",
 		"lib/utils.js",
 		"src/main.mjs",
 		"components/Button.jsx",
-	];
+	]);
 
 	strictEqual(pickEntrypointFile(files, "index.js"), "index.js");
 	strictEqual(pickEntrypointFile(files, "./index.js"), "index.js");
@@ -42,14 +42,14 @@ test("pickEntrypointFile - exact matches", () => {
 });
 
 test("pickEntrypointFile - index.js resolution", () => {
-	const files = [
+	const files = new Set([
 		"lib/index.js",
 		"src/index.mjs",
 		"components/index.jsx",
 		"utils/helper.js",
 		"mixed/index.js",
 		"mixed/main.js",
-	];
+	]);
 
 	strictEqual(pickEntrypointFile(files, "lib"), "lib/index.js");
 	strictEqual(pickEntrypointFile(files, "./lib"), "lib/index.js");
@@ -59,13 +59,13 @@ test("pickEntrypointFile - index.js resolution", () => {
 });
 
 test("pickEntrypointFile - extension inference", () => {
-	const files = [
+	const files = new Set([
 		"utils.js",
 		"parser.mjs",
 		"component.jsx",
 		"config.json", // Should be ignored
 		"readme.md", // Should be ignored
-	];
+	]);
 
 	strictEqual(pickEntrypointFile(files, "utils"), "utils.js");
 	strictEqual(pickEntrypointFile(files, "./utils"), "utils.js");
@@ -76,14 +76,14 @@ test("pickEntrypointFile - extension inference", () => {
 });
 
 test("pickEntrypointFile - precedence order", () => {
-	const files = [
+	const files = new Set([
 		"test.js",
 		"test.mjs",
 		"test.jsx",
 		"test/index.js",
 		"test/index.mjs",
 		"test/index.jsx",
-	];
+	]);
 
 	// Direct match takes precedence over directory resolution
 	strictEqual(pickEntrypointFile(files, "test.js"), "test.js");
@@ -93,18 +93,22 @@ test("pickEntrypointFile - precedence order", () => {
 	strictEqual(pickEntrypointFile(files, "test"), "test.js"); // Extension inference wins over directory
 
 	// Test directory resolution precedence
-	const dirFiles = ["mylib/index.js", "mylib/index.mjs", "mylib/index.jsx"];
+	const dirFiles = new Set([
+		"mylib/index.js",
+		"mylib/index.mjs",
+		"mylib/index.jsx",
+	]);
 	strictEqual(pickEntrypointFile(dirFiles, "mylib"), "mylib/index.js");
 
-	const mjsOnlyDir = ["mylib/index.mjs", "mylib/index.jsx"];
+	const mjsOnlyDir = new Set(["mylib/index.mjs", "mylib/index.jsx"]);
 	strictEqual(pickEntrypointFile(mjsOnlyDir, "mylib"), "mylib/index.mjs");
 
-	const jsxOnlyDir = ["mylib/index.jsx"];
+	const jsxOnlyDir = new Set(["mylib/index.jsx"]);
 	strictEqual(pickEntrypointFile(jsxOnlyDir, "mylib"), "mylib/index.jsx");
 });
 
 test("pickEntrypointFile - no matches", () => {
-	const files = ["index.js", "lib/utils.js"];
+	const files = new Set(["index.js", "lib/utils.js"]);
 
 	strictEqual(pickEntrypointFile(files, "missing"), null);
 	strictEqual(pickEntrypointFile(files, "src/missing"), null);
@@ -113,13 +117,13 @@ test("pickEntrypointFile - no matches", () => {
 });
 
 test("pickEntrypointFile - non-JavaScript files filtered", () => {
-	const files = [
+	const files = new Set([
 		"config.json",
 		"styles.css",
 		"readme.md",
 		"data.txt",
 		"image.png",
-	];
+	]);
 
 	strictEqual(pickEntrypointFile(files, "config.json"), null);
 	strictEqual(pickEntrypointFile(files, "styles.css"), null);
@@ -128,7 +132,7 @@ test("pickEntrypointFile - non-JavaScript files filtered", () => {
 });
 
 test("pickEntrypointFile - complex resolution scenarios", () => {
-	const files = [
+	const files = new Set([
 		"index.js",
 		"lib/index.js",
 		"lib/parser.js",
@@ -138,7 +142,7 @@ test("pickEntrypointFile - complex resolution scenarios", () => {
 		"src/components/index.js",
 		"package.json",
 		"readme.md",
-	];
+	]);
 
 	// Root resolution
 	strictEqual(pickEntrypointFile(files, "."), null); // No index at root level matching "."
@@ -162,7 +166,7 @@ test("pickEntrypointFile - complex resolution scenarios", () => {
 });
 
 test("pickEntrypointFile - empty inputs", () => {
-	strictEqual(pickEntrypointFile([], "index"), null);
-	strictEqual(pickEntrypointFile(["index.js"], ""), null);
-	strictEqual(pickEntrypointFile([], ""), null);
+	strictEqual(pickEntrypointFile(new Set(), "index"), null);
+	strictEqual(pickEntrypointFile(new Set(["index.js"]), ""), null);
+	strictEqual(pickEntrypointFile(new Set(), ""), null);
 });

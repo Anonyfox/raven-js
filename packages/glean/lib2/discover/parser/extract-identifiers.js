@@ -35,14 +35,34 @@ const DESTRUCTURE_PATTERN = /\{([^}]+)\}/;
 const ARRAY_DESTRUCTURE_PATTERN = /\[([^\]]+)\]/;
 
 /**
- * Extracts exported identifiers from JavaScript code with blazing-fast V8-optimized performance.
+ * Extracts publicly exported identifiers from JavaScript code with blazing-fast V8-optimized performance.
  *
- * Significantly faster that AST-based solutions or simple regex-based solutions.
+ * **Design Intent**: ONLY returns identifiers that are actually exported (made publicly available)
+ * by the module. For re-exports (e.g., `export { helper } from './utils.js'`), it captures the
+ * source path to enable dependency tracking. Regular imports that are NOT re-exported are
+ * completely ignored since they don't contribute to the public API.
+ *
+ * **Critical Rule**: This function tracks PUBLIC exports only, not internal imports. If you import
+ * something but don't re-export it, it won't appear in the results. This is by design for
+ * building accurate module dependency graphs based on public interfaces.
+ *
+ * Significantly faster than AST-based solutions or simple regex-based solutions.
  * Handles all ES module patterns: default exports, named exports, re-exports, destructuring,
  * wildcard exports, and complex import/export chains with perfect accuracy.
  *
- * @param {string} code - JavaScript source code
- * @returns {Array<Identifier>}
+ * @param {string} code - JavaScript source code to analyze
+ * @returns {Array<Identifier>} Array of exported identifiers with source paths (null for local exports)
+ * @example
+ * // Given this code:
+ * // import { helper } from './utils.js';
+ * // import { unused } from './other.js';  // ← NOT tracked (not re-exported)
+ * // export { helper };                    // ← Tracked with sourcePath: './utils.js'
+ * // export const local = 'value';         // ← Tracked with sourcePath: null
+ * //
+ * // Returns: [
+ * //   Identifier('helper', 'helper', './utils.js'),
+ * //   Identifier('local', 'local', null)
+ * // ]
  */
 export function extractIdentifiers(code) {
 	if (!code || typeof code !== "string") {

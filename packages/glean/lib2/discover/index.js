@@ -20,7 +20,6 @@ import { listFiles } from "./fsutils/list-files.js";
 import { File } from "./models/file.js";
 import { Module } from "./models/module.js";
 import { Package } from "./models/package.js";
-import { extractIdentifiers } from "./parser/extract-identifiers.js";
 
 /**
  * Discover the package and its modules.
@@ -61,9 +60,7 @@ export const discover = (packagePath) => {
 		}
 
 		// add the initial file as a starting point for the module
-		const file = new File(filePath, readFileSync(filePath, "utf-8"));
-		file.identifiers = extractIdentifiers(file.text);
-		module.addFile(file);
+		module.addFile(new File(filePath, readFileSync(filePath, "utf-8")));
 	}
 
 	// now collect all identifiers from all files in the package that are publicly
@@ -78,9 +75,7 @@ export const discover = (packagePath) => {
 			if (existingFile) {
 				mod.addFile(existingFile);
 			} else {
-				const file = new File(filePath, readFileSync(filePath, "utf-8"));
-				file.identifiers = extractIdentifiers(file.text);
-				mod.addFile(file);
+				mod.addFile(new File(filePath, readFileSync(filePath, "utf-8")));
 			}
 
 			// update the unvisited file paths for the next iteration

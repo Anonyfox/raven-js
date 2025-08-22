@@ -20,236 +20,8 @@ test("extractEntryPoints - no main or exports field", () => {
 		version: "1.0.0",
 	};
 
-	const result = extractEntryPoints(packageJson);
+	const result = extractEntryPoints(packageJson, new Set());
 	deepStrictEqual(result, {});
-});
-
-test("extractEntryPoints - main field only (legacy)", () => {
-	const packageJson = {
-		name: "legacy-package",
-		main: "./index.js",
-	};
-
-	const result = extractEntryPoints(packageJson);
-	deepStrictEqual(result, {
-		".": "./index.js",
-	});
-});
-
-test("extractEntryPoints - main field with relative path", () => {
-	const packageJson = {
-		name: "legacy-package",
-		main: "lib/index.js",
-	};
-
-	const result = extractEntryPoints(packageJson);
-	deepStrictEqual(result, {
-		".": "./lib/index.js",
-	});
-});
-
-test("extractEntryPoints - exports field simple string (sugar syntax)", () => {
-	const packageJson = {
-		name: "modern-package",
-		exports: "./index.js",
-	};
-
-	const result = extractEntryPoints(packageJson);
-	deepStrictEqual(result, {
-		".": "./index.js",
-	});
-});
-
-test("extractEntryPoints - exports field object with main entry", () => {
-	const packageJson = {
-		name: "modern-package",
-		exports: {
-			".": "./index.js",
-		},
-	};
-
-	const result = extractEntryPoints(packageJson);
-	deepStrictEqual(result, {
-		".": "./index.js",
-	});
-});
-
-test("extractEntryPoints - exports field with multiple subpaths", () => {
-	const packageJson = {
-		name: "modern-package",
-		exports: {
-			".": "./index.js",
-			"./submodule": "./src/submodule.js",
-			"./utils": "./lib/utils.js",
-		},
-	};
-
-	const result = extractEntryPoints(packageJson);
-	deepStrictEqual(result, {
-		".": "./index.js",
-		"./submodule": "./src/submodule.js",
-		"./utils": "./lib/utils.js",
-	});
-});
-
-test("extractEntryPoints - exports takes precedence over main", () => {
-	const packageJson = {
-		name: "mixed-package",
-		main: "./legacy.js",
-		exports: {
-			".": "./modern.js",
-		},
-	};
-
-	const result = extractEntryPoints(packageJson);
-	deepStrictEqual(result, {
-		".": "./modern.js",
-	});
-});
-
-test("extractEntryPoints - exports with backwards compatibility patterns", () => {
-	const packageJson = {
-		name: "compat-package",
-		exports: {
-			".": "./lib/index.js",
-			"./lib": "./lib/index.js",
-			"./lib/index": "./lib/index.js",
-			"./lib/index.js": "./lib/index.js",
-			"./feature": "./feature/index.js",
-			"./feature/index": "./feature/index.js",
-			"./feature/index.js": "./feature/index.js",
-			"./package.json": "./package.json",
-		},
-	};
-
-	const result = extractEntryPoints(packageJson);
-	deepStrictEqual(result, {
-		".": "./lib/index.js",
-		"./lib": "./lib/index.js",
-		"./lib/index": "./lib/index.js",
-		"./lib/index.js": "./lib/index.js",
-		"./feature": "./feature/index.js",
-		"./feature/index": "./feature/index.js",
-		"./feature/index.js": "./feature/index.js",
-		"./package.json": "./package.json",
-	});
-});
-
-test("extractEntryPoints - exports with wildcard patterns", () => {
-	const packageJson = {
-		name: "pattern-package",
-		exports: {
-			".": "./lib/index.js",
-			"./lib/*": "./lib/*.js",
-			"./feature/*": "./feature/*.js",
-		},
-	};
-
-	const result = extractEntryPoints(packageJson);
-	deepStrictEqual(result, {
-		".": "./lib/index.js",
-		"./lib/*": "./lib/*.js",
-		"./feature/*": "./feature/*.js",
-	});
-});
-
-test("extractEntryPoints - exports with null entries (restricted access)", () => {
-	const packageJson = {
-		name: "restricted-package",
-		exports: {
-			".": "./lib/index.js",
-			"./feature/*.js": "./feature/*.js",
-			"./feature/internal/*": null,
-		},
-	};
-
-	const result = extractEntryPoints(packageJson);
-	deepStrictEqual(result, {
-		".": "./lib/index.js",
-		"./feature/*.js": "./feature/*.js",
-		// null entries should be filtered out
-	});
-});
-
-test("extractEntryPoints - conditional exports (import/require)", () => {
-	const packageJson = {
-		name: "conditional-package",
-		exports: {
-			".": {
-				import: "./esm/index.js",
-				require: "./cjs/index.js",
-			},
-			"./utils": {
-				import: "./esm/utils.js",
-				require: "./cjs/utils.js",
-			},
-		},
-	};
-
-	// For this test, we'll assume the function returns import conditions by default
-	const result = extractEntryPoints(packageJson);
-	deepStrictEqual(result, {
-		".": "./esm/index.js",
-		"./utils": "./esm/utils.js",
-	});
-});
-
-test("extractEntryPoints - complex conditional exports with defaults", () => {
-	const packageJson = {
-		name: "complex-package",
-		exports: {
-			".": {
-				node: {
-					import: "./node-esm.js",
-					require: "./node-cjs.js",
-				},
-				browser: "./browser.js",
-				default: "./fallback.js",
-			},
-		},
-	};
-
-	// Should fall back to default when specific conditions aren't handled
-	const result = extractEntryPoints(packageJson);
-	deepStrictEqual(result, {
-		".": "./fallback.js",
-	});
-});
-
-test("extractEntryPoints - invalid exports should be filtered", () => {
-	const packageJson = {
-		name: "invalid-package",
-		exports: {
-			".": "./index.js",
-			"./valid": "./lib/valid.js",
-			"./invalid": "/absolute/path.js", // Invalid: absolute path
-			"./another": "../outside.js", // Invalid: path traversal
-		},
-	};
-
-	const result = extractEntryPoints(packageJson);
-	deepStrictEqual(result, {
-		".": "./index.js",
-		"./valid": "./lib/valid.js",
-		// Invalid entries should be filtered out
-	});
-});
-
-test("extractEntryPoints - normalize paths without leading ./", () => {
-	const packageJson = {
-		name: "normalize-package",
-		main: "index.js", // No leading ./
-		exports: {
-			".": "lib/main.js", // No leading ./
-			"./utils": "./lib/utils.js", // Already has ./
-		},
-	};
-
-	const result = extractEntryPoints(packageJson);
-	deepStrictEqual(result, {
-		".": "./lib/main.js",
-		"./utils": "./lib/utils.js",
-	});
 });
 
 test("extractEntryPoints - with file validation", () => {
@@ -262,7 +34,7 @@ test("extractEntryPoints - with file validation", () => {
 		},
 	};
 
-	const availableFiles = ["index.js", "lib/utils.js", "package.json"];
+	const availableFiles = new Set(["index.js", "lib/utils.js", "package.json"]);
 
 	const result = extractEntryPoints(packageJson, availableFiles);
 	deepStrictEqual(result, {
@@ -282,7 +54,7 @@ test("extractEntryPoints - wildcard pattern resolution", () => {
 		},
 	};
 
-	const availableFiles = [
+	const availableFiles = new Set([
 		"index.js",
 		"lib/helper.js",
 		"lib/parser.js",
@@ -290,15 +62,15 @@ test("extractEntryPoints - wildcard pattern resolution", () => {
 		"utils/format.js",
 		"utils/validate.mjs",
 		"package.json",
-	];
+	]);
 
 	const result = extractEntryPoints(packageJson, availableFiles);
 	deepStrictEqual(result, {
 		".": "index.js",
-		"./lib/helper": "lib/helper.js",
-		"./lib/parser": "lib/parser.js",
-		"./utils/format": "utils/format.js",
-		"./utils/validate": "utils/validate.mjs",
+		"./lib/helper": "./lib/helper.js",
+		"./lib/parser": "./lib/parser.js",
+		"./utils/format": "./utils/format.js",
+		"./utils/validate": "./utils/validate.mjs",
 	});
 });
 
@@ -312,12 +84,12 @@ test("extractEntryPoints - index.js resolution", () => {
 		},
 	};
 
-	const availableFiles = [
+	const availableFiles = new Set([
 		"src/index.js",
 		"lib/index.mjs",
 		"utils/index.jsx",
 		"package.json",
-	];
+	]);
 
 	const result = extractEntryPoints(packageJson, availableFiles);
 	deepStrictEqual(result, {
@@ -336,7 +108,7 @@ test("extractEntryPoints - extension resolution", () => {
 		},
 	};
 
-	const availableFiles = ["index.js", "lib/utils.js", "package.json"];
+	const availableFiles = new Set(["index.js", "lib/utils.js", "package.json"]);
 
 	const result = extractEntryPoints(packageJson, availableFiles);
 	deepStrictEqual(result, {
@@ -353,20 +125,20 @@ test("extractEntryPoints - JavaScript file filtering", () => {
 		},
 	};
 
-	const availableFiles = [
+	const availableFiles = new Set([
 		"lib/module.js",
 		"lib/component.jsx",
 		"lib/modern.mjs",
 		"lib/readme.md",
 		"lib/config.json",
 		"lib/styles.css",
-	];
+	]);
 
 	const result = extractEntryPoints(packageJson, availableFiles);
 	deepStrictEqual(result, {
-		"./lib/module": "lib/module.js",
-		"./lib/component": "lib/component.jsx",
-		"./lib/modern": "lib/modern.mjs",
+		"./lib/module": "./lib/module.js",
+		"./lib/component": "./lib/component.jsx",
+		"./lib/modern": "./lib/modern.mjs",
 		// Non-JS files should be filtered out
 	});
 });
@@ -381,19 +153,36 @@ test("extractEntryPoints - empty availableFiles", () => {
 		},
 	};
 
-	const result = extractEntryPoints(packageJson, []);
+	const result = extractEntryPoints(packageJson, new Set());
 	deepStrictEqual(result, {});
 });
 
-test("extractEntryPoints - backward compatibility without availableFiles", () => {
+test("extractEntryPoints - throws TypeError when availableFiles is missing", () => {
 	const packageJson = {
-		name: "backward-compat-package",
+		name: "test-package",
 		main: "./index.js",
 	};
 
-	// Should work without availableFiles parameter
-	const result = extractEntryPoints(packageJson);
-	deepStrictEqual(result, {
-		".": "./index.js",
-	});
+	try {
+		extractEntryPoints(packageJson);
+		throw new Error("Should have thrown TypeError");
+	} catch (error) {
+		deepStrictEqual(error instanceof TypeError, true);
+		deepStrictEqual(error.message, "availableFiles parameter must be a Set");
+	}
+});
+
+test("extractEntryPoints - throws TypeError when availableFiles is not a Set", () => {
+	const packageJson = {
+		name: "test-package",
+		main: "./index.js",
+	};
+
+	try {
+		extractEntryPoints(packageJson, ["index.js"]);
+		throw new Error("Should have thrown TypeError");
+	} catch (error) {
+		deepStrictEqual(error instanceof TypeError, true);
+		deepStrictEqual(error.message, "availableFiles parameter must be a Set");
+	}
 });

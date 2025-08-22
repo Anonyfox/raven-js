@@ -8,56 +8,116 @@
 
 import { dirname, join } from "node:path";
 import { pickEntrypointFile } from "../fsutils/pick-entrypoint-file.js";
+import { extractIdentifiers } from "../parser/extract-identifiers.js";
 import { Identifier } from "./identifier.js";
 
 /**
- * Abstraction over a file in the file system.
+ * Abstraction over a file in the file system with public API tracking.
  *
- * primitive to speed up subsequent algorithms and make testing easier instead
+ * **Design Intent**: Represents a single file and tracks its publicly exported identifiers
+ * to enable dependency resolution. The file's content is immutable after construction to
+ * prevent external tampering. Only tracks identifiers that contribute to the public API
+ * (re-exported symbols), not internal imports.
+ *
+ * **Encapsulation**: All properties are private to prevent external modification. Files
+ * should be treated as immutable data structures once created.
+ *
+ * Primitive to speed up subsequent algorithms and make testing easier instead
  * of always having to touch disk over and over again.
  */
 export class File {
-	/** @type {string} */
-	path = "";
+	/** @type {string} - Relative path to the file within the project (immutable after construction) */
+	#path = "";
 
-	/** @type {string} */
-	text = "";
-
-	/** @type {Array<Identifier>} */
-	identifiers = [];
+	/** @type {string} - File content as string (immutable after construction) */
+	#text = "";
 
 	/**
-	 * @param {string} path the RELATIVE path to the file within the project
-	 * @param {string} text the file's content as a string
+	 * @type {Array<Identifier>} - Publicly exported identifiers extracted from file content
+	 *
+	 * **Design Intent**: Contains ONLY identifiers that are publicly exported by this file.
+	 * For re-exports, includes the source path for dependency tracking. Used internally
+	 * for module graph construction and will be used for a future helper method that
+	 * returns all identifiers as a flat array of strings.
+	 *
+	 * **Private by Design**: External code should not directly access this. Use the provided
+	 * methods like importedFilePaths() instead.
+	 */
+	#identifiers = [];
+
+	/**
+	 * Creates a new File instance with immutable content.
+	 *
+	 * **Design Intent**: Parses the file content once during construction to extract
+	 * publicly exported identifiers. The file becomes immutable after creation to
+	 * prevent accidental modification that could invalidate the parsed identifiers.
+	 *
+	 * @param {string} path - The RELATIVE path to the file within the project (must be relative)
+	 * @param {string} text - The file's content as a string (will be parsed for exports)
 	 */
 	constructor(path, text) {
-		this.path = path;
-		this.text = text;
+		this.#path = path;
+		this.#text = text;
+		this.#identifiers = extractIdentifiers(text) || [];
 	}
 
 	/**
-	 * Returns unique file paths that match import statements in this file.
+	 * Get the file path (readonly).
 	 *
-	 * Iterates over the identifiers array, extracts import paths, resolves them
-	 * using Node.js path helpers, and matches them against the provided file list
-	 * using the pickEntrypointFile function.
+	 * **Design Intent**: Provides readonly access to the file's relative path.
+	 * No setter is provided to maintain immutability.
 	 *
-	 * @param {Set<string>} availableFilePaths - Set of available file paths
-	 * @returns {Set<string>} Array of unique file paths that match imports
+	 * @returns {string} The relative file path within the project
+	 */
+	get path() {
+		return this.#path;
+	}
+
+	/**
+	 * Get the file text content (readonly).
+	 *
+	 * **Design Intent**: Provides readonly access to the file's content.
+	 * No setter is provided to maintain immutability and prevent invalidation
+	 * of the parsed identifiers.
+	 *
+	 * @returns {string} The complete file content as a string
+	 */
+	get text() {
+		return this.#text;
+	}
+
+	/**
+	 * Returns file paths that this file depends on through re-exported imports.
+	 *
+	 * **Design Intent**: ONLY tracks files that contribute to this file's public API
+	 * through re-exports (e.g., `export { helper } from './utils.js'`). Regular imports
+	 * that are not re-exported are ignored because they don't affect the public interface.
+	 *
+	 * **Critical Rule**: This method tracks PUBLIC dependencies only, not internal imports.
+	 * If you import something but don't re-export it, the source file won't appear in
+	 * the results. This enables building accurate module dependency graphs based on
+	 * what each module actually exposes publicly.
+	 *
+	 * Uses pickEntrypointFile to resolve relative import paths to actual files,
+	 * handling different file extensions and index file resolution.
+	 *
+	 * @param {Set<string>} availableFilePaths - Set of available file paths for resolution
+	 * @returns {Set<string>} Set of unique file paths that contribute to this file's public API
+	 * @example
+	 * // Given file content:
+	 * // import { helper } from './utils.js';
+	 * // import { unused } from './other.js';  // ← NOT tracked (not re-exported)
+	 * // export { helper };                    // ← Creates dependency on './utils.js'
+	 * //
+	 * // Returns: Set(['src/utils.js']) - only the re-exported dependency
 	 */
 	importedFilePaths(availableFilePaths) {
-		// Extract unique import paths from identifiers
-		const importPaths = new Set();
-
-		for (const identifier of this.identifiers) {
-			// Only process identifiers that come from imports (have sourcePath)
-			if (identifier.sourcePath !== null) {
-				importPaths.add(identifier.sourcePath);
-			}
-		}
-
+		// Extract unique import paths from re-exported identifiers only
+		const importPaths = new Set(
+			this.#identifiers.map((i) => i.sourcePath).filter((p) => p !== null),
+		);
 		const resolvedPaths = new Set();
-		const currentDir = dirname(this.path);
+		const currentDir = dirname(this.#path);
 
 		for (const importPath of importPaths) {
 			// Skip non-relative imports (npm packages, absolute paths)
@@ -68,7 +128,7 @@ export class File {
 			// Resolve relative import path from current file's directory
 			const resolvedImportPath = join(currentDir, importPath);
 
-			// Use pickEntrypointFile to find the actual file
+			// Use pickEntrypointFile to find the actual target file
 			const actualFile = pickEntrypointFile(
 				availableFilePaths,
 				resolvedImportPath,
