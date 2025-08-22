@@ -21,6 +21,9 @@
     "./seo": {
       "import": "./seo/index.js",
       "types": "./types.seo.d.ts"
+    },
+    "./core/html2": {
+      "import": "./core/html2/index.js"
     }
   },
   "scripts": {
