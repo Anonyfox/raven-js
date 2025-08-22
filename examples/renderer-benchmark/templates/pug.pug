@@ -1,0 +1,58 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title #{site.name} - Modern Web Development Blog
+    meta(name="description" content=site.description)
+  body
+    header
+      h1= site.name
+      nav
+        ul
+          each item in site.navigation
+            li
+              a(href=item.url)= item.name
+
+    main
+      section.hero
+        h2 Latest Blog Posts
+        p= site.description
+
+      section.posts
+        each post in posts
+          article.post(class=post.featured ? 'featured' : '')
+            header
+              h3
+                a(href=`/blog/${post.slug}`)= post.title
+              .meta
+                span.author By #{post.author.name}
+                span.date= post.publishedAt.toLocaleDateString()
+                span.category= post.category
+                span.read-time #{post.readTime} min read
+
+            .excerpt
+              p= post.excerpt
+
+            .tags
+              each tag in post.tags
+                span.tag ##{tag}
+
+            footer.stats
+              span.views #{post.views.toLocaleString()} views
+              span.likes #{post.likes.toLocaleString()} likes
+              span.comments #{post.comments.toLocaleString()} comments
+
+      nav.pagination
+        if hasPrevPage
+          a(href=`/blog?page=${currentPage - 1}`) Previous
+        span Page #{currentPage} of #{totalPages}
+        if hasNextPage
+          a(href=`/blog?page=${currentPage + 1}`) Next
+
+    footer
+      p &copy; #{site.year} #{site.name}. All rights reserved.
+      .social
+        a(href=`https://twitter.com/${site.social.twitter}`) Twitter
+        a(href=`https://github.com/${site.social.github}`) GitHub
+        a(href=`https://linkedin.com/${site.social.linkedin}`) LinkedIn

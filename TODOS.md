@@ -2,7 +2,6 @@
 
 simple task list file what to implement next for short term goals.
 
-- [ ] package in examples that benchmarks beak against other popular renderers
 - [ ] replace the typedoc tool with [glean](./packages/glean/README.md) once
       its working good enough. current state of JSDoc tools is unsatisfactory.
 - [ ] identify potential issues of beak from the glean project since this

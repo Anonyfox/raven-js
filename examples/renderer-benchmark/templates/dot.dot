@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{=it.site.name}} - Modern Web Development Blog</title>
+  <meta name="description" content="{{=it.site.description}}">
+</head>
+<body>
+  <header>
+    <h1>{{=it.site.name}}</h1>
+    <nav>
+      <ul>
+        {{~it.site.navigation :item}}
+          <li><a href="{{=item.url}}">{{=item.name}}</a></li>
+        {{~}}
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h2>Latest Blog Posts</h2>
+      <p>{{=it.site.description}}</p>
+    </section>
+
+    <section class="posts">
+      {{~it.posts :post}}
+        <article class="post {{?post.featured}}featured{{?}}">
+          <header>
+            <h3><a href="/blog/{{=post.slug}}">{{=post.title}}</a></h3>
+            <div class="meta">
+              <span class="author">By {{=post.author.name}}</span>
+              <span class="date">{{=post.publishedAt.toLocaleDateString()}}</span>
+              <span class="category">{{=post.category}}</span>
+              <span class="read-time">{{=post.readTime}} min read</span>
+            </div>
+          </header>
+
+          <div class="excerpt">
+            <p>{{=post.excerpt}}</p>
+          </div>
+
+          <div class="tags">
+            {{~post.tags :tag}}
+              <span class="tag">#{{=tag}}</span>
+            {{~}}
+          </div>
+
+          <footer class="stats">
+            <span class="views">{{=post.views.toLocaleString()}} views</span>
+            <span class="likes">{{=post.likes.toLocaleString()}} likes</span>
+            <span class="comments">{{=post.comments.toLocaleString()}} comments</span>
+          </footer>
+        </article>
+      {{~}}
+    </section>
+
+    <nav class="pagination">
+      {{?it.hasPrevPage}}
+        <a href="/blog?page={{=it.currentPage - 1}}">Previous</a>
+      {{?}}
+      <span>Page {{=it.currentPage}} of {{=it.totalPages}}</span>
+      {{?it.hasNextPage}}
+        <a href="/blog?page={{=it.currentPage + 1}}">Next</a>
+      {{?}}
+    </nav>
+  </main>
+
+  <footer>
+    <p>&copy; {{=it.site.year}} {{=it.site.name}}. All rights reserved.</p>
+    <div class="social">
+      <a href="https://twitter.com/{{=it.site.social.twitter}}">Twitter</a>
+      <a href="https://github.com/{{=it.site.social.github}}">GitHub</a>
+      <a href="https://linkedin.com/{{=it.site.social.linkedin}}">LinkedIn</a>
+    </div>
+  </footer>
+</body>
+</html>
