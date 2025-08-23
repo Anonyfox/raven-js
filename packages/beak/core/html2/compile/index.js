@@ -11,21 +11,25 @@
  *
  * Uses function wrapper approach to analyze template structure before execution,
  * generating optimized rendering functions that eliminate unnecessary work.
+ * Now includes nested template literal inlining for additional performance gains.
  */
+
+import { inline } from "./inline.js";
 
 /**
  * Analyze template function source to extract optimization opportunities
  * @param {string} source - Function source code
- * @returns {Object} Analysis results
+ * @returns {Object|null} Analysis results
  */
 function analyzeTemplate(source) {
 	// Extract template literal content - improved regex
 	const templateRegex = /html2?`([^`]*(?:\\.[^`]*)*)`/g;
 	const matches = [];
-	let match;
+	let match = templateRegex.exec(source);
 
-	while ((match = templateRegex.exec(source)) !== null) {
+	while (match !== null) {
 		matches.push(match[1]);
+		match = templateRegex.exec(source);
 	}
 
 	if (matches.length === 0) {
@@ -39,12 +43,13 @@ function analyzeTemplate(source) {
 	const interpolations = [];
 	const variablePaths = [];
 
-	let interpolationMatch;
-	while ((interpolationMatch = interpolationRegex.exec(template)) !== null) {
+	let interpolationMatch = interpolationRegex.exec(template);
+	while (interpolationMatch !== null) {
 		const fullMatch = interpolationMatch[0];
 		const expression = interpolationMatch[1].trim();
 		interpolations.push(fullMatch);
 		variablePaths.push(expression);
+		interpolationMatch = interpolationRegex.exec(template);
 	}
 
 	const interpolationCount = interpolations.length;
@@ -84,7 +89,7 @@ function analyzeTemplate(source) {
 
 /**
  * Get value from object using dot notation path
- * @param {Object} obj - Source object
+ * @param {any} obj - Source object
  * @param {string} path - Dot notation path like "data.author.name"
  * @returns {*} Value at path
  */
@@ -109,13 +114,15 @@ function getValueFromPath(obj, path) {
 
 /**
  * Generate optimized template function for simple cases
- * @param {Object} analysis - Template analysis results
- * @param {Function} originalFunc - Original template function
+ * @param {any} analysis - Template analysis results
  * @returns {Function} Optimized function
  */
-function generateSimpleTemplate(analysis, originalFunc) {
+function generateSimpleTemplate(analysis) {
 	const { staticParts, variablePaths } = analysis;
 
+	/**
+	 * @param {...any} args - Function arguments
+	 */
 	return function optimizedSimpleTemplate(...args) {
 		const data = args[0];
 		let result = staticParts[0] || "";
@@ -157,22 +164,26 @@ function generateSimpleTemplate(analysis, originalFunc) {
  */
 export function compile(templateFunc) {
 	try {
-		const source = templateFunc.toString();
+		// Step 1: Apply nested template inlining optimization
+		// This eliminates nested tagged template calls (e.g., html`...` inside expressions)
+		const inlinedFunction = inline(templateFunc);
+
+		// Step 2: Apply existing compile optimizations to the inlined function
+		const source = inlinedFunction.toString();
 		const analysis = analyzeTemplate(source);
 
 		if (!analysis) {
-			// No template found, return original
-			return templateFunc;
+			// No template found, return the inlined function (still better than original)
+			return inlinedFunction;
 		}
 
 		// Generate optimized function based on complexity
-		if (analysis.isSimple) {
-			return generateSimpleTemplate(analysis, templateFunc);
+		if (/** @type {any} */ (analysis).isSimple) {
+			return generateSimpleTemplate(analysis);
 		}
 
-		// For complex templates, fall back to original for now
-		// Could add more sophisticated optimizations here
-		return templateFunc;
+		// For complex templates, return inlined version (partial optimization)
+		return inlinedFunction;
 	} catch (error) {
 		// Graceful fallback on any compilation error
 		console.warn("Template compilation failed, using original:", error.message);
