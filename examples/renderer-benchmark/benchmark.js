@@ -15,7 +15,7 @@ import pug from "pug";
 import { generateTemplateData } from "./data.js";
 import { renderBlogPage as beakRender } from "./templates/beak.js";
 import { renderBlogPage as beak2Render } from "./templates/beak2.js";
-import { renderBlogPage as beak3Render } from "./templates/beak3.js";
+import { renderBlogPage as beak2CompiledRender } from "./templates/beak2-compiled.js";
 
 class BenchmarkRunner {
 	constructor() {
@@ -282,12 +282,15 @@ class BenchmarkRunner {
 		});
 	}
 
-	async benchmarkBeak3() {
+	async benchmarkBeak2Compiled() {
 		const { baseData } = this.prepareData();
 
-		return this.measurePerformance("Beak3 (RavenJS HTML3)", () => {
-			return beak3Render(baseData);
-		});
+		return this.measurePerformance(
+			"Beak2 Compiled (RavenJS HTML2 + Compile)",
+			() => {
+				return beak2CompiledRender(baseData);
+			},
+		);
 	}
 
 	async benchmarkEJS() {
@@ -373,7 +376,7 @@ class BenchmarkRunner {
 		const benchmarks = [
 			() => this.benchmarkBeak(),
 			() => this.benchmarkBeak2(),
-			() => this.benchmarkBeak3(),
+			() => this.benchmarkBeak2Compiled(),
 			() => this.benchmarkEJS(),
 			() => this.benchmarkEta(),
 			() => this.benchmarkHandlebars(),

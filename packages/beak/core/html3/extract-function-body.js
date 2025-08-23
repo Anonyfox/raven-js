@@ -14,6 +14,43 @@
  */
 
 /**
+ * Simple robust extraction for regular function declarations
+ * @param {string} fnString - Function string starting with 'function'
+ * @returns {string} Function body content
+ */
+function extractRegularFunctionBody(fnString) {
+	// Find the first opening brace
+	const openBraceIndex = fnString.indexOf("{");
+	if (openBraceIndex === -1) {
+		return "";
+	}
+
+	// Simple brace counting from the opening brace
+	let braceCount = 0;
+	let closeBraceIndex = -1;
+
+	for (let i = openBraceIndex; i < fnString.length; i++) {
+		const char = fnString[i];
+		if (char === "{") {
+			braceCount++;
+		} else if (char === "}") {
+			braceCount--;
+			if (braceCount === 0) {
+				closeBraceIndex = i;
+				break;
+			}
+		}
+	}
+
+	if (closeBraceIndex === -1) {
+		return "";
+	}
+
+	// Extract content between braces, trimmed
+	return fnString.slice(openBraceIndex + 1, closeBraceIndex).trim();
+}
+
+/**
  * Extracts the function body from a function's toString() result.
  *
  * Handles all function formats including arrow functions, async functions,
@@ -40,10 +77,14 @@ export function extractFunctionBody(fn) {
 	try {
 		const fnString = fn.toString();
 
+		// Simple robust extraction for regular functions: function name(params) { body }
+		if (fnString.trim().startsWith("function ")) {
+			return extractRegularFunctionBody(fnString);
+		}
+
 		// Handle arrow functions without braces (single expressions)
-		const arrowMatch = fnString.match(
-			/^\s*(?:async\s+)?(?:\([^)]*\)|[^=>\s]+)\s*=>\s*([^{].*)$/,
-		);
+		// Match: (...params...) => expression or param => expression
+		const arrowMatch = fnString.match(/^.*?\s*=>\s*([^{].*?)$/s);
 		if (arrowMatch) {
 			// Single expression arrow function - wrap in return
 			const expression = arrowMatch[1].trim();

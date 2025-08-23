@@ -25,6 +25,9 @@
     "./core/html2": {
       "import": "./core/html2/index.js"
     },
+    "./core/html2/compile": {
+      "import": "./core/html2/compile.js"
+    },
     "./core/html3": {
       "import": "./core/html3/index.js"
     }

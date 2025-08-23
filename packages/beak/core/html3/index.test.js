@@ -12,12 +12,7 @@
 
 import assert from "node:assert";
 import { describe, it } from "node:test";
-import {
-	compileTemplateFunction,
-	escapeHtml,
-	html3,
-	safeHtml3,
-} from "./index.js";
+import { compileHTML, escapeHtml, html3, safeHtml3 } from "./index.js";
 
 describe("html3 - Basic Template Functionality", () => {
 	it("should export html3 function", () => {
@@ -223,8 +218,8 @@ describe("Complex Expressions", () => {
 });
 
 describe("Function-Level Compilation", () => {
-	it("should export compileTemplateFunction", () => {
-		assert.strictEqual(typeof compileTemplateFunction, "function");
+	it("should export compileHTML", () => {
+		assert.strictEqual(typeof compileHTML, "function");
 	});
 
 	it("should compile simple function with single template", () => {
@@ -232,7 +227,7 @@ describe("Function-Level Compilation", () => {
 			return html3`<div>${data.name}</div>`;
 		}
 
-		const compiled = compileTemplateFunction(simpleTemplate);
+		const compiled = compileHTML(simpleTemplate);
 		const result = compiled({ name: "Alice" });
 		assert.strictEqual(result, "<div>Alice</div>");
 	});
@@ -244,7 +239,7 @@ describe("Function-Level Compilation", () => {
 			return html3`<article>${header}${content}</article>`;
 		}
 
-		const compiled = compileTemplateFunction(multiTemplate);
+		const compiled = compileHTML(multiTemplate);
 		const result = compiled({
 			title: "Test Post",
 			content: "This is test content.",
@@ -261,7 +256,7 @@ describe("Function-Level Compilation", () => {
 			return html3`<ul>${items}</ul>`;
 		}
 
-		const compiled = compileTemplateFunction(listTemplateFixed);
+		const compiled = compileHTML(listTemplateFixed);
 		const result = compiled({ items: ["First", "Second", "Third"] });
 		assert.strictEqual(
 			result,
@@ -276,7 +271,7 @@ describe("Function-Level Compilation", () => {
 			return html3`<div>${data.name}</div>`;
 		}
 
-		const compiled = compileTemplateFunction(malformedTemplate);
+		const compiled = compileHTML(malformedTemplate);
 		// Should fallback to original function
 		assert.strictEqual(typeof compiled, "function");
 	});
