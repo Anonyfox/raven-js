@@ -24,6 +24,9 @@
     },
     "./core/html2": {
       "import": "./core/html2/index.js"
+    },
+    "./core/html3": {
+      "import": "./core/html3/index.js"
     }
   },
   "scripts": {
