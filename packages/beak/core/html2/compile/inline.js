@@ -7,449 +7,519 @@
  */
 
 /**
- * @file Template literal inlining - optimize nested tagged template calls
+ * @file AST-based template literal inlining - surgical optimization
  *
- * Converts nested tagged template calls into direct string concatenation,
- * eliminating function call overhead for significant performance gains.
+ * Single-pass AST transformer that converts nested tagged templates
+ * to direct string concatenation. Raven-lean, zero waste.
  */
 
 /**
- * Extract the tag name from a wrapper function containing tagged template literals
- * @param {string} functionSource - Function source code
- * @returns {string|null} Tag name or null if not found
+ * @typedef {Object} ASTNode
+ * @property {string} type - Node type
+ * @property {string} content - Text content
+ * @property {string} tagName - Tag name for template nodes
+ * @property {ASTNode[]} children - Child nodes
  */
-function extractTagName(functionSource) {
-	// Look for pattern: tagName`...` anywhere in the function
-	const match = functionSource.match(/\b(\w+)`/);
+
+/**
+ * AST node types for template parsing
+ */
+const NodeType = {
+	TEMPLATE: "template",
+	EXPRESSION: "expression",
+	TEXT: "text",
+};
+
+/**
+ * Create AST node with text fragment
+ * @param {string} type - Node type
+ * @param {string} content - Text content
+ * @param {string} [tagName] - Tag name for template nodes
+ * @returns {ASTNode} AST node
+ */
+function createNode(type, content, tagName = null) {
+	return {
+		type,
+		content,
+		tagName,
+		children: [],
+	};
+}
+
+/**
+ * Extract tag name from function source - single match, surgical precision
+ * @param {string} source - Function source code
+ * @returns {string|null} Tag name or null
+ */
+function extractTagName(source) {
+	const match = source.match(/\b(\w+)`/);
 	return match ? match[1] : null;
 }
 
 /**
- * Check if a position in code is inside a string literal, comment, or template
- * @param {string} code - Source code
- * @param {number} position - Position to check
- * @returns {boolean} True if position is safe for replacement
+ * Context-aware AST parser for tagged templates - skips strings and comments
+ * @param {string} code - Source code to parse
+ * @param {string} tagName - Tag name to match
+ * @returns {ASTNode[]} Array of AST nodes
  */
-function isValidPosition(code, position) {
-	// Check if preceded by valid boundary (not part of identifier)
-	if (position > 0) {
-		const prevChar = code[position - 1];
-		if (!/[\s()[\]{};,=!&|+\-*/<>\n\r\t]/.test(prevChar)) {
-			return false;
+function parseTemplateAST(code, tagName) {
+	const nodes = [];
+	const target = tagName + "`";
+	let i = 0;
+
+	while (i < code.length) {
+		// Find next potential tagged template, skipping strings and comments
+		const tagIndex = findNextTemplate(code, target, i);
+		if (tagIndex === -1) {
+			// Add remaining code as text node if any
+			if (i < code.length) {
+				nodes.push(createNode(NodeType.TEXT, code.slice(i)));
+			}
+			break;
 		}
+
+		// Add text before tag as text node
+		if (tagIndex > i) {
+			nodes.push(createNode(NodeType.TEXT, code.slice(i, tagIndex)));
+		}
+
+		// Parse template starting after backtick
+		const templateStart = tagIndex + target.length;
+		const templateResult = parseTemplate(code, templateStart, tagName);
+
+		nodes.push(templateResult.node);
+		i = templateResult.endPos;
 	}
 
-	// Scan backwards to check if we're inside string/comment/template
-	let pos = Math.max(0, position - 200); // Reasonable scan distance
-	let inSingleQuote = false;
-	let inDoubleQuote = false;
-	let inTemplate = false;
-	let inLineComment = false;
-	let inBlockComment = false;
+	return nodes;
+}
 
-	while (pos < position) {
+/**
+ * Find next tagged template - optimized for speed
+ * @param {string} code - Source code
+ * @param {string} target - Target string to find (e.g., "html2`")
+ * @param {number} start - Start position
+ * @returns {number} Index of next template, or -1 if not found
+ */
+function findNextTemplate(code, target, start) {
+	let pos = start;
+	const targetLength = target.length;
+
+	while (pos < code.length) {
 		const char = code[pos];
-		const nextChar = pos + 1 < code.length ? code[pos + 1] : "";
 
-		// Handle comments first
-		if (!inSingleQuote && !inDoubleQuote && !inTemplate && !inBlockComment) {
-			if (char === "/" && nextChar === "/") {
-				inLineComment = true;
-				pos += 2;
-				continue;
-			}
-			if (char === "/" && nextChar === "*") {
-				inBlockComment = true;
-				pos += 2;
-				continue;
-			}
+		// Fast check for target match first (most common case)
+		if (
+			char === target[0] &&
+			pos + targetLength <= code.length &&
+			code.substr(pos, targetLength) === target
+		) {
+			return pos;
 		}
 
-		if (inLineComment && char === "\n") {
-			inLineComment = false;
-		}
-
-		if (inBlockComment && char === "*" && nextChar === "/") {
-			inBlockComment = false;
-			pos += 2;
+		// Skip string literals
+		if (char === '"' || char === "'") {
+			pos = skipStringFast(code, pos, char);
 			continue;
 		}
 
-		if (inLineComment || inBlockComment) {
-			pos++;
+		// Skip template literals
+		if (char === "`") {
+			pos = skipStringFast(code, pos, char);
 			continue;
 		}
 
-		// Handle string literals
-		if (char === "'" && !inDoubleQuote && !inTemplate) {
-			if (pos === 0 || code[pos - 1] !== "\\") {
-				inSingleQuote = !inSingleQuote;
+		// Skip comments
+		if (char === "/" && pos + 1 < code.length) {
+			const nextChar = code[pos + 1];
+			if (nextChar === "/") {
+				// Skip line comment
+				pos = code.indexOf("\n", pos + 2);
+				if (pos === -1) break;
+				continue;
 			}
-		} else if (char === '"' && !inSingleQuote && !inTemplate) {
-			if (pos === 0 || code[pos - 1] !== "\\") {
-				inDoubleQuote = !inDoubleQuote;
-			}
-		} else if (char === "`" && !inSingleQuote && !inDoubleQuote) {
-			if (pos === 0 || code[pos - 1] !== "\\") {
-				inTemplate = !inTemplate;
+			if (nextChar === "*") {
+				// Skip block comment
+				pos = code.indexOf("*/", pos + 2);
+				if (pos === -1) break;
+				pos += 2;
+				continue;
 			}
 		}
 
 		pos++;
 	}
 
-	return (
-		!inSingleQuote &&
-		!inDoubleQuote &&
-		!inTemplate &&
-		!inLineComment &&
-		!inBlockComment
-	);
+	return -1;
 }
 
 /**
- * Parse a template literal starting from the opening backtick
+ * Fast string skipping - optimized version
  * @param {string} code - Source code
- * @param {number} startIndex - Index of opening backtick
- * @returns {{strings: string[], expressions: string[], endPosition: number}|null} Parse result
+ * @param {number} start - Start position
+ * @param {string} quote - Quote character
+ * @returns {number} End position
  */
-function parseTemplateLiteral(code, startIndex) {
-	const strings = [];
-	const expressions = [];
-	let position = startIndex + 1; // Skip opening backtick
-	let currentString = "";
+function skipStringFast(code, start, quote) {
+	let pos = start + 1;
 
-	while (position < code.length) {
-		const char = code[position];
+	while (pos < code.length) {
+		const char = code[pos];
 
-		if (char === "`") {
-			// End of template literal
-			strings.push(currentString);
-			return { strings, expressions, endPosition: position + 1 };
+		if (char === quote) {
+			return pos + 1;
 		}
 
-		if (
-			char === "$" &&
-			position + 1 < code.length &&
-			code[position + 1] === "{"
-		) {
-			// Start of expression
-			strings.push(currentString);
-			currentString = "";
-
-			const expressionResult = parseExpression(code, position + 2);
-			if (!expressionResult) return null;
-
-			expressions.push(expressionResult.content);
-			position = expressionResult.endPosition;
+		if (char === "\\") {
+			pos += 2; // Skip escaped character
 			continue;
 		}
 
-		if (char === "\\" && position + 1 < code.length) {
-			// Handle escaped characters - keep them as-is
-			currentString += char + code[position + 1];
-			position += 2;
-			continue;
-		}
-
-		currentString += char;
-		position++;
+		pos++;
 	}
 
-	// Unclosed template literal
-	return null;
+	return pos; // Unclosed string - return end
 }
 
 /**
- * Parse an expression inside ${...} with proper brace counting
+ * Parse template literal with depth-aware expression tracking
  * @param {string} code - Source code
- * @param {number} startIndex - Index after opening ${
- * @returns {{content: string, endPosition: number}|null} Expression content and end position
+ * @param {number} start - Start position (after opening backtick)
+ * @param {string} tagName - Tag name for recursive parsing
+ * @returns {{node: ASTNode, endPos: number}|null} Template node and end position
  */
-function parseExpression(code, startIndex) {
-	let braceCount = 1;
-	let position = startIndex;
-	const content = [];
+function parseTemplate(code, start, tagName) {
+	const templateNode = createNode(NodeType.TEMPLATE, "", tagName);
+	let pos = start;
+	let currentText = "";
 
-	while (position < code.length && braceCount > 0) {
-		const char = code[position];
+	while (pos < code.length) {
+		const char = code[pos];
 
+		// End of template literal
+		if (char === "`") {
+			if (currentText) {
+				templateNode.children.push(createNode(NodeType.TEXT, currentText));
+			}
+			return { node: templateNode, endPos: pos + 1 };
+		}
+
+		// Expression start
+		if (char === "$" && pos + 1 < code.length && code[pos + 1] === "{") {
+			// Save current text
+			if (currentText) {
+				templateNode.children.push(createNode(NodeType.TEXT, currentText));
+				currentText = "";
+			}
+
+			// Parse expression with depth tracking
+			const exprResult = parseExpression(code, pos + 2, tagName);
+
+			templateNode.children.push(exprResult.node);
+			pos = exprResult.endPos;
+			continue;
+		}
+
+		// Handle escapes
+		if (char === "\\" && pos + 1 < code.length) {
+			currentText += char + code[pos + 1];
+			pos += 2;
+			continue;
+		}
+
+		currentText += char;
+		pos++;
+	}
+
+	throw new Error("Unclosed template literal");
+}
+
+/**
+ * Parse expression with proper delimiter tracking - content agnostic
+ * @param {string} code - Source code
+ * @param {number} start - Start position after ${
+ * @param {string} tagName - Tag name for recursive parsing
+ * @returns {{node: ASTNode, endPos: number}|null} Expression node and end position
+ */
+function parseExpression(code, start, tagName) {
+	let braceDepth = 1; // We start inside ${ already
+	let pos = start;
+	let content = "";
+
+	while (pos < code.length && braceDepth > 0) {
+		const char = code[pos];
+
+		// Handle string literals first - skip their content entirely
+		if (char === '"' || char === "'" || char === "`") {
+			const { content: strContent, endPos } = skipString(code, pos);
+			content += strContent;
+			pos = endPos;
+			continue;
+		}
+
+		// Track all bracket types for proper nesting
 		if (char === "{") {
-			braceCount++;
+			braceDepth++;
 		} else if (char === "}") {
-			braceCount--;
-			if (braceCount === 0) {
+			braceDepth--;
+			if (braceDepth === 0) {
+				// Found the closing brace for our expression
 				return {
-					content: content.join(""),
-					endPosition: position + 1,
+					node: createNode(NodeType.EXPRESSION, content),
+					endPos: pos + 1,
 				};
 			}
 		}
 
-		// Handle string literals to avoid counting braces inside strings
-		if (char === '"' || char === "'" || char === "`") {
-			const stringResult = skipStringLiteral(code, position);
-			for (let i = position; i < stringResult.endPosition; i++) {
-				content.push(code[i]);
-			}
-			position = stringResult.endPosition;
-			continue;
-		}
-
-		content.push(char);
-		position++;
+		content += char;
+		pos++;
 	}
 
-	// Unclosed expression
-	return null;
+	throw new Error("Unclosed expression");
 }
 
 /**
- * Skip over a string literal to avoid parsing its contents
+ * Skip string literal and return content + end position
  * @param {string} code - Source code
- * @param {number} startIndex - Index of opening quote/backtick
- * @returns {{endPosition: number}} End position after closing quote
+ * @param {number} start - Index of opening quote
+ * @returns {{content: string, endPos: number}|null} String content and end position, null if malformed
  */
-function skipStringLiteral(code, startIndex) {
-	const quote = code[startIndex];
-	let position = startIndex + 1;
+function skipString(code, start) {
+	const quote = code[start];
+	let pos = start + 1;
+	let content = quote; // Include opening quote
 
-	while (position < code.length) {
-		const char = code[position];
+	while (pos < code.length) {
+		const char = code[pos];
+		content += char;
 
 		if (char === quote) {
-			return { endPosition: position + 1 };
+			return { content, endPos: pos + 1 };
 		}
 
-		if (char === "\\" && position + 1 < code.length) {
-			// Skip escaped character
-			position += 2;
+		if (char === "\\" && pos + 1 < code.length) {
+			// Include escaped character
+			content += code[pos + 1];
+			pos += 2;
 			continue;
 		}
 
-		position++;
+		pos++;
 	}
 
-	// Unclosed string - return current position
-	return { endPosition: position };
+	// Unclosed string is malformed
+	throw new Error("Unclosed string literal");
 }
 
 /**
- * Process escape sequences in template literal strings the same way JavaScript does
- * @param {string} str - Raw string from template parsing
- * @returns {string} String with escape sequences processed
+ * Process escape sequences in template strings - surgical precision
+ * @param {string} str - Raw template string
+ * @returns {string} Processed string
  */
-function processEscapeSequences(str) {
+function processEscapes(str) {
 	return str
-		.replace(/\\`/g, "`") // \` → `
-		.replace(/\\\$/g, "$") // \$ → $
-		.replace(/\\n/g, "\n") // \n → newline
-		.replace(/\\r/g, "\r") // \r → carriage return
-		.replace(/\\t/g, "\t") // \t → tab
-		.replace(/\\"/g, '"') // \" → "
-		.replace(/\\'/g, "'") // \' → '
-		.replace(/\\\\/g, "\\"); // \\ → \ (must be last)
+		.replace(/\\`/g, "`")
+		.replace(/\\\$/g, "$")
+		.replace(/\\n/g, "\n")
+		.replace(/\\r/g, "\r")
+		.replace(/\\t/g, "\t")
+		.replace(/\\"/g, '"')
+		.replace(/\\'/g, "'")
+		.replace(/\\\\/g, "\\");
 }
 
 /**
- * Convert a template literal to direct string concatenation
- * @param {{strings: string[], expressions: string[]}} template - Parsed template
- * @returns {string} Direct concatenation code
+ * Transform AST node to optimized code - recursive and content-agnostic
+ * @param {ASTNode} node - AST node to transform
+ * @param {string} tagName - Tag name for nested template detection
+ * @returns {string} Optimized JavaScript code
  */
-function templateToConcatenation(template) {
-	const { strings, expressions } = template;
-
-	if (strings.length === 0) {
-		return '""';
+function transformNode(node, tagName) {
+	if (node.type === NodeType.TEXT) {
+		return node.content;
 	}
 
-	if (strings.length === 1 && expressions.length === 0) {
-		// Static template: html`<div>Hello</div>` → `"<div>Hello</div>"`
-		const processedString = processEscapeSequences(strings[0]);
-		return JSON.stringify(processedString);
-	}
+	if (node.type === NodeType.EXPRESSION) {
+		// Parse expression content for nested templates and transform them
+		const nestedAST = parseTemplateAST(node.content, tagName);
+		let result = "";
 
-	// Build concatenation: "string1" + expr1 + "string2" + expr2 + ...
-	const parts = [];
-
-	for (let i = 0; i < strings.length; i++) {
-		// Add string part if not empty
-		if (strings[i] !== "") {
-			// Process escape sequences the same way template literals do
-			const processedString = processEscapeSequences(strings[i]);
-			// Use JSON.stringify to properly escape the processed string for JavaScript
-			parts.push(JSON.stringify(processedString));
+		for (const child of nestedAST) {
+			const transformed = transformNode(child, tagName);
+			if (transformed === null) return null;
+			result += transformed;
 		}
 
-		// Add expression part if it exists
-		if (i < expressions.length) {
-			const expr = expressions[i].trim();
-			if (expr) {
-				// Wrap complex expressions in parentheses for safety
-				if (expr.includes("?") && expr.includes(":")) {
-					// Ternary operator
-					parts.push(`(${expr})`);
-				} else if (expr.includes("&&") || expr.includes("||")) {
-					// Logical operators
-					parts.push(`(${expr})`);
-				} else {
-					// Simple expression
-					parts.push(expr);
+		return result;
+	}
+
+	if (node.type === NodeType.TEMPLATE) {
+		// Transform template to string concatenation
+		const parts = [];
+
+		for (const child of node.children) {
+			if (child.type === NodeType.TEXT) {
+				// Process escapes and stringify
+				const processed = processEscapes(child.content);
+				if (processed) {
+					parts.push(JSON.stringify(processed));
+				}
+			} else if (child.type === NodeType.EXPRESSION) {
+				// Transform nested expressions recursively
+				const transformed = transformNode(child, tagName);
+				if (transformed.trim()) {
+					// Wrap expressions that need precedence protection in string concatenation
+					const needsWrapping =
+						transformed.includes("?") ||
+						transformed.includes("&&") ||
+						transformed.includes("||") ||
+						transformed.includes("===") ||
+						transformed.includes("!==") ||
+						/[+\-*/%]\s/.test(transformed) || // Binary operators with following space
+						/\s[+\-*/%]/.test(transformed); // Binary operators with preceding space
+					parts.push(needsWrapping ? `(${transformed})` : transformed);
 				}
 			}
 		}
+
+		// Join with concatenation
+		if (parts.length === 0) return '""';
+		if (parts.length === 1) return parts[0];
+		return parts.join(" + ");
 	}
 
-	if (parts.length === 0) {
-		return '""';
-	}
-
-	if (parts.length === 1) {
-		return parts[0];
-	}
-
-	return parts.join(" + ");
+	return node.content;
 }
 
 /**
- * Find and replace all nested tagged template literals in function body
- * @param {string} functionBody - Function body source code
- * @param {string} tagName - Tag name to look for (e.g., "html", "html2")
- * @returns {string} Optimized function body with inlined templates
+ * Transform function body using AST approach
+ * @param {string} functionBody - Function body source
+ * @param {string} tagName - Tag name to optimize
+ * @returns {string} Optimized function body
  */
-function inlineTaggedTemplates(functionBody, tagName) {
-	let optimizedBody = functionBody;
-	let position = 0;
-	const searchPattern = tagName + "`";
+function transformFunctionBody(functionBody, tagName) {
+	try {
+		const ast = parseTemplateAST(functionBody, tagName);
+		let result = "";
 
-	while (position < optimizedBody.length) {
-		// Find next potential tagged template
-		const templateIndex = optimizedBody.indexOf(searchPattern, position);
-		if (templateIndex === -1) break;
-
-		// Verify it's a valid position (not in string/comment)
-		if (!isValidPosition(optimizedBody, templateIndex)) {
-			position = templateIndex + 1;
-			continue;
+		for (const node of ast) {
+			const transformed = transformNode(node, tagName);
+			if (transformed === null) {
+				// Transformation failed, return original
+				return functionBody;
+			}
+			result += transformed;
 		}
 
-		// Parse the template literal
-		const backtickIndex = templateIndex + tagName.length;
-		const templateResult = parseTemplateLiteral(optimizedBody, backtickIndex);
-
-		if (!templateResult) {
-			position = templateIndex + 1;
-			continue;
-		}
-
-		// Convert to direct concatenation
-		const optimizedCode = templateToConcatenation(templateResult);
-
-		// Replace in source
-		optimizedBody =
-			optimizedBody.slice(0, templateIndex) +
-			optimizedCode +
-			optimizedBody.slice(templateResult.endPosition);
-
-		// Continue from the end of our replacement
-		position = templateIndex + optimizedCode.length;
+		return result;
+	} catch {
+		// Parsing failed, return original
+		return functionBody;
 	}
-
-	return optimizedBody;
 }
 
 /**
- * Extract function body from function source, handling different function types
+ * Extract function body from function source - lean approach
  * @param {Function} fn - Function to extract body from
  * @returns {string} Function body content
  */
 function extractFunctionBody(fn) {
 	const source = fn.toString();
 
-	// First check if there are braces - if so, extract between them
-	const openBrace = source.indexOf("{");
-	const closeBrace = source.lastIndexOf("}");
+	// Arrow function with expression: () => expression
+	const arrowIndex = source.indexOf("=>");
+	if (arrowIndex !== -1) {
+		const afterArrow = source.slice(arrowIndex + 2).trim();
+		if (!afterArrow.startsWith("{")) {
+			return `return ${afterArrow}`;
+		}
 
-	if (openBrace !== -1 && closeBrace !== -1 && closeBrace > openBrace) {
-		// Function has braces - extract content between them
-		return source.slice(openBrace + 1, closeBrace).trim();
+		// Arrow function with block body: () => { ... }
+		const blockStart = source.indexOf("{", arrowIndex);
+		const blockEnd = source.lastIndexOf("}");
+		if (blockStart !== -1 && blockEnd !== -1 && blockEnd > blockStart) {
+			return source.slice(blockStart + 1, blockEnd).trim();
+		}
 	}
 
-	// Handle arrow functions without braces: () => expression
-	const arrowMatch = source.match(/^.*?\s*=>\s*(.+)$/s);
-	if (arrowMatch) {
-		return `return ${arrowMatch[1].trim()}`;
+	// Regular function: function name() { ... }
+	const functionMatch = source.match(/^(?:async\s+)?function[^{]*\{(.*)\}$/s);
+	if (functionMatch) {
+		return functionMatch[1].trim();
+	}
+
+	// Fallback: find braces
+	const openBrace = source.indexOf("{");
+	const closeBrace = source.lastIndexOf("}");
+	if (openBrace !== -1 && closeBrace !== -1 && closeBrace > openBrace) {
+		return source.slice(openBrace + 1, closeBrace).trim();
 	}
 
 	return "";
 }
 
 /**
- * Extract function parameters from function source
+ * Extract function parameters - lean approach
  * @param {Function} fn - Function to extract parameters from
  * @returns {string} Parameter string
  */
 function extractFunctionParams(fn) {
 	const source = fn.toString();
 
-	// Handle different function formats
-	const paramMatch = source.match(
-		/(?:function[^(]*|async\s+function[^(]*|\w+\s*|\([^)]*\)\s*)\(([^)]*)\)/,
-	);
-	if (paramMatch) {
-		return paramMatch[1].trim();
+	// Arrow function with parentheses: (param) =>
+	const parenArrowMatch = source.match(/^\s*\(([^)]*)\)\s*=>/);
+	if (parenArrowMatch) {
+		return parenArrowMatch[1].trim();
 	}
 
-	// Arrow function params
-	const arrowMatch = source.match(/^\s*([^=]*?)\s*=>/);
-	if (arrowMatch) {
-		const params = arrowMatch[1].trim();
-		// Remove parentheses if present
-		return params.startsWith("(") && params.endsWith(")")
-			? params.slice(1, -1).trim()
-			: params;
+	// Simple arrow function: param =>
+	const simpleArrowMatch = source.match(/^\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=>/);
+	if (simpleArrowMatch) {
+		return simpleArrowMatch[1].trim();
+	}
+
+	// Regular function: function name(params)
+	const paramMatch = source.match(/^(?:async\s+)?function[^(]*\(([^)]*)\)/);
+	if (paramMatch) {
+		return paramMatch[1].trim();
 	}
 
 	return "";
 }
 
 /**
- * Optimize a function by inlining nested tagged template literals
- * @param {Function} templateFunction - Function containing tagged template literals
+ * Optimize function with AST-based template inlining - raven intelligence
+ * @param {Function} templateFunction - Function with tagged templates
  * @returns {Function} Optimized function with inlined templates
  */
 export function inline(templateFunction) {
 	try {
-		// Extract tag name from the function source
 		const functionSource = templateFunction.toString();
 		const tagName = extractTagName(functionSource);
 
 		if (!tagName) {
-			// No tagged templates found, return original
 			return templateFunction;
 		}
 
-		// Extract function body and parameters
 		const functionBody = extractFunctionBody(templateFunction);
 		const params = extractFunctionParams(templateFunction);
 
-		// Inline all nested tagged template calls
-		const optimizedBody = inlineTaggedTemplates(functionBody, tagName);
+		// Transform using AST approach
+		const optimizedBody = transformFunctionBody(functionBody, tagName);
 
-		// If no changes were made, return original
+		// Return original if no optimization possible
 		if (optimizedBody === functionBody) {
 			return templateFunction;
 		}
 
-		// Create new function with optimized body
+		// Create optimized function - surgical precision
 		const functionName = templateFunction.name || "anonymous";
 		const newFunctionCode = `return function ${functionName}(${params}) {\n${optimizedBody}\n}`;
 
 		const optimizedFunction = new Function(newFunctionCode)();
-
 		return optimizedFunction;
 	} catch (error) {
-		// Graceful fallback on any error
+		// Graceful fallback - raven survival instinct
 		console.warn(
 			"Template inlining failed, using original function:",
 			error.message,

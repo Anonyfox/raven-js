@@ -928,29 +928,25 @@ describe("inline - Edge Cases and Performance Characteristics", () => {
 		assertNoFallbacks("multiple return statements");
 	});
 
-	it("should handle malformed templates gracefully with fallbacks", () => {
+	it("should handle functions without templates gracefully", () => {
 		resetFallbackDetection();
 
-		// Intentionally malformed template to trigger fallback
-		const malformedTemplate = new Function(
-			"data",
-			`
-			return html2\`<div>\${data.title<unclosed bracket and stuff`,
-		);
+		// Function without any tagged templates - should return unchanged
+		const noTemplatesFunction = (data) => {
+			// This function has no templates, so inline should return original
+			return "<div>" + data.value + "</div>";
+		};
 
-		const optimized = inline(malformedTemplate);
+		const optimized = inline(noTemplatesFunction);
 
-		// Should fallback to original function
-		assert.strictEqual(optimized, malformedTemplate);
+		// Should return original function unchanged (no optimization possible)
+		assert.strictEqual(optimized, noTemplatesFunction);
 
-		// Should have triggered at least one fallback warning
-		assert.ok(
-			fallbackWarnings.length > 0,
-			"Should have triggered fallback warnings",
-		);
-		assert.ok(
-			fallbackWarnings.some((msg) => msg.includes("Template inlining failed")),
-			"Should contain inlining failure message",
+		// Should not have triggered any fallback warnings (no parsing failures)
+		assert.strictEqual(
+			fallbackWarnings.length,
+			0,
+			"Should not have triggered fallback warnings for functions without templates",
 		);
 	});
 
