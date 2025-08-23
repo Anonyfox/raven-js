@@ -1,6 +1,6 @@
 # Template Engine Benchmark Results
 
-**Generated:** 2025-08-23T21:50:24.331Z
+**Generated:** 2025-08-23T22:11:19.554Z
 **Test Environment:** Node.js v22.5.0
 **Iterations:** 1000 renders per engine
 **Sample Data:** 90 blog posts with full metadata
@@ -9,15 +9,15 @@
 
 | Rank | Engine | Avg Time (ms) | Renders/sec | vs Fastest | Memory (KB) |
 |------|--------|---------------|-------------|------------|-------------|
-| 1 | **doT** | 0.13 | 7948 | baseline | 627 |
-| 2 | **Pug** | 0.19 | 5279 | 1.51x slower | 8556 |
-| 3 | **Eta** | 0.22 | 4573 | 1.74x slower | 4070 |
-| 4 | **Beak2 (RavenJS HTML2)** | 0.54 | 1836 | 4.33x slower | -30987 |
-| 5 | **Mustache** | 0.66 | 1521 | 5.23x slower | 2728 |
-| 6 | **Beak2 Compiled (RavenJS HTML2 + Compile)** | 1.24 | 809 | 9.82x slower | 67943 |
-| 7 | **Handlebars** | 1.32 | 755 | 10.53x slower | 1737 |
-| 8 | **EJS** | 2.04 | 490 | 16.23x slower | -5201 |
-| 9 | **Beak (RavenJS)** | 2.05 | 488 | 16.28x slower | 63130 |
-| 10 | **Nunjucks** | 2.72 | 367 | 21.64x slower | -75570 |
-| 11 | **Liquid** | 4.12 | 242 | 32.79x slower | 63506 |
-\n## Detailed Statistics\n\n| Engine | Min (ms) | Median (ms) | P95 (ms) | Max (ms) | Total (ms) |\n|--------|----------|-------------|----------|----------|------------|\n| **doT** | 0.12 | 0.12 | 0.14 | 0.72 | 126 |\n| **Pug** | 0.17 | 0.18 | 0.20 | 0.81 | 189 |\n| **Eta** | 0.20 | 0.21 | 0.26 | 0.77 | 219 |\n| **Beak2 (RavenJS HTML2)** | 0.48 | 0.51 | 0.72 | 4.90 | 545 |\n| **Mustache** | 0.59 | 0.62 | 1.03 | 1.77 | 657 |\n| **Beak2 Compiled (RavenJS HTML2 + Compile)** | 1.14 | 1.19 | 1.56 | 1.92 | 1236 |\n| **Handlebars** | 1.20 | 1.24 | 1.72 | 2.13 | 1324 |\n| **EJS** | 1.94 | 1.99 | 2.44 | 2.84 | 2042 |\n| **Beak (RavenJS)** | 1.86 | 1.95 | 2.44 | 5.50 | 2048 |\n| **Nunjucks** | 2.42 | 2.62 | 3.21 | 9.11 | 2723 |\n| **Liquid** | 3.50 | 4.05 | 4.47 | 9.31 | 4125 |\n\n## Analysis\n\n### 🏆 Performance Leaders\n\n1. **doT** - Fastest overall with 0.13ms average render time\n2. **Pug** - Close second at 0.19ms (1.51x slower)\n3. **Eta** - Third place at 0.22ms\n\n### 📈 Performance Spread\n\nThe fastest engine (doT) is **32.8x faster** than the slowest (Liquid).\nMedian performance difference: 9.8x slower than fastest.\n\n### 💾 Memory Efficiency\n\n**Most memory efficient:** Nunjucks (-75570 KB)\n**Highest memory usage:** Beak2 Compiled (RavenJS HTML2 + Compile) (67943 KB)\n\n## Test Environment\n\n- **Node.js Version:** v22.5.0\n- **Platform:** darwin arm64\n- **Template Complexity:** Blog listing with 90 posts\n- **Data Variety:** Mixed content lengths, multiple authors, categories, tags\n- **Caching:** Disabled for all engines to ensure fair comparison\n- **Warmup:** 10 iterations before measurement\n- **Measurement:** 1000 timed iterations per engine\n\n---\n\n*Benchmark generated with the RavenJS renderer-benchmark package*\n
+| 1 | **doT** | 0.13 | 7884 | baseline | 786 |
+| 2 | **Pug** | 0.19 | 5291 | 1.49x slower | -7111 |
+| 3 | **Eta** | 0.22 | 4533 | 1.74x slower | 3373 |
+| 4 | **Beak2 Compiled (RavenJS HTML2 + Compile)** | 0.50 | 1983 | 3.98x slower | -3187 |
+| 5 | **Beak2 (RavenJS HTML2)** | 0.54 | 1854 | 4.25x slower | 52189 |
+| 6 | **Mustache** | 0.67 | 1501 | 5.25x slower | -11757 |
+| 7 | **Handlebars** | 1.33 | 752 | 10.49x slower | 796 |
+| 8 | **EJS** | 2.00 | 500 | 15.77x slower | -13168 |
+| 9 | **Beak (RavenJS)** | 2.20 | 454 | 17.35x slower | -7368 |
+| 10 | **Nunjucks** | 2.68 | 374 | 21.11x slower | 3176 |
+| 11 | **Liquid** | 3.81 | 263 | 30.02x slower | -11540 |
+\n## Detailed Statistics\n\n| Engine | Min (ms) | Median (ms) | P95 (ms) | Max (ms) | Total (ms) |\n|--------|----------|-------------|----------|----------|------------|\n| **doT** | 0.12 | 0.12 | 0.14 | 0.62 | 127 |\n| **Pug** | 0.17 | 0.18 | 0.20 | 0.80 | 189 |\n| **Eta** | 0.20 | 0.21 | 0.25 | 1.07 | 221 |\n| **Beak2 Compiled (RavenJS HTML2 + Compile)** | 0.44 | 0.47 | 0.66 | 2.97 | 504 |\n| **Beak2 (RavenJS HTML2)** | 0.48 | 0.51 | 0.73 | 1.30 | 539 |\n| **Mustache** | 0.60 | 0.63 | 1.00 | 1.85 | 666 |\n| **Handlebars** | 1.21 | 1.26 | 1.71 | 2.47 | 1331 |\n| **EJS** | 1.90 | 1.96 | 2.36 | 3.57 | 2001 |\n| **Beak (RavenJS)** | 1.85 | 1.95 | 2.57 | 36.05 | 2201 |\n| **Nunjucks** | 2.39 | 2.56 | 3.16 | 5.37 | 2677 |\n| **Liquid** | 3.38 | 3.80 | 4.13 | 4.91 | 3808 |\n\n## Analysis\n\n### 🏆 Performance Leaders\n\n1. **doT** - Fastest overall with 0.13ms average render time\n2. **Pug** - Close second at 0.19ms (1.49x slower)\n3. **Eta** - Third place at 0.22ms\n\n### 📈 Performance Spread\n\nThe fastest engine (doT) is **30.0x faster** than the slowest (Liquid).\nMedian performance difference: 5.3x slower than fastest.\n\n### 💾 Memory Efficiency\n\n**Most memory efficient:** EJS (-13168 KB)\n**Highest memory usage:** Beak2 (RavenJS HTML2) (52189 KB)\n\n## Test Environment\n\n- **Node.js Version:** v22.5.0\n- **Platform:** darwin arm64\n- **Template Complexity:** Blog listing with 90 posts\n- **Data Variety:** Mixed content lengths, multiple authors, categories, tags\n- **Caching:** Disabled for all engines to ensure fair comparison\n- **Warmup:** 10 iterations before measurement\n- **Measurement:** 1000 timed iterations per engine\n\n---\n\n*Benchmark generated with the RavenJS renderer-benchmark package*\n

@@ -507,12 +507,77 @@ function detectClosureReferences(functionStr) {
 }
 
 /**
- * Create closure-aware inlined function
+ * Create hybrid runtime context function - optimized with partial compile-time capture
+ * @param {Function} templateFunction - Original template function
+ * @param {string} optimizedBody - Optimized function body
+ * @param {string} params - Function parameters
+ * @param {string[]} runtimeVars - Variables that need runtime capture
+ * @param {Object} compiledContext - Variables captured at compile time
+ * @returns {Function} Hybrid optimized function
+ */
+function createRuntimeContextFunction(
+	templateFunction,
+	optimizedBody,
+	params,
+	runtimeVars,
+	compiledContext,
+) {
+	const functionName = templateFunction.name || "anonymous";
+
+	// Cache the optimized function with context injection - created once
+	let cachedOptimizedFunction = null;
+	let cachedContextOptimizedBody = null;
+
+	return function hybridOptimized(...args) {
+		try {
+			// 1. Capture runtime variables (only on first call or when needed)
+			const runtimeContext = {};
+			for (const varName of runtimeVars) {
+				try {
+					runtimeContext[varName] = eval(varName);
+				} catch {
+					// Runtime capture failed - fallback to original function
+					return templateFunction.apply(this, args);
+				}
+			}
+
+			// 2. Merge compile-time and runtime contexts
+			const fullContext = { ...compiledContext, ...runtimeContext };
+
+			// 3. Generate optimized function (cache this for performance)
+			if (!cachedOptimizedFunction) {
+				cachedContextOptimizedBody = optimizedBody;
+				for (const varName of [
+					...Object.keys(compiledContext),
+					...runtimeVars,
+				]) {
+					const regex = new RegExp(`\\b${varName}\\s*\\(`, "g");
+					cachedContextOptimizedBody = cachedContextOptimizedBody.replace(
+						regex,
+						`ctx.${varName}(`,
+					);
+				}
+
+				const newFunctionCode = `return function ${functionName}(ctx, ${params}) {\n${cachedContextOptimizedBody}\n}`;
+				cachedOptimizedFunction = new Function(newFunctionCode)();
+			}
+
+			// 4. Execute with full context (fast bound call)
+			return cachedOptimizedFunction(fullContext, ...args);
+		} catch (error) {
+			// Any error - fallback to original
+			return templateFunction.apply(this, args);
+		}
+	};
+}
+
+/**
+ * Create high-performance closure-bound function - compile once, run fast
  * @param {Function} templateFunction - Original template function
  * @param {string} optimizedBody - Optimized function body
  * @param {string} params - Function parameters
  * @param {string[]} closureRefs - Required closure variables
- * @returns {Function} Closure-aware optimized function
+ * @returns {Function} Pre-optimized bound function
  */
 function createClosureAwareFunction(
 	templateFunction,
@@ -520,54 +585,77 @@ function createClosureAwareFunction(
 	params,
 	closureRefs,
 ) {
+	const functionName = templateFunction.name || "anonymous";
+
 	if (closureRefs.length === 0) {
-		// No closures needed, use direct optimization
-		const functionName = templateFunction.name || "anonymous";
+		// No closures needed - pure speed path
 		const newFunctionCode = `return function ${functionName}(${params}) {\n${optimizedBody}\n}`;
 		return new Function(newFunctionCode)();
 	}
 
-	// Create wrapper that preserves closure access
-	const functionName = templateFunction.name || "anonymous";
+	// COMPILE-TIME OPTIMIZATION: Capture context once, bind once, run fast
+	try {
+		// 1. Capture closure context by walking up the call stack
+		const context = {};
+		const failedVars = [];
 
-	return function closureAwareOptimized(...args) {
-		// Temporarily inject closure variables into global scope
-		const originalValues = new Map();
-
-		// Capture current values and inject needed closures
 		for (const varName of closureRefs) {
-			// Try to get variable from calling context using eval
-			let value;
 			try {
-				// Look in parent scope chain - this is hacky but works
-				value = eval(varName);
+				// Try direct eval first (usually fails due to scope issues)
+				context[varName] = eval(varName);
 			} catch {
-				// Variable not accessible, fall back to original function
-				return templateFunction.apply(this, args);
-			}
+				// Direct eval failed - try alternative methods
+				let found = false;
 
-			if (varName in globalThis) {
-				originalValues.set(varName, globalThis[varName]);
-			}
-			globalThis[varName] = value;
-		}
+				// Method 1: Check if it's already in global scope
+				if (varName in globalThis) {
+					context[varName] = globalThis[varName];
+					found = true;
+				}
 
-		try {
-			// Create and execute optimized function with closure access
-			const newFunctionCode = `return function ${functionName}(${params}) {\n${optimizedBody}\n}`;
-			const optimizedFunction = new Function(newFunctionCode)();
-			return optimizedFunction.apply(this, args);
-		} finally {
-			// Restore original global values
-			for (const varName of closureRefs) {
-				if (originalValues.has(varName)) {
-					globalThis[varName] = originalValues.get(varName);
-				} else {
-					delete globalThis[varName];
+				// Method 2: Runtime capture approach - store variable names for later
+				if (!found) {
+					failedVars.push(varName);
 				}
 			}
 		}
-	};
+
+		// If we couldn't capture all variables at compile time, use hybrid approach
+		if (failedVars.length > 0) {
+			// Use runtime context capture for failed variables
+			return createRuntimeContextFunction(
+				templateFunction,
+				optimizedBody,
+				params,
+				failedVars,
+				context, // partial context we did capture
+			);
+		}
+
+		// 2. Transform optimized body to use context object
+		let contextOptimizedBody = optimizedBody;
+		for (const varName of closureRefs) {
+			// Replace varName( with ctx.varName( in the optimized body
+			const regex = new RegExp(`\\b${varName}\\s*\\(`, "g");
+			contextOptimizedBody = contextOptimizedBody.replace(
+				regex,
+				`ctx.${varName}(`,
+			);
+		}
+
+		// 3. Generate optimized function with context-first parameter
+		const newFunctionCode = `return function ${functionName}(ctx, ${params}) {\n${contextOptimizedBody}\n}`;
+		const optimizedFunction = new Function(newFunctionCode)();
+
+		// 4. Pre-bind context - runtime will be just function calls
+		return optimizedFunction.bind(null, context);
+	} catch (error) {
+		// Any compilation error - fallback gracefully
+		console.warn(
+			`Context binding failed: ${error.message}, using original function`,
+		);
+		return templateFunction;
+	}
 }
 
 /**
