@@ -488,6 +488,89 @@ function extractFunctionParams(fn) {
 }
 
 /**
+ * Detect closure variable references in function body
+ * @param {string} functionStr - Function source code
+ * @returns {string[]} Array of detected closure variable names
+ */
+function detectClosureReferences(functionStr) {
+	const closureRefs = new Set();
+
+	// Pattern to match potential component calls: CapitalizedName(
+	const componentPattern = /\b([A-Z][a-zA-Z0-9]*)\s*\(/g;
+	let match;
+
+	while ((match = componentPattern.exec(functionStr)) !== null) {
+		closureRefs.add(match[1]);
+	}
+
+	return Array.from(closureRefs);
+}
+
+/**
+ * Create closure-aware inlined function
+ * @param {Function} templateFunction - Original template function
+ * @param {string} optimizedBody - Optimized function body
+ * @param {string} params - Function parameters
+ * @param {string[]} closureRefs - Required closure variables
+ * @returns {Function} Closure-aware optimized function
+ */
+function createClosureAwareFunction(
+	templateFunction,
+	optimizedBody,
+	params,
+	closureRefs,
+) {
+	if (closureRefs.length === 0) {
+		// No closures needed, use direct optimization
+		const functionName = templateFunction.name || "anonymous";
+		const newFunctionCode = `return function ${functionName}(${params}) {\n${optimizedBody}\n}`;
+		return new Function(newFunctionCode)();
+	}
+
+	// Create wrapper that preserves closure access
+	const functionName = templateFunction.name || "anonymous";
+
+	return function closureAwareOptimized(...args) {
+		// Temporarily inject closure variables into global scope
+		const originalValues = new Map();
+
+		// Capture current values and inject needed closures
+		for (const varName of closureRefs) {
+			// Try to get variable from calling context using eval
+			let value;
+			try {
+				// Look in parent scope chain - this is hacky but works
+				value = eval(varName);
+			} catch {
+				// Variable not accessible, fall back to original function
+				return templateFunction.apply(this, args);
+			}
+
+			if (varName in globalThis) {
+				originalValues.set(varName, globalThis[varName]);
+			}
+			globalThis[varName] = value;
+		}
+
+		try {
+			// Create and execute optimized function with closure access
+			const newFunctionCode = `return function ${functionName}(${params}) {\n${optimizedBody}\n}`;
+			const optimizedFunction = new Function(newFunctionCode)();
+			return optimizedFunction.apply(this, args);
+		} finally {
+			// Restore original global values
+			for (const varName of closureRefs) {
+				if (originalValues.has(varName)) {
+					globalThis[varName] = originalValues.get(varName);
+				} else {
+					delete globalThis[varName];
+				}
+			}
+		}
+	};
+}
+
+/**
  * Optimize function with AST-based template inlining - raven intelligence
  * @param {Function} templateFunction - Function with tagged templates
  * @returns {Function} Optimized function with inlined templates
@@ -504,6 +587,9 @@ export function inline(templateFunction) {
 		const functionBody = extractFunctionBody(templateFunction);
 		const params = extractFunctionParams(templateFunction);
 
+		// Detect closure references
+		const closureRefs = detectClosureReferences(functionSource);
+
 		// Transform using AST approach
 		const optimizedBody = transformFunctionBody(functionBody, tagName);
 
@@ -512,12 +598,13 @@ export function inline(templateFunction) {
 			return templateFunction;
 		}
 
-		// Create optimized function - surgical precision
-		const functionName = templateFunction.name || "anonymous";
-		const newFunctionCode = `return function ${functionName}(${params}) {\n${optimizedBody}\n}`;
-
-		const optimizedFunction = new Function(newFunctionCode)();
-		return optimizedFunction;
+		// Create closure-aware optimized function
+		return createClosureAwareFunction(
+			templateFunction,
+			optimizedBody,
+			params,
+			closureRefs,
+		);
 	} catch (error) {
 		// Graceful fallback - raven survival instinct
 		console.warn(

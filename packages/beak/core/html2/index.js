@@ -13,6 +13,8 @@
  * Uses += concatenation strategy, monomorphic value processing, and character-level escaping.
  */
 
+export { compile } from "./compile/index.js";
+
 /**
  * Character-level HTML escaping without regex overhead.
  * Switch-based approach optimized for V8 branch prediction.

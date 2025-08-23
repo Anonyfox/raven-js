@@ -1,8 +1,9 @@
-import { html2 as html } from "@raven-js/beak/core/html2";
-import { compile } from "@raven-js/beak/core/html2/compile";
+import { compile, html2 as html } from "@raven-js/beak/core/html2";
 
 // Component-like functions for better organization
-const MetaHead = ({ site, title, description }) => html`
+const MetaHead = compile(
+	({ site, title, description }) =>
+		html`
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>${title} - ${site.name}</title>
@@ -12,9 +13,12 @@ const MetaHead = ({ site, title, description }) => html`
 	<meta property="og:description" content="${description}" />
 	<meta property="og:type" content="website" />
 	<link rel="canonical" href="${site.url}" />
-`;
+`,
+);
 
-const NavigationMenu = ({ navigation, currentPath = "/" }) => html`
+const NavigationMenu = compile(
+	({ navigation, currentPath = "/" }) =>
+		html`
 	<nav class="main-nav" role="navigation" aria-label="Main navigation">
 		<ul class="nav-list">
 			${navigation.map(
@@ -32,9 +36,12 @@ const NavigationMenu = ({ navigation, currentPath = "/" }) => html`
 			)}
 		</ul>
 	</nav>
-`;
+`,
+);
 
-const CategoryFilter = ({ categories, selectedCategory }) => html`
+const CategoryFilter = compile(
+	({ categories, selectedCategory }) =>
+		html`
 	<div class="category-filter">
 		<h3>Filter by Category</h3>
 		<ul class="category-list">
@@ -60,9 +67,12 @@ const CategoryFilter = ({ categories, selectedCategory }) => html`
 			)}
 		</ul>
 	</div>
-`;
+`,
+);
 
-const PopularTags = ({ tags }) => html`
+const PopularTags = compile(
+	({ tags }) =>
+		html`
 	<div class="popular-tags">
 		<h3>Popular Tags</h3>
 		<div class="tag-cloud">
@@ -81,11 +91,13 @@ const PopularTags = ({ tags }) => html`
 			)}
 		</div>
 	</div>
-`;
+`,
+);
 
 // Compiled version - surgically optimized
 const AnalyticsDashboard = compile(
-	({ analytics, totalPosts }) => html`
+	({ analytics, totalPosts }) =>
+		html`
 	<div class="analytics-dashboard">
 		<h3>Blog Statistics</h3>
 		<div class="stats-grid">
@@ -110,7 +122,9 @@ const AnalyticsDashboard = compile(
 `,
 );
 
-const FeaturedPostsSection = ({ featuredPosts }) => html`
+const FeaturedPostsSection = compile(
+	({ featuredPosts }) =>
+		html`
 	${
 		featuredPosts.length > 0
 			? html`
@@ -142,7 +156,8 @@ const FeaturedPostsSection = ({ featuredPosts }) => html`
 		  `
 			: ""
 	}
-`;
+`,
+);
 
 // Compiled version - most complex component
 const PostCard = compile(({ post, compactView = false }) => {
@@ -355,7 +370,9 @@ const PaginationControls = compile(
 	},
 );
 
-const SearchAndFilters = ({ searchQuery, selectedCategory, sortBy }) => html`
+const SearchAndFilters = compile(
+	({ searchQuery, selectedCategory, sortBy }) =>
+		html`
 	<div class="search-filters">
 		<form class="search-form" role="search">
 			<div class="search-input-group">
@@ -394,11 +411,13 @@ const SearchAndFilters = ({ searchQuery, selectedCategory, sortBy }) => html`
 			</select>
 		</div>
 	</div>
-`;
+`,
+);
 
 // Main render function - compiled for maximum optimization
 export const renderBlogPage = compile(
-	(data) => html`<!DOCTYPE html>
+	(data) =>
+		html`<!DOCTYPE html>
 	<html lang="en" data-theme="${data.userPreferences.theme}">
 		<head>
 			${MetaHead({
