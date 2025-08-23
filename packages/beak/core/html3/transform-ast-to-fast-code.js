@@ -101,25 +101,36 @@ function transformTaggedTemplate(template) {
 				if (expr.ast?.parts?.length > 0) {
 					const transformedExpr = transformAstToFastCode(expr.ast);
 					if (transformedExpr.trim()) {
-						// Only wrap if the transformed expression contains multiple parts or operators
-						if (expr.ast.parts.length > 1 || transformedExpr.includes(" + ")) {
+						// Check if it's a simple expression that needs processValue wrapping
+						if (
+							expr.ast.parts.length === 1 &&
+							expr.ast.parts[0].type === "code"
+						) {
+							// Simple variable/expression, wrap with processValue
+							parts.push(`processValue(${transformedExpr})`);
+						} else if (
+							expr.ast.parts.length > 1 ||
+							transformedExpr.includes(" + ")
+						) {
+							// Complex expression, wrap in parentheses
 							parts.push(`(${transformedExpr})`);
 						} else {
+							// Other cases, use as-is
 							parts.push(transformedExpr);
 						}
 					}
 				} else {
-					// Simple expression - check if it needs parentheses for precedence
+					// Simple expression - wrap with processValue to handle arrays properly
 					const content = expr.content;
 					if (content.includes("?") && content.includes(":")) {
 						// Ternary operator needs parentheses when used in concatenation
-						parts.push(`(${content})`);
+						parts.push(`processValue((${content}))`);
 					} else if (content.includes("&&") || content.includes("||")) {
 						// Logical operators need parentheses
-						parts.push(`(${content})`);
+						parts.push(`processValue((${content}))`);
 					} else {
-						// Simple expression, use as-is
-						parts.push(content);
+						// Simple expression, wrap with processValue
+						parts.push(`processValue(${content})`);
 					}
 				}
 			}

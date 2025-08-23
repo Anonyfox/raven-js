@@ -256,12 +256,12 @@ describe("Function-Level Compilation", () => {
 	});
 
 	it("should compile function with array mapping", () => {
-		function listTemplate(data) {
+		function listTemplateFixed(data) {
 			const items = data.items.map((item) => html3`<li>${item}</li>`);
 			return html3`<ul>${items}</ul>`;
 		}
 
-		const compiled = compileTemplateFunction(listTemplate);
+		const compiled = compileTemplateFunction(listTemplateFixed);
 		const result = compiled({ items: ["First", "Second", "Third"] });
 		assert.strictEqual(
 			result,

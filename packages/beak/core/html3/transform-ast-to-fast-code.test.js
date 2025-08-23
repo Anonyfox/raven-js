@@ -157,7 +157,7 @@ describe("transformAstToFastCode", () => {
 			};
 			const result = transformAstToFastCode(ast);
 
-			assert.strictEqual(result, "a + b");
+			assert.strictEqual(result, "processValue(a) + processValue(b)");
 		});
 
 		it("should handle escaped characters in strings", () => {
