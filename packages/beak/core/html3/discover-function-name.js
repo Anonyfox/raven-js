@@ -28,141 +28,92 @@
  */
 export function discoverFunctionName() {
 	try {
-		// Get stack trace
 		const stack = new Error().stack;
-		if (!stack) {
-			return null;
+		if (!stack) return null;
+
+		// Find stack frames inline - avoid array allocation from split()
+		let frameStart = 0;
+		let frameCount = 0;
+
+		// Skip first 2 frames (Error + discoverFunctionName + html3/template function)
+		while (frameCount < 2) {
+			const newlineIndex = stack.indexOf("\n", frameStart);
+			if (newlineIndex === -1) return null;
+			frameStart = newlineIndex + 1;
+			frameCount++;
 		}
 
-		// Parse stack to find the calling function name
-		return parseCallingFunctionFromStack(stack);
-	} catch {
-		// Graceful failure - return null to trigger fallback
-		return null;
-	}
-}
+		// Check up to 8 more frames for user functions
+		for (let i = 0; i < 8; i++) {
+			const newlineIndex = stack.indexOf("\n", frameStart);
+			const frameEnd = newlineIndex === -1 ? stack.length : newlineIndex;
 
-/**
- * Parses stack trace to extract the name of the function that called us.
- * Handles different JavaScript engine stack trace formats.
- *
- * @param {string} stack - Error.prototype.stack string
- * @returns {string|null} Function name or null if not found
- */
-function parseCallingFunctionFromStack(stack) {
-	try {
-		const lines = stack.split("\n");
+			if (frameStart >= frameEnd) return null;
 
-		// Skip our own frames and find the first user function
-		// Typical stack:
-		// 0: "Error" or blank
-		// 1: "at discoverFunctionName ..."  (us)
-		// 2: "at html3 ..." (our template function)
-		// 3: "at userFunction ..." (this is what we want)
+			const frame = stack.slice(frameStart, frameEnd);
 
-		for (let i = 2; i < Math.min(lines.length, 10); i++) {
-			const line = lines[i]?.trim();
-			if (!line) continue;
+			// Combined regex for all engine formats - single pass optimization
+			const match = frame.match(
+				/^\s*at\s+(?:[a-zA-Z_$][\w$]*\.)?([a-zA-Z_$][\w$]*)\s*[(\s]|^(?:[a-zA-Z_$][\w$]*\.)?([a-zA-Z_$][\w$]*)@/,
+			);
+			const functionName = match?.[1] || match?.[2];
 
-			const functionName = extractFunctionNameFromFrame(line);
 			if (functionName && !isInternalFrame(functionName)) {
 				return functionName;
 			}
+
+			if (newlineIndex === -1) break;
+			frameStart = newlineIndex + 1;
 		}
 
 		return null;
 	} catch {
 		return null;
 	}
-}
-
-/**
- * Extracts function name from a single stack trace frame.
- * Handles V8, SpiderMonkey, and JavaScriptCore formats including method calls.
- *
- * @param {string} frame - Single line from stack trace
- * @returns {string|null} Extracted function name or null
- */
-function extractFunctionNameFromFrame(frame) {
-	// V8 method call format: "    at Object.methodName (file:line:column)" or "    at ClassName.methodName (file:line:column)"
-	let match = frame.match(
-		/^\s*at\s+(?:[a-zA-Z_$][a-zA-Z0-9_$]*\.)?([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/,
-	);
-	if (match?.[1]) {
-		return match[1];
-	}
-
-	// V8 method call format without parens: "    at Object.methodName file:line:column"
-	match = frame.match(
-		/^\s*at\s+(?:[a-zA-Z_$][a-zA-Z0-9_$]*\.)?([a-zA-Z_$][a-zA-Z0-9_$]*)\s+/,
-	);
-	if (match?.[1]) {
-		return match[1];
-	}
-
-	// SpiderMonkey (Firefox) format: "functionName@file:line:column"
-	match = frame.match(/^([a-zA-Z_$][a-zA-Z0-9_$]*)@/);
-	if (match?.[1]) {
-		return match[1];
-	}
-
-	// SpiderMonkey method format: "Object.methodName@file:line:column"
-	match = frame.match(
-		/^(?:[a-zA-Z_$][a-zA-Z0-9_$]*\.)?([a-zA-Z_$][a-zA-Z0-9_$]*)@/,
-	);
-	if (match?.[1]) {
-		return match[1];
-	}
-
-	// JavaScriptCore (Safari) similar to V8 but may have variations
-	match = frame.match(/([a-zA-Z_$][a-zA-Z0-9_$]*)@.*:\d+:\d+/);
-	if (match?.[1]) {
-		return match[1];
-	}
-
-	return null;
 }
 
 /**
  * Determines if a function name represents internal/system code.
- * These should be skipped when looking for user functions.
+ * Optimized for high performance with minimal string operations.
  *
  * @param {string} functionName - Function name from stack trace
  * @returns {boolean} True if internal frame
  */
 function isInternalFrame(functionName) {
-	// Skip our own functions and common internal patterns
-	const internalPatterns = [
-		"discoverFunctionName",
-		"html3",
-		"safeHtml3",
-		"escapeHtml",
-		"node:",
-		"internal/",
-		"Module.",
-		"Object.",
-		"Function.",
-		"eval",
-		"<anonymous>",
-		"anonymous",
-		"new", // Constructor calls (like 'new Promise', 'new SafePromise')
-		"Test.", // Node.js test runner
-		"TestContext.", // Node.js test runner
-		"SafePromise", // Node.js internals
-		"Promise", // Can be internal context
-		"primordials", // Node.js internals
-		"async_hooks", // Node.js internals
-		"test_runner", // Node.js test runner
-		"runInAsyncScope", // Node.js async_hooks internal method
-		"processTicksAndRejections", // Node.js internal
-		"processPendingSubtests", // Node.js test runner internal
-		"run", // Node.js test runner Test.run method
-		"start", // Node.js test runner internal
-		"postRun", // Node.js test runner internal
-	];
+	// Fast character-based checks first (most common cases)
+	const firstChar = functionName.charCodeAt(0);
 
-	const lowerName = functionName.toLowerCase();
-	return internalPatterns.some((pattern) =>
-		lowerName.includes(pattern.toLowerCase()),
+	// Check for common internal patterns using char codes for speed
+	// 'd' (100) = discoverFunctionName, 'h' (104) = html3, 's' (115) = safeHtml3
+	if (firstChar === 100 && functionName === "discoverFunctionName") return true;
+	if (firstChar === 104 && functionName === "html3") return true;
+	if (firstChar === 115 && functionName === "safeHtml3") return true;
+	if (firstChar === 101 && functionName.startsWith("escape")) return true; // escapeHtml
+
+	// Handle single character internal markers
+	if (firstChar === 60) return true; // '<anonymous>'
+	if (functionName === "eval" || functionName === "new") return true;
+
+	// Node.js/V8 internal patterns - case sensitive checks
+	return (
+		functionName.includes("node:") ||
+		functionName.includes("internal/") ||
+		functionName.includes("Module.") ||
+		functionName.includes("Object.") ||
+		functionName.includes("Function.") ||
+		functionName.includes("Test.") ||
+		functionName.includes("TestContext.") ||
+		functionName.includes("SafePromise") ||
+		functionName.includes("Promise") ||
+		functionName.includes("primordials") ||
+		functionName.includes("async_hooks") ||
+		functionName.includes("test_runner") ||
+		functionName === "runInAsyncScope" ||
+		functionName === "processTicksAndRejections" ||
+		functionName === "processPendingSubtests" ||
+		functionName === "run" ||
+		functionName === "start" ||
+		functionName === "postRun" ||
+		functionName === "anonymous"
 	);
 }
