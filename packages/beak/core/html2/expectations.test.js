@@ -438,8 +438,8 @@ describe("Edge Cases and Error Handling", () => {
 	});
 
 	test("templates with only whitespace", () => {
-		strictEqual(html2`   `, "   ");
-		strictEqual(html2`\n\t\r`, "\n\t\r");
+		strictEqual(html2`   `, "");
+		strictEqual(html2`\n\t\r`, "");
 	});
 
 	test("templates with special unicode characters", () => {
@@ -451,7 +451,7 @@ describe("Edge Cases and Error Handling", () => {
 	test("control characters and escape sequences", () => {
 		const control = "\n\t\r\0\b\f\v";
 		const result = html2`${control}`;
-		strictEqual(result, control);
+		strictEqual(result, "\0\b"); // trim() removes \n\t\r\f\v whitespace
 	});
 
 	test("circular reference protection", () => {
@@ -567,11 +567,11 @@ describe("Real-World Usage Patterns", () => {
 
 			strictEqual(
 				button("Click me"),
-				'\n\t\t\t\t<button type="button" >Click me</button>\n\t\t\t',
+				'<button type="button" >Click me</button>',
 			);
 			strictEqual(
 				button("Submit", "submit", true),
-				'\n\t\t\t\t<button type="submit" disabled>Submit</button>\n\t\t\t',
+				'<button type="submit" disabled>Submit</button>',
 			);
 		});
 	});

@@ -88,6 +88,27 @@ function processValue(value, shouldEscape = false) {
 }
 
 /**
+ * Protected value processing with circular reference detection.
+ * Used only by safeHtml2 for maximum safety.
+ *
+ * @param {any} value - Value to process
+ * @param {WeakSet<any[]>} seen - Circular reference tracker
+ * @returns {string} Processed string value with escaping
+ */
+function processValueSafe(value, seen) {
+	if (value == null) return "";
+	if (typeof value === "string") return escapeHtml(value);
+	if (typeof value === "number") return String(value);
+	if (typeof value === "boolean") return value ? String(value) : "";
+	if (Array.isArray(value)) {
+		if (seen.has(value)) return "[Circular]";
+		seen.add(value);
+		return value.map((v) => processValueSafe(v, seen)).join("");
+	}
+	return escapeHtml(String(value));
+}
+
+/**
  * Tagged template literal for trusted HTML content.
  * No escaping applied - assumes content is already safe.
  *
@@ -100,21 +121,23 @@ export function html2(strings, ...values) {
 	for (let i = 0; i < values.length; i++) {
 		result += processValue(values[i]) + strings[i + 1];
 	}
-	return result;
+	return result.trim();
 }
 
 /**
  * Tagged template literal for untrusted HTML content.
  * All interpolated values are HTML-escaped for XSS protection.
+ * Includes circular reference protection.
  *
  * @param {readonly string[]} strings - Template literal static parts
  * @param {...any} values - Template literal interpolated values
  * @returns {string} Rendered HTML string with escaped values
  */
 export function safeHtml2(strings, ...values) {
+	const seen = new WeakSet();
 	let result = strings[0];
 	for (let i = 0; i < values.length; i++) {
-		result += processValue(values[i], true) + strings[i + 1];
+		result += processValueSafe(values[i], seen) + strings[i + 1];
 	}
-	return result;
+	return result.trim();
 }

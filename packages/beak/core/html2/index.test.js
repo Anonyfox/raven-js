@@ -76,3 +76,47 @@ test("escapeHtml - mixed content", () => {
 		"Hello &lt;b&gt;World&lt;/b&gt; &amp; &quot;Friends&quot;",
 	);
 });
+
+test("safeHtml2 - circular reference protection", () => {
+	const circular = [];
+	circular.push(circular);
+	const result = safeHtml2`<div>${circular}</div>`;
+	strictEqual(result, "<div>[Circular]</div>");
+});
+
+test("safeHtml2 - nested circular reference protection", () => {
+	const outer = [];
+	const inner = [];
+	outer.push(inner);
+	inner.push(outer);
+	const result = safeHtml2`<div>${outer}</div>`;
+	strictEqual(result, "<div>[Circular]</div>");
+});
+
+test("html2 still fast - no circular protection (verify performance)", () => {
+	// This test documents that html2 remains unsafe but fast
+	// It should still crash on circular refs (expected behavior)
+	const normalArray = [1, 2, 3];
+	const result = html2`<div>${normalArray}</div>`;
+	strictEqual(result, "<div>123</div>");
+	// Note: We don't test circular refs here as they'd crash the test
+});
+
+test("html2 - trims leading/trailing whitespace", () => {
+	const result = html2`
+		<div>Content</div>
+	`;
+	strictEqual(result, "<div>Content</div>");
+});
+
+test("html2 - preserves internal whitespace", () => {
+	const result = html2`<span>A</span> <span>B</span>`;
+	strictEqual(result, "<span>A</span> <span>B</span>");
+});
+
+test("safeHtml2 - trims leading/trailing whitespace", () => {
+	const result = safeHtml2`
+		<div>Content</div>
+	`;
+	strictEqual(result, "<div>Content</div>");
+});
