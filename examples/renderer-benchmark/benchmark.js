@@ -689,12 +689,9 @@ class BenchmarkRunner {
 
 		// Add bundle size analysis if available
 		try {
-			const bundleData = JSON.parse(
-				fs.readFileSync("bundle-sizes.json", "utf8"),
-			);
 			const bundleTable = fs.readFileSync("bundle-size-table.md", "utf8");
 			report += `\n${bundleTable}\n`;
-		} catch (error) {
+		} catch {
 			// Bundle size data not available
 		}
 
@@ -702,7 +699,7 @@ class BenchmarkRunner {
 		try {
 			const coldStartTable = fs.readFileSync("cold-start-table.md", "utf8");
 			report += `\n${coldStartTable}\n`;
-		} catch (error) {
+		} catch {
 			// Cold start data not available
 		}
 
@@ -735,7 +732,7 @@ class BenchmarkRunner {
 	async runBundleAnalysis() {
 		try {
 			const { spawn } = await import("node:child_process");
-			return new Promise((resolve, reject) => {
+			return new Promise((resolve) => {
 				const process = spawn("node", ["build-bundles.js"], {
 					stdio: "pipe",
 					cwd: ".",
@@ -761,7 +758,7 @@ class BenchmarkRunner {
 					resolve("");
 				});
 			});
-		} catch (error) {
+		} catch {
 			console.log("   ⚠️  Bundle analysis skipped (optional)");
 		}
 	}
@@ -769,7 +766,7 @@ class BenchmarkRunner {
 	async runColdStartBenchmarks() {
 		try {
 			const { spawn } = await import("node:child_process");
-			return new Promise((resolve, reject) => {
+			return new Promise((resolve) => {
 				const process = spawn("node", ["cold-start-benchmark.js"], {
 					stdio: "pipe",
 					cwd: ".",
@@ -795,7 +792,7 @@ class BenchmarkRunner {
 					resolve("");
 				});
 			});
-		} catch (error) {
+		} catch {
 			console.log("   ⚠️  Cold start analysis skipped (optional)");
 		}
 	}

@@ -20,7 +20,8 @@
       "!docs",
       "!plugins/vscode",
       "!**/bin/*.min.js",
-      "!**/static"
+      "!**/static",
+      "!**/bundles"
     ]
   }
 }

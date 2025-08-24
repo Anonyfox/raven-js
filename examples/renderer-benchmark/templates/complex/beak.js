@@ -1,6 +1,9 @@
 import { html } from "@raven-js/beak";
 
 // Component-like functions for better organization
+/**
+ * @param {{ site: any, title: string, description: string }} props
+ */
 const MetaHead = ({ site, title, description }) => html`
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,11 +16,14 @@ const MetaHead = ({ site, title, description }) => html`
 	<link rel="canonical" href="${site.url}" />
 `;
 
+/**
+ * @param {{ navigation: any[], currentPath?: string }} props
+ */
 const NavigationMenu = ({ navigation, currentPath = "/" }) => html`
 	<nav class="main-nav" role="navigation" aria-label="Main navigation">
 		<ul class="nav-list">
 			${navigation.map(
-				(item) => html`
+				(/** @type {any} */ item) => html`
 					<li class="nav-item">
 						<a
 							href="${item.url}"
@@ -33,6 +39,9 @@ const NavigationMenu = ({ navigation, currentPath = "/" }) => html`
 	</nav>
 `;
 
+/**
+ * @param {{ categories: string[], selectedCategory: string }} props
+ */
 const CategoryFilter = ({ categories, selectedCategory }) => html`
 	<div class="category-filter">
 		<h3>Filter by Category</h3>
@@ -46,7 +55,7 @@ const CategoryFilter = ({ categories, selectedCategory }) => html`
 				</a>
 			</li>
 			${categories.map(
-				(category) => html`
+				(/** @type {string} */ category) => html`
 					<li>
 						<a
 							href="/blog?category=${encodeURIComponent(category)}"
@@ -61,12 +70,15 @@ const CategoryFilter = ({ categories, selectedCategory }) => html`
 	</div>
 `;
 
+/**
+ * @param {{ tags: any[] }} props
+ */
 const PopularTags = ({ tags }) => html`
 	<div class="popular-tags">
 		<h3>Popular Tags</h3>
 		<div class="tag-cloud">
 			${tags.map(
-				(tag) => html`
+				(/** @type {any} */ tag) => html`
 					<a
 						href="/blog/tag/${encodeURIComponent(tag.name)}"
 						class="tag-link"
@@ -82,6 +94,9 @@ const PopularTags = ({ tags }) => html`
 	</div>
 `;
 
+/**
+ * @param {{ analytics: any, totalPosts: number }} props
+ */
 const AnalyticsDashboard = ({ analytics, totalPosts }) => html`
 	<div class="analytics-dashboard">
 		<h3>Blog Statistics</h3>
@@ -106,6 +121,9 @@ const AnalyticsDashboard = ({ analytics, totalPosts }) => html`
 	</div>
 `;
 
+/**
+ * @param {{ featuredPosts: any[] }} props
+ */
 const FeaturedPostsSection = ({ featuredPosts }) => html`
 	${
 		featuredPosts.length > 0
@@ -114,7 +132,7 @@ const FeaturedPostsSection = ({ featuredPosts }) => html`
 					<h2 id="featured-heading">Featured Posts</h2>
 					<div class="featured-grid">
 						${featuredPosts.map(
-							(post) => html`
+							(/** @type {any} */ post) => html`
 								<article class="featured-post">
 									<div class="featured-content">
 										<div class="post-badge">Featured</div>
@@ -140,6 +158,9 @@ const FeaturedPostsSection = ({ featuredPosts }) => html`
 	}
 `;
 
+/**
+ * @param {{ post: any, compactView?: boolean }} props
+ */
 const PostCard = ({ post, compactView = false }) => {
 	const publishedDate = new Date(post.publishedAt);
 	const isRecent =
@@ -169,7 +190,7 @@ const PostCard = ({ post, compactView = false }) => {
 						<img
 							src="https://via.placeholder.com/32x32?text=${post.author.name
 								.split(" ")
-								.map((n) => n[0])
+								.map((/** @type {string} */ n) => n[0])
 								.join("")}"
 							alt="${post.author.name}"
 							class="author-avatar"
@@ -207,9 +228,14 @@ const PostCard = ({ post, compactView = false }) => {
 										<details class="content-preview">
 											<summary>Read more...</summary>
 											<div class="full-content">
-												${post.content
-													.split("\\n\\n")
-													.map((paragraph) => html`<p>${paragraph}</p>`)}
+																							${post.content
+																								.split("\\n\\n")
+																								.map(
+																									(
+																										/** @type {string} */ paragraph,
+																									) =>
+																										html`<p>${paragraph}</p>`,
+																								)}
 											</div>
 										</details>
 								  `
@@ -221,13 +247,13 @@ const PostCard = ({ post, compactView = false }) => {
 			}
 
 			<div class="post-tags">
-				${post.tags.map(
-					(tag) => html`
+							${post.tags.map(
+								(/** @type {string} */ tag) => html`
 						<a href="/blog/tag/${encodeURIComponent(tag)}" class="tag">
 							#${tag}
 						</a>
 					`,
-				)}
+							)}
 			</div>
 
 			<footer class="post-stats">
@@ -258,6 +284,9 @@ const PostCard = ({ post, compactView = false }) => {
 	`;
 };
 
+/**
+ * @param {{ currentPage: number, totalPages: number, hasNextPage: boolean, hasPrevPage: boolean }} props
+ */
 const PaginationControls = ({
 	currentPage,
 	totalPages,
@@ -313,7 +342,7 @@ const PaginationControls = ({
 				}
 
 				${generatePageNumbers().map(
-					(pageNum) => html`
+					(/** @type {number} */ pageNum) => html`
 						<a
 							href="/blog?page=${pageNum}"
 							class="page-link ${pageNum === currentPage ? "current" : ""}"
@@ -352,6 +381,9 @@ const PaginationControls = ({
 	`;
 };
 
+/**
+ * @param {{ searchQuery: string, selectedCategory: string, sortBy: string }} props
+ */
 const SearchAndFilters = ({ searchQuery, selectedCategory, sortBy }) => html`
 	<div class="search-filters">
 		<form class="search-form" role="search">
@@ -393,6 +425,9 @@ const SearchAndFilters = ({ searchQuery, selectedCategory, sortBy }) => html`
 	</div>
 `;
 
+/**
+ * @param {any} data
+ */
 export function renderBlogPage(data) {
 	return html`<!DOCTYPE html>
 		<html lang="en" data-theme="${data.userPreferences.theme}">
@@ -456,7 +491,7 @@ export function renderBlogPage(data) {
 								>
 									${
 										data.posts.length > 0
-											? data.posts.map((post) =>
+											? data.posts.map((/** @type {any} */ post) =>
 													PostCard({
 														post,
 														compactView: data.userPreferences.compactView,
@@ -504,8 +539,8 @@ export function renderBlogPage(data) {
 							<div class="recent-activity">
 								<h3>Recent Activity</h3>
 								<ul class="activity-list">
-									${data.recentActivity.map(
-										(activity) => html`
+																	${data.recentActivity.map(
+																		(/** @type {any} */ activity) => html`
 											<li class="activity-item">
 												<div class="activity-content">
 													<span class="activity-type">${activity.type}</span>
@@ -518,7 +553,7 @@ export function renderBlogPage(data) {
 												</div>
 											</li>
 										`,
-									)}
+																	)}
 								</ul>
 							</div>
 
