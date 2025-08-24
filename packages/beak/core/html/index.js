@@ -71,20 +71,18 @@ export function escapeHtml(str) {
 /**
  * Monomorphic value processing for optimal V8 performance.
  * Handles behavioral contracts: arrays flatten, falsy filtered except 0.
+ * No escaping - used by html template for maximum speed.
  *
  * @param {any} value - Value to process
- * @param {boolean} shouldEscape - Whether to apply HTML escaping
  * @returns {string} Processed string value
  */
-function processValue(value, shouldEscape = false) {
+function processValue(value) {
 	if (value == null) return "";
-	if (typeof value === "string")
-		return shouldEscape ? escapeHtml(value) : value;
+	if (typeof value === "string") return value;
 	if (typeof value === "number") return String(value);
 	if (typeof value === "boolean") return value ? String(value) : "";
-	if (Array.isArray(value))
-		return value.map((v) => processValue(v, shouldEscape)).join("");
-	return shouldEscape ? escapeHtml(String(value)) : String(value);
+	if (Array.isArray(value)) return value.map((v) => processValue(v)).join("");
+	return String(value);
 }
 
 /**
