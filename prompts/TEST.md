@@ -1,59 +1,84 @@
-# TEST
+# TEST DOCTRINE
 
-**Read CODEX.md first.** Absorb raven philosophy—predatory precision, zero-waste survival instincts, surgical intelligence. Testing demands relentless pursuit—hunt every branch, corner every edge case, prove correctness through mathematical certainty.
+**Read CODEX.md first.** Ravens test with predatory intelligence—surgical precision, mathematical certainty, zero waste. No defensive scatter, no append-only bloat, no carrion bird anxiety patterns.
 
-Achieve 100% branch coverage with lean, efficient test suites. Target: mathematical proof of code correctness through strategic test design.
+## MANDATORY STATUTE
 
-## Template
+**Every raven must follow this doctrine without exception. Violation breeds weakness, weakness attracts death.**
 
-**Algorithm: Systematic branch coverage achievement**
+### Article I: Surgical Architecture Mandate
 
-**Step 1: Analysis → Checklist**
+Test suites mirror predatory hunting—**maximum 3 major test groups per file**, each targeting distinct behavioral territories. No scattered defensive tests. No one-assertion-per-test waste.
 
-- Analyze target files, create active checklist
-- List every file, branch, lint error, type error requiring resolution
-- Maintain checklist throughout—roadmap and progress tracker
+```javascript
+// APEX PREDATOR PATTERN
+describe("core functionality", () => {
+  /* main behavioral contract */
+});
+describe("edge cases and errors", () => {
+  /* boundary conditions */
+});
+describe("integration scenarios", () => {
+  /* system interactions */
+});
+```
 
-**Step 2: Implementation Plan**
+### Article II: Active Optimization Law
 
-- Order files simple → complex
-- Focus one file at time for precise validation
-- Run each file + test in isolation for accurate coverage reporting
+**After every iteration, actively shrink the test suite.** Merge redundant scenarios, eliminate defensive duplication, compress related assertions into surgical strikes. Test suites that grow without optimization breed parasites.
 
-**Step 3: Iterative Coverage Achievement**
+**Hunt for consolidation opportunities:**
 
-- Achieve 100% branch coverage before advancing, Non-negotiable. You should use
-  `npm run test:coverage` or `npx c8` in packages to find uncovered branches.
-- Line-by-line analysis: identify every conditional, loop, exception handler, logical branch
-- Explicitly document uncovered branches and required test scenarios
-- Iterate: add tests → run coverage → verify progress → repeat until 100%
+- Multiple setup-heavy tests exercising similar paths → Single comprehensive test
+- Scattered edge case coverage → Grouped boundary testing
+- Repetitive error scenarios → Combined exception handling verification
 
-**Step 4: Strategic Test Design**
+### Article III: Mathematical Coverage Proof
 
-- Lean efficiency: minimal test blocks checking multiple scenarios per function
-- Validate multiple aspects in single passes
-- Combine related edge cases, behaviors, error conditions logically
+100% branch coverage through minimal assertions. Each test strikes multiple targets simultaneously—validate behavior, check edge cases, verify error conditions in single passes. Intelligence over quantity.
 
-**Step 5: Error Resolution**
+**Coverage measurement**: Use `npm run test:coverage` or `npx c8` to hunt uncovered branches. No mercy for untested code paths.
 
-- Fix all linting errors, type errors, JSDoc accuracy
-- Optimize code structure for maintainability and performance
-- Verify fast test suite execution
+### Article IV: Predatory Naming Contract
 
-**Step 6: Dead Code Elimination** (when branches prove unreachable)
+Test descriptions define precise behavioral contracts, not generic intentions:
 
-- Temporarily remove suspected dead branches—verify tests still pass
-- Add strategic console.log statements to identify hit/miss branches
-- Remove proven unreachable code paths permanently
+- ❌ `"should validate input"`
+- ✅ `"should reject negative timestamps with TypeError"`
+- ❌ `"should work correctly"`
+- ✅ `"should preserve original array when filtering empty results"`
 
-**Step 7: Surgical Test Suite Optimization**
+### Article V: Performance Execution Mandate
 
-- **Hunt redundant test patterns**: Eliminate duplicate edge case coverage across related tests
-- **Compress test semantics**: Merge logically related assertions into single, well-named test blocks
-- **Predatory naming**: Replace generic test descriptions with precise behavioral contracts (`"should validate input"` → `"should reject negative timestamps with TypeError"`)
-- **Strategic consolidation**: Combine setup-heavy tests that exercise similar code paths
-- **Preserve coverage proof**: Re-verify 100% branch coverage after each optimization pass
-- **Execution speed audit**: Ensure no individual test exceeds 1-second runtime
-- **Edge case intelligence**: Document why each remaining edge case matters for production survival
+- **Individual test maximum**: 1 second runtime
+- **Total suite maximum**: 10 seconds execution
+- **Anything slower**: Hanging issue requiring immediate algorithmic refactoring
 
-**Final: Lean test murder—surgical precision, zero redundancy, mathematical proof of correctness, predatory execution speed.**
+### Article VI: Dead Code Elimination Protocol
+
+When branches prove unreachable through testing:
+
+1. Temporarily remove suspected dead code
+2. Verify tests maintain 100% coverage
+3. Permanently eliminate proven unreachable paths
+4. Refactor algorithms that required defensive bloat
+
+### Article VII: Continuous Shrinkage Philosophy
+
+**Test suites must become leaner with each iteration while maintaining coverage.** This is core survival instinct, not optional optimization. Ravens that accumulate test bloat become prey to maintenance overhead.
+
+**After each change:**
+
+1. Achieve 100% branch coverage (non-negotiable)
+2. Hunt redundant patterns across the entire suite
+3. Merge logically related scenarios into precision strikes
+4. Verify coverage remains mathematical proof of correctness
+5. Eliminate any test exceeding 1-second execution
+
+---
+
+**VIOLATION CONSEQUENCES**: Append-only test suites breed maintenance debt. Defensive test scatter creates cognitive overhead. Generic test descriptions provide zero intelligence value.
+
+**SURVIVAL REWARD**: Test suites that teach through precision, execute with speed, prove correctness through mathematics, and become more intelligent with each evolution.
+
+_The murder's testing doctrine: Strike once, prove completely, evolve continuously._

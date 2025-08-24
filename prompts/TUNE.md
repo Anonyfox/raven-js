@@ -1,88 +1,117 @@
-# TUNE
+# PERFORMANCE DOCTRINE
 
-Hunt performance bottlenecks with predatory precision. Transform JS files into V8-optimized apex predators. Target: maximum runtime velocity, minimal code footprint, identical functionality.
+**Read CODEX.md first.** Ravens achieve speed through elimination, not optimization. The apex performance weapon is code that never runs—eliminate branches, functions, entire algorithms before optimizing survivors.
 
-## Template
+## MANDATORY STATUTE
 
-**Read CODEX.md first.** Absorb raven-fast obsession—every millisecond counts, every byte matters. Performance is survival. Hunt inefficiencies like prey, eliminate bloat like stripping carcasses.
+**Every raven must follow this doctrine without exception. Optimization without elimination breeds performance theater that wastes territorial resources.**
 
-**Algorithm: Systematic performance optimization**
+### Article I: Minimization-First Law
 
-**Core Principle: Speed through intelligence, not brute force**
+**Code elimination beats code optimization.** The fastest JavaScript is JavaScript that never executes. Remove unnecessary branches, functions, entire algorithms before applying surgical optimizations to survivors.
 
-- Profile with surgical precision—identify actual bottlenecks, not perceived ones
-- ✓ Measure before/after with concrete numbers: execution time, memory allocation, parse time
-- ✗ Premature optimization, micro-benchmarks that don't reflect real usage
+**Elimination hierarchy:**
 
-**Step 1: Performance Audit → Active Hunting List**
+1. **Delete entire functions** that prove unnecessary through usage analysis
+2. **Remove conditional branches** that mathematical analysis proves unreachable
+3. **Eliminate redundant calculations** performed multiple times
+4. **Strip defensive code** that tests prove unnecessary
+5. **Merge duplicate logic** scattered across multiple locations
 
-- Analyze target files for inefficiencies: nested loops, repeated calculations, memory leaks
-- Create active checklist: every optimization target, measurement baseline, success criteria
-- Identify hot paths through code analysis—where the real performance lives
-- Maintain throughout—roadmap and kill tracker
+### Article II: Measurement Discipline
 
-**Step 2: Algorithmic Evolution** (Order: biggest impact → marginal gains)
+**Every optimization must prove measurable dominance.** Ravens demand concrete before/after numbers with ruthless elimination of insignificant gains and regressions.
 
-- Replace O(n²) with O(n log n), O(n) with O(1) when possible
-- Eliminate redundant iterations, cache expensive calculations
-- Hunt repeated work: memoization candidates, loop invariants, duplicate computations
-- Target mathematical superiority over micro-optimizations
+**Required measurement standards:**
 
-**Step 3: V8 Engine Weaponization**
+- **Baseline establishment**: Execution time, memory allocation, parse time
+- **Delta verification**: Concrete percentage improvements documented
+- **Gain threshold**: <5% improvements get eliminated immediately as noise
+- **Regression elimination**: Any performance decrease triggers immediate revert
+- **Real-world benchmarks**: Measure actual usage patterns, not synthetic micro-tests
+
+### Article III: Lean-First Optimization Sequence
+
+**Minimize code before optimizing code.** Apply optimization techniques only to lean survivors that passed elimination protocols.
+
+## STEP-BY-STEP EXECUTION PROTOCOL
+
+**Step 1: Elimination Analysis → Surgical Removal**
+
+- Identify elimination targets: unused functions, unreachable branches, duplicate logic
+- Create active kill list: every elimination candidate with removal impact assessment
+- Document baseline metrics: current code size, execution paths, performance characteristics
+- Execute elimination surgery: remove entire code sections before optimizing survivors
+
+**Step 2: Algorithmic Minimization** (Order: biggest elimination → marginal removal)
+
+- Replace complex algorithms with simpler approaches that achieve identical results
+- Hunt redundant iterations: eliminate loops that recalculate known values
+- Remove repeated work: identify calculations performed multiple times unnecessarily
+- Target mathematical simplification over micro-optimization complexity
+
+**Step 3: Measurement-Driven Optimization** (Per change, non-negotiable sequence)
+
+1. **Establish baseline**: Measure current performance with concrete numbers
+2. **Apply single technique**: One optimization approach per iteration
+3. **Verify functionality**: All tests pass with identical behavior
+4. **Measure delta**: Document exact performance change percentage
+5. **Elimination decision**: <5% gain → revert immediately, >5% gain → document and continue
+6. **Iterate**: Next optimization or move to next function
+
+**Step 4: V8 Engine Weaponization** (Only for lean survivors)
 
 - Optimize for JIT compilation: monomorphic function signatures, stable object shapes
 - Eliminate deoptimization triggers: avoid `arguments`, `eval`, `with`, dynamic property access
 - Structure for inline caching: consistent property access patterns, predictable types
 - Hunt hidden class mutations: maintain object shape consistency
-- Leverage fast paths: integer math when possible, avoid mixed number types
+- Leverage fast paths: integer math, avoid mixed number types
 
-**Step 4: Modern JS Performance Arsenal**
+**Step 5: Modern JS Performance Arsenal** (Platform-native speed)
 
 - Replace legacy patterns with native performance: `Map`/`Set` vs objects, `for...of` vs `for...in`
-- Weaponize destructuring assignment for cleaner variable access
+- Weaponize destructuring for cleaner variable access
 - Eliminate intermediate arrays: generator functions, iterator protocols
 - Leverage `WeakMap`/`WeakSet` for memory-efficient caching
 - Target native methods: `Array.prototype.includes()` vs manual loops
 
-**Step 5: Creative Elimination** (Exotic approaches to known problems)
+**Step 6: Creative Elimination Techniques** (Exotic minimization approaches)
 
 - Pioneer bit manipulation for boolean operations, flag management
 - Eliminate string concatenation with template literals, `Array.join()`
 - Hunt closure overhead: extract pure functions, minimize captured variables
 - Replace runtime calculations with compile-time constants
-- Eliminate parser tax: restructure code for optimal parsing, reduce nesting depth
+- Eliminate parser tax: restructure for optimal parsing, reduce nesting depth
 
-**Step 6: Iterative Optimization** (Per file, non-negotiable sequence)
-
-1. Establish performance baseline: execution time, memory usage
-2. Apply single optimization technique
-3. **Critical**: Verify identical functionality—all tests pass
-4. Measure performance delta: concrete before/after numbers
-5. Document optimization impact, reasoning
-6. Iterate: next optimization or revert if no measurable gain
-
-**Step 7: Lean Code Surgery**
+**Step 7: Lean Code Surgery** (Final elimination pass)
 
 - Strip defensive code proven unnecessary through mathematical analysis
-- Eliminate dead branches identified through coverage analysis
-- Reduce function call overhead: inline hot path logic when beneficial
-- Minimize object creation in loops: reuse, pool, or eliminate
+- Remove dead branches identified through coverage analysis
+- Reduce function call overhead: inline hot path logic when measurements prove beneficial
+- Minimize object creation in loops: reuse, pool, or eliminate entirely
 - Hunt memory allocations: prefer primitive operations
 
-**Step 8: Final Verification**
+**Step 8: Performance Verification Protocol**
 
-- All tests pass with 100% coverage maintained
-- Measurable performance improvements documented with concrete numbers
-- Code remains readable and maintainable—no clever obfuscation
-- Public API identical, internal implementation optimized
+- **Functionality proof**: All tests pass with 100% coverage maintained
+- **Performance evidence**: Measurable improvements documented with concrete percentages
+- **Regression elimination**: Any <5% gain or performance decrease reverted immediately
+- **Maintainability preservation**: Code remains readable—no clever obfuscation
+- **API guarantee**: Public interface identical, internal implementation optimized
 
-**Performance hunting priorities:**
+**Performance hunting priorities (Elimination → Optimization):**
 
-1. **Algorithmic improvements** (biggest wins)
-2. **Hot path optimization** (where code actually runs)
-3. **Memory efficiency** (allocation reduction)
-4. **V8 engine alignment** (JIT-friendly patterns)
-5. **Modern language features** (native performance)
-6. **Creative solutions** (pioneer new approaches)
+1. **Code elimination** (fastest code never runs)
+2. **Algorithmic minimization** (simplest approach that works)
+3. **Measurement discipline** (prove every change with numbers)
+4. **Hot path optimization** (optimize what actually executes)
+5. **V8 engine alignment** (JIT-friendly patterns)
+6. **Modern language features** (platform-native performance)
 
-**Final: Raven-fast code that dominates through intelligence—measurably faster runtime, leaner footprint, mathematically proven correctness.**
+---
+
+**VIOLATION CONSEQUENCES**: Optimization without elimination wastes resources on unnecessary complexity. Unmeasured performance changes accumulate noise and regressions. <5% gains create maintenance overhead without velocity benefits.
+
+**SURVIVAL REWARD**: Code that achieves maximum velocity through minimum complexity, with every optimization mathematically proven to provide measurable territorial advantages.
+
+_The murder's performance doctrine: Eliminate first, optimize survivors, measure everything, prove dominance._
