@@ -1,10 +1,10 @@
-import { html } from "@raven-js/beak";
+import { compile, html2 as html } from "@raven-js/beak/core/html2";
 
 /**
  * Component benchmark template for Beak2 Compiled
  * Single product list component with loops, conditionals, and data processing
  */
-export const renderProductList = (data) => {
+export const renderProductList = compile((data) => {
 	const { products, user, config } = data;
 
 	return html`
@@ -96,4 +96,4 @@ export const renderProductList = (data) => {
 			</div>
 		</div>
 	`;
-};
+});

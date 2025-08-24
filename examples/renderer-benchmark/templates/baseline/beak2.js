@@ -1,4 +1,4 @@
-import { html } from "@raven-js/beak";
+import { html2 as html } from "@raven-js/beak/core/html2";
 
 /**
  * Baseline static string template for Beak2 (HTML2)
