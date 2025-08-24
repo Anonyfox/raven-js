@@ -112,6 +112,39 @@ Large performance drops from baseline to complex indicate poor algorithmic scali
 - **Warmup:** 10 iterations before measurement
 - **Measurement:** 1000 timed iterations per engine per category
 
+## Cold Start Performance
+
+Startup overhead from fresh engine creation to first render completion:
+
+| Rank | Engine             | Cold Start | Warm Time | Startup Overhead | vs Fastest    |
+| ---- | ------------------ | ---------- | --------- | ---------------- | ------------- |
+| 1    | **mustache**       | 1.24ms     | 650μs     | 590μs            | baseline      |
+| 2    | **beak2-compiled** | 2.21ms     | 510μs     | 1.70ms           | 2.87x slower  |
+| 3    | **eta**            | 1.98ms     | 210μs     | 1.77ms           | 3.00x slower  |
+| 4    | **beak2**          | 2.46ms     | 530μs     | 1.93ms           | 3.27x slower  |
+| 5    | **dot**            | 2.23ms     | 120μs     | 2.11ms           | 3.57x slower  |
+| 6    | **ejs**            | 4.95ms     | 1.94ms    | 3.01ms           | 5.11x slower  |
+| 7    | **liquid**         | 8.71ms     | 3.84ms    | 4.87ms           | 8.25x slower  |
+| 8    | **beak**           | 7.09ms     | 1.97ms    | 5.12ms           | 8.68x slower  |
+| 9    | **nunjucks**       | 10.7ms     | 2.60ms    | 8.11ms           | 13.74x slower |
+| 10   | **pug**            | 26.7ms     | 180μs     | 26.5ms           | 44.89x slower |
+
+### Cold Start Analysis
+
+- **Cold Start**: Total time from fresh engine instantiation to first render
+- **Warm Time**: Known warm render time from performance benchmark
+- **Startup Overhead**: Pure engine initialization cost (Cold Start - Warm Time)
+
+Lower startup overhead indicates faster serverless cold starts and development builds.
+
+### Performance Insights
+
+**Serverless Champions:** Mustache, Beak2 variants, and Eta excel with sub-2ms startup overhead.
+
+**Development Speed:** Faster cold starts reduce dev build times and hot reload cycles.
+
+**Production Impact:** High startup costs like Pug's 26.5ms overhead can significantly impact serverless function performance in cold start scenarios.
+
 ---
 
 _Benchmark generated with the RavenJS renderer-benchmark package_

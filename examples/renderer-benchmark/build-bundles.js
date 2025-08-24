@@ -1,15 +1,12 @@
 #!/usr/bin/env node
+
 /**
  * Bundle size measurement for template engines using esbuild
  */
 
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { gzipSync } from "node:zlib";
 import { build } from "esbuild";
-import { mkdirSync, readFileSync, writeFileSync } from "fs";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
-import { gzipSync } from "zlib";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Frameworks to benchmark (using complex templates)
 const frameworks = {
@@ -62,7 +59,7 @@ const frameworks = {
 // Create bundles directory
 try {
 	mkdirSync("bundles", { recursive: true });
-} catch (e) {
+} catch {
 	// Directory might already exist
 }
 
@@ -74,7 +71,7 @@ async function measureBundle(name, config) {
 
 	try {
 		// Regular bundle
-		const bundleResult = await build({
+		await build({
 			entryPoints: [config.entry],
 			bundle: true,
 			format: "esm",
@@ -87,7 +84,7 @@ async function measureBundle(name, config) {
 		});
 
 		// Minified bundle
-		const minResult = await build({
+		await build({
 			entryPoints: [config.entry],
 			bundle: true,
 			format: "esm",
@@ -132,14 +129,14 @@ function formatBytes(bytes) {
 	const k = 1024;
 	const sizes = ["B", "KB", "MB"];
 	const i = Math.floor(Math.log(bytes) / Math.log(k));
-	return parseFloat((bytes / k ** i).toFixed(1)) + " " + sizes[i];
+	return `${parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`;
 }
 
 function generateSizeTable() {
 	console.log("\n📊 Bundle Size Results:\n");
 
 	const tableRows = Object.entries(results)
-		.filter(([name, data]) => !data.error)
+		.filter(([, data]) => !data.error)
 		.sort((a, b) => a[1].minGzipped - b[1].minGzipped)
 		.map(([name, data], index) => {
 			const minGzSize = data.minGzipped;
@@ -148,7 +145,7 @@ function generateSizeTable() {
 			);
 			const ratio = minGzSize / smallest;
 
-			return `| ${index + 1} | **${name}** | ${formatBytes(data.bundle)} | ${formatBytes(data.minified)} | ${formatBytes(data.minGzipped)} | ${ratio === 1 ? "baseline" : ratio.toFixed(2) + "x larger"} |`;
+			return `| ${index + 1} | **${name}** | ${formatBytes(data.bundle)} | ${formatBytes(data.minified)} | ${formatBytes(data.minGzipped)} | ${ratio === 1 ? "baseline" : `${ratio.toFixed(2)}x larger`} |`;
 		});
 
 	const table = [
