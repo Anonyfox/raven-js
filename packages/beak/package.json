@@ -22,11 +22,8 @@
       "import": "./seo/index.js",
       "types": "./types.seo.d.ts"
     },
-    "./core/html2": {
-      "import": "./core/html2/index.js"
-    },
-    "./core/html2/compile": {
-      "import": "./core/html2/compile.js"
+    "./core/html/compile": {
+      "import": "./core/html/compile/index.js"
     }
   },
   "scripts": {

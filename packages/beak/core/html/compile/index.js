@@ -15,14 +15,18 @@
 import { inline } from "./inline.js";
 
 /**
- * Compile function that optimizes tagged template literals
+ * **EXPERIMENTAL:** Compile function that optimizes tagged template literals
+ *
+ * **Status:** Experimental - API may change, use with caution in production.
+ * **Benefits:** Converts templates to string concatenation for V8 optimization.
+ * **Limitations:** Simple functions only, gracefully falls back on complex cases.
  *
  * @param {Function} templateFunc - Function containing tagged template literal
  * @returns {Function} Optimized template function
  *
  * @example
- * const optimized = compile((data) => tag`template ${data.value}`);
- * const result = optimized(myData); // Faster execution with string concatenation
+ * const optimized = compile((data) => html`<div>${data.value}</div>`);
+ * const result = optimized(myData); // Faster execution when optimization succeeds
  */
 export function compile(templateFunc) {
 	try {

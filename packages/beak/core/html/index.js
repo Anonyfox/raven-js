@@ -1,101 +1,148 @@
 /**
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
- * @see {@link https://github.com/Anonyfox/ravenjs}
- * @see {@link https://ravenjs.dev}
- * @see {@link https://anonyfox.com}
+ * @see https://github.com/Anonyfox/ravenjs
+ * @see https://ravenjs.dev
+ * @see https://anonyfox.com
  */
 
 /**
- * @file HTML template literals with performance optimization and XSS protection
+ * @file HTML tagged template literal engine - apex performance through platform primitives
  *
- * Tagged template functions for safe HTML generation. Provides fast rendering
- * with optional content escaping for untrusted input. Features whitespace
- * normalization, array flattening, and performance caching.
+ * Phase 1: Minimal viable implementation targeting sub-2.12ms performance.
+ * Uses += concatenation strategy, monomorphic value processing, and character-level escaping.
  */
 
-import { escapeSpecialCharacters } from "./escape-special-characters.js";
-import { _renderHtmlFast, _renderSafeHtmlFast } from "./template-renderer.js";
+export { compile } from "./compile/index.js";
 
 /**
- * Tagged template literal for trusted HTML content.
+ * Character-level HTML escaping without regex overhead.
+ * Switch-based approach optimized for V8 branch prediction.
+ * Includes XSS protection for dangerous protocols and event handlers.
  *
- * **Performance:** Zero-copy for static templates, optimized fast paths for
- * single-value interpolation. String cache reduces repeated normalization overhead.
+ * @param {string} str - String to escape
+ * @returns {string} HTML-escaped string
+ */
+export function escapeHtml(str) {
+	let stringValue = String(str);
+
+	// Pre-processing: neutralize dangerous patterns with minimal overhead
+	if (stringValue.includes("javascript:")) {
+		stringValue = stringValue.replace(/javascript:/gi, "blocked:");
+	}
+	if (stringValue.includes("vbscript:")) {
+		stringValue = stringValue.replace(/vbscript:/gi, "blocked:");
+	}
+	if (stringValue.includes("data:")) {
+		stringValue = stringValue.replace(/data:/gi, "blocked:");
+	}
+	// Neutralize event handlers by converting to safe attributes
+	if (stringValue.includes("on")) {
+		stringValue = stringValue.replace(/\bon([a-z]+)=/gi, "blocked-$1=");
+	}
+
+	let result = "";
+	for (let i = 0; i < stringValue.length; i++) {
+		const char = stringValue[i];
+		switch (char) {
+			case "&":
+				result += "&amp;";
+				break;
+			case "<":
+				result += "&lt;";
+				break;
+			case ">":
+				result += "&gt;";
+				break;
+			case '"':
+				result += "&quot;";
+				break;
+			case "'":
+				result += "&#x27;";
+				break;
+			default:
+				result += char;
+				break;
+		}
+	}
+	return result;
+}
+
+/**
+ * Monomorphic value processing for optimal V8 performance.
+ * Handles behavioral contracts: arrays flatten, falsy filtered except 0.
  *
- * **Behavior:**
- * - Arrays flatten without separators: `[1,2,3]` → `"123"`
- * - Falsy values excluded except `0`
- * - Whitespace normalized between tags
- * - **No XSS protection** - use `safeHtml` for untrusted input
+ * @param {any} value - Value to process
+ * @param {boolean} shouldEscape - Whether to apply HTML escaping
+ * @returns {string} Processed string value
+ */
+function processValue(value, shouldEscape = false) {
+	if (value == null) return "";
+	if (typeof value === "string")
+		return shouldEscape ? escapeHtml(value) : value;
+	if (typeof value === "number") return String(value);
+	if (typeof value === "boolean") return value ? String(value) : "";
+	if (Array.isArray(value))
+		return value.map((v) => processValue(v, shouldEscape)).join("");
+	return shouldEscape ? escapeHtml(String(value)) : String(value);
+}
+
+/**
+ * Protected value processing with circular reference detection.
+ * Used only by safeHtml for maximum safety.
  *
- * @param {TemplateStringsArray} strings - Static template parts
- * @param {...*} values - Dynamic values for interpolation
+ * @param {any} value - Value to process
+ * @param {WeakSet<any[]>} seen - Circular reference tracker
+ * @returns {string} Processed string value with escaping
+ */
+function processValueSafe(value, seen) {
+	if (value == null) return "";
+	if (typeof value === "string") return escapeHtml(value);
+	if (typeof value === "number") return String(value);
+	if (typeof value === "boolean") return value ? String(value) : "";
+	if (Array.isArray(value)) {
+		if (seen.has(value)) return "[Circular]";
+		seen.add(value);
+		return value.map((v) => processValueSafe(v, seen)).join("");
+	}
+	return escapeHtml(String(value));
+}
+
+/**
+ * Tagged template literal for trusted HTML content - maximum performance.
+ *
+ * **Strengths:** Platform-native speed, preserves semantic whitespace, zero escaping overhead.
+ * **Use when:** Content is already sanitized, performance is critical, building static templates.
+ * **Avoid for:** User input, API responses, any untrusted data.
+ *
+ * @param {readonly string[]} strings - Template literal static parts
+ * @param {...any} values - Template literal interpolated values
  * @returns {string} Rendered HTML string
- *
- * @example
- * const name = 'Alice';
- * html`<h1>Hello, ${name}!</h1>`
- * // "<h1>Hello, Alice!</h1>"
- *
- * @example
- * const items = ['a', 'b', 'c'];
- * html`<ul>${items.map(x => html`<li>${x}</li>`)}</ul>`
- * // "<ul><li>a</li><li>b</li><li>c</li></ul>"
- *
- * @example
- * const count = 0;
- * html`<div>Count: ${count}</div>`
- * // "<div>Count: 0</div>" (zero preserved)
  */
-export const html = (
-	/** @type {TemplateStringsArray} */ strings,
-	/** @type {...*} */ ...values
-) => _renderHtmlFast(strings, values);
+export function html(strings, ...values) {
+	let result = strings[0];
+	for (let i = 0; i < values.length; i++) {
+		result += processValue(values[i]) + strings[i + 1];
+	}
+	return result.trim();
+}
 
 /**
- * Tagged template literal with XSS protection for untrusted content.
+ * Tagged template literal for untrusted HTML content - bulletproof security.
  *
- * **Security:** Escapes `&`, `<`, `>`, `"`, `'` to prevent script injection,
- * tag injection, and attribute injection attacks.
+ * **Strengths:** XSS protection, blocks dangerous protocols/events, circular reference safety.
+ * **Use when:** Handling user input, form data, API responses, comments, any external content.
+ * **Benefits:** Enhanced security beyond basic escaping, prevents stack overflow crashes.
  *
- * **Performance:** Same optimizations as `html` with additional escaping step.
- * Use `html` for trusted content to avoid escape overhead.
- *
- * **Critical for:** User input, form data, API responses, comments, any external content.
- *
- * @param {TemplateStringsArray} strings - Static template parts
- * @param {...*} values - Dynamic values for interpolation and escaping
- * @returns {string} Rendered HTML with escaped dynamic content
- *
- * @example
- * const userInput = '<script>alert("XSS")</script>';
- * safeHtml`<p>${userInput}</p>`
- * // "<p>&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;</p>"
- *
- * @example
- * const users = [{name: '<script>', email: 'user@test.com'}];
- * safeHtml`<table>${users.map(u => safeHtml`<tr><td>${u.name}</td></tr>`)}</table>`
- * // Escapes user.name, keeps structure safe
+ * @param {readonly string[]} strings - Template literal static parts
+ * @param {...any} values - Template literal interpolated values
+ * @returns {string} Rendered HTML string with escaped values
  */
-export const safeHtml = (
-	/** @type {TemplateStringsArray} */ strings,
-	/** @type {...*} */ ...values
-) => _renderSafeHtmlFast(strings, values);
-
-/**
- * Escapes HTML special characters to prevent XSS attacks.
- *
- * Converts dangerous characters to safe HTML entities:
- * `&` → `&amp;`, `<` → `&lt;`, `>` → `&gt;`, `"` → `&quot;`, `'` → `&#39;`
- *
- * **Alias for `escapeSpecialCharacters`** - use directly when not templating.
- *
- * @param {*} str - Value to escape (converted to string)
- * @returns {string} String with HTML entities replacing special characters
- *
- * @example
- * escapeHtml('<script>alert("XSS")</script>')
- * // "&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;"
- */
-export const escapeHtml = escapeSpecialCharacters;
+export function safeHtml(strings, ...values) {
+	const seen = new WeakSet();
+	let result = strings[0];
+	for (let i = 0; i < values.length; i++) {
+		result += processValueSafe(values[i], seen) + strings[i + 1];
+	}
+	return result.trim();
+}

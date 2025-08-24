@@ -7,7 +7,7 @@
  */
 
 /**
- * @file Exhaustive integration test suite for HTML2 template engine expectations
+ * @file Exhaustive integration test suite for HTML template engine expectations
  *
  * Comprehensive validation of all features a modern developer expects from a templating engine:
  * - Template interpolation behaviors
@@ -19,43 +19,43 @@
 
 import { ok, strictEqual } from "node:assert";
 import { describe, test } from "node:test";
-import { compile, escapeHtml, html2, safeHtml2 } from "./index.js";
+import { compile, escapeHtml, html, safeHtml } from "./index.js";
 
 describe("Basic Template Functionality", () => {
 	test("empty template produces empty string", () => {
-		strictEqual(html2``, "");
-		strictEqual(safeHtml2``, "");
+		strictEqual(html``, "");
+		strictEqual(safeHtml``, "");
 	});
 
 	test("template without interpolation passes through unchanged", () => {
 		const template = "<div>Static content</div>";
-		strictEqual(html2`<div>Static content</div>`, template);
-		strictEqual(safeHtml2`<div>Static content</div>`, template);
+		strictEqual(html`<div>Static content</div>`, template);
+		strictEqual(safeHtml`<div>Static content</div>`, template);
 	});
 
 	test("single interpolation in middle of template", () => {
 		const value = "test";
-		strictEqual(html2`<p>${value}</p>`, "<p>test</p>");
-		strictEqual(safeHtml2`<p>${value}</p>`, "<p>test</p>");
+		strictEqual(html`<p>${value}</p>`, "<p>test</p>");
+		strictEqual(safeHtml`<p>${value}</p>`, "<p>test</p>");
 	});
 
 	test("multiple interpolations in sequence", () => {
 		const a = "Hello";
 		const b = "World";
-		strictEqual(html2`${a} ${b}!`, "Hello World!");
-		strictEqual(safeHtml2`${a} ${b}!`, "Hello World!");
+		strictEqual(html`${a} ${b}!`, "Hello World!");
+		strictEqual(safeHtml`${a} ${b}!`, "Hello World!");
 	});
 
 	test("interpolation at template boundaries", () => {
 		const start = "Begin";
 		const end = "End";
-		strictEqual(html2`${start} content ${end}`, "Begin content End");
-		strictEqual(safeHtml2`${start} content ${end}`, "Begin content End");
+		strictEqual(html`${start} content ${end}`, "Begin content End");
+		strictEqual(safeHtml`${start} content ${end}`, "Begin content End");
 	});
 
 	test("multiline templates preserve whitespace", () => {
 		const value = "content";
-		const result = html2`<div>
+		const result = html`<div>
 			<p>${value}</p>
 		</div>`;
 		strictEqual(result, "<div>\n\t\t\t<p>content</p>\n\t\t</div>");
@@ -64,7 +64,7 @@ describe("Basic Template Functionality", () => {
 	test("templates with complex HTML structure", () => {
 		const title = "Page Title";
 		const body = "Page Body";
-		const result = html2`<!DOCTYPE html>
+		const result = html`<!DOCTYPE html>
 <html>
 <head><title>${title}</title></head>
 <body><h1>${title}</h1><p>${body}</p></body>
@@ -82,105 +82,105 @@ describe("Basic Template Functionality", () => {
 
 describe("Data Type Processing", () => {
 	describe("String Handling", () => {
-		test("regular strings pass through html2 unchanged", () => {
-			strictEqual(html2`${"Hello World"}`, "Hello World");
+		test("regular strings pass through html unchanged", () => {
+			strictEqual(html`${"Hello World"}`, "Hello World");
 		});
 
 		test("empty strings produce no output", () => {
-			strictEqual(html2`<p>${""}</p>`, "<p></p>");
-			strictEqual(safeHtml2`<p>${""}</p>`, "<p></p>");
+			strictEqual(html`<p>${""}</p>`, "<p></p>");
+			strictEqual(safeHtml`<p>${""}</p>`, "<p></p>");
 		});
 
-		test("strings with special characters in html2", () => {
+		test("strings with special characters in html", () => {
 			const dangerous = '<script>alert("xss")</script>';
-			strictEqual(html2`${dangerous}`, dangerous);
+			strictEqual(html`${dangerous}`, dangerous);
 		});
 
 		test("strings with unicode characters", () => {
 			const unicode = "Hello 🌍 World ñáéíóú";
-			strictEqual(html2`${unicode}`, unicode);
-			strictEqual(safeHtml2`${unicode}`, unicode);
+			strictEqual(html`${unicode}`, unicode);
+			strictEqual(safeHtml`${unicode}`, unicode);
 		});
 	});
 
 	describe("Number Handling", () => {
 		test("positive integers", () => {
-			strictEqual(html2`${42}`, "42");
-			strictEqual(safeHtml2`${42}`, "42");
+			strictEqual(html`${42}`, "42");
+			strictEqual(safeHtml`${42}`, "42");
 		});
 
 		test("negative integers", () => {
-			strictEqual(html2`${-42}`, "-42");
-			strictEqual(safeHtml2`${-42}`, "-42");
+			strictEqual(html`${-42}`, "-42");
+			strictEqual(safeHtml`${-42}`, "-42");
 		});
 
 		test("zero preservation (critical behavioral contract)", () => {
-			strictEqual(html2`${0}`, "0");
-			strictEqual(safeHtml2`${0}`, "0");
+			strictEqual(html`${0}`, "0");
+			strictEqual(safeHtml`${0}`, "0");
 		});
 
 		test("floating point numbers", () => {
 			const pi = Math.PI;
-			strictEqual(html2`${pi}`, String(Math.PI));
-			strictEqual(safeHtml2`${pi}`, String(Math.PI));
+			strictEqual(html`${pi}`, String(Math.PI));
+			strictEqual(safeHtml`${pi}`, String(Math.PI));
 		});
 
 		test("special numeric values", () => {
-			strictEqual(html2`${Number.POSITIVE_INFINITY}`, "Infinity");
-			strictEqual(html2`${Number.NEGATIVE_INFINITY}`, "-Infinity");
-			strictEqual(html2`${Number.NaN}`, "NaN");
-			strictEqual(safeHtml2`${Number.POSITIVE_INFINITY}`, "Infinity");
-			strictEqual(safeHtml2`${Number.NEGATIVE_INFINITY}`, "-Infinity");
-			strictEqual(safeHtml2`${Number.NaN}`, "NaN");
+			strictEqual(html`${Number.POSITIVE_INFINITY}`, "Infinity");
+			strictEqual(html`${Number.NEGATIVE_INFINITY}`, "-Infinity");
+			strictEqual(html`${Number.NaN}`, "NaN");
+			strictEqual(safeHtml`${Number.POSITIVE_INFINITY}`, "Infinity");
+			strictEqual(safeHtml`${Number.NEGATIVE_INFINITY}`, "-Infinity");
+			strictEqual(safeHtml`${Number.NaN}`, "NaN");
 		});
 
 		test("very large numbers", () => {
 			const big = 999999999999999;
-			strictEqual(html2`${big}`, String(big));
-			strictEqual(safeHtml2`${big}`, String(big));
+			strictEqual(html`${big}`, String(big));
+			strictEqual(safeHtml`${big}`, String(big));
 		});
 
 		test("scientific notation", () => {
 			const scientific = 1.23e-4;
-			strictEqual(html2`${scientific}`, String(scientific));
-			strictEqual(safeHtml2`${scientific}`, String(scientific));
+			strictEqual(html`${scientific}`, String(scientific));
+			strictEqual(safeHtml`${scientific}`, String(scientific));
 		});
 	});
 
 	describe("Boolean Handling", () => {
 		test("true renders as string", () => {
-			strictEqual(html2`${true}`, "true");
-			strictEqual(safeHtml2`${true}`, "true");
+			strictEqual(html`${true}`, "true");
+			strictEqual(safeHtml`${true}`, "true");
 		});
 
 		test("false renders as empty string (critical behavioral contract)", () => {
-			strictEqual(html2`${false}`, "");
-			strictEqual(safeHtml2`${false}`, "");
+			strictEqual(html`${false}`, "");
+			strictEqual(safeHtml`${false}`, "");
 		});
 
 		test("boolean in conditional context", () => {
 			const showContent = true;
 			const hideContent = false;
-			strictEqual(html2`${showContent && "Visible"}`, "Visible");
-			strictEqual(html2`${hideContent && "Hidden"}`, "");
+			strictEqual(html`${showContent && "Visible"}`, "Visible");
+			strictEqual(html`${hideContent && "Hidden"}`, "");
 		});
 	});
 
 	describe("Null and Undefined Handling", () => {
 		test("null produces empty output", () => {
-			strictEqual(html2`${null}`, "");
-			strictEqual(safeHtml2`${null}`, "");
+			strictEqual(html`${null}`, "");
+			strictEqual(safeHtml`${null}`, "");
 		});
 
 		test("undefined produces empty output", () => {
-			strictEqual(html2`${undefined}`, "");
-			strictEqual(safeHtml2`${undefined}`, "");
+			strictEqual(html`${undefined}`, "");
+			strictEqual(safeHtml`${undefined}`, "");
 		});
 
 		test("null and undefined mixed with content", () => {
-			strictEqual(html2`<p>${null}content${undefined}</p>`, "<p>content</p>");
+			strictEqual(html`<p>${null}content${undefined}</p>`, "<p>content</p>");
 			strictEqual(
-				safeHtml2`<p>${null}content${undefined}</p>`,
+				safeHtml`<p>${null}content${undefined}</p>`,
 				"<p>content</p>",
 			);
 		});
@@ -188,19 +188,19 @@ describe("Data Type Processing", () => {
 
 	describe("Array Handling", () => {
 		test("simple array flattening without separators", () => {
-			strictEqual(html2`${[1, 2, 3]}`, "123");
-			strictEqual(safeHtml2`${[1, 2, 3]}`, "123");
+			strictEqual(html`${[1, 2, 3]}`, "123");
+			strictEqual(safeHtml`${[1, 2, 3]}`, "123");
 		});
 
 		test("empty array produces no output", () => {
-			strictEqual(html2`${[]}`, "");
-			strictEqual(safeHtml2`${[]}`, "");
+			strictEqual(html`${[]}`, "");
+			strictEqual(safeHtml`${[]}`, "");
 		});
 
 		test("array with mixed data types", () => {
 			const mixed = ["hello", 42, true, false, null, undefined];
-			strictEqual(html2`${mixed}`, "hello42true");
-			strictEqual(safeHtml2`${mixed}`, "hello42true");
+			strictEqual(html`${mixed}`, "hello42true");
+			strictEqual(safeHtml`${mixed}`, "hello42true");
 		});
 
 		test("nested arrays flatten completely", () => {
@@ -208,19 +208,19 @@ describe("Data Type Processing", () => {
 				["a", "b"],
 				["c", ["d", "e"]],
 			];
-			strictEqual(html2`${nested}`, "abcde");
-			strictEqual(safeHtml2`${nested}`, "abcde");
+			strictEqual(html`${nested}`, "abcde");
+			strictEqual(safeHtml`${nested}`, "abcde");
 		});
 
-		test("array with HTML content in html2", () => {
+		test("array with HTML content in html", () => {
 			const htmlArray = ["<b>Bold</b>", "<i>Italic</i>"];
-			strictEqual(html2`${htmlArray}`, "<b>Bold</b><i>Italic</i>");
+			strictEqual(html`${htmlArray}`, "<b>Bold</b><i>Italic</i>");
 		});
 
-		test("array with HTML content in safeHtml2 gets escaped", () => {
+		test("array with HTML content in safeHtml gets escaped", () => {
 			const htmlArray = ["<b>Bold</b>", "<i>Italic</i>"];
 			strictEqual(
-				safeHtml2`${htmlArray}`,
+				safeHtml`${htmlArray}`,
 				"&lt;b&gt;Bold&lt;/b&gt;&lt;i&gt;Italic&lt;/i&gt;",
 			);
 		});
@@ -228,7 +228,7 @@ describe("Data Type Processing", () => {
 		test("sparse arrays handle empty slots", () => {
 			const sparse = [1, undefined, undefined, 4];
 			// Note: sparse array behavior may vary - testing actual behavior
-			const result = html2`${sparse}`;
+			const result = html`${sparse}`;
 			ok(result.includes("1") && result.includes("4"));
 		});
 	});
@@ -236,7 +236,7 @@ describe("Data Type Processing", () => {
 	describe("Object and Complex Type Handling", () => {
 		test("plain objects convert to string representation", () => {
 			const obj = { name: "test", value: 42 };
-			const result = html2`${obj}`;
+			const result = html`${obj}`;
 			strictEqual(result, "[object Object]");
 		});
 
@@ -247,19 +247,19 @@ describe("Data Type Processing", () => {
 					return `Custom: ${this.name}`;
 				},
 			};
-			strictEqual(html2`${obj}`, "Custom: test");
-			strictEqual(safeHtml2`${obj}`, "Custom: test");
+			strictEqual(html`${obj}`, "Custom: test");
+			strictEqual(safeHtml`${obj}`, "Custom: test");
 		});
 
 		test("Date objects render as date strings", () => {
 			const date = new Date("2024-01-01T00:00:00.000Z");
-			const result = html2`${date}`;
+			const result = html`${date}`;
 			ok(result.includes("2024"));
 		});
 
 		test("functions render as string representation", () => {
 			const fn = () => "test";
-			const result = html2`${fn}`;
+			const result = html`${fn}`;
 			ok(result.includes("function") || result.includes("=>"));
 		});
 
@@ -267,7 +267,7 @@ describe("Data Type Processing", () => {
 			const sym = Symbol("test");
 			// Testing actual behavior - may throw or convert to string
 			try {
-				const result = html2`${sym}`;
+				const result = html`${sym}`;
 				ok(typeof result === "string");
 			} catch (error) {
 				ok(error instanceof TypeError);
@@ -277,24 +277,24 @@ describe("Data Type Processing", () => {
 });
 
 describe("Security and XSS Protection", () => {
-	describe("HTML Escaping in safeHtml2", () => {
+	describe("HTML Escaping in safeHtml", () => {
 		test("basic HTML tags are escaped", () => {
 			const dangerous = "<script>alert('xss')</script>";
 			strictEqual(
-				safeHtml2`${dangerous}`,
+				safeHtml`${dangerous}`,
 				"&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;",
 			);
 		});
 
 		test("all HTML entities are escaped", () => {
 			const entities = "&<>\"'";
-			strictEqual(safeHtml2`${entities}`, "&amp;&lt;&gt;&quot;&#x27;");
+			strictEqual(safeHtml`${entities}`, "&amp;&lt;&gt;&quot;&#x27;");
 		});
 
 		test("mixed content with HTML", () => {
 			const mixed = 'Hello <b>World</b> & "Friends"';
 			strictEqual(
-				safeHtml2`${mixed}`,
+				safeHtml`${mixed}`,
 				"Hello &lt;b&gt;World&lt;/b&gt; &amp; &quot;Friends&quot;",
 			);
 		});
@@ -309,7 +309,7 @@ describe("Security and XSS Protection", () => {
 			];
 
 			attacks.forEach((attack) => {
-				const result = safeHtml2`<div>${attack}</div>`;
+				const result = safeHtml`<div>${attack}</div>`;
 				ok(!result.includes("script>"));
 				ok(!result.includes("onerror="));
 				ok(!result.includes("onload="));
@@ -320,20 +320,20 @@ describe("Security and XSS Protection", () => {
 
 		test("attribute injection protection", () => {
 			const malicious = '" onmouseover="alert(1)" other="';
-			const result = safeHtml2`<input value="${malicious}">`;
+			const result = safeHtml`<input value="${malicious}">`;
 			ok(!result.includes("onmouseover="));
 		});
 	});
 
-	describe("No Escaping in html2", () => {
+	describe("No Escaping in html", () => {
 		test("HTML passes through unchanged", () => {
-			const html = "<b>Bold</b> & <i>Italic</i>";
-			strictEqual(html2`${html}`, html);
+			const htmlContent = "<b>Bold</b> & <i>Italic</i>";
+			strictEqual(html`${htmlContent}`, htmlContent);
 		});
 
 		test("dangerous content passes through unchanged", () => {
 			const dangerous = '<script>alert("xss")</script>';
-			strictEqual(html2`${dangerous}`, dangerous);
+			strictEqual(html`${dangerous}`, dangerous);
 		});
 	});
 
@@ -367,21 +367,21 @@ describe("Security and XSS Protection", () => {
 describe("Performance Features", () => {
 	describe("Template Compilation", () => {
 		test("compile function exists and accepts functions", () => {
-			const template = (data) => html2`<p>${data.name}</p>`;
+			const template = (data) => html`<p>${data.name}</p>`;
 			const compiled = compile(template);
 			ok(typeof compiled === "function");
 		});
 
 		test("compiled templates produce same output", () => {
 			const data = { name: "Test", value: 42 };
-			const template = (d) => html2`<div>${d.name}: ${d.value}</div>`;
+			const template = (d) => html`<div>${d.name}: ${d.value}</div>`;
 			const compiled = compile(template);
 
 			strictEqual(template(data), compiled(data));
 		});
 
 		test("compile handles template without interpolation", () => {
-			const template = () => html2`<div>Static</div>`;
+			const template = () => html`<div>Static</div>`;
 			const compiled = compile(template);
 			strictEqual(template(), compiled());
 		});
@@ -395,7 +395,7 @@ describe("Performance Features", () => {
 
 		test("compile handles functions with closures", () => {
 			const external = "External";
-			const template = (data) => html2`<p>${external} ${data}</p>`;
+			const template = (data) => html`<p>${external} ${data}</p>`;
 			const compiled = compile(template);
 
 			// Should work whether optimized or not
@@ -409,14 +409,14 @@ describe("Performance Features", () => {
 			const large = Array(1000)
 				.fill()
 				.map((_, i) => i);
-			const result = html2`<div>${large}</div>`;
+			const result = html`<div>${large}</div>`;
 			ok(result.startsWith("<div>") && result.endsWith("</div>"));
 			ok(result.includes("999")); // Last element
 		});
 
 		test("handles large strings", () => {
 			const large = "x".repeat(10000);
-			const result = html2`<p>${large}</p>`;
+			const result = html`<p>${large}</p>`;
 			strictEqual(result, `<p>${large}</p>`);
 		});
 
@@ -424,7 +424,7 @@ describe("Performance Features", () => {
 			const deep = Array(100)
 				.fill()
 				.reduce((acc) => [acc], "deep");
-			const result = html2`${deep}`;
+			const result = html`${deep}`;
 			strictEqual(result, "deep");
 		});
 	});
@@ -433,24 +433,24 @@ describe("Performance Features", () => {
 describe("Edge Cases and Error Handling", () => {
 	test("extremely long templates", () => {
 		const longTemplate = "a".repeat(1000);
-		const result = html2`${longTemplate}`;
+		const result = html`${longTemplate}`;
 		strictEqual(result, longTemplate);
 	});
 
 	test("templates with only whitespace", () => {
-		strictEqual(html2`   `, "");
-		strictEqual(html2`\n\t\r`, "");
+		strictEqual(html`   `, "");
+		strictEqual(html`\n\t\r`, "");
 	});
 
 	test("templates with special unicode characters", () => {
 		const special = "🚀 ñáéíóú 中文 العربية русский";
-		strictEqual(html2`${special}`, special);
-		strictEqual(safeHtml2`${special}`, special);
+		strictEqual(html`${special}`, special);
+		strictEqual(safeHtml`${special}`, special);
 	});
 
 	test("control characters and escape sequences", () => {
 		const control = "\n\t\r\0\b\f\v";
-		const result = html2`${control}`;
+		const result = html`${control}`;
 		strictEqual(result, "\0\b"); // trim() removes \n\t\r\f\v whitespace
 	});
 
@@ -459,7 +459,7 @@ describe("Edge Cases and Error Handling", () => {
 		circular.self = circular;
 
 		// Should not cause stack overflow
-		const result = html2`${circular}`;
+		const result = html`${circular}`;
 		ok(typeof result === "string");
 	});
 
@@ -468,7 +468,7 @@ describe("Edge Cases and Error Handling", () => {
 		for (let i = 0; i < 100; i++) {
 			nested = [nested];
 		}
-		const result = html2`${nested}`;
+		const result = html`${nested}`;
 		strictEqual(result, "base");
 	});
 });
@@ -481,17 +481,17 @@ describe("Real-World Usage Patterns", () => {
 			const title = "Page Title";
 
 			strictEqual(
-				html2`${showTitle && `<h1>${title}</h1>`}`,
+				html`${showTitle && `<h1>${title}</h1>`}`,
 				"<h1>Page Title</h1>",
 			);
-			strictEqual(html2`${hideTitle && `<h1>${title}</h1>`}`, "");
+			strictEqual(html`${hideTitle && `<h1>${title}</h1>`}`, "");
 		});
 
 		test("ternary operator conditional", () => {
 			const isLoggedIn = true;
 			const user = "John";
 
-			const result = html2`${isLoggedIn ? `Welcome ${user}` : "Please login"}`;
+			const result = html`${isLoggedIn ? `Welcome ${user}` : "Please login"}`;
 			strictEqual(result, "Welcome John");
 		});
 
@@ -499,7 +499,7 @@ describe("Real-World Usage Patterns", () => {
 			const isActive = true;
 			const isDisabled = false;
 
-			const result = html2`<button class="${isActive ? "active" : ""} ${isDisabled ? "disabled" : ""}">Click</button>`;
+			const result = html`<button class="${isActive ? "active" : ""} ${isDisabled ? "disabled" : ""}">Click</button>`;
 			strictEqual(result, '<button class="active ">Click</button>');
 		});
 	});
@@ -507,7 +507,7 @@ describe("Real-World Usage Patterns", () => {
 	describe("List Rendering", () => {
 		test("simple list rendering", () => {
 			const items = ["Apple", "Banana", "Cherry"];
-			const result = html2`<ul>${items.map((item) => html2`<li>${item}</li>`)}</ul>`;
+			const result = html`<ul>${items.map((item) => html`<li>${item}</li>`)}</ul>`;
 			strictEqual(
 				result,
 				"<ul><li>Apple</li><li>Banana</li><li>Cherry</li></ul>",
@@ -516,13 +516,13 @@ describe("Real-World Usage Patterns", () => {
 
 		test("list with indexes", () => {
 			const items = ["A", "B"];
-			const result = html2`<ol>${items.map((item, i) => html2`<li>${i}: ${item}</li>`)}</ol>`;
+			const result = html`<ol>${items.map((item, i) => html`<li>${i}: ${item}</li>`)}</ol>`;
 			strictEqual(result, "<ol><li>0: A</li><li>1: B</li></ol>");
 		});
 
 		test("empty list handling", () => {
 			const items = [];
-			const result = html2`<ul>${items.map((item) => html2`<li>${item}</li>`)}</ul>`;
+			const result = html`<ul>${items.map((item) => html`<li>${item}</li>`)}</ul>`;
 			strictEqual(result, "<ul></ul>");
 		});
 
@@ -532,9 +532,9 @@ describe("Real-World Usage Patterns", () => {
 				{ id: 2, name: "Bob", active: false },
 			];
 
-			const result = html2`<div>${users.map(
+			const result = html`<div>${users.map(
 				(user) =>
-					html2`<div class="${user.active ? "active" : "inactive"}">${user.name}</div>`,
+					html`<div class="${user.active ? "active" : "inactive"}">${user.name}</div>`,
 			)}</div>`;
 
 			strictEqual(
@@ -546,9 +546,9 @@ describe("Real-World Usage Patterns", () => {
 
 	describe("Component Composition", () => {
 		test("nested template composition", () => {
-			const header = (title) => html2`<header><h1>${title}</h1></header>`;
-			const footer = (text) => html2`<footer><p>${text}</p></footer>`;
-			const page = (title, content, footerText) => html2`
+			const header = (title) => html`<header><h1>${title}</h1></header>`;
+			const footer = (text) => html`<footer><p>${text}</p></footer>`;
+			const page = (title, content, footerText) => html`
 				${header(title)}
 				<main>${content}</main>
 				${footer(footerText)}
@@ -561,7 +561,7 @@ describe("Real-World Usage Patterns", () => {
 		});
 
 		test("reusable component patterns", () => {
-			const button = (text, type = "button", disabled = false) => html2`
+			const button = (text, type = "button", disabled = false) => html`
 				<button type="${type}" ${disabled ? "disabled" : ""}>${text}</button>
 			`;
 
@@ -584,7 +584,7 @@ describe("Real-World Usage Patterns", () => {
 				message: "Hello & welcome!",
 			};
 
-			const form = html2`
+			const form = html`
 				<form>
 					<input name="name" value="${formData.name}">
 					<input name="email" value="${formData.email}">
@@ -599,7 +599,7 @@ describe("Real-World Usage Patterns", () => {
 
 		test("safe form input binding", () => {
 			const userInput = '"><script>alert("xss")</script>';
-			const safeForm = safeHtml2`<input value="${userInput}">`;
+			const safeForm = safeHtml`<input value="${userInput}">`;
 
 			ok(!safeForm.includes("<script>"));
 			ok(safeForm.includes("&quot;&gt;&lt;script&gt;"));
@@ -619,7 +619,7 @@ describe("Real-World Usage Patterns", () => {
 				)
 				.join("; ");
 
-			const result = html2`<div style="${cssText}">Styled content</div>`;
+			const result = html`<div style="${cssText}">Styled content</div>`;
 			strictEqual(
 				result,
 				'<div style="color: red; font-size: 14px; display: block">Styled content</div>',
@@ -630,7 +630,7 @@ describe("Real-World Usage Patterns", () => {
 	describe("Advanced Template Patterns", () => {
 		test("template with computed values", () => {
 			const data = { items: [1, 2, 3, 4, 5] };
-			const result = html2`
+			const result = html`
 				<div>
 					Total: ${data.items.length}
 					Sum: ${data.items.reduce((a, b) => a + b, 0)}
@@ -646,7 +646,7 @@ describe("Real-World Usage Patterns", () => {
 		test("template with async-ready patterns", () => {
 			const asyncData = Promise.resolve("Loaded");
 			// Template should handle promise objects gracefully
-			const result = html2`<div>Status: ${asyncData}</div>`;
+			const result = html`<div>Status: ${asyncData}</div>`;
 			ok(result.includes("[object Promise]"));
 		});
 	});

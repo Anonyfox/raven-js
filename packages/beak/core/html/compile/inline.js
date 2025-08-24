@@ -238,7 +238,7 @@ function parseTemplate(code, start, tagName) {
  * Parse expression with proper delimiter tracking - content agnostic
  * @param {string} code - Source code
  * @param {number} start - Start position after ${
- * @param {string} tagName - Tag name for recursive parsing
+ * @param {string} _tagName - Tag name for recursive parsing (unused)
  * @returns {{node: ASTNode, endPos: number}|null} Expression node and end position
  */
 function parseExpression(code, start, _tagName) {
