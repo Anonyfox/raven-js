@@ -511,8 +511,28 @@ export function inline(templateFunction) {
 			return templateFunction;
 		}
 
-		const functionBody = extractFunctionBody(templateFunction);
+		// Enhanced closure detection: check for variable references not in parameters
 		const params = extractFunctionParams(templateFunction);
+		const paramNames = params
+			.split(",")
+			.map((p) => p.trim().split(/\s+/).pop())
+			.filter(Boolean);
+
+		// Look for template literal variable references ${variableName}
+		const templateVarPattern = /\$\{([a-zA-Z_$][a-zA-Z0-9_$]*)\}/g;
+		let match;
+		while ((match = templateVarPattern.exec(functionSource)) !== null) {
+			const varName = match[1];
+			// If variable is not in parameters and not a known safe reference, skip optimization
+			if (
+				!paramNames.includes(varName) &&
+				!["true", "false", "null", "undefined"].includes(varName)
+			) {
+				return templateFunction;
+			}
+		}
+
+		const functionBody = extractFunctionBody(templateFunction);
 
 		// Transform using AST approach (only for closure-free functions)
 		const optimizedBody = transformFunctionBody(functionBody, tagName);

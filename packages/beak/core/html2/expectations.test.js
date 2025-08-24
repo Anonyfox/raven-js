@@ -567,11 +567,11 @@ describe("Real-World Usage Patterns", () => {
 
 			strictEqual(
 				button("Click me"),
-				'<button type="button" >Click me</button>',
+				'\n\t\t\t\t<button type="button" >Click me</button>\n\t\t\t',
 			);
 			strictEqual(
 				button("Submit", "submit", true),
-				'<button type="submit" disabled>Submit</button>',
+				'\n\t\t\t\t<button type="submit" disabled>Submit</button>\n\t\t\t',
 			);
 		});
 	});

@@ -18,12 +18,29 @@ export { compile } from "./compile/index.js";
 /**
  * Character-level HTML escaping without regex overhead.
  * Switch-based approach optimized for V8 branch prediction.
+ * Includes XSS protection for dangerous protocols and event handlers.
  *
  * @param {string} str - String to escape
  * @returns {string} HTML-escaped string
  */
 export function escapeHtml(str) {
-	const stringValue = String(str);
+	let stringValue = String(str);
+
+	// Pre-processing: neutralize dangerous patterns with minimal overhead
+	if (stringValue.includes("javascript:")) {
+		stringValue = stringValue.replace(/javascript:/gi, "blocked:");
+	}
+	if (stringValue.includes("vbscript:")) {
+		stringValue = stringValue.replace(/vbscript:/gi, "blocked:");
+	}
+	if (stringValue.includes("data:")) {
+		stringValue = stringValue.replace(/data:/gi, "blocked:");
+	}
+	// Neutralize event handlers by converting to safe attributes
+	if (stringValue.includes("on")) {
+		stringValue = stringValue.replace(/\bon([a-z]+)=/gi, "blocked-$1=");
+	}
+
 	let result = "";
 	for (let i = 0; i < stringValue.length; i++) {
 		const char = stringValue[i];
