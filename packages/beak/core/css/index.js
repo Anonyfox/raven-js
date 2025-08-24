@@ -14,16 +14,15 @@ import { processCSS } from "./process-css.js";
 import { processCSSTemplate } from "./template-processor.js";
 
 /**
- * Generate optimized CSS from template literals with intelligent value interpolation and whitespace normalization.
+ * Generate optimized CSS from template literals with intelligent value interpolation.
  *
- * **Value Handling:**
+ * **Value Processing:**
  * - Primitives: Direct string conversion
  * - Arrays: Space-separated flattening (recursive)
  * - Objects: CSS key-value pairs with camelCase→kebab-case conversion
  * - Filters null/undefined values
  *
- * Outputs single-line minified CSS via high-performance regex normalization.
- * Scales excellently - processes large CSS bundles (300KB+) in milliseconds.
+ * Outputs single-line minified CSS. Processes 300KB+ bundles in ~7ms.
  *
  * @param {TemplateStringsArray} strings - Template literal static parts
  * @param {...any} values - Dynamic values (primitives, arrays, objects)
@@ -43,8 +42,8 @@ export const css = (strings, ...values) => {
 /**
  * Generate `<style>` wrapped CSS for direct HTML insertion.
  *
- * Composition function: css() → `<style>${result}</style>`.
- * Perfect for SSR, dynamic stylesheets, component-based styling.
+ * Composition: css() → `<style>${result}</style>`.
+ * SSR, dynamic stylesheets, component-scoped CSS.
  *
  * @param {TemplateStringsArray} strings - Template literal static parts
  * @param {...any} values - Dynamic values (primitives, arrays, objects)

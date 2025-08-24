@@ -9,13 +9,12 @@
 import { processJSTemplate } from "./template-processor.js";
 
 /**
- * @file JavaScript template literal processor with intelligent value interpolation.
+ * @file JavaScript template processor with value filtering and array flattening.
  *
- * Processes template literals with value filtering, array flattening, and whitespace trimming.
- * Core template processor for dynamic JavaScript code generation.
+ * Filters falsy values (except 0), flattens arrays, trims whitespace.
  *
  * @param {TemplateStringsArray} strings - Static template parts.
- * @param {...any} values - Dynamic values for interpolation.
+ * @param {...any} values - Values to interpolate.
  * @returns {string} Processed JavaScript code.
  *
  * @example
@@ -26,10 +25,10 @@ import { processJSTemplate } from "./template-processor.js";
 export const js = processJSTemplate;
 
 /**
- * Wraps JavaScript template in `<script type="text/javascript">` tags.
+ * Wraps JavaScript in `<script type="text/javascript">` tags.
  *
  * @param {TemplateStringsArray} strings - Static template parts.
- * @param {...any} values - Interpolated values.
+ * @param {...any} values - Values to interpolate.
  * @returns {string} JavaScript wrapped in script tags.
  *
  * @example
@@ -42,11 +41,11 @@ export const script = (strings, ...values) => {
 };
 
 /**
- * Wraps JavaScript template in `<script type="text/javascript" defer>` tags.
- * Executes after HTML parsing completes, ideal for DOM manipulation.
+ * Wraps JavaScript in `<script type="text/javascript" defer>` tags.
+ * Executes after HTML parsing completes.
  *
  * @param {TemplateStringsArray} strings - Static template parts.
- * @param {...any} values - Interpolated values.
+ * @param {...any} values - Values to interpolate.
  * @returns {string} JavaScript wrapped in deferred script tags.
  *
  * @example
@@ -59,11 +58,11 @@ export const scriptDefer = (strings, ...values) => {
 };
 
 /**
- * Wraps JavaScript template in `<script type="text/javascript" async>` tags.
- * Executes independently without blocking, ideal for analytics and tracking.
+ * Wraps JavaScript in `<script type="text/javascript" async>` tags.
+ * Executes without blocking HTML parsing.
  *
  * @param {TemplateStringsArray} strings - Static template parts.
- * @param {...any} values - Interpolated values.
+ * @param {...any} values - Values to interpolate.
  * @returns {string} JavaScript wrapped in async script tags.
  *
  * @example

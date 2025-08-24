@@ -9,27 +9,27 @@
 /**
  * @file Template compilation for tagged template literals
  *
- * Content-agnostic optimization that converts tagged templates to string concatenation.
+ * Converts tagged templates to string concatenation for V8 optimization.
  */
 
 import { inline } from "./inline.js";
 
 /**
- * **EXPERIMENTAL:** Compile function that optimizes tagged template literals
+ * **EXPERIMENTAL:** Template function optimization through AST transformation.
  *
- * **Status:** Experimental - API may change, use with caution in production.
- * **Benefits:** Converts templates to string concatenation for V8 optimization.
- * **Limitations:** Simple functions only, gracefully falls back on complex cases.
+ * **Warning:** API unstable, use cautiously in production.
+ * **Optimization:** Converts tagged templates to direct string concatenation.
+ * **Fallback:** Returns original function on complex cases or errors.
  *
  * @param {Function} templateFunc - Function containing tagged template literal
- * @returns {Function} Optimized template function
+ * @returns {Function} Optimized or original template function
  *
  * @example
  * const optimized = compile((data) => html`<div>${data.value}</div>`);
- * const result = optimized(myData); // Faster execution when optimization succeeds
+ * const result = optimized(myData);
  */
 export function compile(templateFunc) {
-	// Apply template literal optimization - converts tagged templates to string concatenation
-	// inline() function provides comprehensive error handling and never throws
+	// Apply template literal optimization via AST transformation
+	// inline() provides error handling and graceful fallback
 	return inline(templateFunc);
 }

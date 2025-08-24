@@ -7,14 +7,13 @@
  */
 
 /**
- * @file Core string conversion utility for template processing.
+ * @file String conversion with array flattening.
  *
- * Converts values to strings with array flattening. Arrays join with empty string,
- * all other types use String() constructor.
+ * Arrays join with empty string, other types use String() constructor.
  *
- * @param {any} value - Value to convert to string.
+ * @param {any} value - Value to convert.
  * @returns {string} String representation. Arrays flatten to concatenated elements.
- * @throws {TypeError} When value cannot be converted to string (null-prototype objects).
+ * @throws {TypeError} When value cannot be converted (null-prototype objects).
  *
  * @example
  * stringify([1, 2, 3])        // "123"

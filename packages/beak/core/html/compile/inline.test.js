@@ -1,7 +1,9 @@
 /**
- * @author Fox Kiester <noahf.kies@gmail.com>
- * @license Apache-2.0
- * @see {@link https://github.com/Anonyfox/ravenjs\}
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see https://github.com/Anonyfox/ravenjs
+ * @see https://ravenjs.dev
+ * @see https://anonyfox.com
  */
 
 /**

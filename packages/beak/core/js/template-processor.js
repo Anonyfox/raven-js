@@ -13,24 +13,16 @@ const isValidJSValue = (/** @type {any} */ value) =>
 	value === 0 || Boolean(value);
 
 /**
- * @file High-performance JavaScript template literal processor.
+ * @file JavaScript template processor with four execution paths.
  *
- * Processes template literals with intelligent value filtering and optimized string building.
- * Performance-optimized with multiple execution paths based on value count.
+ * Execution paths: 0 values (direct return), 1 value (concat), 2-3 values (array build), 4+ values (pre-allocated array).
  *
  * @param {TemplateStringsArray} strings - Static template parts.
- * @param {...any} values - Interpolated values for processing.
- * @returns {string} Processed JavaScript code with trimmed whitespace.
- *
- * @performance
- * - Zero values: Direct string return (fastest path)
- * - Single value: Optimized concat operation
- * - 2-3 values: StringBuilder pattern
- * - 4+ values: Pre-allocated array with exact sizing
- * - Extracted validation: Monomorphic function for V8 JIT optimization
+ * @param {...any} values - Values to interpolate.
+ * @returns {string} Processed JavaScript code, trimmed.
  *
  * @filtering
- * Includes: 0 (zero), truthy values
+ * Includes: 0, truthy values
  * Excludes: null, undefined, false, empty string
  *
  * @example
@@ -57,7 +49,7 @@ export const processJSTemplate = (
 		if (!isValidJSValue(value)) {
 			return strings[0].concat(strings[1]).trim();
 		}
-		// Use concat for better performance than string concatenation
+		// Use concat operation
 		return strings[0].concat(stringify(value), strings[1]).trim();
 	}
 
@@ -84,7 +76,7 @@ export const processJSTemplate = (
 		}
 	}
 
-	// Pre-allocate array with exact size for maximum performance
+	// Pre-allocate array with exact size
 	// Total size = strings.length + valid values count
 	const totalSize = stringsLength + validCount;
 	const parts = new Array(totalSize);

@@ -11,17 +11,15 @@
  */
 
 /**
- * Recursively flattens values with intelligent type handling for CSS generation.
+ * Recursively flattens values with intelligent type handling.
  *
- * **Arrays:** Flattened to space-separated strings, filtering null/undefined.
- * **Objects:** Decomposed to CSS key-value pairs with camelCase→kebab-case conversion.
- * **Primitives:** Converted to strings directly.
+ * **Type Processing:**
+ * - Arrays: Space-separated strings, filters null/undefined
+ * - Objects: CSS key-value pairs with camelCase→kebab-case conversion
+ * - Primitives: Direct string conversion
  *
- * **Performance:** O(n) for flat arrays, O(n*d) for nested arrays (d=depth).
- * Sparse array optimization skips holes via `in` operator.
- * Handles large structures efficiently - 1000+ elements process in <1ms.
- *
- * **Protected Edge:** Circular references throw RangeError (stack overflow protection).
+ * **Performance:** O(n) flat arrays, O(n*d) nested. Sparse array optimization.
+ * **Edge Protection:** Circular references throw RangeError.
  *
  * @param {any} value - Value to flatten (primitives, arrays, objects)
  * @returns {string} CSS-formatted flattened representation
@@ -99,11 +97,10 @@ export const flattenValue = (value) => {
 };
 
 /**
- * Combines template literal parts with interpolated values for CSS generation.
+ * Combines template literal parts with interpolated values.
  *
- * **Integration:** Requires genuine TemplateStringsArray - manual construction fails.
- * Values undergo efficient recursive flattening via flattenValue().
- * Optimized for performance - handles complex templates with many interpolations seamlessly.
+ * **Requirements:** Genuine TemplateStringsArray only - manual construction fails.
+ * Values processed via recursive flattenValue(). Handles complex interpolations efficiently.
  *
  * @param {TemplateStringsArray} strings - Template static parts (immutable array)
  * @param {...any} values - Interpolated values (primitives, arrays, objects)

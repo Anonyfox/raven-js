@@ -25,14 +25,12 @@ const CLOSE_BRACE_SPACE = "} ";
  */
 
 /**
- * Normalizes CSS strings to single-line output with minimal whitespace.
+ * Normalizes CSS to single-line output with minimal whitespace.
  *
- * **Performance:** Pre-compiled regex patterns enable O(n) single-pass transformation.
- * Fast-path detection for empty strings eliminates unnecessary processing.
- * Excellent performance scaling - processes 300KB+ CSS bundles in ~7ms.
+ * **Performance:** O(n) single-pass via pre-compiled regex patterns.
+ * Fast-path empty string detection. Processes 300KB+ in ~7ms.
  *
- * **Design:** Linear regex patterns avoid catastrophic backtracking even with
- * pathological inputs (10K+ consecutive spaces process in <1ms).
+ * **Pathological Protection:** Linear patterns prevent catastrophic backtracking.
  *
  * @param {string} css - Raw CSS string requiring normalization
  * @returns {string} Minified CSS with normalized whitespace
