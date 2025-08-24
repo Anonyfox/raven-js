@@ -14,14 +14,6 @@ const frameworks = {
 		entry: "templates/complex/beak.js",
 		external: ["@raven-js/beak"],
 	},
-	beak2: {
-		entry: "templates/complex/beak2.js",
-		external: ["@raven-js/beak"],
-	},
-	"beak2-compiled": {
-		entry: "templates/complex/beak2-compiled.js",
-		external: ["@raven-js/beak"],
-	},
 	dot: {
 		entry: "bundles/dot-entry.js",
 		external: [],

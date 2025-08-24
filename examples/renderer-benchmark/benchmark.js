@@ -21,16 +21,10 @@ import {
 
 // Import baseline templates
 import { renderBaselineString as beakBaselineRender } from "./templates/baseline/beak.js";
-import { renderBaselineString as beak2BaselineRender } from "./templates/baseline/beak2.js";
-import { renderBaselineString as beak2CompiledBaselineRender } from "./templates/baseline/beak2-compiled.js";
-// Import complex templates (existing)
+// Import complex templates
 import { renderBlogPage as beakComplexRender } from "./templates/complex/beak.js";
-import { renderBlogPage as beak2ComplexRender } from "./templates/complex/beak2.js";
-import { renderBlogPage as beak2CompiledComplexRender } from "./templates/complex/beak2-compiled.js";
 // Import component templates
 import { renderProductList as beakComponentRender } from "./templates/component/beak.js";
-import { renderProductList as beak2ComponentRender } from "./templates/component/beak2.js";
-import { renderProductList as beak2CompiledComponentRender } from "./templates/component/beak2-compiled.js";
 
 class BenchmarkRunner {
 	constructor() {
@@ -305,18 +299,6 @@ class BenchmarkRunner {
 		});
 	}
 
-	async benchmarkBeak2Baseline() {
-		return this.measurePerformance("Beak2 (HTML2)", "baseline", () => {
-			return beak2BaselineRender();
-		});
-	}
-
-	async benchmarkBeak2CompiledBaseline() {
-		return this.measurePerformance("Beak2 Compiled", "baseline", () => {
-			return beak2CompiledBaselineRender();
-		});
-	}
-
 	async benchmarkEJSBaseline() {
 		const template = this.loadTemplate("templates/baseline/ejs.ejs");
 		return this.measurePerformance("EJS", "baseline", () => {
@@ -386,20 +368,6 @@ class BenchmarkRunner {
 		const { standardData } = this.componentData;
 		return this.measurePerformance("Beak (RavenJS)", "component", () => {
 			return beakComponentRender(standardData);
-		});
-	}
-
-	async benchmarkBeak2Component() {
-		const { standardData } = this.componentData;
-		return this.measurePerformance("Beak2 (HTML2)", "component", () => {
-			return beak2ComponentRender(standardData);
-		});
-	}
-
-	async benchmarkBeak2CompiledComponent() {
-		const { standardData } = this.componentData;
-		return this.measurePerformance("Beak2 Compiled", "component", () => {
-			return beak2CompiledComponentRender(standardData);
 		});
 	}
 
@@ -474,20 +442,6 @@ class BenchmarkRunner {
 		const { baseData } = this.prepareComplexData();
 		return this.measurePerformance("Beak (RavenJS)", "complex", () => {
 			return beakComplexRender(baseData);
-		});
-	}
-
-	async benchmarkBeak2Complex() {
-		const { baseData } = this.prepareComplexData();
-		return this.measurePerformance("Beak2 (HTML2)", "complex", () => {
-			return beak2ComplexRender(baseData);
-		});
-	}
-
-	async benchmarkBeak2CompiledComplex() {
-		const { baseData } = this.prepareComplexData();
-		return this.measurePerformance("Beak2 Compiled", "complex", () => {
-			return beak2CompiledComplexRender(baseData);
 		});
 	}
 
@@ -571,8 +525,6 @@ class BenchmarkRunner {
 				dataSize: "No dynamic data",
 				benchmarks: [
 					() => this.benchmarkBeakBaseline(),
-					() => this.benchmarkBeak2Baseline(),
-					() => this.benchmarkBeak2CompiledBaseline(),
 					() => this.benchmarkEJSBaseline(),
 					() => this.benchmarkEtaBaseline(),
 					() => this.benchmarkHandlebarsBaseline(),
@@ -590,8 +542,6 @@ class BenchmarkRunner {
 				dataSize: `${this.componentData.standardData.products.length} products with attributes`,
 				benchmarks: [
 					() => this.benchmarkBeakComponent(),
-					() => this.benchmarkBeak2Component(),
-					() => this.benchmarkBeak2CompiledComponent(),
 					() => this.benchmarkEJSComponent(),
 					() => this.benchmarkEtaComponent(),
 					() => this.benchmarkHandlebarsComponent(),
@@ -608,8 +558,6 @@ class BenchmarkRunner {
 				dataSize: `${this.complexData.posts.length} blog posts with full metadata`,
 				benchmarks: [
 					() => this.benchmarkBeakComplex(),
-					() => this.benchmarkBeak2Complex(),
-					() => this.benchmarkBeak2CompiledComplex(),
 					() => this.benchmarkEJSComplex(),
 					() => this.benchmarkEtaComplex(),
 					() => this.benchmarkHandlebarsComplex(),
@@ -739,6 +687,25 @@ class BenchmarkRunner {
 		report += `- **Warmup:** ${this.warmupRuns} iterations before measurement\n`;
 		report += `- **Measurement:** ${this.iterations} timed iterations per engine per category\n\n`;
 
+		// Add bundle size analysis if available
+		try {
+			const bundleData = JSON.parse(
+				fs.readFileSync("bundle-sizes.json", "utf8"),
+			);
+			const bundleTable = fs.readFileSync("bundle-size-table.md", "utf8");
+			report += `\n${bundleTable}\n`;
+		} catch (error) {
+			// Bundle size data not available
+		}
+
+		// Add cold start analysis if available
+		try {
+			const coldStartTable = fs.readFileSync("cold-start-table.md", "utf8");
+			report += `\n${coldStartTable}\n`;
+		} catch (error) {
+			// Cold start data not available
+		}
+
 		report += `---\n\n`;
 		report += `*Benchmark generated with the RavenJS renderer-benchmark package*\n`;
 
@@ -746,15 +713,91 @@ class BenchmarkRunner {
 	}
 
 	async run() {
+		console.log("🔧 Running bundle size analysis...");
+		await this.runBundleAnalysis();
+
+		console.log("\n❄️  Running cold start benchmarks...");
+		await this.runColdStartBenchmarks();
+
+		console.log("\n🚀 Running performance benchmarks...");
 		await this.runAllBenchmarks();
+
 		const report = this.generateReport();
 
 		fs.writeFileSync("BENCHMARK.md", report);
 		console.log(
-			"\n📊 Three-tiered benchmark complete! Results saved to BENCHMARK.md",
+			"\n📊 Complete benchmark suite finished! Results saved to BENCHMARK.md",
 		);
 
 		return this.results;
+	}
+
+	async runBundleAnalysis() {
+		try {
+			const { spawn } = await import("node:child_process");
+			return new Promise((resolve, reject) => {
+				const process = spawn("node", ["build-bundles.js"], {
+					stdio: "pipe",
+					cwd: ".",
+				});
+
+				let output = "";
+				process.stdout.on("data", (data) => {
+					output += data.toString();
+				});
+
+				process.on("close", (code) => {
+					if (code === 0) {
+						console.log("   ✅ Bundle analysis complete");
+						resolve(output);
+					} else {
+						console.log("   ⚠️  Bundle analysis skipped (optional)");
+						resolve("");
+					}
+				});
+
+				process.on("error", () => {
+					console.log("   ⚠️  Bundle analysis skipped (optional)");
+					resolve("");
+				});
+			});
+		} catch (error) {
+			console.log("   ⚠️  Bundle analysis skipped (optional)");
+		}
+	}
+
+	async runColdStartBenchmarks() {
+		try {
+			const { spawn } = await import("node:child_process");
+			return new Promise((resolve, reject) => {
+				const process = spawn("node", ["cold-start-benchmark.js"], {
+					stdio: "pipe",
+					cwd: ".",
+				});
+
+				let output = "";
+				process.stdout.on("data", (data) => {
+					output += data.toString();
+				});
+
+				process.on("close", (code) => {
+					if (code === 0) {
+						console.log("   ✅ Cold start analysis complete");
+						resolve(output);
+					} else {
+						console.log("   ⚠️  Cold start analysis skipped (optional)");
+						resolve("");
+					}
+				});
+
+				process.on("error", () => {
+					console.log("   ⚠️  Cold start analysis skipped (optional)");
+					resolve("");
+				});
+			});
+		} catch (error) {
+			console.log("   ⚠️  Cold start analysis skipped (optional)");
+		}
 	}
 }
 

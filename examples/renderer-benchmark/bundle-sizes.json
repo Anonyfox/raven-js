@@ -1,68 +1,56 @@
 {
-	"beak": {
-		"bundle": 16063,
-		"minified": 14111,
-		"gzipped": 4641,
-		"minGzipped": 4303
-	},
-	"beak2": {
-		"bundle": 16084,
-		"minified": 14123,
-		"gzipped": 4654,
-		"minGzipped": 4309
-	},
-	"beak2-compiled": {
-		"bundle": 16103,
-		"minified": 13995,
-		"gzipped": 4652,
-		"minGzipped": 4297
-	},
-	"dot": {
-		"bundle": 19015,
-		"minified": 12281,
-		"gzipped": 6657,
-		"minGzipped": 5328
-	},
-	"ejs": {
-		"bundle": 52149,
-		"minified": 35734,
-		"gzipped": 13755,
-		"minGzipped": 11638
-	},
-	"eta": {
-		"bundle": 27686,
-		"minified": 15902,
-		"gzipped": 8061,
-		"minGzipped": 6329
-	},
-	"handlebars": {
-		"bundle": 260319,
-		"minified": 128512,
-		"gzipped": 52996,
-		"minGzipped": 38983
-	},
-	"liquid": {
-		"bundle": 168896,
-		"minified": 82295,
-		"gzipped": 35517,
-		"minGzipped": 25610
-	},
-	"mustache": {
-		"bundle": 37988,
-		"minified": 26932,
-		"gzipped": 10274,
-		"minGzipped": 8739
-	},
-	"nunjucks": {
-		"bundle": 218088,
-		"minified": 112488,
-		"gzipped": 44078,
-		"minGzipped": 32857
-	},
-	"pug": {
-		"bundle": 1620439,
-		"minified": 833992,
-		"gzipped": 266735,
-		"minGzipped": 205943
-	}
+  "beak": {
+    "bundle": 16063,
+    "minified": 14111,
+    "gzipped": 4641,
+    "minGzipped": 4303
+  },
+  "dot": {
+    "bundle": 19015,
+    "minified": 12281,
+    "gzipped": 6657,
+    "minGzipped": 5328
+  },
+  "ejs": {
+    "bundle": 52149,
+    "minified": 35734,
+    "gzipped": 13755,
+    "minGzipped": 11638
+  },
+  "eta": {
+    "bundle": 27686,
+    "minified": 15902,
+    "gzipped": 8061,
+    "minGzipped": 6329
+  },
+  "handlebars": {
+    "bundle": 260319,
+    "minified": 128512,
+    "gzipped": 52996,
+    "minGzipped": 38983
+  },
+  "liquid": {
+    "bundle": 168896,
+    "minified": 82295,
+    "gzipped": 35517,
+    "minGzipped": 25610
+  },
+  "mustache": {
+    "bundle": 37988,
+    "minified": 26932,
+    "gzipped": 10274,
+    "minGzipped": 8739
+  },
+  "nunjucks": {
+    "bundle": 218088,
+    "minified": 112488,
+    "gzipped": 44078,
+    "minGzipped": 32857
+  },
+  "pug": {
+    "bundle": 1620439,
+    "minified": 833992,
+    "gzipped": 266735,
+    "minGzipped": 205943
+  }
 }

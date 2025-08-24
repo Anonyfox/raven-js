@@ -1,0 +1,15 @@
+
+import { Liquid } from 'liquidjs';
+import { generateTemplateData } from '../data.js';
+
+const engine = new Liquid();
+const template = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>{{ site.name }} - Modern Web Development Blog</title>\n  <meta name=\"description\" content=\"{{ site.description }}\">\n</head>\n<body>\n  <header>\n    <h1>{{ site.name }}</h1>\n    <nav>\n      <ul>\n        {% for item in site.navigation %}\n          <li><a href=\"{{ item.url }}\">{{ item.name }}</a></li>\n        {% endfor %}\n      </ul>\n    </nav>\n  </header>\n\n  <main>\n    <section class=\"hero\">\n      <h2>Latest Blog Posts</h2>\n      <p>{{ site.description }}</p>\n    </section>\n\n    <section class=\"posts\">\n      {% for post in posts %}\n        <article class=\"post {% if post.featured %}featured{% endif %}\">\n          <header>\n            <h3><a href=\"/blog/{{ post.slug }}\">{{ post.title }}</a></h3>\n            <div class=\"meta\">\n              <span class=\"author\">By {{ post.author.name }}</span>\n              <span class=\"date\">{{ post.publishedAt | date: \"%m/%d/%Y\" }}</span>\n              <span class=\"category\">{{ post.category }}</span>\n              <span class=\"read-time\">{{ post.readTime }} min read</span>\n            </div>\n          </header>\n\n          <div class=\"excerpt\">\n            <p>{{ post.excerpt }}</p>\n          </div>\n\n          <div class=\"tags\">\n            {% for tag in post.tags %}\n              <span class=\"tag\">#{{ tag }}</span>\n            {% endfor %}\n          </div>\n\n          <footer class=\"stats\">\n            <span class=\"views\">{{ post.views }} views</span>\n            <span class=\"likes\">{{ post.likes }} likes</span>\n            <span class=\"comments\">{{ post.comments }} comments</span>\n          </footer>\n        </article>\n      {% endfor %}\n    </section>\n\n    <nav class=\"pagination\">\n      {% if hasPrevPage %}\n        {% assign prevPage = currentPage | minus: 1 %}\n        <a href=\"/blog?page={{ prevPage }}\">Previous</a>\n      {% endif %}\n      <span>Page {{ currentPage }} of {{ totalPages }}</span>\n      {% if hasNextPage %}\n        {% assign nextPage = currentPage | plus: 1 %}\n        <a href=\"/blog?page={{ nextPage }}\">Next</a>\n      {% endif %}\n    </nav>\n  </main>\n\n  <footer>\n    <p>&copy; {{ site.year }} {{ site.name }}. All rights reserved.</p>\n    <div class=\"social\">\n      <a href=\"https://twitter.com/{{ site.social.twitter }}\">Twitter</a>\n      <a href=\"https://github.com/{{ site.social.github }}\">GitHub</a>\n      <a href=\"https://linkedin.com/{{ site.social.linkedin }}\">LinkedIn</a>\n    </div>\n  </footer>\n</body>\n</html>\n";
+const data = generateTemplateData();
+
+// Export render function
+export function render() {
+  return engine.parseAndRenderSync(template, data);
+}
+
+// Ensure it runs
+render();

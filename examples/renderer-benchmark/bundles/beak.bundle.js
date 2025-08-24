@@ -1,7 +1,6 @@
-import { html2 as html } from "@raven-js/beak/core/html2";
-
-// Component-like functions for better organization
-const MetaHead = ({ site, title, description }) => html`
+// templates/complex/beak.js
+import { html } from "@raven-js/beak";
+var MetaHead = ({ site, title, description }) => html`
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>${title} - ${site.name}</title>
@@ -12,12 +11,11 @@ const MetaHead = ({ site, title, description }) => html`
 	<meta property="og:type" content="website" />
 	<link rel="canonical" href="${site.url}" />
 `;
-
-const NavigationMenu = ({ navigation, currentPath = "/" }) => html`
+var NavigationMenu = ({ navigation, currentPath = "/" }) => html`
 	<nav class="main-nav" role="navigation" aria-label="Main navigation">
 		<ul class="nav-list">
 			${navigation.map(
-				(item) => html`
+  (item) => html`
 					<li class="nav-item">
 						<a
 							href="${item.url}"
@@ -27,13 +25,12 @@ const NavigationMenu = ({ navigation, currentPath = "/" }) => html`
 							${item.name}
 						</a>
 					</li>
-				`,
-			)}
+				`
+)}
 		</ul>
 	</nav>
 `;
-
-const CategoryFilter = ({ categories, selectedCategory }) => html`
+var CategoryFilter = ({ categories, selectedCategory }) => html`
 	<div class="category-filter">
 		<h3>Filter by Category</h3>
 		<ul class="category-list">
@@ -46,7 +43,7 @@ const CategoryFilter = ({ categories, selectedCategory }) => html`
 				</a>
 			</li>
 			${categories.map(
-				(category) => html`
+  (category) => html`
 					<li>
 						<a
 							href="/blog?category=${encodeURIComponent(category)}"
@@ -55,18 +52,17 @@ const CategoryFilter = ({ categories, selectedCategory }) => html`
 							${category}
 						</a>
 					</li>
-				`,
-			)}
+				`
+)}
 		</ul>
 	</div>
 `;
-
-const PopularTags = ({ tags }) => html`
+var PopularTags = ({ tags }) => html`
 	<div class="popular-tags">
 		<h3>Popular Tags</h3>
 		<div class="tag-cloud">
 			${tags.map(
-				(tag) => html`
+  (tag) => html`
 					<a
 						href="/blog/tag/${encodeURIComponent(tag.name)}"
 						class="tag-link"
@@ -76,13 +72,12 @@ const PopularTags = ({ tags }) => html`
 						#${tag.name}
 						<span class="tag-count">(${tag.count})</span>
 					</a>
-				`,
-			)}
+				`
+)}
 		</div>
 	</div>
 `;
-
-const AnalyticsDashboard = ({ analytics, totalPosts }) => html`
+var AnalyticsDashboard = ({ analytics, totalPosts }) => html`
 	<div class="analytics-dashboard">
 		<h3>Blog Statistics</h3>
 		<div class="stats-grid">
@@ -105,16 +100,13 @@ const AnalyticsDashboard = ({ analytics, totalPosts }) => html`
 		</div>
 	</div>
 `;
-
-const FeaturedPostsSection = ({ featuredPosts }) => html`
-	${
-		featuredPosts.length > 0
-			? html`
+var FeaturedPostsSection = ({ featuredPosts }) => html`
+	${featuredPosts.length > 0 ? html`
 				<section class="featured-posts" aria-labelledby="featured-heading">
 					<h2 id="featured-heading">Featured Posts</h2>
 					<div class="featured-grid">
 						${featuredPosts.map(
-							(post) => html`
+  (post) => html`
 								<article class="featured-post">
 									<div class="featured-content">
 										<div class="post-badge">Featured</div>
@@ -131,23 +123,17 @@ const FeaturedPostsSection = ({ featuredPosts }) => html`
 										</div>
 									</div>
 								</article>
-							`,
-						)}
+							`
+)}
 					</div>
 				</section>
-		  `
-			: ""
-	}
+		  ` : ""}
 `;
-
-const PostCard = ({ post, compactView = false }) => {
-	const publishedDate = new Date(post.publishedAt);
-	const isRecent =
-		Date.now() - publishedDate.getTime() < 7 * 24 * 60 * 60 * 1000; // 7 days
-	const readTimeCategory =
-		post.readTime <= 3 ? "quick" : post.readTime <= 7 ? "medium" : "long";
-
-	return html`
+var PostCard = ({ post, compactView = false }) => {
+  const publishedDate = new Date(post.publishedAt);
+  const isRecent = Date.now() - publishedDate.getTime() < 7 * 24 * 60 * 60 * 1e3;
+  const readTimeCategory = post.readTime <= 3 ? "quick" : post.readTime <= 7 ? "medium" : "long";
+  return html`
 		<article
 			class="post-card ${post.featured ? "featured" : ""} ${compactView ? "compact" : ""}"
 			data-category="${post.category}"
@@ -167,10 +153,7 @@ const PostCard = ({ post, compactView = false }) => {
 				<div class="post-meta">
 					<div class="author-info">
 						<img
-							src="https://via.placeholder.com/32x32?text=${post.author.name
-								.split(" ")
-								.map((n) => n[0])
-								.join("")}"
+							src="https://via.placeholder.com/32x32?text=${post.author.name.split(" ").map((n) => n[0]).join("")}"
 							alt="${post.author.name}"
 							class="author-avatar"
 							width="32"
@@ -196,47 +179,37 @@ const PostCard = ({ post, compactView = false }) => {
 				</div>
 			</header>
 
-			${
-				!compactView
-					? html`
+			${!compactView ? html`
 						<div class="post-content">
 							<p class="post-excerpt">${post.excerpt}</p>
-							${
-								post.content.length > 500
-									? html`
+							${post.content.length > 500 ? html`
 										<details class="content-preview">
 											<summary>Read more...</summary>
 											<div class="full-content">
-												${post.content
-													.split("\\n\\n")
-													.map((paragraph) => html`<p>${paragraph}</p>`)}
+												${post.content.split("\\n\\n").map((paragraph) => html`<p>${paragraph}</p>`)}
 											</div>
 										</details>
-								  `
-									: ""
-							}
+								  ` : ""}
 						</div>
-				  `
-					: ""
-			}
+				  ` : ""}
 
 			<div class="post-tags">
 				${post.tags.map(
-					(tag) => html`
+    (tag) => html`
 						<a href="/blog/tag/${encodeURIComponent(tag)}" class="tag">
 							#${tag}
 						</a>
-					`,
-				)}
+					`
+  )}
 			</div>
 
 			<footer class="post-stats">
 				<div class="engagement-stats">
 					<span class="stat views" title="${post.views.toLocaleString()} views">
-						👁️ ${post.views > 1000 ? `${Math.round(post.views / 1000)}k` : post.views}
+						👁️ ${post.views > 1e3 ? `${Math.round(post.views / 1e3)}k` : post.views}
 					</span>
 					<span class="stat likes" title="${post.likes.toLocaleString()} likes">
-						❤️ ${post.likes > 1000 ? `${Math.round(post.likes / 1000)}k` : post.likes}
+						❤️ ${post.likes > 1e3 ? `${Math.round(post.likes / 1e3)}k` : post.likes}
 					</span>
 					<span
 						class="stat comments"
@@ -257,30 +230,26 @@ const PostCard = ({ post, compactView = false }) => {
 		</article>
 	`;
 };
-
-const PaginationControls = ({
-	currentPage,
-	totalPages,
-	hasNextPage,
-	hasPrevPage,
+var PaginationControls = ({
+  currentPage,
+  totalPages,
+  hasNextPage,
+  hasPrevPage
 }) => {
-	const generatePageNumbers = () => {
-		const pages = [];
-		const showPages = 5;
-		let start = Math.max(1, currentPage - Math.floor(showPages / 2));
-		const end = Math.min(totalPages, start + showPages - 1);
-
-		if (end - start + 1 < showPages) {
-			start = Math.max(1, end - showPages + 1);
-		}
-
-		for (let i = start; i <= end; i++) {
-			pages.push(i);
-		}
-		return pages;
-	};
-
-	return html`
+  const generatePageNumbers = () => {
+    const pages = [];
+    const showPages = 5;
+    let start = Math.max(1, currentPage - Math.floor(showPages / 2));
+    const end = Math.min(totalPages, start + showPages - 1);
+    if (end - start + 1 < showPages) {
+      start = Math.max(1, end - showPages + 1);
+    }
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
+  return html`
 		<nav class="pagination" role="navigation" aria-label="Pagination">
 			<div class="pagination-info">
 				<span>
@@ -288,9 +257,7 @@ const PaginationControls = ({
 				</span>
 			</div>
 			<div class="pagination-controls">
-				${
-					hasPrevPage
-						? html`
+				${hasPrevPage ? html`
 							<a
 								href="/blog?page=1"
 								class="page-link first"
@@ -305,15 +272,13 @@ const PaginationControls = ({
 							>
 								‹ Previous
 							</a>
-					  `
-						: html`
+					  ` : html`
 							<span class="page-link disabled">« First</span>
 							<span class="page-link disabled">‹ Previous</span>
-					  `
-				}
+					  `}
 
 				${generatePageNumbers().map(
-					(pageNum) => html`
+    (pageNum) => html`
 						<a
 							href="/blog?page=${pageNum}"
 							class="page-link ${pageNum === currentPage ? "current" : ""}"
@@ -321,12 +286,10 @@ const PaginationControls = ({
 						>
 							${pageNum}
 						</a>
-					`,
-				)}
+					`
+  )}
 
-				${
-					hasNextPage
-						? html`
+				${hasNextPage ? html`
 							<a
 								href="/blog?page=${currentPage + 1}"
 								class="page-link next"
@@ -341,18 +304,15 @@ const PaginationControls = ({
 							>
 								Last »
 							</a>
-					  `
-						: html`
+					  ` : html`
 							<span class="page-link disabled">Next ›</span>
 							<span class="page-link disabled">Last »</span>
-					  `
-				}
+					  `}
 			</div>
 		</nav>
 	`;
 };
-
-const SearchAndFilters = ({ searchQuery, selectedCategory, sortBy }) => html`
+var SearchAndFilters = ({ searchQuery, selectedCategory, sortBy }) => html`
 	<div class="search-filters">
 		<form class="search-form" role="search">
 			<div class="search-input-group">
@@ -392,16 +352,15 @@ const SearchAndFilters = ({ searchQuery, selectedCategory, sortBy }) => html`
 		</div>
 	</div>
 `;
-
-export function renderBlogPage(data) {
-	return html`<!DOCTYPE html>
+function renderBlogPage(data) {
+  return html`<!DOCTYPE html>
 		<html lang="en" data-theme="${data.userPreferences.theme}">
 			<head>
 				${MetaHead({
-					site: data.site,
-					title: "Modern Web Development Blog",
-					description: data.site.description,
-				})}
+    site: data.site,
+    title: "Modern Web Development Blog",
+    description: data.site.description
+  })}
 				<link rel="stylesheet" href="/css/blog.css" />
 				<script defer src="/js/blog-interactions.js"></script>
 			</head>
@@ -430,21 +389,17 @@ export function renderBlogPage(data) {
 					<div class="content-wrapper">
 						<div class="main-column">
 							${SearchAndFilters({
-								searchQuery: data.searchQuery,
-								selectedCategory: data.selectedCategory,
-								sortBy: data.sortBy,
-							})}
+    searchQuery: data.searchQuery,
+    selectedCategory: data.selectedCategory,
+    sortBy: data.sortBy
+  })}
 
 							${FeaturedPostsSection({ featuredPosts: data.featuredPosts })}
 
 							<section class="posts-section" aria-labelledby="posts-heading">
 								<div class="section-header">
 									<h2 id="posts-heading">
-										${
-											data.selectedCategory
-												? `Posts in ${data.selectedCategory}`
-												: "All Posts"
-										}
+										${data.selectedCategory ? `Posts in ${data.selectedCategory}` : "All Posts"}
 									</h2>
 									<div class="posts-count">
 										${data.posts.length} posts found
@@ -454,15 +409,12 @@ export function renderBlogPage(data) {
 								<div
 									class="posts-grid ${data.userPreferences.compactView ? "compact" : ""}"
 								>
-									${
-										data.posts.length > 0
-											? data.posts.map((post) =>
-													PostCard({
-														post,
-														compactView: data.userPreferences.compactView,
-													}),
-												)
-											: html`
+									${data.posts.length > 0 ? data.posts.map(
+    (post) => PostCard({
+      post,
+      compactView: data.userPreferences.compactView
+    })
+  ) : html`
 												<div class="no-posts">
 													<h3>No posts found</h3>
 													<p>
@@ -473,39 +425,34 @@ export function renderBlogPage(data) {
 														Reset filters
 													</a>
 												</div>
-										  `
-									}
+										  `}
 								</div>
 							</section>
 
-							${
-								data.posts.length > 0
-									? PaginationControls({
-											currentPage: data.currentPage,
-											totalPages: data.totalPages,
-											hasNextPage: data.hasNextPage,
-											hasPrevPage: data.hasPrevPage,
-										})
-									: ""
-							}
+							${data.posts.length > 0 ? PaginationControls({
+    currentPage: data.currentPage,
+    totalPages: data.totalPages,
+    hasNextPage: data.hasNextPage,
+    hasPrevPage: data.hasPrevPage
+  }) : ""}
 						</div>
 
 						<aside class="sidebar">
 							${AnalyticsDashboard({
-								analytics: data.analytics,
-								totalPosts: data.totalPosts,
-							})}
+    analytics: data.analytics,
+    totalPosts: data.totalPosts
+  })}
 							${CategoryFilter({
-								categories: data.categories,
-								selectedCategory: data.selectedCategory,
-							})}
+    categories: data.categories,
+    selectedCategory: data.selectedCategory
+  })}
 							${PopularTags({ tags: data.popularTags })}
 
 							<div class="recent-activity">
 								<h3>Recent Activity</h3>
 								<ul class="activity-list">
 									${data.recentActivity.map(
-										(activity) => html`
+    (activity) => html`
 											<li class="activity-item">
 												<div class="activity-content">
 													<span class="activity-type">${activity.type}</span>
@@ -517,8 +464,8 @@ export function renderBlogPage(data) {
 													</time>
 												</div>
 											</li>
-										`,
-									)}
+										`
+  )}
 								</ul>
 							</div>
 
@@ -599,3 +546,6 @@ export function renderBlogPage(data) {
 			</body>
 		</html>`;
 }
+export {
+  renderBlogPage
+};

@@ -10,8 +10,6 @@ import { writeFileSync } from "node:fs";
 // Template engines to benchmark
 const engines = [
 	"beak",
-	"beak2",
-	"beak2-compiled",
 	"dot",
 	"ejs",
 	"eta",
@@ -24,9 +22,7 @@ const engines = [
 
 // Known warm render times (from main benchmark) to calculate overhead
 const warmRenderTimes = {
-	beak: 1.97,
-	beak2: 0.53,
-	"beak2-compiled": 0.51,
+	beak: 0.75,
 	dot: 0.12,
 	ejs: 1.94,
 	eta: 0.21,
