@@ -77,6 +77,10 @@ When branches prove unreachable through testing:
 
 ---
 
+Ensure all tests are finally passing, there is perfect 100% coverage across lines/branches/functions, and do never stop iterating until you have achieved this outcome.
+
+---
+
 **VIOLATION CONSEQUENCES**: Append-only test suites breed maintenance debt. Defensive test scatter creates cognitive overhead. Generic test descriptions provide zero intelligence value.
 
 **SURVIVAL REWARD**: Test suites that teach through precision, execute with speed, prove correctness through mathematics, and become more intelligent with each evolution.
