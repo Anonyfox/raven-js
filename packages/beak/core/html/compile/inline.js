@@ -37,7 +37,7 @@ const NodeType = {
  * @param {string} [tagName] - Tag name for template nodes
  * @returns {ASTNode} AST node
  */
-function createNode(type, content, tagName = null) {
+function createNode(type, content, tagName = "") {
 	return {
 		type,
 		content,
@@ -86,6 +86,7 @@ function parseTemplateAST(code, tagName) {
 		// Parse template starting after backtick
 		const templateStart = tagIndex + target.length;
 		const templateResult = parseTemplate(code, templateStart, tagName);
+		if (!templateResult) continue;
 
 		nodes.push(templateResult.node);
 		i = templateResult.endPos;
@@ -214,6 +215,7 @@ function parseTemplate(code, start, tagName) {
 
 			// Parse expression with depth tracking
 			const exprResult = parseExpression(code, pos + 2, tagName);
+			if (!exprResult) break;
 
 			templateNode.children.push(exprResult.node);
 			pos = exprResult.endPos;
@@ -251,7 +253,9 @@ function parseExpression(code, start, _tagName) {
 
 		// Handle string literals first - skip their content entirely
 		if (char === '"' || char === "'" || char === "`") {
-			const { content: strContent, endPos } = skipString(code, pos);
+			const stringResult = skipString(code, pos);
+			if (!stringResult) return null;
+			const { content: strContent, endPos } = stringResult;
 			content += strContent;
 			pos = endPos;
 			continue;
@@ -346,7 +350,7 @@ function transformNode(node, tagName) {
 
 		for (const child of nestedAST) {
 			const transformed = transformNode(child, tagName);
-			if (transformed === null) return null;
+			if (transformed === null) return "";
 			result += transformed;
 		}
 
@@ -554,7 +558,7 @@ export function inline(templateFunction) {
 		// Graceful fallback - raven survival instinct
 		console.warn(
 			"Template inlining failed, using original function:",
-			error.message,
+			error instanceof Error ? error.message : String(error),
 		);
 		return templateFunction;
 	}
