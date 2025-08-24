@@ -97,7 +97,7 @@ function parseTemplateAST(code, tagName) {
 /**
  * Find next tagged template - optimized for speed
  * @param {string} code - Source code
- * @param {string} target - Target string to find (e.g., "html2`")
+ * @param {string} target - Target string to find (e.g., "tag`")
  * @param {number} start - Start position
  * @returns {number} Index of next template, or -1 if not found
  */
@@ -488,177 +488,6 @@ function extractFunctionParams(fn) {
 }
 
 /**
- * Detect closure variable references in function body
- * @param {string} functionStr - Function source code
- * @returns {string[]} Array of detected closure variable names
- */
-function detectClosureReferences(functionStr) {
-	const closureRefs = new Set();
-
-	// Pattern to match potential component calls: CapitalizedName(
-	const componentPattern = /\b([A-Z][a-zA-Z0-9]*)\s*\(/g;
-	let match;
-
-	while ((match = componentPattern.exec(functionStr)) !== null) {
-		closureRefs.add(match[1]);
-	}
-
-	return Array.from(closureRefs);
-}
-
-/**
- * Create hybrid runtime context function - optimized with partial compile-time capture
- * @param {Function} templateFunction - Original template function
- * @param {string} optimizedBody - Optimized function body
- * @param {string} params - Function parameters
- * @param {string[]} runtimeVars - Variables that need runtime capture
- * @param {Object} compiledContext - Variables captured at compile time
- * @returns {Function} Hybrid optimized function
- */
-function createRuntimeContextFunction(
-	templateFunction,
-	optimizedBody,
-	params,
-	runtimeVars,
-	compiledContext,
-) {
-	const functionName = templateFunction.name || "anonymous";
-
-	// Cache the optimized function with context injection - created once
-	let cachedOptimizedFunction = null;
-	let cachedContextOptimizedBody = null;
-
-	return function hybridOptimized(...args) {
-		try {
-			// 1. Capture runtime variables (only on first call or when needed)
-			const runtimeContext = {};
-			for (const varName of runtimeVars) {
-				try {
-					runtimeContext[varName] = eval(varName);
-				} catch {
-					// Runtime capture failed - fallback to original function
-					return templateFunction.apply(this, args);
-				}
-			}
-
-			// 2. Merge compile-time and runtime contexts
-			const fullContext = { ...compiledContext, ...runtimeContext };
-
-			// 3. Generate optimized function (cache this for performance)
-			if (!cachedOptimizedFunction) {
-				cachedContextOptimizedBody = optimizedBody;
-				for (const varName of [
-					...Object.keys(compiledContext),
-					...runtimeVars,
-				]) {
-					const regex = new RegExp(`\\b${varName}\\s*\\(`, "g");
-					cachedContextOptimizedBody = cachedContextOptimizedBody.replace(
-						regex,
-						`ctx.${varName}(`,
-					);
-				}
-
-				const newFunctionCode = `return function ${functionName}(ctx, ${params}) {\n${cachedContextOptimizedBody}\n}`;
-				cachedOptimizedFunction = new Function(newFunctionCode)();
-			}
-
-			// 4. Execute with full context (fast bound call)
-			return cachedOptimizedFunction(fullContext, ...args);
-		} catch (error) {
-			// Any error - fallback to original
-			return templateFunction.apply(this, args);
-		}
-	};
-}
-
-/**
- * Create high-performance closure-bound function - compile once, run fast
- * @param {Function} templateFunction - Original template function
- * @param {string} optimizedBody - Optimized function body
- * @param {string} params - Function parameters
- * @param {string[]} closureRefs - Required closure variables
- * @returns {Function} Pre-optimized bound function
- */
-function createClosureAwareFunction(
-	templateFunction,
-	optimizedBody,
-	params,
-	closureRefs,
-) {
-	const functionName = templateFunction.name || "anonymous";
-
-	if (closureRefs.length === 0) {
-		// No closures needed - pure speed path
-		const newFunctionCode = `return function ${functionName}(${params}) {\n${optimizedBody}\n}`;
-		return new Function(newFunctionCode)();
-	}
-
-	// COMPILE-TIME OPTIMIZATION: Capture context once, bind once, run fast
-	try {
-		// 1. Capture closure context by walking up the call stack
-		const context = {};
-		const failedVars = [];
-
-		for (const varName of closureRefs) {
-			try {
-				// Try direct eval first (usually fails due to scope issues)
-				context[varName] = eval(varName);
-			} catch {
-				// Direct eval failed - try alternative methods
-				let found = false;
-
-				// Method 1: Check if it's already in global scope
-				if (varName in globalThis) {
-					context[varName] = globalThis[varName];
-					found = true;
-				}
-
-				// Method 2: Runtime capture approach - store variable names for later
-				if (!found) {
-					failedVars.push(varName);
-				}
-			}
-		}
-
-		// If we couldn't capture all variables at compile time, use hybrid approach
-		if (failedVars.length > 0) {
-			// Use runtime context capture for failed variables
-			return createRuntimeContextFunction(
-				templateFunction,
-				optimizedBody,
-				params,
-				failedVars,
-				context, // partial context we did capture
-			);
-		}
-
-		// 2. Transform optimized body to use context object
-		let contextOptimizedBody = optimizedBody;
-		for (const varName of closureRefs) {
-			// Replace varName( with ctx.varName( in the optimized body
-			const regex = new RegExp(`\\b${varName}\\s*\\(`, "g");
-			contextOptimizedBody = contextOptimizedBody.replace(
-				regex,
-				`ctx.${varName}(`,
-			);
-		}
-
-		// 3. Generate optimized function with context-first parameter
-		const newFunctionCode = `return function ${functionName}(ctx, ${params}) {\n${contextOptimizedBody}\n}`;
-		const optimizedFunction = new Function(newFunctionCode)();
-
-		// 4. Pre-bind context - runtime will be just function calls
-		return optimizedFunction.bind(null, context);
-	} catch (error) {
-		// Any compilation error - fallback gracefully
-		console.warn(
-			`Context binding failed: ${error.message}, using original function`,
-		);
-		return templateFunction;
-	}
-}
-
-/**
  * Optimize function with AST-based template inlining - raven intelligence
  * @param {Function} templateFunction - Function with tagged templates
  * @returns {Function} Optimized function with inlined templates
@@ -672,13 +501,20 @@ export function inline(templateFunction) {
 			return templateFunction;
 		}
 
+		// EARLY CLOSURE DETECTION: Check source before any processing
+		// If function contains closure calls, skip optimization entirely - zero overhead!
+		const hasClosureReferencesInSource = /\b[A-Z][a-zA-Z0-9]*\s*\(/.test(
+			functionSource,
+		);
+		if (hasClosureReferencesInSource) {
+			// Return original function unchanged - preserves performance and closure access
+			return templateFunction;
+		}
+
 		const functionBody = extractFunctionBody(templateFunction);
 		const params = extractFunctionParams(templateFunction);
 
-		// Detect closure references
-		const closureRefs = detectClosureReferences(functionSource);
-
-		// Transform using AST approach
+		// Transform using AST approach (only for closure-free functions)
 		const optimizedBody = transformFunctionBody(functionBody, tagName);
 
 		// Return original if no optimization possible
@@ -686,13 +522,12 @@ export function inline(templateFunction) {
 			return templateFunction;
 		}
 
-		// Create closure-aware optimized function
-		return createClosureAwareFunction(
-			templateFunction,
-			optimizedBody,
-			params,
-			closureRefs,
+		// SIMPLE FUNCTIONS ONLY: Direct eval for maximum performance
+		const functionName = templateFunction.name || "optimized";
+		const optimizedFunction = eval(
+			`(function ${functionName}(${params}) { ${optimizedBody} })`,
 		);
+		return optimizedFunction;
 	} catch (error) {
 		// Graceful fallback - raven survival instinct
 		console.warn(
