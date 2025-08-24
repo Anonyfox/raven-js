@@ -1,0 +1,72 @@
+<div class="product-grid">
+	<h2>Featured Products ({{ products.length }})</h2>
+	{% if user.isPremium %}
+		<div class="premium-badge">Premium Member</div>
+	{% endif %}
+
+	<div class="products">
+		{% for product in products %}
+			<div class="product-card {% if product.featured %}featured{% endif %} {% if not product.inStock %}out-of-stock{% endif %}">
+				<div class="product-image">
+					<img src="{{ product.imageUrl }}" alt="{{ product.name }}" />
+					{% if product.discount > 0 %}
+						<span class="discount-badge">-{{ product.discount }}%</span>
+					{% endif %}
+				</div>
+
+				<div class="product-info">
+					<h3 class="product-name">{{ product.name }}</h3>
+					<p class="product-description">{{ product.description }}</p>
+
+					<div class="product-categories">
+						{% for category in product.categories %}
+							<span class="category-tag">{{ category }}</span>
+						{% endfor %}
+					</div>
+
+					<div class="product-price">
+						{% if product.discount > 0 %}
+							<span class="original-price">${{ product.price | number }}</span>
+							<span class="sale-price">${{ (product.price * (1 - product.discount / 100)) | number }}</span>
+						{% else %}
+							<span class="current-price">${{ product.price | number }}</span>
+						{% endif %}
+					</div>
+
+					<div class="product-stats">
+						<div class="rating">
+							{% for i in range(5) %}
+								<span class="star {% if i < product.rating | int %}filled{% endif %}">★</span>
+							{% endfor %}
+							<span class="rating-text">({{ product.reviews }})</span>
+						</div>
+					</div>
+
+					<div class="product-actions">
+						{% if product.inStock %}
+							<button class="btn-primary" {% if not user.isLoggedIn %}disabled{% endif %}>
+								Add to Cart
+							</button>
+							{% if product.quantity < 5 %}
+								<span class="low-stock">Only {{ product.quantity }} left!</span>
+							{% endif %}
+						{% else %}
+							<button class="btn-secondary" disabled>Out of Stock</button>
+						{% endif %}
+					</div>
+
+					{% if config.showAttributes %}
+						<div class="product-attributes">
+							{% for key, value in product.attributes %}
+								<div class="attribute">
+									<span class="attr-name">{{ key }}:</span>
+									<span class="attr-value">{{ value }}</span>
+								</div>
+							{% endfor %}
+						</div>
+					{% endif %}
+				</div>
+			</div>
+		{% endfor %}
+	</div>
+</div>

@@ -1,0 +1,72 @@
+<div class="product-grid">
+	<h2>Featured Products ({{products.length}})</h2>
+	{{#if user.isPremium}}
+		<div class="premium-badge">Premium Member</div>
+	{{/if}}
+
+	<div class="products">
+		{{#each products}}
+			<div class="product-card {{#if featured}}featured{{/if}} {{#unless inStock}}out-of-stock{{/unless}}">
+				<div class="product-image">
+					<img src="{{imageUrl}}" alt="{{name}}" />
+					{{#if (gt discount 0)}}
+						<span class="discount-badge">-{{discount}}%</span>
+					{{/if}}
+				</div>
+
+				<div class="product-info">
+					<h3 class="product-name">{{name}}</h3>
+					<p class="product-description">{{description}}</p>
+
+					<div class="product-categories">
+						{{#each categories}}
+							<span class="category-tag">{{this}}</span>
+						{{/each}}
+					</div>
+
+					<div class="product-price">
+						{{#if (gt discount 0)}}
+							<span class="original-price">${{price}}</span>
+							<span class="sale-price">${{multiply price (subtract 1 (multiply discount 0.01))}}</span>
+						{{else}}
+							<span class="current-price">${{price}}</span>
+						{{/if}}
+					</div>
+
+					<div class="product-stats">
+						<div class="rating">
+							{{#each (range 5)}}
+								<span class="star {{#if (lt this ../rating)}}filled{{/if}}">★</span>
+							{{/each}}
+							<span class="rating-text">({{reviews}})</span>
+						</div>
+					</div>
+
+					<div class="product-actions">
+						{{#if inStock}}
+							<button class="btn-primary" {{#unless ../user.isLoggedIn}}disabled{{/unless}}>
+								Add to Cart
+							</button>
+							{{#if (lt quantity 5)}}
+								<span class="low-stock">Only {{quantity}} left!</span>
+							{{/if}}
+						{{else}}
+							<button class="btn-secondary" disabled>Out of Stock</button>
+						{{/if}}
+					</div>
+
+					{{#if ../config.showAttributes}}
+						<div class="product-attributes">
+							{{#each (objectEntries attributes)}}
+								<div class="attribute">
+									<span class="attr-name">{{key}}:</span>
+									<span class="attr-value">{{value}}</span>
+								</div>
+							{{/each}}
+						</div>
+					{{/if}}
+				</div>
+			</div>
+		{{/each}}
+	</div>
+</div>

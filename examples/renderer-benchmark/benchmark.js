@@ -12,17 +12,36 @@ import Mustache from "mustache";
 import nunjucks from "nunjucks";
 import pug from "pug";
 
-import { generateTemplateData } from "./data.js";
-import { renderBlogPage as beakRender } from "./templates/beak.js";
-import { renderBlogPage as beak2Render } from "./templates/beak2.js";
-import { renderBlogPage as beak2CompiledRender } from "./templates/beak2-compiled.js";
+// Import data generators
+import {
+	generateBaselineData,
+	generateComponentData,
+	generateTemplateData,
+} from "./data.js";
+
+// Import baseline templates
+import { renderBaselineString as beakBaselineRender } from "./templates/baseline/beak.js";
+import { renderBaselineString as beak2BaselineRender } from "./templates/baseline/beak2.js";
+import { renderBaselineString as beak2CompiledBaselineRender } from "./templates/baseline/beak2-compiled.js";
+// Import complex templates (existing)
+import { renderBlogPage as beakComplexRender } from "./templates/complex/beak.js";
+import { renderBlogPage as beak2ComplexRender } from "./templates/complex/beak2.js";
+import { renderBlogPage as beak2CompiledComplexRender } from "./templates/complex/beak2-compiled.js";
+// Import component templates
+import { renderProductList as beakComponentRender } from "./templates/component/beak.js";
+import { renderProductList as beak2ComponentRender } from "./templates/component/beak2.js";
+import { renderProductList as beak2CompiledComponentRender } from "./templates/component/beak2-compiled.js";
 
 class BenchmarkRunner {
 	constructor() {
 		this.results = new Map();
-		this.templateData = generateTemplateData();
 		this.iterations = 1000; // Number of render iterations per engine
 		this.warmupRuns = 10; // Warmup iterations
+
+		// Generate data for all three test types
+		this.baselineData = generateBaselineData();
+		this.componentData = generateComponentData(20);
+		this.complexData = generateTemplateData();
 
 		this.setupEngines();
 	}
@@ -34,21 +53,51 @@ class BenchmarkRunner {
 			cache: false, // Disable caching for fair comparison
 		});
 
-		// Setup Handlebars with helpers
-		Handlebars.registerHelper("formatDate", (date) =>
-			date.toLocaleDateString(),
-		);
-		Handlebars.registerHelper("formatNumber", (num) => num.toLocaleString());
-		Handlebars.registerHelper("add", (a, b) => a + b);
-		Handlebars.registerHelper("subtract", (a, b) => a - b);
-		Handlebars.registerHelper("multiply", (a, b) => a * b);
-		Handlebars.registerHelper("ifEquals", function (a, b, options) {
-			return a === b ? options.fn(this) : options.inverse(this);
+		// Setup Handlebars with helpers (for complex templates)
+		this.setupHandlebarsHelpers();
+
+		// Setup Nunjucks
+		this.nunjucksEnv = nunjucks.configure("templates", {
+			autoescape: true,
+			noCache: true,
 		});
+		this.setupNunjucksFilters();
+
+		// Setup Liquid
+		this.liquid = new Liquid({
+			root: path.join(process.cwd(), "templates"),
+			cache: false,
+		});
+
+		// Setup doT
+		this.dotSettings = Object.assign({}, doT.templateSettings);
+		this.dotSettings.strip = false;
+	}
+
+	setupHandlebarsHelpers() {
+		// Basic helpers for component templates
 		Handlebars.registerHelper("gt", (a, b) => a > b);
 		Handlebars.registerHelper("gte", (a, b) => a >= b);
 		Handlebars.registerHelper("lt", (a, b) => a < b);
 		Handlebars.registerHelper("lte", (a, b) => a <= b);
+		Handlebars.registerHelper("add", (a, b) => a + b);
+		Handlebars.registerHelper("subtract", (a, b) => a - b);
+		Handlebars.registerHelper("multiply", (a, b) => a * b);
+		Handlebars.registerHelper("range", (n) =>
+			Array.from({ length: n }, (_, i) => i),
+		);
+		Handlebars.registerHelper("objectEntries", (obj) =>
+			Object.entries(obj).map(([key, value]) => ({ key, value })),
+		);
+
+		// Complex helpers for blog templates
+		Handlebars.registerHelper("formatDate", (date) =>
+			date.toLocaleDateString(),
+		);
+		Handlebars.registerHelper("formatNumber", (num) => num.toLocaleString());
+		Handlebars.registerHelper("ifEquals", function (a, b, options) {
+			return a === b ? options.fn(this) : options.inverse(this);
+		});
 		Handlebars.registerHelper("isRecent", (date) => {
 			return Date.now() - new Date(date).getTime() < 7 * 24 * 60 * 60 * 1000;
 		});
@@ -85,12 +134,9 @@ class BenchmarkRunner {
 				return result;
 			},
 		);
+	}
 
-		// Setup Nunjucks
-		this.nunjucksEnv = nunjucks.configure("templates", {
-			autoescape: true,
-			noCache: true,
-		});
+	setupNunjucksFilters() {
 		this.nunjucksEnv.addFilter("number", (num) => num.toLocaleString());
 		this.nunjucksEnv.addFilter("date", (date, format) => {
 			if (format === "iso") {
@@ -99,25 +145,15 @@ class BenchmarkRunner {
 			return new Date(date).toLocaleDateString();
 		});
 		this.nunjucksEnv.addFilter("urlencode", (str) => encodeURIComponent(str));
-
-		// Setup Liquid
-		this.liquid = new Liquid({
-			root: path.join(process.cwd(), "templates"),
-			cache: false,
-		});
-
-		// Setup doT
-		this.dotSettings = Object.assign({}, doT.templateSettings);
-		this.dotSettings.strip = false;
 	}
 
-	loadTemplate(filename) {
-		return fs.readFileSync(path.join("templates", filename), "utf8");
+	loadTemplate(templatePath) {
+		return fs.readFileSync(templatePath, "utf8");
 	}
 
-	prepareData() {
-		// Prepare data for engines that need special formatting
-		const baseData = { ...this.templateData };
+	prepareComplexData() {
+		// Prepare data for engines that need special formatting (complex templates only)
+		const baseData = { ...this.complexData };
 
 		// Generate pagination pages for complex logic
 		const generatePaginationPages = (currentPage, totalPages) => {
@@ -217,7 +253,7 @@ class BenchmarkRunner {
 		return { baseData, mustacheData };
 	}
 
-	async measurePerformance(name, renderFn, warmup = true) {
+	async measurePerformance(name, category, renderFn, warmup = true) {
 		if (warmup) {
 			// Warmup runs to stabilize JIT compilation
 			for (let i = 0; i < this.warmupRuns; i++) {
@@ -231,7 +267,6 @@ class BenchmarkRunner {
 		}
 
 		const measurements = [];
-		const startMemory = process.memoryUsage().heapUsed;
 
 		for (let i = 0; i < this.iterations; i++) {
 			const start = performance.now();
@@ -239,9 +274,6 @@ class BenchmarkRunner {
 			const end = performance.now();
 			measurements.push(end - start);
 		}
-
-		const endMemory = process.memoryUsage().heapUsed;
-		const memoryDelta = endMemory - startMemory;
 
 		// Calculate statistics
 		const sorted = measurements.sort((a, b) => a - b);
@@ -254,6 +286,7 @@ class BenchmarkRunner {
 
 		return {
 			name,
+			category,
 			iterations: this.iterations,
 			totalTime: total,
 			avgTime: avg,
@@ -261,146 +294,355 @@ class BenchmarkRunner {
 			minTime: min,
 			maxTime: max,
 			p95Time: p95,
-			memoryDelta,
 			rendersPerSecond: 1000 / avg,
 		};
 	}
 
-	async benchmarkBeak() {
-		const { baseData } = this.prepareData();
-
-		return this.measurePerformance("Beak (RavenJS)", () => {
-			return beakRender(baseData);
+	// Baseline benchmarks
+	async benchmarkBeakBaseline() {
+		return this.measurePerformance("Beak (RavenJS)", "baseline", () => {
+			return beakBaselineRender();
 		});
 	}
 
-	async benchmarkBeak2() {
-		const { baseData } = this.prepareData();
-
-		return this.measurePerformance("Beak2 (RavenJS HTML2)", () => {
-			return beak2Render(baseData);
+	async benchmarkBeak2Baseline() {
+		return this.measurePerformance("Beak2 (HTML2)", "baseline", () => {
+			return beak2BaselineRender();
 		});
 	}
 
-	async benchmarkBeak2Compiled() {
-		const { baseData } = this.prepareData();
+	async benchmarkBeak2CompiledBaseline() {
+		return this.measurePerformance("Beak2 Compiled", "baseline", () => {
+			return beak2CompiledBaselineRender();
+		});
+	}
 
-		return this.measurePerformance(
-			"Beak2 Compiled (RavenJS HTML2 + Compile)",
-			() => {
-				return beak2CompiledRender(baseData);
-			},
+	async benchmarkEJSBaseline() {
+		const template = this.loadTemplate("templates/baseline/ejs.ejs");
+		return this.measurePerformance("EJS", "baseline", () => {
+			return ejs.render(template, this.baselineData, { cache: false });
+		});
+	}
+
+	async benchmarkEtaBaseline() {
+		return this.measurePerformance("Eta", "baseline", () => {
+			return this.eta.render("baseline/eta.eta", this.baselineData);
+		});
+	}
+
+	async benchmarkHandlebarsBaseline() {
+		const template = Handlebars.compile(
+			this.loadTemplate("templates/baseline/handlebars.hbs"),
 		);
-	}
-
-	async benchmarkEJS() {
-		const template = this.loadTemplate("ejs.ejs");
-		const { baseData } = this.prepareData();
-
-		return this.measurePerformance("EJS", () => {
-			return ejs.render(template, baseData, { cache: false });
+		return this.measurePerformance("Handlebars", "baseline", () => {
+			return template(this.baselineData);
 		});
 	}
 
-	async benchmarkEta() {
-		const { baseData } = this.prepareData();
-
-		return this.measurePerformance("Eta", () => {
-			return this.eta.render("eta.eta", baseData);
+	async benchmarkMustacheBaseline() {
+		const template = this.loadTemplate("templates/baseline/mustache.mustache");
+		return this.measurePerformance("Mustache", "baseline", () => {
+			return Mustache.render(template, this.baselineData);
 		});
 	}
 
-	async benchmarkHandlebars() {
-		const template = Handlebars.compile(this.loadTemplate("handlebars.hbs"));
-		const { baseData } = this.prepareData();
-
-		return this.measurePerformance("Handlebars", () => {
-			return template(baseData);
+	async benchmarkNunjucksBaseline() {
+		return this.measurePerformance("Nunjucks", "baseline", () => {
+			return this.nunjucksEnv.render(
+				"baseline/nunjucks.njk",
+				this.baselineData,
+			);
 		});
 	}
 
-	async benchmarkMustache() {
-		const template = this.loadTemplate("mustache.mustache");
-		const { mustacheData } = this.prepareData();
+	async benchmarkPugBaseline() {
+		const template = pug.compileFile("templates/baseline/pug.pug", {
+			cache: false,
+		});
+		return this.measurePerformance("Pug", "baseline", () => {
+			return template(this.baselineData);
+		});
+	}
 
-		return this.measurePerformance("Mustache", () => {
+	async benchmarkDoTBaseline() {
+		const templateStr = this.loadTemplate("templates/baseline/dot.dot");
+		const template = doT.template(templateStr, this.dotSettings);
+		return this.measurePerformance("doT", "baseline", () => {
+			return template(this.baselineData);
+		});
+	}
+
+	async benchmarkLiquidBaseline() {
+		return this.measurePerformance("Liquid", "baseline", () => {
+			return this.liquid.renderFile(
+				"baseline/liquid.liquid",
+				this.baselineData,
+			);
+		});
+	}
+
+	// Component benchmarks
+	async benchmarkBeakComponent() {
+		const { standardData } = this.componentData;
+		return this.measurePerformance("Beak (RavenJS)", "component", () => {
+			return beakComponentRender(standardData);
+		});
+	}
+
+	async benchmarkBeak2Component() {
+		const { standardData } = this.componentData;
+		return this.measurePerformance("Beak2 (HTML2)", "component", () => {
+			return beak2ComponentRender(standardData);
+		});
+	}
+
+	async benchmarkBeak2CompiledComponent() {
+		const { standardData } = this.componentData;
+		return this.measurePerformance("Beak2 Compiled", "component", () => {
+			return beak2CompiledComponentRender(standardData);
+		});
+	}
+
+	async benchmarkEJSComponent() {
+		const template = this.loadTemplate("templates/component/ejs.ejs");
+		const { standardData } = this.componentData;
+		return this.measurePerformance("EJS", "component", () => {
+			return ejs.render(template, standardData, { cache: false });
+		});
+	}
+
+	async benchmarkEtaComponent() {
+		const { standardData } = this.componentData;
+		return this.measurePerformance("Eta", "component", () => {
+			return this.eta.render("component/eta.eta", standardData);
+		});
+	}
+
+	async benchmarkHandlebarsComponent() {
+		const template = Handlebars.compile(
+			this.loadTemplate("templates/component/handlebars.hbs"),
+		);
+		const { standardData } = this.componentData;
+		return this.measurePerformance("Handlebars", "component", () => {
+			return template(standardData);
+		});
+	}
+
+	async benchmarkMustacheComponent() {
+		const template = this.loadTemplate("templates/component/mustache.mustache");
+		const { mustacheData } = this.componentData;
+		return this.measurePerformance("Mustache", "component", () => {
 			return Mustache.render(template, mustacheData);
 		});
 	}
 
-	async benchmarkNunjucks() {
-		const { baseData } = this.prepareData();
-
-		return this.measurePerformance("Nunjucks", () => {
-			return this.nunjucksEnv.render("nunjucks.njk", baseData);
+	async benchmarkNunjucksComponent() {
+		const { standardData } = this.componentData;
+		return this.measurePerformance("Nunjucks", "component", () => {
+			return this.nunjucksEnv.render("component/nunjucks.njk", standardData);
 		});
 	}
 
-	async benchmarkPug() {
-		const template = pug.compileFile("templates/pug.pug", { cache: false });
-		const { baseData } = this.prepareData();
-
-		return this.measurePerformance("Pug", () => {
-			return template(baseData);
+	async benchmarkPugComponent() {
+		const template = pug.compileFile("templates/component/pug.pug", {
+			cache: false,
+		});
+		const { standardData } = this.componentData;
+		return this.measurePerformance("Pug", "component", () => {
+			return template(standardData);
 		});
 	}
 
-	async benchmarkDoT() {
-		const templateStr = this.loadTemplate("dot.dot");
+	async benchmarkDoTComponent() {
+		const templateStr = this.loadTemplate("templates/component/dot.dot");
 		const template = doT.template(templateStr, this.dotSettings);
-		const { baseData } = this.prepareData();
+		const { standardData } = this.componentData;
+		return this.measurePerformance("doT", "component", () => {
+			return template(standardData);
+		});
+	}
 
-		return this.measurePerformance("doT", () => {
+	async benchmarkLiquidComponent() {
+		const { standardData } = this.componentData;
+		return this.measurePerformance("Liquid", "component", () => {
+			return this.liquid.renderFile("component/liquid.liquid", standardData);
+		});
+	}
+
+	// Complex benchmarks
+	async benchmarkBeakComplex() {
+		const { baseData } = this.prepareComplexData();
+		return this.measurePerformance("Beak (RavenJS)", "complex", () => {
+			return beakComplexRender(baseData);
+		});
+	}
+
+	async benchmarkBeak2Complex() {
+		const { baseData } = this.prepareComplexData();
+		return this.measurePerformance("Beak2 (HTML2)", "complex", () => {
+			return beak2ComplexRender(baseData);
+		});
+	}
+
+	async benchmarkBeak2CompiledComplex() {
+		const { baseData } = this.prepareComplexData();
+		return this.measurePerformance("Beak2 Compiled", "complex", () => {
+			return beak2CompiledComplexRender(baseData);
+		});
+	}
+
+	async benchmarkEJSComplex() {
+		const template = this.loadTemplate("templates/complex/ejs.ejs");
+		const { baseData } = this.prepareComplexData();
+		return this.measurePerformance("EJS", "complex", () => {
+			return ejs.render(template, baseData, { cache: false });
+		});
+	}
+
+	async benchmarkEtaComplex() {
+		const { baseData } = this.prepareComplexData();
+		return this.measurePerformance("Eta", "complex", () => {
+			return this.eta.render("complex/eta.eta", baseData);
+		});
+	}
+
+	async benchmarkHandlebarsComplex() {
+		const template = Handlebars.compile(
+			this.loadTemplate("templates/complex/handlebars.hbs"),
+		);
+		const { baseData } = this.prepareComplexData();
+		return this.measurePerformance("Handlebars", "complex", () => {
 			return template(baseData);
 		});
 	}
 
-	async benchmarkLiquid() {
-		const { baseData } = this.prepareData();
+	async benchmarkMustacheComplex() {
+		const template = this.loadTemplate("templates/complex/mustache.mustache");
+		const { mustacheData } = this.prepareComplexData();
+		return this.measurePerformance("Mustache", "complex", () => {
+			return Mustache.render(template, mustacheData);
+		});
+	}
 
-		return this.measurePerformance("Liquid", () => {
-			return this.liquid.renderFile("liquid.liquid", baseData);
+	async benchmarkNunjucksComplex() {
+		const { baseData } = this.prepareComplexData();
+		return this.measurePerformance("Nunjucks", "complex", () => {
+			return this.nunjucksEnv.render("complex/nunjucks.njk", baseData);
+		});
+	}
+
+	async benchmarkPugComplex() {
+		const template = pug.compileFile("templates/complex/pug.pug", {
+			cache: false,
+		});
+		const { baseData } = this.prepareComplexData();
+		return this.measurePerformance("Pug", "complex", () => {
+			return template(baseData);
+		});
+	}
+
+	async benchmarkDoTComplex() {
+		const templateStr = this.loadTemplate("templates/complex/dot.dot");
+		const template = doT.template(templateStr, this.dotSettings);
+		const { baseData } = this.prepareComplexData();
+		return this.measurePerformance("doT", "complex", () => {
+			return template(baseData);
+		});
+	}
+
+	async benchmarkLiquidComplex() {
+		const { baseData } = this.prepareComplexData();
+		return this.measurePerformance("Liquid", "complex", () => {
+			return this.liquid.renderFile("complex/liquid.liquid", baseData);
 		});
 	}
 
 	async runAllBenchmarks() {
-		console.log("🚀 Starting Template Engine Benchmark...");
+		console.log("🚀 Starting Three-Tiered Template Engine Benchmark...");
 		console.log(
-			`📊 Running ${this.iterations} iterations per engine with ${this.warmupRuns} warmup runs`,
-		);
-		console.log(
-			`📝 Template complexity: ${this.templateData.posts.length} blog posts with rich metadata`,
+			`📊 Running ${this.iterations} iterations per engine/category with ${this.warmupRuns} warmup runs`,
 		);
 		console.log();
 
-		const benchmarks = [
-			() => this.benchmarkBeak(),
-			() => this.benchmarkBeak2(),
-			() => this.benchmarkBeak2Compiled(),
-			() => this.benchmarkEJS(),
-			() => this.benchmarkEta(),
-			() => this.benchmarkHandlebars(),
-			() => this.benchmarkMustache(),
-			() => this.benchmarkNunjucks(),
-			() => this.benchmarkPug(),
-			() => this.benchmarkDoT(),
-			() => this.benchmarkLiquid(),
+		const categories = [
+			{
+				name: "Baseline",
+				description: "Static string rendering - measures pure engine overhead",
+				dataSize: "No dynamic data",
+				benchmarks: [
+					() => this.benchmarkBeakBaseline(),
+					() => this.benchmarkBeak2Baseline(),
+					() => this.benchmarkBeak2CompiledBaseline(),
+					() => this.benchmarkEJSBaseline(),
+					() => this.benchmarkEtaBaseline(),
+					() => this.benchmarkHandlebarsBaseline(),
+					() => this.benchmarkMustacheBaseline(),
+					() => this.benchmarkNunjucksBaseline(),
+					() => this.benchmarkPugBaseline(),
+					() => this.benchmarkDoTBaseline(),
+					() => this.benchmarkLiquidBaseline(),
+				],
+			},
+			{
+				name: "Component",
+				description:
+					"Product list with loops, conditionals - typical component complexity",
+				dataSize: `${this.componentData.standardData.products.length} products with attributes`,
+				benchmarks: [
+					() => this.benchmarkBeakComponent(),
+					() => this.benchmarkBeak2Component(),
+					() => this.benchmarkBeak2CompiledComponent(),
+					() => this.benchmarkEJSComponent(),
+					() => this.benchmarkEtaComponent(),
+					() => this.benchmarkHandlebarsComponent(),
+					() => this.benchmarkMustacheComponent(),
+					() => this.benchmarkNunjucksComponent(),
+					() => this.benchmarkPugComponent(),
+					() => this.benchmarkDoTComponent(),
+					() => this.benchmarkLiquidComponent(),
+				],
+			},
+			{
+				name: "Complex",
+				description: "Full blog application - real-world complexity",
+				dataSize: `${this.complexData.posts.length} blog posts with full metadata`,
+				benchmarks: [
+					() => this.benchmarkBeakComplex(),
+					() => this.benchmarkBeak2Complex(),
+					() => this.benchmarkBeak2CompiledComplex(),
+					() => this.benchmarkEJSComplex(),
+					() => this.benchmarkEtaComplex(),
+					() => this.benchmarkHandlebarsComplex(),
+					() => this.benchmarkMustacheComplex(),
+					() => this.benchmarkNunjucksComplex(),
+					() => this.benchmarkPugComplex(),
+					() => this.benchmarkDoTComplex(),
+					() => this.benchmarkLiquidComplex(),
+				],
+			},
 		];
 
-		for (const benchmark of benchmarks) {
-			try {
-				const result = await benchmark();
-				if (result) {
-					this.results.set(result.name, result);
-					console.log(
-						`✅ ${result.name}: ${result.avgTime.toFixed(2)}ms avg, ${result.rendersPerSecond.toFixed(0)} renders/sec`,
+		for (const category of categories) {
+			console.log(`\n📋 ${category.name} Benchmarks`);
+			console.log(`   ${category.description}`);
+			console.log(`   Data: ${category.dataSize}`);
+			console.log();
+
+			for (const benchmark of category.benchmarks) {
+				try {
+					const result = await benchmark();
+					if (result) {
+						this.results.set(`${result.name}_${result.category}`, result);
+						console.log(
+							`   ✅ ${result.name}: ${result.avgTime.toFixed(2)}ms avg, ${result.rendersPerSecond.toFixed(0)} renders/sec`,
+						);
+					}
+				} catch (error) {
+					console.error(
+						`   ❌ ${benchmark.name || "Unknown"} failed:`,
+						error.message,
 					);
 				}
-			} catch (error) {
-				console.error(
-					`❌ ${benchmark.name || "Unknown"} failed:`,
-					error.message,
-				);
 			}
 		}
 
@@ -408,73 +650,97 @@ class BenchmarkRunner {
 	}
 
 	generateReport() {
-		const sortedResults = Array.from(this.results.values()).sort(
-			(a, b) => a.avgTime - b.avgTime,
-		);
+		const categories = ["baseline", "component", "complex"];
+		const categoryData = new Map();
 
-		const fastest = sortedResults[0];
+		// Group results by category
+		for (const category of categories) {
+			const categoryResults = Array.from(this.results.values())
+				.filter((result) => result.category === category)
+				.sort((a, b) => a.avgTime - b.avgTime);
+			categoryData.set(category, categoryResults);
+		}
 
-		let report = `# Template Engine Benchmark Results\n\n`;
+		let report = `# Three-Tiered Template Engine Benchmark Results\n\n`;
 		report += `**Generated:** ${new Date().toISOString()}\n`;
 		report += `**Test Environment:** Node.js ${process.version}\n`;
-		report += `**Iterations:** ${this.iterations} renders per engine\n`;
-		report += `**Sample Data:** ${this.templateData.posts.length} blog posts with full metadata\n\n`;
+		report += `**Iterations:** ${this.iterations} renders per engine per category\n\n`;
 
-		// Performance ranking table
-		report += `## Performance Ranking\n\n`;
-		report += `| Rank | Engine | Avg Time (ms) | Renders/sec | vs Fastest | Memory (KB) |\n`;
-		report += `|------|--------|---------------|-------------|------------|-------------|\n`;
+		report += `## Benchmark Categories\n\n`;
+		report += `This benchmark tests template engines across three complexity levels:\n\n`;
+		report += `1. **Baseline** - Static string rendering to measure pure engine overhead\n`;
+		report += `2. **Component** - Product list with loops, conditionals, and data processing\n`;
+		report += `3. **Complex** - Full blog application with ${this.complexData.posts.length} posts and rich metadata\n\n`;
 
-		sortedResults.forEach((result, index) => {
-			const speedRatio = result.avgTime / fastest.avgTime;
-			const memoryKB = Math.round(result.memoryDelta / 1024);
-			const speedText =
-				index === 0 ? "baseline" : `${speedRatio.toFixed(2)}x slower`;
+		// Generate tables for each category
+		for (const category of categories) {
+			const results = categoryData.get(category);
+			if (results.length === 0) continue;
 
-			report += `| ${index + 1} | **${result.name}** | ${result.avgTime.toFixed(2)} | ${Math.round(result.rendersPerSecond)} | ${speedText} | ${memoryKB} |\n`;
-		});
+			const fastest = results[0];
+			const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
 
-		// Detailed statistics
-		report += `\\n## Detailed Statistics\\n\\n`;
-		report += `| Engine | Min (ms) | Median (ms) | P95 (ms) | Max (ms) | Total (ms) |\\n`;
-		report += `|--------|----------|-------------|----------|----------|------------|\\n`;
+			report += `## ${categoryName} Benchmark Results\n\n`;
 
-		sortedResults.forEach((result) => {
-			report += `| **${result.name}** | ${result.minTime.toFixed(2)} | ${result.medianTime.toFixed(2)} | ${result.p95Time.toFixed(2)} | ${result.maxTime.toFixed(2)} | ${result.totalTime.toFixed(0)} |\\n`;
-		});
+			if (category === "baseline") {
+				report += `Measures pure template engine overhead with static HTML content.\n`;
+				report += `**Data complexity:** No dynamic data\n\n`;
+			} else if (category === "component") {
+				report += `Tests typical component rendering with loops, conditionals, and data processing.\n`;
+				report += `**Data complexity:** ${this.componentData.standardData.products.length} products with categories, pricing, ratings\n\n`;
+			} else {
+				report += `Full application complexity with comprehensive data processing and transformations.\n`;
+				report += `**Data complexity:** ${this.complexData.posts.length} blog posts with authors, categories, tags, pagination\n\n`;
+			}
 
-		// Analysis
-		report += `\\n## Analysis\\n\\n`;
-		report += `### 🏆 Performance Leaders\\n\\n`;
-		report += `1. **${sortedResults[0].name}** - Fastest overall with ${sortedResults[0].avgTime.toFixed(2)}ms average render time\\n`;
-		report += `2. **${sortedResults[1].name}** - Close second at ${sortedResults[1].avgTime.toFixed(2)}ms (${(sortedResults[1].avgTime / sortedResults[0].avgTime).toFixed(2)}x slower)\\n`;
-		report += `3. **${sortedResults[2].name}** - Third place at ${sortedResults[2].avgTime.toFixed(2)}ms\\n\\n`;
+			report += `| Rank | Engine | Avg Time (ms) | Renders/sec | vs Fastest |\n`;
+			report += `|------|--------|---------------|-------------|------------|\n`;
 
-		const slowest = sortedResults[sortedResults.length - 1];
-		report += `### 📈 Performance Spread\\n\\n`;
-		report += `The fastest engine (${fastest.name}) is **${(slowest.avgTime / fastest.avgTime).toFixed(1)}x faster** than the slowest (${slowest.name}).\\n`;
-		report += `Median performance difference: ${(sortedResults[Math.floor(sortedResults.length / 2)].avgTime / fastest.avgTime).toFixed(1)}x slower than fastest.\\n\\n`;
+			results.forEach((result, index) => {
+				const speedRatio = result.avgTime / fastest.avgTime;
+				const speedText =
+					index === 0 ? "baseline" : `${speedRatio.toFixed(2)}x slower`;
 
-		// Memory usage analysis
-		const memoryResults = sortedResults.sort(
-			(a, b) => a.memoryDelta - b.memoryDelta,
-		);
-		report += `### 💾 Memory Efficiency\\n\\n`;
-		report += `**Most memory efficient:** ${memoryResults[0].name} (${Math.round(memoryResults[0].memoryDelta / 1024)} KB)\\n`;
-		report += `**Highest memory usage:** ${memoryResults[memoryResults.length - 1].name} (${Math.round(memoryResults[memoryResults.length - 1].memoryDelta / 1024)} KB)\\n\\n`;
+				report += `| ${index + 1} | **${result.name}** | ${result.avgTime.toFixed(2)} | ${Math.round(result.rendersPerSecond)} | ${speedText} |\n`;
+			});
+
+			report += `\n`;
+		}
+
+		// Cross-category analysis
+		report += `## Performance Analysis\n\n`;
+
+		report += `### Engine Scaling Patterns\n\n`;
+		for (const category of categories) {
+			const results = categoryData.get(category);
+			if (results.length > 0) {
+				const fastest = results[0];
+				const slowest = results[results.length - 1];
+				const categoryName =
+					category.charAt(0).toUpperCase() + category.slice(1);
+
+				report += `**${categoryName}:** ${fastest.name} leads at ${fastest.avgTime.toFixed(2)}ms, `;
+				report += `${(slowest.avgTime / fastest.avgTime).toFixed(1)}x performance spread\n`;
+			}
+		}
+
+		report += `\n### Why This Matters\n\n`;
+		report += `- **Baseline** reveals engine startup costs and core overhead\n`;
+		report += `- **Component** shows real-world single-component performance\n`;
+		report += `- **Complex** demonstrates full application scaling behavior\n\n`;
+		report += `Engines that maintain relative performance across categories handle complexity well.\n`;
+		report += `Large performance drops from baseline to complex indicate poor algorithmic scaling.\n\n`;
 
 		// Test environment
-		report += `## Test Environment\\n\\n`;
-		report += `- **Node.js Version:** ${process.version}\\n`;
-		report += `- **Platform:** ${process.platform} ${process.arch}\\n`;
-		report += `- **Template Complexity:** Blog listing with ${this.templateData.posts.length} posts\\n`;
-		report += `- **Data Variety:** Mixed content lengths, multiple authors, categories, tags\\n`;
-		report += `- **Caching:** Disabled for all engines to ensure fair comparison\\n`;
-		report += `- **Warmup:** ${this.warmupRuns} iterations before measurement\\n`;
-		report += `- **Measurement:** ${this.iterations} timed iterations per engine\\n\\n`;
+		report += `## Test Environment\n\n`;
+		report += `- **Node.js Version:** ${process.version}\n`;
+		report += `- **Platform:** ${process.platform} ${process.arch}\n`;
+		report += `- **Caching:** Disabled for all engines to ensure fair comparison\n`;
+		report += `- **Warmup:** ${this.warmupRuns} iterations before measurement\n`;
+		report += `- **Measurement:** ${this.iterations} timed iterations per engine per category\n\n`;
 
-		report += `---\\n\\n`;
-		report += `*Benchmark generated with the RavenJS renderer-benchmark package*\\n`;
+		report += `---\n\n`;
+		report += `*Benchmark generated with the RavenJS renderer-benchmark package*\n`;
 
 		return report;
 	}
@@ -484,7 +750,9 @@ class BenchmarkRunner {
 		const report = this.generateReport();
 
 		fs.writeFileSync("BENCHMARK.md", report);
-		console.log("\\n📊 Benchmark complete! Results saved to BENCHMARK.md");
+		console.log(
+			"\n📊 Three-tiered benchmark complete! Results saved to BENCHMARK.md",
+		);
 
 		return this.results;
 	}

@@ -275,3 +275,144 @@ function generateRecentActivity(posts) {
 		description: `New post "${post.title}" published`,
 	}));
 }
+
+/**
+ * Generate baseline data (empty - static templates need no data)
+ */
+export function generateBaselineData() {
+	return {};
+}
+
+/**
+ * Generate component test data for product list benchmark
+ * @param {number} count - Number of products to generate
+ */
+export function generateComponentData(count = 20) {
+	const productNames = [
+		"Wireless Bluetooth Headphones",
+		"Portable SSD Drive",
+		"Gaming Mechanical Keyboard",
+		"4K Webcam",
+		"Ergonomic Office Chair",
+		"Smart Watch",
+		"Laptop Stand",
+		"USB-C Hub",
+		"Wireless Mouse",
+		"Desktop Monitor",
+		"Phone Charger",
+		"Tablet Case",
+		"Bluetooth Speaker",
+		"External Battery",
+		"Cable Management Kit",
+	];
+
+	const descriptions = [
+		"High-quality product with excellent performance and durability.",
+		"Perfect for professional use with advanced features.",
+		"Great value for money with premium build quality.",
+		"Innovative design meets cutting-edge technology.",
+		"Essential accessory for modern productivity.",
+	];
+
+	const categories = [
+		["Electronics", "Audio"],
+		["Computers", "Storage"],
+		["Gaming", "Peripherals"],
+		["Video", "Streaming"],
+		["Furniture", "Office"],
+		["Wearables", "Smart"],
+		["Accessories", "Laptop"],
+		["Connectivity", "USB"],
+		["Peripherals", "Wireless"],
+		["Displays", "Monitor"],
+	];
+
+	const attributes = {
+		Brand: ["TechCorp", "GadgetPro", "EliteGear", "SmartTech", "ProLine"],
+		Color: ["Black", "White", "Silver", "Blue", "Red"],
+		Material: ["Aluminum", "Plastic", "Metal", "Fabric", "Glass"],
+		Warranty: ["1 Year", "2 Years", "3 Years", "Lifetime"],
+		Weight: ["0.5kg", "1.2kg", "2.1kg", "0.8kg", "1.5kg"],
+	};
+
+	const products = [];
+
+	for (let i = 0; i < count; i++) {
+		const basePrice = 50 + random() * 450; // $50-$500
+		const discount = random() > 0.7 ? Math.floor(random() * 30) + 5 : 0; // 30% chance of 5-35% discount
+		const rating = 2 + random() * 3; // 2-5 stars
+		const reviews = Math.floor(random() * 500) + 10;
+		const quantity = Math.floor(random() * 20) + 1;
+
+		const productAttrs = {};
+		const attrKeys = Object.keys(attributes);
+		const numAttrs = Math.floor(random() * 3) + 2; // 2-4 attributes
+
+		for (let j = 0; j < numAttrs; j++) {
+			const key = attrKeys[Math.floor(random() * attrKeys.length)];
+			if (!productAttrs[key]) {
+				const values = attributes[key];
+				productAttrs[key] = values[Math.floor(random() * values.length)];
+			}
+		}
+
+		products.push({
+			id: i + 1,
+			name:
+				productNames[i % productNames.length] +
+				(i >= productNames.length
+					? ` v${Math.floor(i / productNames.length) + 1}`
+					: ""),
+			description: descriptions[Math.floor(random() * descriptions.length)],
+			price: Number(basePrice.toFixed(2)),
+			discount: discount,
+			rating: Number(rating.toFixed(1)),
+			reviews: reviews,
+			imageUrl: `https://images.example.com/products/${i + 1}.jpg`,
+			categories: categories[i % categories.length],
+			inStock: random() > 0.1, // 90% in stock
+			quantity: quantity,
+			featured: random() > 0.8, // 20% featured
+			attributes: productAttrs,
+		});
+	}
+
+	// Standard data format
+	const standardData = {
+		products: products,
+		user: {
+			isLoggedIn: true,
+			isPremium: random() > 0.7, // 30% premium
+		},
+		config: {
+			showAttributes: true,
+		},
+		productCount: products.length,
+	};
+
+	// Mustache needs pre-formatted data (logic-less)
+	const mustacheData = {
+		...standardData,
+		products: products.map((product) => ({
+			...product,
+			featured: product.featured,
+			outOfStock: !product.inStock,
+			hasDiscount: product.discount > 0,
+			originalPrice: product.price.toFixed(2),
+			currentPrice: product.price.toFixed(2),
+			salePrice: (product.price * (1 - product.discount / 100)).toFixed(2),
+			categories: product.categories.map((cat) => ({ name: cat })),
+			stars: Array.from({ length: 5 }, (_, i) => ({
+				filled: i < Math.floor(product.rating),
+			})),
+			userNotLoggedIn: !standardData.user.isLoggedIn,
+			lowStock: product.quantity < 5,
+			attributesList: Object.entries(product.attributes).map(
+				([key, value]) => ({ key, value }),
+			),
+		})),
+		showAttributes: standardData.config.showAttributes,
+	};
+
+	return { standardData, mustacheData };
+}

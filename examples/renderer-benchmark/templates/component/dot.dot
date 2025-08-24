@@ -1,0 +1,72 @@
+<div class="product-grid">
+	<h2>Featured Products ({{=it.products.length}})</h2>
+	{{? it.user.isPremium}}
+		<div class="premium-badge">Premium Member</div>
+	{{?}}
+
+	<div class="products">
+		{{~it.products :product:index}}
+			<div class="product-card {{?product.featured}}featured{{?}} {{?!product.inStock}}out-of-stock{{?}}">
+				<div class="product-image">
+					<img src="{{=product.imageUrl}}" alt="{{=product.name}}" />
+					{{?product.discount > 0}}
+						<span class="discount-badge">-{{=product.discount}}%</span>
+					{{?}}
+				</div>
+
+				<div class="product-info">
+					<h3 class="product-name">{{=product.name}}</h3>
+					<p class="product-description">{{=product.description}}</p>
+
+					<div class="product-categories">
+						{{~product.categories :category:catIndex}}
+							<span class="category-tag">{{=category}}</span>
+						{{~}}
+					</div>
+
+					<div class="product-price">
+						{{?product.discount > 0}}
+							<span class="original-price">${{=product.price.toFixed(2)}}</span>
+							<span class="sale-price">${{=(product.price * (1 - product.discount / 100)).toFixed(2)}}</span>
+						{{??}}
+							<span class="current-price">${{=product.price.toFixed(2)}}</span>
+						{{?}}
+					</div>
+
+					<div class="product-stats">
+						<div class="rating">
+							{{for(var i = 0; i < 5; i++) { }}
+								<span class="star {{?i < Math.floor(product.rating)}}filled{{?}}">★</span>
+							{{ } }}
+							<span class="rating-text">({{=product.reviews}})</span>
+						</div>
+					</div>
+
+					<div class="product-actions">
+						{{?product.inStock}}
+							<button class="btn-primary" {{?!it.user.isLoggedIn}}disabled{{?}}>
+								Add to Cart
+							</button>
+							{{?product.quantity < 5}}
+								<span class="low-stock">Only {{=product.quantity}} left!</span>
+							{{?}}
+						{{??}}
+							<button class="btn-secondary" disabled>Out of Stock</button>
+						{{?}}
+					</div>
+
+					{{?it.config.showAttributes}}
+						<div class="product-attributes">
+							{{for(var key in product.attributes) { }}
+								<div class="attribute">
+									<span class="attr-name">{{=key}}:</span>
+									<span class="attr-value">{{=product.attributes[key]}}</span>
+								</div>
+							{{ } }}
+						</div>
+					{{?}}
+				</div>
+			</div>
+		{{~}}
+	</div>
+</div>

@@ -1,0 +1,74 @@
+<div class="product-grid">
+	<h2>Featured Products ({{productCount}})</h2>
+	{{#user.isPremium}}
+		<div class="premium-badge">Premium Member</div>
+	{{/user.isPremium}}
+
+	<div class="products">
+		{{#products}}
+			<div class="product-card {{#featured}}featured{{/featured}} {{#outOfStock}}out-of-stock{{/outOfStock}}">
+				<div class="product-image">
+					<img src="{{imageUrl}}" alt="{{name}}" />
+					{{#hasDiscount}}
+						<span class="discount-badge">-{{discount}}%</span>
+					{{/hasDiscount}}
+				</div>
+
+				<div class="product-info">
+					<h3 class="product-name">{{name}}</h3>
+					<p class="product-description">{{description}}</p>
+
+					<div class="product-categories">
+						{{#categories}}
+							<span class="category-tag">{{name}}</span>
+						{{/categories}}
+					</div>
+
+					<div class="product-price">
+						{{#hasDiscount}}
+							<span class="original-price">${{originalPrice}}</span>
+							<span class="sale-price">${{salePrice}}</span>
+						{{/hasDiscount}}
+						{{^hasDiscount}}
+							<span class="current-price">${{currentPrice}}</span>
+						{{/hasDiscount}}
+					</div>
+
+					<div class="product-stats">
+						<div class="rating">
+							{{#stars}}
+								<span class="star {{#filled}}filled{{/filled}}">★</span>
+							{{/stars}}
+							<span class="rating-text">({{reviews}})</span>
+						</div>
+					</div>
+
+					<div class="product-actions">
+						{{#inStock}}
+							<button class="btn-primary" {{#userNotLoggedIn}}disabled{{/userNotLoggedIn}}>
+								Add to Cart
+							</button>
+							{{#lowStock}}
+								<span class="low-stock">Only {{quantity}} left!</span>
+							{{/lowStock}}
+						{{/inStock}}
+						{{^inStock}}
+							<button class="btn-secondary" disabled>Out of Stock</button>
+						{{/inStock}}
+					</div>
+
+					{{#showAttributes}}
+						<div class="product-attributes">
+							{{#attributesList}}
+								<div class="attribute">
+									<span class="attr-name">{{key}}:</span>
+									<span class="attr-value">{{value}}</span>
+								</div>
+							{{/attributesList}}
+						</div>
+					{{/showAttributes}}
+				</div>
+			</div>
+		{{/products}}
+	</div>
+</div>

@@ -1,6 +1,6 @@
-# Renderer Benchmark
+# Three-Tiered Template Engine Benchmark
 
-Comprehensive performance comparison of major JavaScript template rendering engines.
+Comprehensive performance analysis of JavaScript template engines across three complexity levels.
 
 ## Quick Start
 
@@ -9,9 +9,25 @@ npm install
 npm run benchmark
 ```
 
-## What's Tested
+## Three-Tiered Testing Approach
 
-This benchmark compares the following template engines against identical, complex sample data:
+This benchmark evaluates template engines across three distinct complexity levels:
+
+### 1. Baseline - Engine Overhead
+
+Static string rendering with no dynamic data to measure pure engine overhead.
+
+### 2. Component - Typical Complexity
+
+Product list component with loops, conditionals, and data processing (20 products).
+
+### 3. Complex - Real-World Application
+
+Full blog application with comprehensive data transformations (86 blog posts).
+
+## Template Engines Tested
+
+This benchmark compares the following template engines:
 
 - **RavenJS Beak** (baseline)
 - **EJS** - Embedded JavaScript templates
@@ -23,16 +39,40 @@ This benchmark compares the following template engines against identical, comple
 - **doT** - Fast precompiled templates
 - **Liquid** - Safe template language
 
-## Sample Data
+## Why Three Tiers Matter
 
-The benchmark uses complex, realistic template features including:
+### Engine Overhead vs Scaling Performance
 
-- **Real-world complexity**: Component-like structures, nested conditionals, complex loops
-- **Rich data model**: 90 blog posts with full metadata, analytics, user preferences
-- **Advanced features**: Pagination, search/filters, recent activity, popular tags
-- **Performance optimizations**: Author avatars, formatted numbers, responsive design
-- **Accessibility**: ARIA labels, semantic HTML, progressive enhancement
-- **Multiple data transformations**: Date formatting, URL encoding, content processing
+Different engines excel at different complexity levels:
+
+- **High baseline performance** doesn't guarantee good complex performance
+- **Poor baseline performance** might scale better with data complexity
+- **Consistent ratios** across tiers indicate predictable scaling behavior
+
+### Real-World Insights
+
+- **Baseline** → Choose for static site generation
+- **Component** → Choose for typical React/Vue-style components
+- **Complex** → Choose for server-side rendered applications
+
+### Sample Data Complexity
+
+**Baseline:** Static HTML string (no data processing)
+
+**Component:** Product catalog with:
+
+- 20 products with pricing, ratings, categories
+- Conditional rendering (stock status, discounts)
+- Loops (product attributes, star ratings)
+- Data transformations (price formatting)
+
+**Complex:** Blog application with:
+
+- 86 blog posts with full metadata
+- Author information and avatars
+- Categories, tags, and pagination
+- Analytics data and recent activity
+- Date formatting and URL encoding
 
 ## Results
 

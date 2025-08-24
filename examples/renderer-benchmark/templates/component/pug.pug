@@ -1,0 +1,49 @@
+.product-grid
+	h2 Featured Products (#{products.length})
+	if user.isPremium
+		.premium-badge Premium Member
+
+	.products
+		each product in products
+			.product-card(class=`${product.featured ? 'featured' : ''} ${!product.inStock ? 'out-of-stock' : ''}`)
+				.product-image
+					img(src=product.imageUrl alt=product.name)
+					if product.discount > 0
+						span.discount-badge -#{product.discount}%
+
+				.product-info
+					h3.product-name= product.name
+					p.product-description= product.description
+
+					.product-categories
+						each category in product.categories
+							span.category-tag= category
+
+					.product-price
+						if product.discount > 0
+							span.original-price $#{product.price.toFixed(2)}
+							span.sale-price $#{(product.price * (1 - product.discount / 100)).toFixed(2)}
+						else
+							span.current-price $#{product.price.toFixed(2)}
+
+					.product-stats
+						.rating
+							- for (let i = 0; i < 5; i++)
+								span.star(class=i < Math.floor(product.rating) ? 'filled' : '') ★
+							span.rating-text (#{product.reviews})
+
+					.product-actions
+						if product.inStock
+							button.btn-primary(disabled=!user.isLoggedIn)
+								| Add to Cart
+							if product.quantity < 5
+								span.low-stock Only #{product.quantity} left!
+						else
+							button.btn-secondary(disabled) Out of Stock
+
+					if config.showAttributes
+						.product-attributes
+							each value, key in product.attributes
+								.attribute
+									span.attr-name #{key}:
+									span.attr-value #{value}
