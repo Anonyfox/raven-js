@@ -36,25 +36,34 @@
 export const flattenValue = (value) => {
 	if (value == null) return "";
 
-	// Handle arrays recursively
+	// Handle arrays recursively with modern JS optimization
 	if (Array.isArray(value)) {
-		const flattened = [];
+		let result = "";
+		let needsSpace = false;
+
 		for (let i = 0; i < value.length; i++) {
 			if (i in value) {
 				// Check if the index exists (handles sparse arrays)
 				const item = value[i];
 				if (item != null) {
 					// Filter out null/undefined
-					flattened.push(flattenValue(item));
+					const flattened = flattenValue(item);
+					if (flattened) {
+						if (needsSpace) result += " ";
+						result += flattened;
+						needsSpace = true;
+					}
 				}
 			}
 		}
-		return flattened.join(" ");
+		return result;
 	}
 
 	// Handle plain objects by converting to CSS key-value pairs
 	if (typeof value === "object" && value.constructor === Object) {
-		const pairs = [];
+		let result = "";
+		let needsSeparator = false;
+
 		for (const [key, val] of Object.entries(value)) {
 			if (val != null) {
 				// Convert camelCase to kebab-case for CSS properties
@@ -63,20 +72,24 @@ export const flattenValue = (value) => {
 					(letter) => `-${letter.toLowerCase()}`,
 				);
 				const cssValue = flattenValue(val);
+
+				if (needsSeparator) result += "; ";
+
 				if (cssValue !== "") {
 					// Remove trailing semicolon from nested objects to avoid double semicolons
 					const cleanValue = cssValue.endsWith(";")
 						? cssValue.slice(0, -1)
 						: cssValue;
-					pairs.push(`${cssKey}:${cleanValue}`);
+					result += `${cssKey}:${cleanValue}`;
 				} else {
 					// Handle empty string as valid CSS value
-					pairs.push(`${cssKey}:`);
+					result += `${cssKey}:`;
 				}
+				needsSeparator = true;
 			}
 		}
 		// End with semicolon for proper CSS concatenation
-		return pairs.length > 0 ? `${pairs.join("; ")};` : "";
+		return result ? `${result};` : "";
 	}
 
 	// Handle primitives and other objects (Date, RegExp, etc.)

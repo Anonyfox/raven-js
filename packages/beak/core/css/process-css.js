@@ -6,14 +6,19 @@
  * @see {@link https://anonyfox.com}
  */
 
-// Pre-compiled regex patterns for performance
+// Pre-compiled regex patterns for performance - V8 optimized
 const WHITESPACE_REGEX = /\s+/g;
 const COLON_REGEX = /([a-zA-Z-]+)\s*:\s*/g;
 const SEMICOLON_REGEX = /\s+;/g;
 const OPEN_BRACE_REGEX = /\s+\{/g;
 const CLOSE_BRACE_REGEX = /\s+\}/g;
 const SEMICOLON_SPACE_REGEX = /;(?!$|\s)/g;
-const CLOSE_BRACE_SPACE_REGEX = /\}(?!$|\s)/g;
+const CLOSE_BRACE_SPACE_REGEX = /\}(?!\s)/g;
+
+// Pre-computed replacement strings for JIT optimization
+const SPACE = " ";
+const SEMICOLON_SPACE = "; ";
+const CLOSE_BRACE_SPACE = "} ";
 
 /**
  * @file CSS string normalization with single-pass regex optimization
@@ -40,14 +45,14 @@ export const processCSS = (/** @type {string} */ css) => {
 	// Fast path for empty or whitespace-only strings
 	if (!css || css.trim() === "") return "";
 
-	// Use a more efficient approach: combine multiple operations
+	// V8 optimized: use pre-computed constants
 	return css
-		.replace(WHITESPACE_REGEX, " ")
+		.replace(WHITESPACE_REGEX, SPACE)
 		.replace(COLON_REGEX, "$1:")
 		.replace(SEMICOLON_REGEX, ";")
 		.replace(OPEN_BRACE_REGEX, "{")
 		.replace(CLOSE_BRACE_REGEX, "}")
-		.replace(SEMICOLON_SPACE_REGEX, "; ")
-		.replace(CLOSE_BRACE_SPACE_REGEX, "} ")
+		.replace(SEMICOLON_SPACE_REGEX, SEMICOLON_SPACE)
+		.replace(CLOSE_BRACE_SPACE_REGEX, CLOSE_BRACE_SPACE)
 		.trim();
 };

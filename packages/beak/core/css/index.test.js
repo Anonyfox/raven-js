@@ -17,7 +17,8 @@ const _b = css`
 			}
 		`;
 
-describe("css function", () => {
+describe("core functionality", () => {
+	// Basic CSS formatting
 	it("should format basic CSS correctly", () => {
 		const result = css`
 				.button {
@@ -59,11 +60,7 @@ describe("css function", () => {
 		);
 	});
 
-	it("should handle empty input", () => {
-		const result = css``;
-		assert.equal(result, "");
-	});
-
+	// Single properties and basic structures
 	it("should handle single property", () => {
 		const result = css`color: white;`;
 		assert.equal(result, "color:white;");
@@ -95,35 +92,76 @@ describe("css function", () => {
 			"-webkit-transform:rotate(45deg); -moz-transform:rotate(45deg); transform:rotate(45deg);",
 		);
 	});
-});
 
-describe("style function", () => {
-	it("should wrap CSS in style tags", () => {
-		const result = style`
+	// Style function integration
+	describe("style wrapper functionality", () => {
+		it("should wrap CSS in style tags", () => {
+			const result = style`
 				.button {
 					color: white;
 					background: #007bff;
 				}
 			`;
-		assert.equal(
-			result,
-			"<style>.button{ color:white; background:#007bff; }</style>",
-		);
-	});
+			assert.equal(
+				result,
+				"<style>.button{ color:white; background:#007bff; }</style>",
+			);
+		});
 
-	it("should handle empty input", () => {
-		const result = style``;
-		assert.equal(result, "<style></style>");
-	});
+		it("should handle empty input", () => {
+			const result = style``;
+			assert.equal(result, "<style></style>");
+		});
 
-	it("should handle multiple rules", () => {
-		const result = style`
+		// Multiple rules handling
+		it("should handle multiple rules", () => {
+			const result = style`
 				.button { color: white; }
 				.container { max-width: 1200px; }
 			`;
-		assert.equal(
-			result,
-			"<style>.button{ color:white; } .container{ max-width:1200px; }</style>",
-		);
+			assert.equal(
+				result,
+				"<style>.button{ color:white; } .container{ max-width:1200px; }</style>",
+			);
+		});
+	});
+
+	describe("edge cases and errors", () => {
+		// Empty input handling
+		it("should handle empty CSS input", () => {
+			const result = css``;
+			assert.equal(result, "");
+		});
+
+		it("should handle empty style input", () => {
+			const result = style``;
+			assert.equal(result, "<style></style>");
+		});
+	});
+
+	describe("integration scenarios", () => {
+		// Complex CSS patterns
+		it("should handle complex property values with CSS functions", () => {
+			const result = css`
+				box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);
+			`;
+			assert.equal(
+				result,
+				"box-shadow:0 1px 2px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);",
+			);
+		});
+
+		// Vendor prefixes integration
+		it("should handle vendor prefixes for real-world compatibility", () => {
+			const result = css`
+				-webkit-transform: rotate(45deg);
+				-moz-transform: rotate(45deg);
+				transform: rotate(45deg);
+			`;
+			assert.equal(
+				result,
+				"-webkit-transform:rotate(45deg); -moz-transform:rotate(45deg); transform:rotate(45deg);",
+			);
+		});
 	});
 });

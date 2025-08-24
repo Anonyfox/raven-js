@@ -2,8 +2,10 @@ import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 import { flattenValue, processCSSTemplate } from "./template-processor.js";
 
-describe("flattenValue", () => {
-	describe("null and undefined handling", () => {
+describe("core functionality", () => {
+	// flattenValue core behavior
+	describe("flattenValue basic operations", () => {
+		// Null and undefined handling
 		it("should return empty string for null", () => {
 			const result = flattenValue(null);
 			assert.equal(result, "");
@@ -13,9 +15,8 @@ describe("flattenValue", () => {
 			const result = flattenValue(undefined);
 			assert.equal(result, "");
 		});
-	});
 
-	describe("non-array values", () => {
+		// Non-array value conversion
 		it("should convert strings to string", () => {
 			const result = flattenValue("hello");
 			assert.equal(result, "hello");
@@ -56,9 +57,8 @@ describe("flattenValue", () => {
 			const result = flattenValue("");
 			assert.equal(result, "");
 		});
-	});
 
-	describe("array handling", () => {
+		// Array handling fundamentals
 		it("should handle empty arrays", () => {
 			const result = flattenValue([]);
 			assert.equal(result, "");
@@ -98,9 +98,8 @@ describe("flattenValue", () => {
 			const result = flattenValue([null, "hello", undefined, "world", null]);
 			assert.equal(result, "hello world");
 		});
-	});
 
-	describe("sparse array handling", () => {
+		// Sparse array optimization
 		it("should handle sparse arrays with holes", () => {
 			const sparse = [];
 			sparse[0] = "first";
@@ -137,9 +136,8 @@ describe("flattenValue", () => {
 			const result = flattenValue(arrayWithLength);
 			assert.equal(result, "middle");
 		});
-	});
 
-	describe("nested array handling", () => {
+		// Nested array flattening
 		it("should handle nested arrays", () => {
 			const result = flattenValue([["hello", "world"]]);
 			assert.equal(result, "hello world");
@@ -168,9 +166,8 @@ describe("flattenValue", () => {
 			const result = flattenValue(nestedSparse);
 			assert.equal(result, "second third");
 		});
-	});
 
-	describe("mixed type handling", () => {
+		// Mixed type handling
 		it("should handle arrays with mixed types", () => {
 			const result = flattenValue(["string", 42, true, { obj: "value" }]);
 			assert.equal(result, "string 42 true obj:value;");
@@ -186,9 +183,8 @@ describe("flattenValue", () => {
 			const result = flattenValue([["string", 42], true, [null, "world"]]);
 			assert.equal(result, "string 42 true world");
 		});
-	});
 
-	describe("object decomposition", () => {
+		// Object to CSS conversion
 		it("should convert camelCase to kebab-case", () => {
 			const result = flattenValue({
 				backgroundColor: "#007bff",
@@ -252,7 +248,8 @@ describe("flattenValue", () => {
 		});
 	});
 
-	describe("edge cases", () => {
+	describe("edge cases and errors", () => {
+		// flattenValue edge cases
 		it("should handle very large arrays", () => {
 			const largeArray = Array(1000).fill("item");
 			const result = flattenValue(largeArray);
@@ -281,10 +278,9 @@ describe("flattenValue", () => {
 			assert.throws(() => flattenValue(selfRef), RangeError);
 		});
 	});
-});
 
-describe("processCSSTemplate", () => {
-	describe("basic template processing", () => {
+	// processCSSTemplate core behavior
+	describe("processCSSTemplate basic operations", () => {
 		it("should handle empty template", () => {
 			const result = processCSSTemplate``;
 			assert.equal(result, "");
@@ -335,9 +331,8 @@ describe("processCSSTemplate", () => {
 			const result = processCSSTemplate`color: ${null}; background: ${color};`;
 			assert.equal(result, "color: ; background: red;");
 		});
-	});
 
-	describe("array value handling", () => {
+		// Array value handling in templates
 		it("should join array values with spaces", () => {
 			const colors = ["red", "blue", "green"];
 			const result = processCSSTemplate`colors: ${colors};`;
@@ -372,9 +367,8 @@ describe("processCSSTemplate", () => {
 			const result = processCSSTemplate`colors: ${nestedArray};`;
 			assert.equal(result, "colors: red blue green yellow;");
 		});
-	});
 
-	describe("null and undefined handling", () => {
+		// Null/undefined in templates
 		it("should skip null values", () => {
 			const result = processCSSTemplate`color: ${null}; background: red;`;
 			assert.equal(result, "color: ; background: red;");
@@ -394,9 +388,8 @@ describe("processCSSTemplate", () => {
 			const result = processCSSTemplate`${null}color: red; background: ${undefined}`;
 			assert.equal(result, "color: red; background: ");
 		});
-	});
 
-	describe("complex CSS structures", () => {
+		// Complex template structures
 		it("should handle CSS rules with multiple properties", () => {
 			const primaryColor = "#007bff";
 			const padding = "10px 15px";
@@ -472,9 +465,8 @@ describe("processCSSTemplate", () => {
 			`,
 			);
 		});
-	});
 
-	describe("edge cases", () => {
+		// Edge cases for template processing
 		it("should handle zero as a valid value", () => {
 			const result = processCSSTemplate`opacity: ${0};`;
 			assert.equal(result, "opacity: 0;");
@@ -511,9 +503,8 @@ describe("processCSSTemplate", () => {
 			const result = processCSSTemplate`value: ${func};`;
 			assert.equal(result, 'value: () => "dynamic";');
 		});
-	});
 
-	describe("advanced array scenarios", () => {
+		// Advanced array scenarios
 		it("should handle sparse arrays", () => {
 			const sparse = [1];
 			sparse[3] = 4;
@@ -542,13 +533,13 @@ describe("processCSSTemplate", () => {
 		it("should handle arrays with falsy values", () => {
 			const falsy = [0, false, "", null, undefined];
 			const result = processCSSTemplate`falsy: ${falsy};`;
-			assert.equal(result, "falsy: 0  ;");
+			assert.equal(result, "falsy: 0;");
 		});
 
 		it("should handle arrays with only falsy values", () => {
 			const allFalsy = [null, undefined, false, ""];
 			const result = processCSSTemplate`allFalsy: ${allFalsy};`;
-			assert.equal(result, "allFalsy:  ;");
+			assert.equal(result, "allFalsy: ;");
 		});
 
 		it("should handle arrays with missing indices (sparse array edge case)", () => {
@@ -968,7 +959,8 @@ describe("processCSSTemplate", () => {
 		});
 	});
 
-	describe("real-world scenarios", () => {
+	describe("integration scenarios", () => {
+		// Real-world usage patterns
 		it("should handle dynamic theme generation", () => {
 			const theme = {
 				primary: "#007bff",

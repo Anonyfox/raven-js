@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import { processCSS } from "./process-css.js";
 
 describe("processCSS", () => {
-	describe("basic CSS processing", () => {
+	describe("core functionality", () => {
 		it("should normalize whitespace sequences", () => {
 			const input = "  .button  {  color:  white;  }  ";
 			const result = processCSS(input);
@@ -48,9 +48,8 @@ describe("processCSS", () => {
 				".button{color:white; } .container{max-width:1200px; }",
 			);
 		});
-	});
 
-	describe("complex CSS structures", () => {
+		// Complex CSS structures
 		it("should handle nested selectors", () => {
 			const input = `
 				.container {
@@ -117,9 +116,8 @@ describe("processCSS", () => {
 				"@keyframes fadeIn{ from{ opacity:0; } to{ opacity:1; } }",
 			);
 		});
-	});
 
-	describe("property values", () => {
+		// Property value handling
 		it("should preserve spaces in property values", () => {
 			const input = "font-family: Arial, sans-serif; margin: 10px 20px;";
 			const result = processCSS(input);
@@ -166,7 +164,8 @@ describe("processCSS", () => {
 		});
 	});
 
-	describe("edge cases", () => {
+	describe("edge cases and errors", () => {
+		// Basic edge cases
 		it("should handle empty string", () => {
 			const result = processCSS("");
 			assert.equal(result, "");
@@ -211,9 +210,8 @@ describe("processCSS", () => {
 			const result = processCSS(input);
 			assert.equal(result, ":::");
 		});
-	});
 
-	describe("special characters", () => {
+		// Special character handling
 		it("should handle CSS with quotes", () => {
 			const input = "content: 'Hello World'; font-family: 'Arial', sans-serif;";
 			const result = processCSS(input);
@@ -243,9 +241,8 @@ describe("processCSS", () => {
 			const result = processCSS(input);
 			assert.equal(result, "[data-testid='button']{ color:white; }");
 		});
-	});
 
-	describe("performance edge cases", () => {
+		// Performance edge cases
 		it("should handle very long CSS", () => {
 			const longCSS =
 				".button{color:white;background:#007bff;padding:10px;margin:5px;border:1px solid #ccc;border-radius:4px;font-size:14px;font-weight:bold;text-align:center;cursor:pointer;transition:all 0.3s ease;box-shadow:0 2px 4px rgba(0,0,0,0.1);}".repeat(
@@ -276,7 +273,8 @@ describe("processCSS", () => {
 		});
 	});
 
-	describe("real-world scenarios", () => {
+	describe("integration scenarios", () => {
+		// Real-world scenarios
 		it("should handle a complete CSS rule", () => {
 			const input = `
 				.button {
