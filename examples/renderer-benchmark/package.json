@@ -11,14 +11,14 @@
   },
   "dependencies": {
     "@raven-js/beak": "file:../../packages/beak",
+    "dot": "^2.0.0-beta.1",
     "ejs": "^3.1.9",
     "eta": "^3.2.0",
     "handlebars": "^4.7.8",
+    "liquidjs": "^10.9.2",
     "mustache": "^4.2.0",
     "nunjucks": "^3.2.4",
-    "pug": "^3.0.2",
-    "dot": "^2.0.0-beta.1",
-    "liquidjs": "^10.9.2"
+    "pug": "^3.0.2"
   },
   "keywords": [
     "benchmark",
@@ -28,5 +28,8 @@
     "comparison"
   ],
   "author": "RavenJS",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.25.9"
+  }
 }
