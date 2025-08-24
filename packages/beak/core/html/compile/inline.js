@@ -183,7 +183,8 @@ function skipStringFast(code, start, quote) {
  * @param {string} code - Source code
  * @param {number} start - Start position (after opening backtick)
  * @param {string} tagName - Tag name for recursive parsing
- * @returns {{node: ASTNode, endPos: number}|null} Template node and end position
+ * @returns {{node: ASTNode, endPos: number}} Template node and end position
+ * @throws {Error} When template literal is unclosed
  */
 function parseTemplate(code, start, tagName) {
 	const templateNode = createNode(NodeType.TEMPLATE, "", tagName);
@@ -237,7 +238,8 @@ function parseTemplate(code, start, tagName) {
  * @param {string} code - Source code
  * @param {number} start - Start position after ${
  * @param {string} _tagName - Tag name for recursive parsing (unused)
- * @returns {{node: ASTNode, endPos: number}|null} Expression node and end position
+ * @returns {{node: ASTNode, endPos: number}} Expression node and end position
+ * @throws {Error} When expression is unclosed
  */
 function parseExpression(code, start, _tagName) {
 	let braceDepth = 1; // We start inside ${ already
@@ -282,7 +284,8 @@ function parseExpression(code, start, _tagName) {
  * Skip string literal and return content + end position
  * @param {string} code - Source code
  * @param {number} start - Index of opening quote
- * @returns {{content: string, endPos: number}|null} String content and end position, null if malformed
+ * @returns {{content: string, endPos: number}} String content and end position
+ * @throws {Error} When string literal is unclosed
  */
 function skipString(code, start) {
 	const quote = code[start];
@@ -387,7 +390,8 @@ function transformNode(node, tagName) {
 		return parts.join(" + ");
 	}
 
-	// All node types are handled above
+	// All node types are handled above - this should never be reached
+	throw new Error(`Unknown node type: ${node.type}`);
 }
 
 /**
