@@ -172,7 +172,7 @@ describe("inline - Edge Cases and Error Resilience", () => {
 
 		// Block comments (lines 139-144) + Line comments at EOF (line 135)
 		const commentFunc = (data) => {
-			/* Block comment */ 
+			/* Block comment */
 			return html2`<div class="${data.cls}">${data.text}</div>`; // EOF comment
 		};
 		const commentOptimized = inline(commentFunc);
