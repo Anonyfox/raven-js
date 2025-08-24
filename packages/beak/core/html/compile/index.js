@@ -29,11 +29,7 @@ import { inline } from "./inline.js";
  * const result = optimized(myData); // Faster execution when optimization succeeds
  */
 export function compile(templateFunc) {
-	try {
-		// Apply template literal optimization - converts tagged templates to string concatenation
-		return inline(templateFunc);
-	} catch (_error) {
-		// Graceful fallback on any compilation error
-		return templateFunc;
-	}
+	// Apply template literal optimization - converts tagged templates to string concatenation
+	// inline() function provides comprehensive error handling and never throws
+	return inline(templateFunc);
 }
