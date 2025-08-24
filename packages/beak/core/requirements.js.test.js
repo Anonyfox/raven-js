@@ -8,7 +8,7 @@
 
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
-import { js, script, scriptAsync, scriptDefer } from "./index.js";
+import { js, script, scriptAsync, scriptDefer } from "./js/index.js";
 
 /**
  * @file Comprehensive integration tests for JavaScript template literals.

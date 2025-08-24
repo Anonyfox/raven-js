@@ -19,7 +19,7 @@
 
 import { ok, strictEqual } from "node:assert";
 import { describe, test } from "node:test";
-import { compile, escapeHtml, html, safeHtml } from "./index.js";
+import { compile, escapeHtml, html, safeHtml } from "./html/index.js";
 
 describe("Basic Template Functionality", () => {
 	test("empty template produces empty string", () => {

@@ -19,7 +19,7 @@
 
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
-import { css, style } from "./index.js";
+import { css, style } from "./css/index.js";
 
 describe("CSS Template Literal - Mandatory Integration Contract", () => {
 	describe("Template Literal Mechanics", () => {
