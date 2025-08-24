@@ -28,7 +28,7 @@ export function compile(templateFunc) {
 	try {
 		// Apply template literal optimization - converts tagged templates to string concatenation
 		return inline(templateFunc);
-	} catch (error) {
+	} catch (_error) {
 		// Graceful fallback on any compilation error
 		return templateFunc;
 	}

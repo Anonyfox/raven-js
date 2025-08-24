@@ -27,9 +27,6 @@
     },
     "./core/html2/compile": {
       "import": "./core/html2/compile.js"
-    },
-    "./core/html3": {
-      "import": "./core/html3/index.js"
     }
   },
   "scripts": {

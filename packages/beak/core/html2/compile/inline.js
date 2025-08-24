@@ -64,7 +64,7 @@ function extractTagName(source) {
  */
 function parseTemplateAST(code, tagName) {
 	const nodes = [];
-	const target = tagName + "`";
+	const target = `${tagName}\``;
 	let i = 0;
 
 	while (i < code.length) {
@@ -241,7 +241,7 @@ function parseTemplate(code, start, tagName) {
  * @param {string} tagName - Tag name for recursive parsing
  * @returns {{node: ASTNode, endPos: number}|null} Expression node and end position
  */
-function parseExpression(code, start, tagName) {
+function parseExpression(code, start, _tagName) {
 	let braceDepth = 1; // We start inside ${ already
 	let pos = start;
 	let content = "";
@@ -520,10 +520,11 @@ export function inline(templateFunction) {
 
 		// Look for template literal variable references ${variableName}
 		const templateVarPattern = /\$\{([a-zA-Z_$][a-zA-Z0-9_$]*)\}/g;
-		let match;
-		while ((match = templateVarPattern.exec(functionSource)) !== null) {
+		let match = templateVarPattern.exec(functionSource);
+		while (match !== null) {
 			const varName = match[1];
 			// If variable is not in parameters and not a known safe reference, skip optimization
+			match = templateVarPattern.exec(functionSource);
 			if (
 				!paramNames.includes(varName) &&
 				!["true", "false", "null", "undefined"].includes(varName)
@@ -544,6 +545,7 @@ export function inline(templateFunction) {
 
 		// SIMPLE FUNCTIONS ONLY: Direct eval for maximum performance
 		const functionName = templateFunction.name || "optimized";
+		// biome-ignore lint/security/noGlobalEval: Safe code generation from analyzed AST for raven-speed optimization
 		const optimizedFunction = eval(
 			`(function ${functionName}(${params}) { ${optimizedBody} })`,
 		);

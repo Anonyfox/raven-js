@@ -934,7 +934,7 @@ describe("inline - Edge Cases and Performance Characteristics", () => {
 		// Function without any tagged templates - should return unchanged
 		const noTemplatesFunction = (data) => {
 			// This function has no templates, so inline should return original
-			return "<div>" + data.value + "</div>";
+			return `<div>${data.value}</div>`;
 		};
 
 		const optimized = inline(noTemplatesFunction);
