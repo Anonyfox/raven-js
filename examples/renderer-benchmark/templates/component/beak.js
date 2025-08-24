@@ -3,6 +3,7 @@ import { html } from "@raven-js/beak";
 /**
  * Component benchmark template for Beak
  * Single product list component with loops, conditionals, and data processing
+ * @param {any} data
  */
 export const renderProductList = (data) => {
 	const { products, user, config } = data;
@@ -14,7 +15,7 @@ export const renderProductList = (data) => {
 
 			<div class="products">
 				${products.map(
-					(product) => html`
+					(/** @type {any} */ product) => html`
 					<div class="product-card ${product.featured ? "featured" : ""} ${!product.inStock ? "out-of-stock" : ""}">
 						<div class="product-image">
 							<img src="${product.imageUrl}" alt="${product.name}" />
@@ -27,7 +28,7 @@ export const renderProductList = (data) => {
 
 							<div class="product-categories">
 								${product.categories.map(
-									(category) => html`
+									(/** @type {string} */ category) => html`
 									<span class="category-tag">${category}</span>
 								`,
 								)}
