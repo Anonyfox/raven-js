@@ -32,7 +32,7 @@ import { normalizePath, validatePath } from "./path-security.js";
  * @param {string} filePath - File path to validate
  * @returns {string|null} Normalized path or null if invalid
  */
-function validateFilePath(filePath) {
+export function validateFilePath(filePath) {
 	if (typeof filePath !== "string" || filePath.length === 0) {
 		return null;
 	}
@@ -318,6 +318,10 @@ export function getMimeType(filePath) {
 		".js": "text/javascript",
 		".mjs": "text/javascript",
 		".jsx": "text/javascript", // React JSX files
+		".ts": "text/javascript", // TypeScript files
+		".tsx": "text/javascript", // TypeScript JSX files
+		".cjs": "text/javascript", // CommonJS files
+		".map": "application/json", // Source maps
 
 		// Web assets
 		".json": "application/json",
