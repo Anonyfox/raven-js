@@ -47,7 +47,7 @@ import { absoluteUrl } from "./utils.js";
  */
 export const general = ({ title, description, domain, path, suffix }) => {
 	const fullTitle = suffix ? `${title} | ${suffix}` : title;
-	const url = absoluteUrl(path, domain);
+	const url = domain && path ? absoluteUrl(path, domain) : path;
 
 	return html`
 		<title>${fullTitle}</title>

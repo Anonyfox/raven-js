@@ -47,8 +47,9 @@ import { absoluteUrl } from "./utils.js";
  * // <meta name="pinterest:source" property="pinterest:source" content="https://example.com/my-page" />
  */
 export const pinterest = ({ description, domain, imageUrl, sourceUrl }) => {
-	const image = imageUrl ? absoluteUrl(imageUrl, domain) : undefined;
-	const source = sourceUrl ? absoluteUrl(sourceUrl, domain) : undefined;
+	const image = imageUrl && domain ? absoluteUrl(imageUrl, domain) : imageUrl;
+	const source =
+		sourceUrl && domain ? absoluteUrl(sourceUrl, domain) : sourceUrl;
 
 	const imageTag = image
 		? html`<meta name="pinterest:media" property="pinterest:media" content="${image}" />`

@@ -22,8 +22,8 @@ import { twitter } from "./twitter.js";
  * @property {Object} twitter - Twitter configuration
  * @property {Object} openGraph - Open Graph configuration
  * @property {string} [image] - Default social image
- * @property {string} [title] - Social title
- * @property {string} [description] - Social description
+ * @property {string} title - Social title (required)
+ * @property {string} description - Social description (required)
  * @property {string} [domain] - Domain for URL construction
  * @property {string} [path] - Path for URL construction
  * @property {string} [imageUrl] - Image URL for social media

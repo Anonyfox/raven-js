@@ -57,7 +57,7 @@ export const twitter = ({
 	imageUrl,
 	cardType = "summary",
 }) => {
-	const image = imageUrl ? absoluteUrl(imageUrl, domain) : undefined;
+	const image = imageUrl && domain ? absoluteUrl(imageUrl, domain) : imageUrl;
 
 	const imageTags = !image
 		? ""

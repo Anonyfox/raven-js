@@ -17,8 +17,8 @@ import { absoluteUrl } from "./utils.js";
  * @typedef {Object} CanonicalConfig
  * @property {string} url - Canonical URL for the page
  * @property {boolean} [hreflang] - Whether to include hreflang attributes
- * @property {string} [domain] - Domain for URL construction
- * @property {string} [path] - Path for URL construction
+ * @property {string} domain - Domain for URL construction (required)
+ * @property {string} path - Path for URL construction (required)
  * @property {string} [media] - Media query for canonical link
  */
 

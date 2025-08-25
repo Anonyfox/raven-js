@@ -63,8 +63,8 @@ export const linkedin = ({
 	owner,
 	company,
 }) => {
-	const url = absoluteUrl(path, domain);
-	const image = imageUrl ? absoluteUrl(imageUrl, domain) : undefined;
+	const url = domain && path ? absoluteUrl(path, domain) : path;
+	const image = imageUrl && domain ? absoluteUrl(imageUrl, domain) : imageUrl;
 
 	const ownerTag = owner
 		? html`<meta name="linkedin:owner" property="linkedin:owner" content="${owner}" />`

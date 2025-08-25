@@ -60,8 +60,8 @@ export const openGraph = ({
 	imageUrl,
 	type = "website",
 }) => {
-	const url = absoluteUrl(path, domain);
-	const image = imageUrl ? absoluteUrl(imageUrl, domain) : undefined;
+	const url = domain && path ? absoluteUrl(path, domain) : path;
+	const image = imageUrl && domain ? absoluteUrl(imageUrl, domain) : imageUrl;
 
 	return html`
 		<meta name="og:type" property="og:type" content="${type}">

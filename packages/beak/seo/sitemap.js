@@ -87,7 +87,7 @@ export const sitemap = ({ domain, pages, lastmod, changefreq, priority }) => {
 	const defaultPriority = "0.8";
 
 	const entries = pages.map((/** @type {any} */ page) => {
-		const url = absoluteUrl(page, domain);
+		const url = domain ? absoluteUrl(page, domain) : page;
 		const pageLastmod = lastmod || defaultLastmod;
 		const pageChangefreq = changefreq || defaultChangefreq;
 		const pagePriority = priority || defaultPriority;
