@@ -4,11 +4,14 @@ import {
 	DevServer,
 	generateSSLCert,
 	Logger,
-} from "@ravenjs/wings/server";
+	Resolve,
+} from "@raven-js/wings/server";
 import { router } from "./src/index.js";
 
 const port = 3000;
 
+// Enable zero-build ESM development with automatic import maps
+router.use(new Resolve({ sourceFolder: "src" }));
 router.use(new Assets({ assetsDir: "public" }));
 
 /**

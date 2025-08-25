@@ -14,6 +14,8 @@
  * Perfect for rapid development workflows with npm package support.
  */
 
+import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { Middleware } from "../../../core/middleware.js";
 import { injectImportMap } from "./html-injector.js";
 import { generateImportMap } from "./import-map-generator.js";
@@ -24,6 +26,7 @@ import { serveModule } from "./module-server.js";
  *
  * @typedef {Object} ResolveConfig
  * @property {string} sourceFolder - Root folder to serve JS modules from
+ * @property {string} [projectRoot] - Project root directory (auto-detected)
  * @property {string} [importMapPath="/importmap.json"] - URL path for import map endpoint
  */
 
@@ -79,8 +82,16 @@ export class Resolve extends Middleware {
 			throw new Error("sourceFolder configuration is required");
 		}
 
+		// Resolve relative paths to absolute paths
+		const absoluteSourceFolder = resolve(config.sourceFolder);
+
+		// Find project root (where package.json is located)
+		const projectRoot = findProjectRoot(absoluteSourceFolder);
+
 		// Set defaults
 		const resolvedConfig = {
+			sourceFolder: absoluteSourceFolder,
+			projectRoot,
 			importMapPath: "/importmap.json",
 			...config,
 		};
@@ -102,25 +113,32 @@ export class Resolve extends Middleware {
 	 * 3. After-handler registration for HTML injection
 	 *
 	 * @param {import('../../../core/context.js').Context} ctx - Wings context
-	 * @private
 	 */
 	async #handleRequest(ctx) {
 		const pathname = ctx.path;
-		const { sourceFolder, importMapPath } = this.#config;
+		const { sourceFolder, projectRoot, importMapPath } = this.#config;
 
 		// Serve import map
 		if (pathname === importMapPath) {
-			const importMap = await generateImportMap(sourceFolder);
+			const importMap = await generateImportMap(projectRoot);
 			ctx.json(importMap);
+			ctx.responseEnded = true; // Stop further middleware processing
 			return;
 		}
 
-		// Serve JavaScript modules from source folder
+		// Serve JavaScript modules
 		if (pathname.endsWith(".js") || pathname.endsWith(".mjs")) {
 			// Remove leading slash to get relative path
 			const relativePath = pathname.slice(1);
-			const served = await serveModule(ctx, relativePath, sourceFolder);
+
+			// Determine base directory: node_modules from project root, everything else from source folder
+			const baseDirectory = relativePath.startsWith("node_modules/")
+				? projectRoot
+				: sourceFolder;
+
+			const served = await serveModule(ctx, relativePath, baseDirectory);
 			if (served) {
+				ctx.responseEnded = true; // Stop further middleware processing
 				return; // Module was served successfully
 			}
 			// If not served, continue to next middleware (likely 404)
@@ -137,4 +155,32 @@ export class Resolve extends Middleware {
 			}, "resolve-after"),
 		);
 	}
+}
+
+/**
+ * Finds the project root directory by traversing up from a given directory.
+ *
+ * Searches for package.json starting from the given path and moving up the
+ * directory tree until found, similar to Node.js module resolution.
+ *
+ * @param {string} startPath - Directory to start searching from
+ * @returns {string} Absolute path to project root, or startPath if no package.json found
+ */
+function findProjectRoot(startPath) {
+	let currentPath = startPath;
+
+	// Traverse up directory tree until root
+	while (currentPath !== dirname(currentPath)) {
+		const packageJsonPath = resolve(currentPath, "package.json");
+		if (existsSync(packageJsonPath)) {
+			return currentPath;
+		}
+
+		// Move up one directory level
+		currentPath = dirname(currentPath);
+	}
+
+	// If no package.json found, return the original path as fallback
+	// This ensures compatibility with test environments and edge cases
+	return startPath;
 }

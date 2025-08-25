@@ -142,6 +142,51 @@ describe("Import Map Generator", () => {
 			await cleanup();
 		});
 
+		it("should handle packages with subpath exports", async () => {
+			const testDir = await createTestStructure({
+				"package.json": {
+					dependencies: {
+						"@test/beak": "1.0.0",
+					},
+				},
+				"node_modules/@test/beak/package.json": {
+					name: "@test/beak",
+					exports: {
+						".": {
+							import: "./index.js",
+						},
+						"./html": {
+							import: "./html/index.js",
+						},
+						"./css": {
+							import: "./css/index.js",
+						},
+						"./js": {
+							import: "./js/index.js",
+						},
+					},
+				},
+				"node_modules/@test/beak/index.js": "export const beak = 'main';",
+				"node_modules/@test/beak/html/index.js":
+					"export const html = 'template';",
+				"node_modules/@test/beak/css/index.js": "export const css = 'styles';",
+				"node_modules/@test/beak/js/index.js": "export const js = 'scripts';",
+			});
+
+			const result = await generateImportMap(testDir);
+
+			const expected = createExpectedImportMap({
+				"@test/beak": "/node_modules/@test/beak/index.js",
+				"@test/beak/html": "/node_modules/@test/beak/html/index.js",
+				"@test/beak/css": "/node_modules/@test/beak/css/index.js",
+				"@test/beak/js": "/node_modules/@test/beak/js/index.js",
+			});
+
+			assert.deepStrictEqual(result, expected);
+
+			await cleanup();
+		});
+
 		it("should handle module field fallback", async () => {
 			const testDir = await createTestStructure({
 				"package.json": {
@@ -422,6 +467,35 @@ describe("Import Map Generator", () => {
 			const expected = createExpectedImportMap();
 
 			assert.deepStrictEqual(result, expected);
+		});
+
+		it("should find package.json by traversing up directory tree", async () => {
+			const testDir = await createTestStructure({
+				"package.json": {
+					dependencies: {
+						"test-pkg": "1.0.0",
+					},
+				},
+				"node_modules/test-pkg/package.json": {
+					name: "test-pkg",
+					main: "index.js",
+				},
+				"node_modules/test-pkg/index.js": "export default 'test';",
+				"src/client/app.js": "// client code",
+				"src/shared/lib.js": "// shared code",
+			});
+
+			// Call generateImportMap from a subdirectory (src/client)
+			const srcClientPath = join(testDir, "src", "client");
+			const result = await generateImportMap(srcClientPath);
+
+			const expected = createExpectedImportMap({
+				"test-pkg": "/node_modules/test-pkg/index.js",
+			});
+
+			assert.deepStrictEqual(result, expected);
+
+			await cleanup();
 		});
 	});
 });

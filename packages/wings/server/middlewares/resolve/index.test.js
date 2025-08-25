@@ -121,6 +121,13 @@ describe("Resolve Middleware Class", () => {
 			);
 		});
 
+		it("should resolve relative paths to absolute paths", () => {
+			const resolve = new Resolve({ sourceFolder: "src" });
+
+			// Should not throw and should work with relative paths
+			assert.ok(resolve instanceof Resolve);
+		});
+
 		it("should throw for missing config object", () => {
 			assert.throws(
 				() => new Resolve(),

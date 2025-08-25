@@ -65,6 +65,27 @@ export const Index = html`
         font-size: 2rem;
         margin-bottom: 1rem;
       }
+      .nav-links {
+        margin: 2rem 0;
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .nav-link {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .nav-link:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+      }
     </style>
   </head>
   <body>
@@ -72,6 +93,10 @@ export const Index = html`
       <div class="raven-logo">🦅</div>
       <h1>Hello World!</h1>
       <p class="subtitle">Welcome to your first RavenJS application</p>
+
+      <div class="nav-links">
+        <a href="/greet" class="nav-link">👋 Try Interactive Greeting</a>
+      </div>
 
       <div class="features">
         <div class="feature">

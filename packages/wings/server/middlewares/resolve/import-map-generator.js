@@ -47,14 +47,29 @@ export async function generateImportMap(rootPath) {
 		for (const packageName of Object.keys(dependencies)) {
 			const packagePath = await resolvePackage(packageName, rootPath);
 			if (packagePath) {
-				const entryPoint = await resolvePackageEntryPoint(packagePath);
-				if (entryPoint) {
-					// Convert file path to URL path for import map, removing ./ prefix
-					const cleanEntryPoint = entryPoint.startsWith("./")
-						? entryPoint.slice(2)
-						: entryPoint;
-					const urlPath = `/node_modules/${packageName}/${cleanEntryPoint}`;
-					importMap.imports[packageName] = urlPath;
+				const packageExports = await resolvePackageExports(packagePath);
+
+				// Process all exports (main + subpaths)
+				for (const [specifier, entryPoint] of Object.entries(packageExports)) {
+					if (entryPoint) {
+						// Convert file path to URL path for import map, removing ./ prefix
+						const cleanEntryPoint = entryPoint.startsWith("./")
+							? entryPoint.slice(2)
+							: entryPoint;
+						const urlPath = `/node_modules/${packageName}/${cleanEntryPoint}`;
+
+						// Generate import map entry
+						if (specifier === ".") {
+							// Main export: @package/name
+							importMap.imports[packageName] = urlPath;
+						} else {
+							// Subpath export: @package/name/subpath
+							const subpath = specifier.startsWith("./")
+								? specifier.slice(2)
+								: specifier;
+							importMap.imports[`${packageName}/${subpath}`] = urlPath;
+						}
+					}
 				}
 			}
 		}
@@ -67,12 +82,44 @@ export async function generateImportMap(rootPath) {
 }
 
 /**
- * Parse package.json from a directory (adapted from glean).
+ * Parse package.json by traversing up directory tree (adapted from glean).
+ *
+ * Searches for package.json starting from the given path and traversing up
+ * the directory tree until found, similar to Node.js module resolution.
+ *
+ * @param {string} startPath - Directory to start searching from
+ * @returns {Promise<any|null>} Parsed package.json or null if not found
+ */
+async function parsePackageJson(startPath) {
+	let currentPath = startPath;
+
+	// Traverse up directory tree until root
+	while (currentPath !== dirname(currentPath)) {
+		try {
+			const packageJsonPath = join(currentPath, "package.json");
+			const content = await readFile(packageJsonPath, "utf-8");
+			return JSON.parse(content);
+		} catch (_error) {
+			// Continue to parent directory if package.json not found or malformed
+		}
+
+		// Move up one directory level
+		currentPath = dirname(currentPath);
+	}
+
+	// No package.json found in entire tree
+	return null;
+}
+
+/**
+ * Parse package.json from a specific directory (no traversal).
+ *
+ * Used for parsing package.json from known package directories in node_modules.
  *
  * @param {string} packagePath - Absolute path to package directory
  * @returns {Promise<any|null>} Parsed package.json or null if not found
  */
-async function parsePackageJson(packagePath) {
+async function parsePackageJsonDirect(packagePath) {
 	try {
 		const packageJsonPath = join(packagePath, "package.json");
 		const content = await readFile(packageJsonPath, "utf-8");
@@ -116,74 +163,90 @@ async function resolvePackage(packageName, startPath) {
 }
 
 /**
- * Resolves package entry point using exports field or fallbacks.
+ * Extracts all exports from exports field.
  *
- * Adapted from glean's extractEntryPoints with simplified logic for
- * import map generation focusing on main entry point only.
- *
- * @param {string} packagePath - Absolute path to package directory
- * @returns {Promise<string|null>} Relative entry point path or null
- */
-async function resolvePackageEntryPoint(packagePath) {
-	const packageJson = await parsePackageJson(packagePath);
-	if (!packageJson) {
-		return null;
-	}
-
-	// Handle exports field (modern packages)
-	if (packageJson.exports) {
-		const entryPoint = extractMainFromExports(packageJson.exports);
-		if (entryPoint) {
-			return normalizePath(entryPoint);
-		}
-	}
-
-	// Fallback to module field (ESM)
-	if (packageJson.module) {
-		return normalizePath(packageJson.module);
-	}
-
-	// Fallback to main field
-	if (packageJson.main) {
-		return normalizePath(packageJson.main);
-	}
-
-	// Default fallback
-	return "index.js";
-}
-
-/**
- * Extracts main entry point from exports field.
- *
- * Simplified version of glean's exports parsing focusing on main "." export
- * and ESM conditional exports for import map generation.
+ * Processes both main "." export and subpath exports like "./html", "./css"
+ * for complete import map generation with subpath support.
  *
  * @param {any} exports - Exports field from package.json
- * @returns {string|null} Main entry point or null
+ * @returns {Record<string, string>} Map of export specifiers to entry points
  */
-function extractMainFromExports(exports) {
+function extractAllExports(exports) {
+	const exportMap = Object.create(null);
+
 	if (typeof exports === "string") {
 		// Sugar syntax: "exports": "./index.js"
-		return exports;
+		exportMap["."] = exports;
+		return exportMap;
 	}
 
 	if (typeof exports === "object" && exports !== null) {
 		// Use bracket notation to avoid linter issues with Object.create(null)
 		const exportsObj = /** @type {Record<string, any>} */ (exports);
 
-		// Check for main export "."
-		if (exportsObj["."] !== undefined) {
-			return resolveExportTarget(exportsObj["."]);
-		}
-
-		// Check for default export if no main
-		if (Object.keys(exportsObj).length === 1) {
-			const [, value] = Object.entries(exportsObj)[0];
-			return resolveExportTarget(value);
+		// Process all export specifiers
+		for (const [specifier, target] of Object.entries(exportsObj)) {
+			const resolvedTarget = resolveExportTarget(target);
+			if (resolvedTarget) {
+				exportMap[specifier] = resolvedTarget;
+			}
 		}
 	}
 
-	return null;
+	return exportMap;
+}
+
+/**
+ * Resolves all package export entries for import map generation.
+ *
+ * Extracts main export and all subpath exports from modern packages
+ * with exports field, with fallback to legacy fields for compatibility.
+ *
+ * @param {string} packagePath - Absolute path to package directory
+ * @returns {Promise<Record<string, string>>} Map of specifiers to entry points
+ */
+async function resolvePackageExports(packagePath) {
+	const packageJson = await parsePackageJsonDirect(packagePath);
+	if (!packageJson) {
+		return Object.create(null);
+	}
+
+	// Handle exports field (modern packages) - includes main + subpaths
+	if (packageJson.exports) {
+		const allExports = extractAllExports(packageJson.exports);
+		const normalizedExports = Object.create(null);
+
+		for (const [specifier, entryPoint] of Object.entries(allExports)) {
+			normalizedExports[specifier] = normalizePath(entryPoint);
+		}
+
+		// If main export is missing/null but we have a main field, use it as fallback
+		if (!normalizedExports["."] && packageJson.main) {
+			normalizedExports["."] = normalizePath(packageJson.main);
+		}
+
+		return normalizedExports;
+	}
+
+	// Fallback for legacy packages - only main export
+	const exports = Object.create(null);
+	let entryPoint = null;
+
+	// Fallback to module field (ESM)
+	if (packageJson.module) {
+		entryPoint = normalizePath(packageJson.module);
+	}
+	// Fallback to main field
+	else if (packageJson.main) {
+		entryPoint = normalizePath(packageJson.main);
+	}
+	// Default fallback
+	else {
+		entryPoint = "index.js";
+	}
+
+	exports["."] = entryPoint;
+	return exports;
 }
 
 /**

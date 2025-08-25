@@ -427,7 +427,7 @@ describe("Module Server", () => {
 		});
 
 		it("should handle very long valid paths", async () => {
-			const longPath = "a".repeat(50) + "/" + "b".repeat(50) + "/test.js";
+			const longPath = `${"a".repeat(50)}/${"b".repeat(50)}/test.js`;
 			const structure = {};
 			structure[longPath] = "export default 'long path';";
 

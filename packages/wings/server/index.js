@@ -19,4 +19,5 @@ export { Assets } from "./middlewares/assets/index.js";
 export { Compression } from "./middlewares/compression.js";
 export { CORS } from "./middlewares/cors.js";
 export { Logger } from "./middlewares/logger.js";
+export { Resolve } from "./middlewares/resolve/index.js";
 export * from "./server-options.js";

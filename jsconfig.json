@@ -8,10 +8,12 @@
   },
   "exclude": [
     "docs/**",
+    "examples/**",
     "node_modules/**",
     "**/dist/**",
     "**/_dist/**",
     "plugins/vscode/**",
-    "**/*.test.js"
+    "**/*.test.js",
+    "**/static/**"
   ]
 }
