@@ -114,18 +114,30 @@ const meta = openGraph({
 
 ## Architecture
 
-**Core engines:**
+**Import strategy optimized for tree-shaking and native ESM:**
 
-- `html/` - XSS protection, normalization, escaping
-- `css/` - Minification, object→kebab-case conversion
-- `md/` - GitHub Flavored Markdown parser (O(n) complexity)
-- `js/` - Script tag variations, value filtering
-- `sql/` - Injection prevention, character escaping
+```javascript
+// Root import: everything (convenience)
+import { html, css, md, sql } from "@raven-js/beak";
 
-**SEO generators:**
+// Sub-imports: minimal bundles (optimal)
+import { html } from "@raven-js/beak/html";
+import { openGraph } from "@raven-js/beak/seo";
+```
 
-- Complete meta tag coverage for OpenGraph, Twitter, LinkedIn, Pinterest, Discord
-- Structured data helpers, canonical URLs, robots.txt
+**Core modules:**
+
+| Module     | Purpose                          |
+| ---------- | -------------------------------- |
+| `html/`    | XSS protection, normalization    |
+| `css/`     | Minification, object→kebab-case  |
+| `md/`      | GitHub Flavored Markdown parser  |
+| `js/`      | Script tag variations, filtering |
+| `sql/`     | Injection prevention, escaping   |
+| `seo/`     | Meta generators, structured data |
+| `compile/` | Build-time optimization          |
+
+**Zero lookups for native browser imports.** Each sub-export resolves directly without filesystem traversal.
 
 ## The RavenJS Advantage
 
