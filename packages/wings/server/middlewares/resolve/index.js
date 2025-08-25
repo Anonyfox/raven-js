@@ -25,8 +25,8 @@ import { serveModule } from "./module-server.js";
  * Configuration options for the Resolve middleware.
  *
  * @typedef {Object} ResolveConfig
- * @property {string} sourceFolder - Root folder to serve JS modules from
- * @property {string} [projectRoot] - Project root directory (auto-detected)
+ * @property {string} sourceFolder - Directory to mount at "/" for serving JS modules (e.g., "src" serves src/client/app.js at /client/app.js)
+ * @property {string} [projectRoot] - Project root directory (auto-detected from sourceFolder)
  * @property {string} [importMapPath="/importmap.json"] - URL path for import map endpoint
  */
 
@@ -45,18 +45,24 @@ import { serveModule } from "./module-server.js";
  * - **Security First**: Path traversal and access validation
  * - **Wings Integration**: Proper middleware and after-handler patterns
  *
+ * ## Path Mounting
+ * The `sourceFolder` is mounted at the root "/" of your application:
+ * - `sourceFolder: "src"` serves `src/client/app.js` at `/client/app.js`
+ * - `sourceFolder: "dist"` serves `dist/utils/helpers.js` at `/utils/helpers.js`
+ * - Node.js packages are served separately at `/node_modules/` paths
+ *
  * ## Usage
  * ```javascript
  * import { Resolve } from '@wings/server/middlewares/resolve';
  *
- * // Basic usage with current directory
+ * // Mount src/ folder at root
  * router.use(new Resolve({
- *   sourceFolder: process.cwd()
+ *   sourceFolder: 'src'  // src/client/app.js → /client/app.js
  * }));
  *
- * // Custom configuration
+ * // Mount current directory
  * router.use(new Resolve({
- *   sourceFolder: './src',
+ *   sourceFolder: '.',   // ./utils/math.js → /utils/math.js
  *   importMapPath: '/my-imports.json'
  * }));
  * ```
@@ -73,8 +79,18 @@ export class Resolve extends Middleware {
 	/**
 	 * Creates a new Resolve middleware instance.
 	 *
+	 * The constructor automatically resolves relative paths and determines the project root
+	 * for package.json resolution. The sourceFolder is mounted at "/" in your application,
+	 * while node_modules paths are served separately.
+	 *
 	 * @param {ResolveConfig} config - Configuration options
 	 * @throws {Error} When sourceFolder is missing or invalid
+	 *
+	 * @example
+	 * // Mount src/ directory at root
+	 * new Resolve({ sourceFolder: "src" })
+	 * // src/client/app.js → http://localhost:3000/client/app.js
+	 * // src/utils/math.js → http://localhost:3000/utils/math.js
 	 */
 	constructor(config) {
 		// Validate configuration
@@ -108,8 +124,10 @@ export class Resolve extends Middleware {
 	 * Main request handler for the resolve middleware.
 	 *
 	 * Processes requests in order of specificity:
-	 * 1. Import map serving at configured path
-	 * 2. JavaScript module serving (.js/.mjs files)
+	 * 1. Import map serving at configured path (e.g., /importmap.json)
+	 * 2. JavaScript module serving (.js/.mjs files):
+	 *    - /node_modules/* paths → served from projectRoot
+	 *    - All other JS paths → served from sourceFolder (mounted at /)
 	 * 3. After-handler registration for HTML injection
 	 *
 	 * @param {import('../../../core/context.js').Context} ctx - Wings context

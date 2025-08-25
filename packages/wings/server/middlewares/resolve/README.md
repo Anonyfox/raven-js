@@ -41,6 +41,78 @@ router.use(
 );
 ```
 
+## Path Mounting
+
+The `sourceFolder` configuration determines how your application files are mounted and served:
+
+### Source Folder Mounting
+
+The specified `sourceFolder` is mounted at the **root "/"** of your application:
+
+```javascript
+// Configuration
+router.use(new Resolve({
+  sourceFolder: "src"
+}));
+
+// File mappings
+src/client/app.js       →  http://localhost:3000/client/app.js
+src/shared/utils.js     →  http://localhost:3000/shared/utils.js
+src/components/Button.js →  http://localhost:3000/components/Button.js
+```
+
+### Node.js Package Mounting
+
+Node.js packages are automatically served at `/node_modules/` paths:
+
+```javascript
+// Import map generated
+{
+  "imports": {
+    "react": "/node_modules/react/index.js",
+    "@my/package/utils": "/node_modules/@my/package/dist/utils.js"
+  }
+}
+
+// Available at
+http://localhost:3000/node_modules/react/index.js
+http://localhost:3000/node_modules/@my/package/dist/utils.js
+```
+
+### Complete Example
+
+Project structure:
+
+```
+my-project/
+├── package.json
+├── node_modules/
+│   └── lodash/
+├── src/
+│   ├── client/
+│   │   └── app.js
+│   └── shared/
+│       └── lib.js
+└── boot.js
+```
+
+Configuration:
+
+```javascript
+router.use(
+  new Resolve({
+    sourceFolder: "src", // Mount src/ at /
+  })
+);
+```
+
+URLs available:
+
+- `http://localhost:3000/client/app.js` (from `src/client/app.js`)
+- `http://localhost:3000/shared/lib.js` (from `src/shared/lib.js`)
+- `http://localhost:3000/node_modules/lodash/index.js` (from dependencies)
+- `http://localhost:3000/importmap.json` (generated import map)
+
 ## How It Works
 
 ### 1. **Import Map Generation**
