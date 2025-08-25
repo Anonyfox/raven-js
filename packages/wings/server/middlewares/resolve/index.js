@@ -85,10 +85,10 @@ export class Resolve extends Middleware {
 		// Resolve relative paths to absolute paths
 		const absoluteSourceFolder = resolve(config.sourceFolder);
 
-		// Find project root (where package.json is located)
+		// Find project root (where package.json is located) - do this once in constructor
 		const projectRoot = findProjectRoot(absoluteSourceFolder);
 
-		// Set defaults
+		// Set defaults with determined paths
 		const resolvedConfig = {
 			sourceFolder: absoluteSourceFolder,
 			projectRoot,

@@ -24,16 +24,16 @@ import { dirname, join } from "node:path";
  * Implements Node.js resolution algorithm to find packages in node_modules
  * hierarchy and extract their entry points using exports field parsing.
  *
- * @param {string} rootPath - Root directory to start resolution from
+ * @param {string} cwd - Project root directory (where package.json is located)
  * @returns {Promise<object>} Import map object with bare specifier mappings
  */
-export async function generateImportMap(rootPath) {
+export async function generateImportMap(cwd) {
 	// V8 optimization: Object.create(null) for cleaner object shapes
 	const importMap = Object.create(null);
 	importMap.imports = Object.create(null);
 
 	try {
-		const packageJson = await parsePackageJson(rootPath);
+		const packageJson = await parsePackageJsonDirect(cwd);
 		if (!packageJson) {
 			return importMap;
 		}
@@ -45,7 +45,7 @@ export async function generateImportMap(rootPath) {
 
 		// Resolve each dependency through Node.js algorithm
 		for (const packageName of Object.keys(dependencies)) {
-			const packagePath = await resolvePackage(packageName, rootPath);
+			const packagePath = await resolvePackage(packageName, cwd);
 			if (packagePath) {
 				const packageExports = await resolvePackageExports(packagePath);
 
@@ -82,41 +82,11 @@ export async function generateImportMap(rootPath) {
 }
 
 /**
- * Parse package.json by traversing up directory tree (adapted from glean).
+ * Parse package.json from a specific directory.
  *
- * Searches for package.json starting from the given path and traversing up
- * the directory tree until found, similar to Node.js module resolution.
+ * Used for parsing package.json from known directories (project root or node_modules packages).
  *
- * @param {string} startPath - Directory to start searching from
- * @returns {Promise<any|null>} Parsed package.json or null if not found
- */
-async function parsePackageJson(startPath) {
-	let currentPath = startPath;
-
-	// Traverse up directory tree until root
-	while (currentPath !== dirname(currentPath)) {
-		try {
-			const packageJsonPath = join(currentPath, "package.json");
-			const content = await readFile(packageJsonPath, "utf-8");
-			return JSON.parse(content);
-		} catch (_error) {
-			// Continue to parent directory if package.json not found or malformed
-		}
-
-		// Move up one directory level
-		currentPath = dirname(currentPath);
-	}
-
-	// No package.json found in entire tree
-	return null;
-}
-
-/**
- * Parse package.json from a specific directory (no traversal).
- *
- * Used for parsing package.json from known package directories in node_modules.
- *
- * @param {string} packagePath - Absolute path to package directory
+ * @param {string} packagePath - Absolute path to directory containing package.json
  * @returns {Promise<any|null>} Parsed package.json or null if not found
  */
 async function parsePackageJsonDirect(packagePath) {

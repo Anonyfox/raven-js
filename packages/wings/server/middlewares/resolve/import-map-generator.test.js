@@ -469,9 +469,10 @@ describe("Import Map Generator", () => {
 			assert.deepStrictEqual(result, expected);
 		});
 
-		it("should find package.json by traversing up directory tree", async () => {
+		it("should generate import map when called with project root", async () => {
 			const testDir = await createTestStructure({
 				"package.json": {
+					name: "test-project",
 					dependencies: {
 						"test-pkg": "1.0.0",
 					},
@@ -485,9 +486,8 @@ describe("Import Map Generator", () => {
 				"src/shared/lib.js": "// shared code",
 			});
 
-			// Call generateImportMap from a subdirectory (src/client)
-			const srcClientPath = join(testDir, "src", "client");
-			const result = await generateImportMap(srcClientPath);
+			// Call generateImportMap with the project root (as the middleware constructor would)
+			const result = await generateImportMap(testDir);
 
 			const expected = createExpectedImportMap({
 				"test-pkg": "/node_modules/test-pkg/index.js",
