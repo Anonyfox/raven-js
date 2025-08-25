@@ -9,7 +9,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { css, html } from "../../../beak/core/index.js";
+import { css, html } from "../../../beak/index.js";
 
 /**
  *

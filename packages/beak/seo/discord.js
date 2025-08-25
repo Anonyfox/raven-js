@@ -6,7 +6,7 @@
  * @see {@link https://anonyfox.com}
  */
 
-import { html } from "../core/index.js";
+import { html } from "../html/index.js";
 import { absoluteUrl } from "./utils.js";
 
 /**

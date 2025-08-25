@@ -44,4 +44,5 @@ export {
 	extractStructuredContent as mdExtractStructuredContent,
 	parseMarkdownToAST,
 } from "./md/md-structures.js";
+export * from "./seo/index.js";
 export { sql } from "./sql/index.js";

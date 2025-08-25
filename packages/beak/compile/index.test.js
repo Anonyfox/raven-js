@@ -15,7 +15,7 @@
 
 import { strict as assert } from "node:assert";
 import { describe, test } from "node:test";
-import { html } from "../../index.js";
+import { html } from "../index.js";
 import { compile } from "./index.js";
 
 describe("compile - Core Optimization Engine", () => {

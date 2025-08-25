@@ -15,7 +15,7 @@
 
 import { strict as assert } from "node:assert";
 import { describe, test } from "node:test";
-import { html as html2 } from "../../index.js";
+import { html as html2 } from "../index.js";
 import { inline } from "./inline.js";
 
 // Fallback detection infrastructure for tracking defensive paths

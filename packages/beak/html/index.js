@@ -13,7 +13,7 @@
  * Uses += concatenation, monomorphic value processing, character-level escaping.
  */
 
-export { compile } from "./compile/index.js";
+export { compile } from "../compile/index.js";
 
 /**
  * Character-level HTML escaping with XSS protection.

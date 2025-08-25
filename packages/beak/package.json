@@ -6,24 +6,50 @@
   "files": [
     "*.js",
     "*.d.ts",
-    "core/**/*.js",
+    "html/**/*.js",
+    "css/**/*.js",
+    "js/**/*.js",
+    "md/**/*.js",
+    "sql/**/*.js",
     "seo/**/*.js",
     "bootstrap/**/*.js",
+    "compile/**/*.js",
+    "!**/*.test.js",
     "types.*.d.ts",
     "LICENSE",
     "README.md"
   ],
   "exports": {
     ".": {
-      "import": "./core/index.js",
-      "types": "./types.core.d.ts"
+      "import": "./index.js",
+      "types": "./types.d.ts"
+    },
+    "./css": {
+      "import": "./css/index.js",
+      "types": "./types.css.d.ts"
+    },
+    "./html": {
+      "import": "./html/index.js",
+      "types": "./types.html.d.ts"
+    },
+    "./js": {
+      "import": "./js/index.js",
+      "types": "./types.js.d.ts"
+    },
+    "./md": {
+      "import": "./md/index.js",
+      "types": "./types.md.d.ts"
+    },
+    "./sql": {
+      "import": "./sql/index.js",
+      "types": "./types.sql.d.ts"
     },
     "./seo": {
       "import": "./seo/index.js",
       "types": "./types.seo.d.ts"
     },
-    "./core/html/compile": {
-      "import": "./core/html/compile/index.js"
+    "./compile": {
+      "import": "./compile/index.js"
     }
   },
   "scripts": {
@@ -33,7 +59,7 @@
     "test": "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
     "test:code": "node --no-warnings --test --test-reporter=dot",
     "test:coverage": "node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
-    "test:style": "npx biome lint --error-on-warnings ./core ./seo",
+    "test:style": "npx biome lint --error-on-warnings index.js ./seo ./html ./css ./js ./md ./sql ./compile",
     "test:types": "tsc --noEmit --project jsconfig.json"
   },
   "keywords": [
