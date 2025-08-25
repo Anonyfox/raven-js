@@ -1,4 +1,4 @@
-import { html } from "@raven-js/beak";
+import { html } from "@raven-js/beak/html";
 
 /**
  * Baseline static string template for Beak

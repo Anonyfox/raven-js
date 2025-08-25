@@ -1,9 +1,9 @@
 {
   "beak": {
-    "bundle": 16093,
-    "minified": 14133,
-    "gzipped": 4642,
-    "minGzipped": 4305
+    "bundle": 16098,
+    "minified": 14138,
+    "gzipped": 4645,
+    "minGzipped": 4309
   },
   "dot": {
     "bundle": 19015,

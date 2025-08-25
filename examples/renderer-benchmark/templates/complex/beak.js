@@ -1,4 +1,4 @@
-import { html } from "@raven-js/beak";
+import { html } from "@raven-js/beak/html";
 
 // Component-like functions for better organization
 /**

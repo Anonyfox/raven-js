@@ -1,4 +1,4 @@
-import { html } from "@raven-js/beak";
+import { html } from "@raven-js/beak/html";
 
 /**
  * Component benchmark template for Beak
