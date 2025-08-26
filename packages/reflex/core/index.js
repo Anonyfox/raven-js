@@ -30,6 +30,28 @@ let listener = null;
 let isBatching = false;
 
 /**
+ * Tracks the current batch depth for nested batches.
+ *
+ * @type {number}
+ */
+let batchDepth = 0;
+
+/**
+ * Set of signals that need to flush notifications after batch completes.
+ * Used to ensure effects run after batch() finishes.
+ *
+ * @type {Set<function>}
+ */
+const batchedSignals = new Set();
+
+/**
+ * Flag to prevent re-entrant flushing during batch flush phase.
+ *
+ * @type {boolean}
+ */
+const isFlushing = false;
+
+/**
  * Global context stack for tracking reactive operations and their promises.
  * Used by effects to track async operations and by universal module for SSR.
  *
@@ -97,6 +119,26 @@ export function signal(initial) {
 	const subs = new Set();
 
 	/**
+	 * Notifies all subscribers with current value.
+	 * @returns {Promise<void[]>} Promise that resolves when all subscribers finish
+	 */
+	const notifySubscribers = async () => {
+		const updates = [];
+		for (const sub of subs) {
+			try {
+				const result = sub(value);
+				if (result && typeof result.then === "function") {
+					updates.push(result);
+				}
+			} catch (error) {
+				// Continue notifying other subscribers even if one fails
+				console.error("Signal subscriber error:", error);
+			}
+		}
+		return Promise.all(updates);
+	};
+
+	/**
 	 * Reads the current signal value and tracks dependency.
 	 * @returns {T} The current value
 	 */
@@ -121,27 +163,25 @@ export function signal(initial) {
 
 		value = newValue;
 
-		// If batching, don't notify subscribers immediately
-		if (isBatching) {
+		// If batching, collect signal for later flush instead of immediate notification
+		// Don't add to batched signals if we're currently flushing (prevents re-entrant flushing)
+		if (isBatching && !isFlushing) {
+			batchedSignals.add(read);
 			return Promise.resolve([]);
 		}
 
-		// Notify all subscribers and collect any returned promises
-		const updates = [];
-		for (const sub of subs) {
-			try {
-				const result = sub(value);
-				if (result && typeof result.then === "function") {
-					updates.push(result);
-				}
-			} catch (error) {
-				// Continue notifying other subscribers even if one fails
-				console.error("Signal subscriber error:", error);
-			}
-		}
+		return notifySubscribers();
+	};
 
-		// Wait for all async subscribers to complete
-		return Promise.all(updates);
+	// Expose methods for batch flushing
+	read._getSubscribers = () => subs;
+
+	/**
+	 * Removes a subscriber from this signal.
+	 * @param {function} subscriber - The subscriber to remove
+	 */
+	read._unsubscribe = (subscriber) => {
+		subs.delete(subscriber);
 	};
 
 	/**
@@ -294,8 +334,23 @@ export function effect(fn) {
 		};
 	};
 
+	let runCount = 0; // Track consecutive runs to detect infinite loops
+	const MAX_RUNS = 100; // Reasonable limit for recursive effects
+
 	const execute = () => {
 		if (isDisposed) return;
+
+		// Infinite loop protection
+		runCount++;
+		if (runCount > MAX_RUNS) {
+			console.error("Effect infinite loop detected - stopping execution");
+			return;
+		}
+
+		// Reset counter after a microtask (allows legitimate recursion)
+		queueMicrotask(() => {
+			runCount = Math.max(0, runCount - 1);
+		});
 
 		const prev = listener;
 		listener = execute;
@@ -467,6 +522,14 @@ export function computed(fn) {
 	 */
 	read.peek = () => value;
 
+	/**
+	 * Removes a subscriber from this computed.
+	 * @param {function} subscriber - The subscriber to remove
+	 */
+	read._unsubscribe = (subscriber) => {
+		subs.delete(subscriber);
+	};
+
 	return read;
 }
 
@@ -505,19 +568,47 @@ export function computed(fn) {
  * ```
  */
 export function batch(fn) {
-	// If already batching, just run the function
-	if (isBatching) {
-		return fn();
-	}
+	// Track batch depth for nested batches
+	batchDepth++;
 
-	// Start batching
-	const prevBatching = isBatching;
-	isBatching = true;
+	// Set batching flag if this is the first batch
+	if (batchDepth === 1) {
+		isBatching = true;
+	}
 
 	try {
 		fn();
 	} finally {
-		isBatching = prevBatching;
+		batchDepth--;
+
+		// Only flush when exiting the outermost batch
+		if (batchDepth === 0) {
+			isBatching = false;
+
+			// Flush all batched signals after batch completes
+			if (batchedSignals.size > 0) {
+				const signalsToFlush = Array.from(batchedSignals);
+				batchedSignals.clear();
+
+				// Collect all unique effects to run exactly once
+				const uniqueEffects = new Set();
+				for (const signal of signalsToFlush) {
+					// Access signal's subscribers directly and add to set for deduplication
+					signal
+						._getSubscribers()
+						.forEach((effect) => uniqueEffects.add(effect));
+				}
+
+				// Run each effect exactly once
+				for (const effect of uniqueEffects) {
+					try {
+						effect();
+					} catch (error) {
+						console.error("Batch effect execution error:", error);
+					}
+				}
+			}
+		}
 	}
 }
 

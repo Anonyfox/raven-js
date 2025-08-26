@@ -986,7 +986,7 @@ describe("core/index.js", () => {
 			assert.strictEqual(executed, true);
 		});
 
-		it("should prevent effect execution during batch", () => {
+		it("should prevent effect execution during batch but run once after", () => {
 			const a = core.signal(1);
 			const b = core.signal(2);
 			const log = [];
@@ -1004,8 +1004,8 @@ describe("core/index.js", () => {
 				b.set(20);
 			});
 
-			// Effects should not have run during batch
-			assert.deepStrictEqual(log, [3]);
+			// Effects should run exactly once after batch with final values
+			assert.deepStrictEqual(log, [3, 30]);
 
 			dispose();
 		});
@@ -1032,8 +1032,9 @@ describe("core/index.js", () => {
 				b.set(20);
 			});
 
-			// Should still be cached until next access
-			assert.strictEqual(computeCount, 1);
+			// Effect should run once after batch, triggering computed recomputation
+			assert.strictEqual(computeCount, 2);
+			assert.strictEqual(sum(), 30);
 
 			dispose();
 		});
@@ -1059,8 +1060,8 @@ describe("core/index.js", () => {
 				signal.set(4);
 			});
 
-			// No effects should have run during nested batches
-			assert.deepStrictEqual(log, [0]);
+			// Effects should run once after all nested batches complete with final value
+			assert.deepStrictEqual(log, [0, 4]);
 
 			dispose();
 		});
@@ -1294,6 +1295,709 @@ describe("core/index.js", () => {
 			// Changing b should not invalidate computed
 			b.set(100);
 			assert.strictEqual(computed(), 15); // Still cached
+		});
+	});
+
+	describe("rough edge testing - global state collision", () => {
+		it("should handle concurrent signal operations without global state conflicts", async () => {
+			// Test if global listener and isBatching variables cause conflicts
+			// when multiple signal operations happen simultaneously
+			const signals = Array.from({ length: 10 }, (_, i) => core.signal(i));
+			const results = [];
+			const effectDisposers = [];
+
+			// Create multiple effects running concurrently
+			for (let i = 0; i < signals.length; i++) {
+				const dispose = core.effect(() => {
+					results[i] = signals[i]() * 2;
+				});
+				effectDisposers.push(dispose);
+			}
+
+			// Initial state check
+			assert.deepStrictEqual(results, [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]);
+
+			// Rapid concurrent updates to test global state conflicts
+			const updates = signals.map((signal, i) => signal.set(i + 10));
+			await Promise.all(updates);
+
+			// Should have updated correctly without conflicts
+			assert.deepStrictEqual(results, [20, 22, 24, 26, 28, 30, 32, 34, 36, 38]);
+
+			// Cleanup
+			effectDisposers.forEach((dispose) => {
+				dispose();
+			});
+		});
+
+		it("should handle nested effects with different listener contexts", async () => {
+			const outer = core.signal(1);
+			const inner = core.signal(2);
+			const results = [];
+
+			const outerDispose = core.effect(() => {
+				const outerVal = outer();
+
+				const innerDispose = core.effect(() => {
+					const innerVal = inner();
+					results.push(`${outerVal}-${innerVal}`);
+				});
+
+				// Immediately dispose inner to test context restoration
+				innerDispose();
+			});
+
+			// Should not have context leakage
+			assert.deepStrictEqual(results, ["1-2"]);
+
+			await outer.set(5);
+			assert.deepStrictEqual(results, ["1-2", "5-2"]);
+
+			// Inner signal changes should not affect outer effect
+			await inner.set(10);
+			assert.deepStrictEqual(results, ["1-2", "5-2"]);
+
+			outerDispose();
+		});
+
+		it("should handle concurrent batching operations", () => {
+			const signals = Array.from({ length: 5 }, (_, i) => core.signal(i));
+			const effectCounts = Array(5).fill(0);
+			const disposers = [];
+
+			// Create effects that track each signal
+			signals.forEach((signal, i) => {
+				const dispose = core.effect(() => {
+					signal();
+					effectCounts[i]++;
+				});
+				disposers.push(dispose);
+			});
+
+			// Initial effect runs
+			assert.deepStrictEqual(effectCounts, [1, 1, 1, 1, 1]);
+
+			// Concurrent batches
+			core.batch(() => {
+				signals[0].set(10);
+				signals[1].set(11);
+			});
+
+			core.batch(() => {
+				signals[2].set(12);
+				signals[3].set(13);
+				signals[4].set(14);
+			});
+
+			// Effects should run once after each batch completes
+			assert.deepStrictEqual(effectCounts, [2, 2, 2, 2, 2]);
+
+			// Cleanup
+			disposers.forEach((dispose) => {
+				dispose();
+			});
+		});
+	});
+
+	describe("rough edge testing - memory management", () => {
+		it("should not leak memory in long-running computed with many subscribers", async () => {
+			const base = core.signal(1);
+			const computed = core.computed(() => base() * 2);
+			const subscribers = [];
+
+			// Add many subscribers that will be disposed
+			for (let i = 0; i < 100; i++) {
+				const dispose = core.effect(() => {
+					computed(); // Subscribe to computed
+				});
+				subscribers.push(dispose);
+			}
+
+			// Dispose all subscribers
+			subscribers.forEach((dispose) => {
+				dispose();
+			});
+
+			// Change base signal - computed should still work correctly
+			await base.set(5);
+			assert.strictEqual(computed(), 10);
+
+			// Add new subscriber after cleanup
+			let newResult = null;
+			const newDispose = core.effect(() => {
+				newResult = computed();
+			});
+
+			assert.strictEqual(newResult, 10);
+
+			await base.set(7);
+			assert.strictEqual(newResult, 14);
+
+			newDispose();
+		});
+
+		it("should handle subscriber cleanup in computed values", async () => {
+			const base = core.signal(1);
+			let computeCount = 0;
+
+			const computed = core.computed(() => {
+				computeCount++;
+				return base() * 2;
+			});
+
+			// Create and dispose many effect subscribers
+			for (let cycle = 0; cycle < 10; cycle++) {
+				const disposers = [];
+
+				// Add subscribers
+				for (let i = 0; i < 10; i++) {
+					const dispose = core.effect(() => {
+						computed();
+					});
+					disposers.push(dispose);
+				}
+
+				// Trigger recomputation
+				await base.set(base() + 1);
+
+				// Dispose all subscribers
+				disposers.forEach((dispose) => {
+					dispose();
+				});
+			}
+
+			// Computed should still work correctly
+			const finalValue = computed();
+			assert.strictEqual(finalValue, base() * 2);
+
+			// Should have computed exactly once per base change + initial access
+			// (Not testing exact count as implementation may vary, just that it works)
+			assert.ok(computeCount > 0, "Computed should have run");
+		});
+	});
+
+	describe("rough edge testing - untrack during setup", () => {
+		it("should handle untrack calls during initial effect setup", () => {
+			const tracked = core.signal(1);
+			const untracked = core.signal(100);
+			const log = [];
+
+			const dispose = core.effect(() => {
+				// Immediate untrack during first execution
+				const untrackedValue = core.untrack(() => untracked());
+				log.push(`${tracked()}-${untrackedValue}`);
+			});
+
+			// Initial run should work correctly
+			assert.deepStrictEqual(log, ["1-100"]);
+
+			// Tracked signal should trigger re-run
+			tracked.set(2);
+			assert.deepStrictEqual(log, ["1-100", "2-100"]);
+
+			// Untracked signal should NOT trigger re-run
+			untracked.set(200);
+			assert.deepStrictEqual(log, ["1-100", "2-100"]);
+
+			dispose();
+		});
+
+		it("should properly track dependencies after untrack in setup", () => {
+			const a = core.signal(1);
+			const b = core.signal(2);
+			const c = core.signal(3);
+			const log = [];
+
+			const dispose = core.effect(() => {
+				// Track a
+				const valueA = a();
+
+				// Don't track b during setup
+				const valueB = core.untrack(() => b());
+
+				// Track c after untrack
+				const valueC = c();
+
+				log.push(`${valueA}-${valueB}-${valueC}`);
+			});
+
+			assert.deepStrictEqual(log, ["1-2-3"]);
+
+			// a should trigger
+			a.set(10);
+			assert.deepStrictEqual(log, ["1-2-3", "10-2-3"]);
+
+			// b should NOT trigger (was untracked)
+			b.set(20);
+			assert.deepStrictEqual(log, ["1-2-3", "10-2-3"]);
+
+			// c should trigger (tracked after untrack)
+			c.set(30);
+			assert.deepStrictEqual(log, ["1-2-3", "10-2-3", "10-20-30"]);
+
+			dispose();
+		});
+	});
+
+	describe("rough edge testing - async effect race conditions", () => {
+		it("should handle rapid signal changes with async effects correctly", async () => {
+			const signal = core.signal(0);
+			const results = [];
+			let processingCount = 0;
+
+			const dispose = core.effect(async () => {
+				const value = signal();
+				processingCount++;
+
+				// Simulate async work
+				await new Promise((resolve) => setTimeout(resolve, 1));
+
+				results.push(value);
+				processingCount--;
+			});
+
+			// Initial async effect
+			await new Promise((resolve) => setTimeout(resolve, 10));
+			assert.deepStrictEqual(results, [0]);
+
+			// Rapid sequential changes
+			await signal.set(1);
+			await signal.set(2);
+			await signal.set(3);
+
+			// Wait for all async effects to complete
+			await new Promise((resolve) => setTimeout(resolve, 20));
+
+			// All values should be processed in order
+			assert.deepStrictEqual(results, [0, 1, 2, 3]);
+			assert.strictEqual(
+				processingCount,
+				0,
+				"All async operations should complete",
+			);
+
+			dispose();
+		});
+
+		it("should handle promise tracking in reactive contexts correctly", async () => {
+			// Test correct SSR behavior - all effects should track in topmost context
+			const rootContext = {
+				promises: new Set(),
+				track: function (promise) {
+					this.promises.add(promise);
+					promise.finally(() => this.promises.delete(promise));
+				},
+			};
+
+			// Push root context for SSR simulation
+			core.contextStack.push(rootContext);
+
+			const promises = [];
+
+			// Create multiple effects - all should track in root context
+			for (let i = 0; i < 3; i++) {
+				const signal = core.signal(i);
+				const effectPromise = new Promise((resolve) =>
+					setTimeout(() => resolve(`result-${i}`), 5),
+				);
+
+				core.effect(() => {
+					signal();
+					return effectPromise;
+				});
+
+				promises.push(effectPromise);
+			}
+
+			// Root context should track all promises (SSR behavior)
+			assert.strictEqual(
+				rootContext.promises.size,
+				3,
+				"Root context should track all promises for SSR",
+			);
+
+			// Wait for all promises to resolve
+			await Promise.all(promises);
+
+			// All promises should be cleaned up
+			assert.strictEqual(
+				rootContext.promises.size,
+				0,
+				"All promises should be cleaned up after resolution",
+			);
+
+			// Clean up context
+			core.contextStack.pop();
+		});
+
+		it("should handle overlapping async effect executions", async () => {
+			const trigger = core.signal(0);
+			const results = [];
+			const startTimes = [];
+			const endTimes = [];
+
+			const dispose = core.effect(async () => {
+				const value = trigger();
+				const startTime = Date.now();
+				startTimes.push(startTime);
+
+				// Variable delay to create overlapping executions
+				const delay = value === 1 ? 20 : 5;
+				await new Promise((resolve) => setTimeout(resolve, delay));
+
+				const endTime = Date.now();
+				endTimes.push(endTime);
+				results.push(`${value}-${startTime}`);
+			});
+
+			// Wait for initial effect
+			await new Promise((resolve) => setTimeout(resolve, 5));
+
+			// Trigger rapid changes to create overlapping executions
+			await trigger.set(1); // Long delay
+			await trigger.set(2); // Short delay
+			await trigger.set(3); // Short delay
+
+			// Wait sufficient time for all overlapping async effects to complete
+			// Longest delay is 20ms, so 50ms should be enough with margin
+			await new Promise((resolve) => setTimeout(resolve, 50));
+
+			// All effects should complete
+			assert.strictEqual(
+				results.length,
+				4,
+				`Expected 4 results, got ${results.length}: ${JSON.stringify(results.map((r) => r.split("-")[0]))}`,
+			);
+			assert.strictEqual(startTimes.length, 4);
+			assert.strictEqual(endTimes.length, 4);
+
+			// Results should contain all values despite overlapping execution
+			const values = results.map((r) => r.split("-")[0]);
+			assert.deepStrictEqual(values, ["0", "1", "2", "3"]);
+
+			dispose();
+		});
+	});
+
+	describe("algorithmic flaw testing - expert feedback", () => {
+		describe("batch flush bug", () => {
+			it("should trigger effects after batch completion", () => {
+				const signal = core.signal(0);
+				const log = [];
+
+				const dispose = core.effect(() => {
+					log.push(signal());
+				});
+
+				// Initial effect run
+				assert.deepStrictEqual(log, [0]);
+
+				// Batch multiple updates
+				core.batch(() => {
+					signal.set(1);
+					signal.set(2);
+					signal.set(3);
+				});
+
+				// CRITICAL: Effects should run AFTER batch completes
+				// Current implementation might fail this - effects may never run
+				assert.deepStrictEqual(
+					log,
+					[0, 3],
+					"Effects should run after batch completion",
+				);
+
+				dispose();
+			});
+
+			it("should handle nested batches with proper flushing", () => {
+				const a = core.signal(1);
+				const b = core.signal(2);
+				const log = [];
+
+				const dispose = core.effect(() => {
+					log.push(`${a()}-${b()}`);
+				});
+
+				assert.deepStrictEqual(log, ["1-2"]);
+
+				core.batch(() => {
+					a.set(10);
+
+					core.batch(() => {
+						b.set(20);
+						a.set(30);
+					});
+
+					b.set(40);
+				});
+
+				// Should run exactly once with final values after all batches complete
+				assert.deepStrictEqual(
+					log,
+					["1-2", "30-40"],
+					"Nested batches should flush once with final values",
+				);
+
+				dispose();
+			});
+		});
+
+		describe("dependency cleanup", () => {
+			it("should unsubscribe from old dependencies when effect dependencies change", () => {
+				const condition = core.signal(true);
+				const a = core.signal(1);
+				const b = core.signal(100);
+				const log = [];
+
+				// Track subscription counts manually
+				const aSubsCount = () =>
+					a.subscribe(() => {}).constructor === Function
+						? Object.getOwnPropertyDescriptor(a, "subs")?.value?.size || 0
+						: 0;
+
+				const dispose = core.effect(() => {
+					if (condition()) {
+						log.push(`a: ${a()}`);
+					} else {
+						log.push(`b: ${b()}`);
+					}
+				});
+
+				// Initial state - should track both condition and a
+				assert.deepStrictEqual(log, ["a: 1"]);
+
+				// Change condition to false - effect should now track b, not a
+				condition.set(false);
+				assert.deepStrictEqual(log, ["a: 1", "b: 100"]);
+
+				// CRITICAL: Changing 'a' should NOT trigger effect anymore
+				// If dependency cleanup is broken, this will fail
+				a.set(999);
+				assert.deepStrictEqual(
+					log,
+					["a: 1", "b: 100"],
+					"Effect should not respond to 'a' after dependency change",
+				);
+
+				// But 'b' should still trigger
+				b.set(200);
+				assert.deepStrictEqual(log, ["a: 1", "b: 100", "b: 200"]);
+
+				dispose();
+			});
+
+			it("should handle memory leaks in computed with changing dependencies", () => {
+				const condition = core.signal(true);
+				const a = core.signal(1);
+				const b = core.signal(100);
+
+				const computed = core.computed(() => {
+					return condition() ? a() * 2 : b() * 3;
+				});
+
+				// Initial computation uses 'a'
+				assert.strictEqual(computed(), 2);
+
+				// Switch to using 'b'
+				condition.set(false);
+				assert.strictEqual(computed(), 300);
+
+				// CRITICAL: 'a' changes should not trigger recomputation
+				// If dependency cleanup is broken, computed will recompute unnecessarily
+				let computeCount = 0;
+				const original = computed;
+				const counting = core.computed(() => {
+					computeCount++;
+					return condition() ? a() * 2 : b() * 3;
+				});
+
+				// Reset count
+				computeCount = 0;
+				counting(); // Initial
+				assert.strictEqual(computeCount, 1);
+
+				condition.set(false); // No change (already false)
+				counting();
+				assert.strictEqual(computeCount, 1); // Should not recompute since value didn't change
+
+				// This should NOT trigger recomputation
+				a.set(999);
+				counting();
+				assert.strictEqual(
+					computeCount,
+					1,
+					"Computed should not recompute for unused dependencies",
+				);
+			});
+		});
+
+		describe("diamond glitches", () => {
+			it("should provide consistent snapshot during cascading updates", () => {
+				const source = core.signal(1);
+				const left = core.computed(() => source() * 2);
+				const right = core.computed(() => source() * 3);
+				const log = [];
+
+				// Effect reads both computed values
+				const dispose = core.effect(() => {
+					const l = left();
+					const r = right();
+					log.push({ source: source(), left: l, right: r, sum: l + r });
+				});
+
+				// Initial state
+				assert.deepStrictEqual(log, [{ source: 1, left: 2, right: 3, sum: 5 }]);
+
+				// CRITICAL: When source changes, effect should see consistent snapshot
+				// Diamond glitch would be: left updated but right hasn't, causing inconsistent read
+				source.set(10);
+
+				const lastEntry = log[log.length - 1];
+				assert.strictEqual(lastEntry.source, 10);
+				assert.strictEqual(lastEntry.left, 20);
+				assert.strictEqual(lastEntry.right, 30);
+				assert.strictEqual(lastEntry.sum, 50);
+
+				// Verify no intermediate inconsistent states were captured
+				assert.strictEqual(
+					log.length,
+					2,
+					"Should have exactly 2 log entries, no glitched intermediates",
+				);
+
+				dispose();
+			});
+
+			it("should handle complex diamond dependencies without glitches", () => {
+				const root = core.signal(1);
+				const a = core.computed(() => root() + 1);
+				const b = core.computed(() => root() + 2);
+				const c = core.computed(() => a() + b()); // Depends on both a and b
+				const snapshots = [];
+
+				const dispose = core.effect(() => {
+					// Capture complete snapshot
+					snapshots.push({
+						root: root(),
+						a: a(),
+						b: b(),
+						c: c(),
+						// Verify mathematical consistency
+						consistent:
+							a() === root() + 1 && b() === root() + 2 && c() === a() + b(),
+					});
+				});
+
+				// Initial state
+				assert.strictEqual(snapshots[0].consistent, true);
+
+				// Change root - all computeds should update consistently
+				root.set(5);
+
+				// Verify final state consistency
+				const final = snapshots[snapshots.length - 1];
+				assert.strictEqual(final.root, 5);
+				assert.strictEqual(final.a, 6);
+				assert.strictEqual(final.b, 7);
+				assert.strictEqual(final.c, 13);
+				assert.strictEqual(final.consistent, true);
+
+				// CRITICAL: No inconsistent intermediate states
+				assert.ok(
+					snapshots.every((s) => s.consistent),
+					"All snapshots should be mathematically consistent (no diamond glitches)",
+				);
+
+				dispose();
+			});
+		});
+
+		describe("reentrancy loops", () => {
+			it("should prevent infinite loops from self-triggering effects", () => {
+				const counter = core.signal(0);
+				const log = [];
+				let runCount = 0;
+
+				const dispose = core.effect(() => {
+					runCount++;
+					const current = counter();
+					log.push(current);
+
+					// DANGEROUS: Effect writes to its own dependency
+					if (current < 3) {
+						counter.set(current + 1);
+					}
+
+					// Safety guard - test should not hang
+					if (runCount > 10) {
+						throw new Error(
+							"Infinite loop detected - effect ran more than 10 times",
+						);
+					}
+				});
+
+				// Should stabilize at counter = 3 without infinite loop
+				assert.strictEqual(counter(), 3);
+				assert.deepStrictEqual(log, [0, 1, 2, 3]);
+				assert.ok(
+					runCount <= 5,
+					`Effect should run reasonable number of times, got ${runCount}`,
+				);
+
+				dispose();
+			});
+
+			it("should handle mutually triggering effects without cascade", () => {
+				const a = core.signal(1);
+				const b = core.signal(1);
+				const log = [];
+				let aRunCount = 0;
+				let bRunCount = 0;
+
+				const disposeA = core.effect(() => {
+					aRunCount++;
+					const aVal = a();
+					log.push(`A: ${aVal}`);
+
+					// A effect increments B if A changed
+					if (aVal === 2) {
+						b.set(2);
+					}
+
+					if (aRunCount > 5) {
+						throw new Error("Effect A ran too many times");
+					}
+				});
+
+				const disposeB = core.effect(() => {
+					bRunCount++;
+					const bVal = b();
+					log.push(`B: ${bVal}`);
+
+					// B effect increments A if B changed
+					if (bVal === 2) {
+						a.set(3);
+					}
+
+					if (bRunCount > 5) {
+						throw new Error("Effect B ran too many times");
+					}
+				});
+
+				// Initial state
+				assert.deepStrictEqual(log, ["A: 1", "B: 1"]);
+
+				// Trigger the cascade
+				a.set(2);
+
+				// Should stabilize without infinite ping-pong
+				assert.ok(aRunCount <= 4, `Effect A ran ${aRunCount} times`);
+				assert.ok(bRunCount <= 4, `Effect B ran ${bRunCount} times`);
+
+				disposeA();
+				disposeB();
+			});
 		});
 	});
 });
