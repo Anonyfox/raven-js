@@ -1751,7 +1751,7 @@ describe("core/index.js", () => {
 				const log = [];
 
 				// Track subscription counts manually
-				const aSubsCount = () =>
+				const _aSubsCount = () =>
 					a.subscribe(() => {}).constructor === Function
 						? Object.getOwnPropertyDescriptor(a, "subs")?.value?.size || 0
 						: 0;
@@ -1806,7 +1806,7 @@ describe("core/index.js", () => {
 				// CRITICAL: 'a' changes should not trigger recomputation
 				// If dependency cleanup is broken, computed will recompute unnecessarily
 				let computeCount = 0;
-				const original = computed;
+				const _original = computed;
 				const counting = core.computed(() => {
 					computeCount++;
 					return condition() ? a() * 2 : b() * 3;

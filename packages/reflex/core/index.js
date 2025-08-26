@@ -30,6 +30,14 @@ let listener = null;
 let isBatching = false;
 
 /**
+ * Global flag to track if we're currently in an update cycle.
+ * Prevents effects from running until all signals have updated.
+ *
+ * @type {boolean}
+ */
+const isInUpdateCycle = false;
+
+/**
  * Tracks the current batch depth for nested batches.
  *
  * @type {number}
@@ -49,7 +57,7 @@ const batchedSignals = new Set();
  *
  * @type {boolean}
  */
-const isFlushing = false;
+let isFlushing = false;
 
 /**
  * Global context stack for tracking reactive operations and their promises.
@@ -58,6 +66,45 @@ const isFlushing = false;
  * @type {Array<{track: function(Promise<any>): void}>}
  */
 export const contextStack = [];
+
+/**
+ * Flushes all batched signals and runs their effects exactly once.
+ * Used by both automatic microtask batching and explicit batch() calls.
+ */
+function flushBatchedSignals() {
+	if (isFlushing || batchedSignals.size === 0) {
+		return;
+	}
+
+	isFlushing = true;
+
+	try {
+		const signalsToFlush = Array.from(batchedSignals);
+		batchedSignals.clear();
+
+		// Collect all unique effects to run exactly once
+		const uniqueEffects = new Set();
+		for (const signal of signalsToFlush) {
+			// Access signal's subscribers directly and add to set for deduplication
+			/** @type {Set<Function>} */
+			const subscribers = /** @type {any} */ (signal)._getSubscribers();
+			for (const effect of subscribers) {
+				uniqueEffects.add(effect);
+			}
+		}
+
+		// Run each effect exactly once
+		for (const effect of uniqueEffects) {
+			try {
+				effect();
+			} catch (error) {
+				console.error("Batch effect execution error:", error);
+			}
+		}
+	} finally {
+		isFlushing = false;
+	}
+}
 
 /**
  * Creates a reactive signal that can hold and notify changes to a value.
@@ -146,6 +193,10 @@ export function signal(initial) {
 		// Track dependency if we're in an effect/computed context
 		if (listener) {
 			subs.add(listener);
+			// Also track this signal as a dependency in the effect if it supports it
+			if (listener._trackDependency) {
+				listener._trackDependency(read);
+			}
 		}
 		return value;
 	}
@@ -163,13 +214,13 @@ export function signal(initial) {
 
 		value = newValue;
 
-		// If batching, collect signal for later flush instead of immediate notification
-		// Don't add to batched signals if we're currently flushing (prevents re-entrant flushing)
+		// If explicitly batching, collect signal for later flush
 		if (isBatching && !isFlushing) {
 			batchedSignals.add(read);
 			return Promise.resolve([]);
 		}
 
+		// Immediate notification for all subscribers
 		return notifySubscribers();
 	};
 
@@ -263,6 +314,7 @@ export function signal(initial) {
 export function effect(fn) {
 	let isDisposed = false;
 	const currentRunResources = new Set();
+	const currentDependencies = new Set();
 
 	/**
 	 * Wraps global APIs to auto-track resources for cleanup.
@@ -353,6 +405,16 @@ export function effect(fn) {
 		});
 
 		const prev = listener;
+		const previousDependencies = new Set(currentDependencies);
+
+		// Clear current dependencies - will be rebuilt during execution
+		currentDependencies.clear();
+
+		// Add dependency tracking capability to the execute function
+		execute._trackDependency = (signal) => {
+			currentDependencies.add(signal);
+		};
+
 		listener = execute;
 
 		// Wrap resource APIs during effect execution - but only for non-test environment
@@ -375,6 +437,14 @@ export function effect(fn) {
 			// Always restore APIs after execution
 			restore();
 			listener = prev;
+
+			// Clean up previous dependencies AFTER effect execution completes
+			// This prevents re-entrant issues during the current notification cycle
+			for (const signal of previousDependencies) {
+				if (signal._unsubscribe && !currentDependencies.has(signal)) {
+					signal._unsubscribe(execute);
+				}
+			}
 		}
 	};
 
@@ -384,6 +454,14 @@ export function effect(fn) {
 	// Return disposal function with deterministic cleanup
 	return () => {
 		isDisposed = true;
+
+		// Clean up signal dependencies
+		for (const signal of currentDependencies) {
+			if (signal._unsubscribe) {
+				signal._unsubscribe(execute);
+			}
+		}
+		currentDependencies.clear();
 
 		// Auto-cleanup all tracked resources from current run
 		for (const cleanup of currentRunResources) {
@@ -452,6 +530,7 @@ export function computed(fn) {
 	const notifySubscribers = () => {
 		if (isBatching) return;
 
+		// Immediate notification for all subscribers
 		for (const sub of subs) {
 			try {
 				sub();
@@ -584,30 +663,7 @@ export function batch(fn) {
 		// Only flush when exiting the outermost batch
 		if (batchDepth === 0) {
 			isBatching = false;
-
-			// Flush all batched signals after batch completes
-			if (batchedSignals.size > 0) {
-				const signalsToFlush = Array.from(batchedSignals);
-				batchedSignals.clear();
-
-				// Collect all unique effects to run exactly once
-				const uniqueEffects = new Set();
-				for (const signal of signalsToFlush) {
-					// Access signal's subscribers directly and add to set for deduplication
-					signal
-						._getSubscribers()
-						.forEach((effect) => uniqueEffects.add(effect));
-				}
-
-				// Run each effect exactly once
-				for (const effect of uniqueEffects) {
-					try {
-						effect();
-					} catch (error) {
-						console.error("Batch effect execution error:", error);
-					}
-				}
-			}
+			flushBatchedSignals();
 		}
 	}
 }
