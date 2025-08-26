@@ -32,21 +32,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocLicenseTag extends JSDocTagBase {
 	/**
-	 * @type {string} Full license information
-	 */
-	licenseInfo = "";
-
-	/**
-	 * @type {boolean} Whether this is a standard SPDX identifier
-	 */
-	isSpdxIdentifier = false;
-
-	/**
-	 * @type {boolean} Whether this is a URL
-	 */
-	isUrl = false;
-
-	/**
 	 * Create license tag instance
 	 * @param {string} rawContent - Raw license tag content
 	 */
@@ -58,18 +43,32 @@ export class JSDocLicenseTag extends JSDocTagBase {
 	 * Parse license tag content
 	 */
 	parseContent() {
+		/**
+		 * @type {string} Full license information
+		 */
 		this.licenseInfo = this.rawContent?.trim() || "";
 
 		if (this.licenseInfo) {
 			// Check for SPDX identifier
 			const spdxPattern =
 				/^(MIT|Apache-2\.0|GPL-[23]\.0|BSD-[23]-Clause|ISC|LGPL-[23]\.1|MPL-2\.0|AGPL-3\.0|Unlicense|CC0-1\.0)$/i;
+			/**
+			 * @type {boolean} Whether this is a standard SPDX identifier
+			 */
 			this.isSpdxIdentifier = spdxPattern.test(this.licenseInfo);
 
-			// Check for URL
+			/**
+			 * @type {boolean} Whether this is a URL
+			 */
 			this.isUrl = /^https?:\/\//.test(this.licenseInfo);
 		} else {
+			/**
+			 * @type {boolean} Whether this is a standard SPDX identifier
+			 */
 			this.isSpdxIdentifier = false;
+			/**
+			 * @type {boolean} Whether this is a URL
+			 */
 			this.isUrl = false;
 		}
 	}

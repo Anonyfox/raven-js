@@ -33,21 +33,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocPropertyTag extends JSDocTagBase {
 	/**
-	 * @type {string} Property type annotation
-	 */
-	type = "";
-
-	/**
-	 * @type {string} Property name
-	 */
-	name = "";
-
-	/**
-	 * @type {string} Property description
-	 */
-	description = "";
-
-	/**
 	 * Create property tag instance
 	 * @param {string} rawContent - Raw property tag content
 	 */
@@ -90,12 +75,30 @@ export class JSDocPropertyTag extends JSDocTagBase {
 		const nameDescMatch = nameAndDesc.match(/^(\w+)?\s*(.*)?$/);
 		if (nameDescMatch) {
 			const [, name, description] = nameDescMatch;
+			/**
+			 * @type {string} Property type annotation
+			 */
 			this.type = type;
+			/**
+			 * @type {string} Property name
+			 */
 			this.name = name ? name.trim() : "";
+			/**
+			 * @type {string} Property description
+			 */
 			this.description = description ? description.trim() : "";
 		} else {
+			/**
+			 * @type {string} Property type annotation
+			 */
 			this.type = type;
+			/**
+			 * @type {string} Property name
+			 */
 			this.name = "";
+			/**
+			 * @type {string} Property description
+			 */
 			this.description = nameAndDesc;
 		}
 	}

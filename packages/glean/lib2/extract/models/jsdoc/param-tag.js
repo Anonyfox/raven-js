@@ -35,31 +35,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocParamTag extends JSDocTagBase {
 	/**
-	 * @type {string} Parameter type annotation
-	 */
-	type = "";
-
-	/**
-	 * @type {string} Parameter name
-	 */
-	name = "";
-
-	/**
-	 * @type {string} Parameter description
-	 */
-	description = "";
-
-	/**
-	 * @type {boolean} Whether parameter is optional
-	 */
-	optional = false;
-
-	/**
-	 * @type {string} Default value if optional
-	 */
-	defaultValue = "";
-
-	/**
 	 * Create @param tag instance
 	 * @param {string} rawContent - Raw @param content
 	 */
@@ -80,33 +55,78 @@ export class JSDocParamTag extends JSDocTagBase {
 		const match = this.rawContent.match(paramRegex);
 
 		if (!match) {
+			/**
+			 * @type {string} Parameter type annotation
+			 */
 			this.type = "";
+			/**
+			 * @type {string} Parameter name
+			 */
 			this.name = "";
+			/**
+			 * @type {boolean} Whether parameter is optional
+			 */
 			this.optional = false;
+			/**
+			 * @type {string} Default value if optional
+			 */
 			this.defaultValue = "";
+			/**
+			 * @type {string} Parameter description
+			 */
 			this.description = "";
 			return;
 		}
 
 		const [, type, bracketedName, simpleName, description] = match;
 
+		/**
+		 * @type {string} Parameter type annotation
+		 */
 		this.type = type || "";
+		/**
+		 * @type {string} Parameter description
+		 */
 		this.description = description ? description.trim() : "";
 
 		// Handle bracketed parameters (optional with possible default)
 		if (bracketedName) {
+			/**
+			 * @type {boolean} Whether parameter is optional
+			 */
 			this.optional = true;
 			const defaultMatch = bracketedName.match(/^([^=]+)(?:=(.*))?$/);
 			if (defaultMatch) {
+				/**
+				 * @type {string} Parameter name
+				 */
 				this.name = defaultMatch[1].trim();
+				/**
+				 * @type {string} Default value if optional
+				 */
 				this.defaultValue = defaultMatch[2] ? defaultMatch[2].trim() : "";
 			} else {
+				/**
+				 * @type {string} Parameter name
+				 */
 				this.name = bracketedName.trim();
+				/**
+				 * @type {string} Default value if optional
+				 */
 				this.defaultValue = "";
 			}
 		} else {
+			/**
+			 * @type {string} Parameter name
+			 */
 			this.name = simpleName || "";
+			/**
+			 * @type {boolean} Whether parameter is optional
+			 */
 			this.optional = false;
+			/**
+			 * @type {string} Default value if optional
+			 */
 			this.defaultValue = "";
 		}
 	}

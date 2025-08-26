@@ -32,16 +32,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocSinceTag extends JSDocTagBase {
 	/**
-	 * @type {string} Version when functionality was introduced
-	 */
-	version = "";
-
-	/**
-	 * @type {string} Optional description of changes
-	 */
-	description = "";
-
-	/**
 	 * Create since tag instance
 	 * @param {string} rawContent - Raw since tag content
 	 */

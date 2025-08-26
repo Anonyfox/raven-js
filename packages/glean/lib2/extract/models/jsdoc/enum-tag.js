@@ -32,16 +32,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocEnumTag extends JSDocTagBase {
 	/**
-	 * @type {string} Enumeration type
-	 */
-	type = "";
-
-	/**
-	 * @type {string} Enumeration description
-	 */
-	description = "";
-
-	/**
 	 * Create enum tag instance
 	 * @param {string} rawContent - Raw enum tag content
 	 */
@@ -56,7 +46,13 @@ export class JSDocEnumTag extends JSDocTagBase {
 		const content = this.rawContent?.trim() || "";
 
 		if (!content) {
+			/**
+			 * @type {string} Enumeration type
+			 */
 			this.type = "";
+			/**
+			 * @type {string} Enumeration description
+			 */
 			this.description = "";
 			return;
 		}
@@ -64,10 +60,22 @@ export class JSDocEnumTag extends JSDocTagBase {
 		// Check for type in braces
 		const typeMatch = content.match(/^\{([^}]+)\}\s*(.*)$/);
 		if (typeMatch) {
+			/**
+			 * @type {string} Enumeration type
+			 */
 			this.type = typeMatch[1].trim();
+			/**
+			 * @type {string} Enumeration description
+			 */
 			this.description = typeMatch[2].trim();
 		} else {
+			/**
+			 * @type {string} Enumeration type
+			 */
 			this.type = "";
+			/**
+			 * @type {string} Enumeration description
+			 */
 			this.description = content;
 		}
 	}

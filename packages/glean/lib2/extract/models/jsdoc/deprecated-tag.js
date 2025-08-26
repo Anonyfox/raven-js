@@ -32,11 +32,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocDeprecatedTag extends JSDocTagBase {
 	/**
-	 * @type {string} Deprecation message or reason
-	 */
-	message = "";
-
-	/**
 	 * Create deprecated tag instance
 	 * @param {string} rawContent - Raw deprecated tag content
 	 */
@@ -48,6 +43,9 @@ export class JSDocDeprecatedTag extends JSDocTagBase {
 	 * Parse deprecated content
 	 */
 	parseContent() {
+		/**
+		 * @type {string} Deprecation message or reason
+		 */
 		this.message = this.rawContent ? this.rawContent.trim() : "";
 	}
 

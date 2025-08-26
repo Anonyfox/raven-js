@@ -31,11 +31,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocProtectedTag extends JSDocTagBase {
 	/**
-	 * @type {string} Optional description of protection reason
-	 */
-	description = "";
-
-	/**
 	 * Create protected tag instance
 	 * @param {string} rawContent - Raw protected tag content
 	 */
@@ -47,6 +42,9 @@ export class JSDocProtectedTag extends JSDocTagBase {
 	 * Parse protected tag content
 	 */
 	parseContent() {
+		/**
+		 * @type {string} Optional description of protection reason
+		 */
 		this.description = this.rawContent?.trim() || "";
 	}
 

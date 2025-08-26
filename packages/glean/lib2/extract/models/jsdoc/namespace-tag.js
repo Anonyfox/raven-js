@@ -31,16 +31,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocNamespaceTag extends JSDocTagBase {
 	/**
-	 * @type {string} Namespace name
-	 */
-	name = "";
-
-	/**
-	 * @type {string} Namespace description
-	 */
-	description = "";
-
-	/**
 	 * Create namespace tag instance
 	 * @param {string} rawContent - Raw namespace tag content
 	 */
@@ -55,7 +45,13 @@ export class JSDocNamespaceTag extends JSDocTagBase {
 		const content = this.rawContent?.trim() || "";
 
 		if (!content) {
+			/**
+			 * @type {string} Namespace name
+			 */
 			this.name = "";
+			/**
+			 * @type {string} Namespace description
+			 */
 			this.description = "";
 			return;
 		}
@@ -63,10 +59,22 @@ export class JSDocNamespaceTag extends JSDocTagBase {
 		// Split on first whitespace to separate name from description
 		const spaceIndex = content.indexOf(" ");
 		if (spaceIndex !== -1) {
+			/**
+			 * @type {string} Namespace name
+			 */
 			this.name = content.slice(0, spaceIndex).trim();
+			/**
+			 * @type {string} Namespace description
+			 */
 			this.description = content.slice(spaceIndex + 1).trim();
 		} else {
+			/**
+			 * @type {string} Namespace name
+			 */
 			this.name = content;
+			/**
+			 * @type {string} Namespace description
+			 */
 			this.description = "";
 		}
 	}

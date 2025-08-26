@@ -31,10 +31,7 @@ import { JSDocTagBase } from "./base.js";
  * - Essential for module intelligence
  */
 export class JSDocFileTag extends JSDocTagBase {
-	/**
-	 * @type {string} File description/overview
-	 */
-	description = "";
+
 
 	/**
 	 * Create file tag instance
@@ -48,6 +45,9 @@ export class JSDocFileTag extends JSDocTagBase {
 	 * Parse file tag content
 	 */
 	parseContent() {
+		/**
+		 * @type {string} File description or overview
+		 */
 		this.description = this.rawContent?.trim() || "";
 	}
 
@@ -55,6 +55,7 @@ export class JSDocFileTag extends JSDocTagBase {
 	 * Validate file tag structure
 	 */
 	validate() {
-		this.isValidated = Boolean(this.description && this.description.length > 0);
+		// File tags are always valid - they just mark file-level documentation
+		this.isValidated = true;
 	}
 }

@@ -32,16 +32,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocExampleTag extends JSDocTagBase {
 	/**
-	 * @type {string} Optional caption/description for the example
-	 */
-	caption = "";
-
-	/**
-	 * @type {string} The actual code example
-	 */
-	code = "";
-
-	/**
 	 * Create example tag instance
 	 * @param {string} rawContent - Raw example tag content
 	 */
@@ -54,7 +44,13 @@ export class JSDocExampleTag extends JSDocTagBase {
 	 */
 	parseContent() {
 		if (!this.rawContent?.trim()) {
+			/**
+			 * @type {string} Optional caption/description for the example
+			 */
 			this.caption = "";
+			/**
+			 * @type {string} The actual code example
+			 */
 			this.code = "";
 			return;
 		}
@@ -64,10 +60,22 @@ export class JSDocExampleTag extends JSDocTagBase {
 			/^\s*<caption>(.*?)<\/caption>\s*([\s\S]*)$/,
 		);
 		if (captionMatch) {
+			/**
+			 * @type {string} Optional caption/description for the example
+			 */
 			this.caption = captionMatch[1].trim();
+			/**
+			 * @type {string} The actual code example
+			 */
 			this.code = captionMatch[2].trim();
 		} else {
+			/**
+			 * @type {string} Optional caption/description for the example
+			 */
 			this.caption = "";
+			/**
+			 * @type {string} The actual code example
+			 */
 			this.code = this.rawContent.trim();
 		}
 	}

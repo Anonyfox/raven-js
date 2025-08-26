@@ -32,26 +32,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocAuthorTag extends JSDocTagBase {
 	/**
-	 * @type {string} Full author information
-	 */
-	authorInfo = "";
-
-	/**
-	 * @type {string} Extracted author name
-	 */
-	name = "";
-
-	/**
-	 * @type {string} Extracted email address
-	 */
-	email = "";
-
-	/**
-	 * @type {string} Additional information
-	 */
-	additional = "";
-
-	/**
 	 * Create author tag instance
 	 * @param {string} rawContent - Raw author tag content
 	 */
@@ -63,14 +43,26 @@ export class JSDocAuthorTag extends JSDocTagBase {
 	 * Parse author tag content
 	 */
 	parseContent() {
+		/**
+		 * @type {string} Full author information
+		 */
 		this.authorInfo = this.rawContent?.trim() || "";
 
 		if (this.authorInfo) {
 			// Extract name and email if in standard format: Name <email>
 			const emailMatch = this.authorInfo.match(/^([^<]+?)\s*<([^>]+)>(.*)$/);
 			if (emailMatch) {
+				/**
+				 * @type {string} Extracted author name
+				 */
 				this.name = emailMatch[1].trim();
+				/**
+				 * @type {string} Extracted email address
+				 */
 				this.email = emailMatch[2].trim();
+				/**
+				 * @type {string} Additional information
+				 */
 				this.additional = emailMatch[3].trim();
 			} else {
 				this.name = this.authorInfo;

@@ -31,11 +31,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocReadonlyTag extends JSDocTagBase {
 	/**
-	 * @type {string} Optional description of readonly nature
-	 */
-	description = "";
-
-	/**
 	 * Create readonly tag instance
 	 * @param {string} rawContent - Raw readonly tag content
 	 */
@@ -47,6 +42,9 @@ export class JSDocReadonlyTag extends JSDocTagBase {
 	 * Parse readonly tag content
 	 */
 	parseContent() {
+		/**
+		 * @type {string} Optional description of readonly nature
+		 */
 		this.description = this.rawContent?.trim() || "";
 	}
 

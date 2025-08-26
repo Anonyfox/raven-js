@@ -32,11 +32,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocAliasTag extends JSDocTagBase {
 	/**
-	 * @type {string} The symbol this is an alias for
-	 */
-	aliasFor = "";
-
-	/**
 	 * Create alias tag instance
 	 * @param {string} rawContent - Raw alias tag content
 	 */
@@ -48,6 +43,9 @@ export class JSDocAliasTag extends JSDocTagBase {
 	 * Parse alias tag content
 	 */
 	parseContent() {
+		/**
+		 * @type {string} The symbol this is an alias for
+		 */
 		this.aliasFor = this.rawContent?.trim() || "";
 	}
 

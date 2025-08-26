@@ -34,26 +34,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocSeeTag extends JSDocTagBase {
 	/**
-	 * @type {string} Type of reference: "link", "url", "symbol", "module", "text", "empty"
-	 */
-	referenceType = "";
-
-	/**
-	 * @type {string} The reference target (URL, symbol name, etc.)
-	 */
-	reference = "";
-
-	/**
-	 * @type {string} Optional description for the reference
-	 */
-	description = "";
-
-	/**
-	 * @type {string} URL if reference is a link
-	 */
-	url = "";
-
-	/**
 	 * Create see tag instance
 	 * @param {string} rawContent - Raw see tag content
 	 */
@@ -66,9 +46,21 @@ export class JSDocSeeTag extends JSDocTagBase {
 	 */
 	parseContent() {
 		if (!this.rawContent?.trim()) {
+			/**
+			 * @type {string} Type of reference: "link", "url", "symbol", "module", "text", "empty"
+			 */
 			this.referenceType = "empty";
+			/**
+			 * @type {string} The reference target (URL, symbol name, etc.)
+			 */
 			this.reference = "";
+			/**
+			 * @type {string} Optional description for the reference
+			 */
 			this.description = "";
+			/**
+			 * @type {string} URL if reference is a link
+			 */
 			this.url = "";
 			return;
 		}
@@ -78,18 +70,42 @@ export class JSDocSeeTag extends JSDocTagBase {
 		// Check for link syntax: {@link URL} or {@link URL|Description}
 		const linkMatch = content.match(/^\{@?link\s+([^}|]+)(?:\|([^}]+))?\}$/);
 		if (linkMatch) {
+			/**
+			 * @type {string} Type of reference: "link", "url", "symbol", "module", "text", "empty"
+			 */
 			this.referenceType = "link";
+			/**
+			 * @type {string} The reference target (URL, symbol name, etc.)
+			 */
 			this.reference = linkMatch[1].trim();
+			/**
+			 * @type {string} Optional description for the reference
+			 */
 			this.description = linkMatch[2]?.trim() || "";
+			/**
+			 * @type {string} URL if reference is a link
+			 */
 			this.url = this.isUrl(this.reference) ? this.reference : "";
 			return;
 		}
 
 		// Check for URL reference
 		if (this.isUrl(content)) {
+			/**
+			 * @type {string} Type of reference: "link", "url", "symbol", "module", "text", "empty"
+			 */
 			this.referenceType = "url";
+			/**
+			 * @type {string} The reference target (URL, symbol name, etc.)
+			 */
 			this.reference = content;
+			/**
+			 * @type {string} Optional description for the reference
+			 */
 			this.description = "";
+			/**
+			 * @type {string} URL if reference is a link
+			 */
 			this.url = content;
 			return;
 		}
@@ -97,26 +113,62 @@ export class JSDocSeeTag extends JSDocTagBase {
 		// Check for quoted text reference
 		const quotedMatch = content.match(/^["'](.+)["']$/);
 		if (quotedMatch) {
+			/**
+			 * @type {string} Type of reference: "link", "url", "symbol", "module", "text", "empty"
+			 */
 			this.referenceType = "text";
+			/**
+			 * @type {string} The reference target (URL, symbol name, etc.)
+			 */
 			this.reference = quotedMatch[1];
+			/**
+			 * @type {string} Optional description for the reference
+			 */
 			this.description = "";
+			/**
+			 * @type {string} URL if reference is a link
+			 */
 			this.url = "";
 			return;
 		}
 
 		// Check for module reference
 		if (content.startsWith("module:")) {
+			/**
+			 * @type {string} Type of reference: "link", "url", "symbol", "module", "text", "empty"
+			 */
 			this.referenceType = "module";
+			/**
+			 * @type {string} The reference target (URL, symbol name, etc.)
+			 */
 			this.reference = content;
+			/**
+			 * @type {string} Optional description for the reference
+			 */
 			this.description = "";
+			/**
+			 * @type {string} URL if reference is a link
+			 */
 			this.url = "";
 			return;
 		}
 
 		// Default to symbol reference
+		/**
+		 * @type {string} Type of reference: "link", "url", "symbol", "module", "text", "empty"
+		 */
 		this.referenceType = "symbol";
+		/**
+		 * @type {string} The reference target (URL, symbol name, etc.)
+		 */
 		this.reference = content;
+		/**
+		 * @type {string} Optional description for the reference
+		 */
 		this.description = "";
+		/**
+		 * @type {string} URL if reference is a link
+		 */
 		this.url = "";
 	}
 

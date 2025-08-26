@@ -33,11 +33,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocMemberofTag extends JSDocTagBase {
 	/**
-	 * @type {string} Parent symbol this belongs to
-	 */
-	parent = "";
-
-	/**
 	 * Create memberof tag instance
 	 * @param {string} rawContent - Raw memberof tag content
 	 */
@@ -49,6 +44,9 @@ export class JSDocMemberofTag extends JSDocTagBase {
 	 * Parse memberof tag content
 	 */
 	parseContent() {
+		/**
+		 * @type {string} Parent symbol this belongs to
+		 */
 		this.parent = this.rawContent?.trim() || "";
 	}
 

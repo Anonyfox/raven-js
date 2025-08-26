@@ -31,16 +31,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocCallbackTag extends JSDocTagBase {
 	/**
-	 * @type {string} Callback name/identifier
-	 */
-	name = "";
-
-	/**
-	 * @type {string} Callback description
-	 */
-	description = "";
-
-	/**
 	 * Create callback tag instance
 	 * @param {string} rawContent - Raw callback tag content
 	 */
@@ -55,7 +45,13 @@ export class JSDocCallbackTag extends JSDocTagBase {
 		const content = this.rawContent?.trim() || "";
 
 		if (!content) {
+			/**
+			 * @type {string} Callback name/identifier
+			 */
 			this.name = "";
+			/**
+			 * @type {string} Callback description
+			 */
 			this.description = "";
 			return;
 		}

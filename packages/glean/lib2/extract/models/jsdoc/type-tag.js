@@ -34,11 +34,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocTypeTag extends JSDocTagBase {
 	/**
-	 * @type {string} The type annotation
-	 */
-	type = "";
-
-	/**
 	 * Create type tag instance
 	 * @param {string} rawContent - Raw type tag content
 	 */
@@ -51,6 +46,9 @@ export class JSDocTypeTag extends JSDocTagBase {
 	 */
 	parseContent() {
 		if (!this.rawContent?.trim()) {
+			/**
+			 * @type {string} The type annotation
+			 */
 			this.type = "";
 			return;
 		}

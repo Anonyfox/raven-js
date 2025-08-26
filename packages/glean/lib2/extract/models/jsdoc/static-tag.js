@@ -31,11 +31,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocStaticTag extends JSDocTagBase {
 	/**
-	 * @type {string} Optional description of static nature
-	 */
-	description = "";
-
-	/**
 	 * Create static tag instance
 	 * @param {string} rawContent - Raw static tag content
 	 */
@@ -47,6 +42,9 @@ export class JSDocStaticTag extends JSDocTagBase {
 	 * Parse static tag content
 	 */
 	parseContent() {
+		/**
+		 * @type {string} Optional description of static nature
+		 */
 		this.description = this.rawContent?.trim() || "";
 	}
 

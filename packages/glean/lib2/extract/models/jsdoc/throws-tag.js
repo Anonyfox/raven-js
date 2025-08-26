@@ -33,16 +33,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocThrowsTag extends JSDocTagBase {
 	/**
-	 * @type {string} Exception/error type
-	 */
-	type = "";
-
-	/**
-	 * @type {string} Description of when exception is thrown
-	 */
-	description = "";
-
-	/**
 	 * Create throws tag instance
 	 * @param {string} rawContent - Raw throws tag content
 	 */
@@ -61,7 +51,13 @@ export class JSDocThrowsTag extends JSDocTagBase {
 		const match = this.rawContent.match(throwsRegex);
 
 		if (!match) {
+			/**
+			 * @type {string} Exception/error type
+			 */
 			this.type = "";
+			/**
+			 * @type {string} Description of when exception is thrown
+			 */
 			this.description = "";
 			return;
 		}

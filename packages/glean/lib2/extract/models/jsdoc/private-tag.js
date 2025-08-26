@@ -31,11 +31,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocPrivateTag extends JSDocTagBase {
 	/**
-	 * @type {string} Optional description of privacy reason
-	 */
-	description = "";
-
-	/**
 	 * Create private tag instance
 	 * @param {string} rawContent - Raw private tag content
 	 */
@@ -47,6 +42,9 @@ export class JSDocPrivateTag extends JSDocTagBase {
 	 * Parse private tag content
 	 */
 	parseContent() {
+		/**
+		 * @type {string} Optional description of privacy reason
+		 */
 		this.description = this.rawContent?.trim() || "";
 	}
 

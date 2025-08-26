@@ -33,21 +33,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocTypedefTag extends JSDocTagBase {
 	/**
-	 * @type {string} Type definition
-	 */
-	type = "";
-
-	/**
-	 * @type {string} Type name
-	 */
-	name = "";
-
-	/**
-	 * @type {string} Type description
-	 */
-	description = "";
-
-	/**
 	 * Create typedef tag instance
 	 * @param {string} rawContent - Raw typedef tag content
 	 */
@@ -62,8 +47,17 @@ export class JSDocTypedefTag extends JSDocTagBase {
 		const content = this.rawContent?.trim() || "";
 
 		if (!content) {
+			/**
+			 * @type {string} Type definition
+			 */
 			this.type = "";
+			/**
+			 * @type {string} Type name
+			 */
 			this.name = "";
+			/**
+			 * @type {string} Type description
+			 */
 			this.description = "";
 			return;
 		}
@@ -99,12 +93,30 @@ export class JSDocTypedefTag extends JSDocTagBase {
 		if (spaceIndex !== -1) {
 			const name = nameAndDesc.slice(0, spaceIndex).trim();
 			const description = nameAndDesc.slice(spaceIndex + 1).trim();
+			/**
+			 * @type {string} Type definition
+			 */
 			this.type = type;
+			/**
+			 * @type {string} Type name
+			 */
 			this.name = name;
+			/**
+			 * @type {string} Type description
+			 */
 			this.description = description;
 		} else {
+			/**
+			 * @type {string} Type definition
+			 */
 			this.type = type;
+			/**
+			 * @type {string} Type name
+			 */
 			this.name = nameAndDesc;
+			/**
+			 * @type {string} Type description
+			 */
 			this.description = "";
 		}
 	}

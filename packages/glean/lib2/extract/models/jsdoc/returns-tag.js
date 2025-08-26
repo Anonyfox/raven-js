@@ -33,16 +33,6 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocReturnsTag extends JSDocTagBase {
 	/**
-	 * @type {string} Return value type annotation
-	 */
-	type = "";
-
-	/**
-	 * @type {string} Return value description
-	 */
-	description = "";
-
-	/**
 	 * Create returns tag instance
 	 * @param {string} rawContent - Raw returns tag content
 	 */
@@ -62,7 +52,13 @@ export class JSDocReturnsTag extends JSDocTagBase {
 		const match = this.rawContent.match(returnsRegex);
 
 		if (!match) {
+			/**
+			 * @type {string} Return value type annotation
+			 */
 			this.type = "";
+			/**
+			 * @type {string} Return value description
+			 */
 			this.description = "";
 			return;
 		}
