@@ -318,4 +318,83 @@ function someFunc() {}`,
 		const result = parseModuleEntities(discoveryModule);
 		deepStrictEqual(result, [], "Should ignore unsupported entity types");
 	});
+
+	test("should extract description content separately from JSDoc tags", () => {
+		const file = {
+			path: "test.js",
+			text: `/**
+ * This is a detailed description of the function.
+ * It explains what the function does and provides context.
+ * Multiple lines of rich documentation content.
+ *
+ * @function myFunction
+ * @param {string} input - The input parameter
+ * @returns {string} The output result
+ * @example
+ * myFunction('hello');
+ * // Returns: 'HELLO'
+ */
+export function myFunction(input) {
+	return input.toUpperCase();
+}`,
+		};
+
+		const entities = parseModuleEntities({
+			files: [file],
+		});
+
+		strictEqual(entities.length, 1, "Should create one entity");
+
+		const entity = entities[0];
+		strictEqual(entity.entityType, "function", "Should be function type");
+		strictEqual(entity.name, "myFunction", "Should have correct name");
+
+		// Check description content (should NOT include @tag content)
+		const expectedDescription = `This is a detailed description of the function.
+It explains what the function does and provides context.
+Multiple lines of rich documentation content.`;
+
+		strictEqual(
+			entity.description,
+			expectedDescription,
+			"Should have clean description without tags",
+		);
+		strictEqual(
+			entity.description.includes("@function"),
+			false,
+			"Description should not contain @function",
+		);
+		strictEqual(
+			entity.description.includes("@param"),
+			false,
+			"Description should not contain @param",
+		);
+		strictEqual(
+			entity.description.includes("myFunction('hello')"),
+			false,
+			"Description should not contain @example content",
+		);
+
+		// Check JSDoc tags (excluding @function as it's not in TAG_REGISTRY)
+		strictEqual(entity.jsdocTags.length, 3, "Should have 3 JSDoc tags");
+
+		const paramTag = entity.jsdocTags.find((tag) => tag.tagType === "param");
+		const returnsTag = entity.jsdocTags.find(
+			(tag) => tag.tagType === "returns",
+		);
+		const exampleTag = entity.jsdocTags.find(
+			(tag) => tag.tagType === "example",
+		);
+
+		strictEqual(paramTag !== undefined, true, "Should have param tag");
+		strictEqual(returnsTag !== undefined, true, "Should have returns tag");
+		strictEqual(exampleTag !== undefined, true, "Should have example tag");
+
+		// Example tag should contain the example code
+		strictEqual(
+			exampleTag.rawContent.includes("myFunction('hello')"),
+			true,
+			"Example tag should contain example code",
+		);
+	});
 });

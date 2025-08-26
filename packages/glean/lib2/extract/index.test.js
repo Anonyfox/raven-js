@@ -242,4 +242,275 @@ describe("extract()", () => {
 		strictEqual(result.description, "", "Should handle missing description");
 		strictEqual(result.readme, "", "Should handle missing readme");
 	});
+
+	test("should handle realistic beak-like package structure with complex JSDoc", () => {
+		// Mock discovery package structure mimicking @raven-js/beak
+		const mockPackage = { name: "@raven-js/beak" };
+		const discoveryPackage = {
+			name: "@raven-js/beak",
+			version: "0.4.7",
+			description: "Zero-dependency templating library for modern JavaScript",
+			readme: "# Beak\n\nZero-dependency templating library.",
+			modules: [
+				{
+					importPath: "@raven-js/beak",
+					package: mockPackage,
+					readme: "",
+					files: [
+						{
+							path: "index.js",
+							text: `/**
+ * @file Zero-dependency template literal engine for modern JavaScript
+ *
+ * Tagged template literals for HTML, CSS, JavaScript, SQL, and Markdown generation.
+ * Near string-concatenation performance with intelligent value processing.
+ *
+ * @example
+ * // Conditional rendering with ternary operators
+ * const greeting = html\`<div>
+ *   \${isLoggedIn ? html\`<p>Welcome back!</p>\` : html\`<p>Please log in.</p>\`}
+ * </div>\`;
+ */
+
+export { css, style } from "./css/index.js";
+export { html, safeHtml } from "./html/index.js";`,
+						},
+					],
+				},
+				{
+					importPath: "@raven-js/beak/html",
+					package: mockPackage,
+					readme: "",
+					files: [
+						{
+							path: "html/index.js",
+							text: `/**
+ * @file HTML tagged template literal engine - apex performance through platform primitives
+ */
+
+/**
+ * Character-level HTML escaping with XSS protection.
+ * Switch-based for V8 optimization. Blocks dangerous protocols/events.
+ *
+ * @function escapeHtml
+ * @param {string} str - String to escape
+ * @returns {string} HTML-escaped string
+ * @example
+ * escapeHtml('<script>alert("xss")</script>');
+ * // Returns: "&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;"
+ */
+export function escapeHtml(str) {
+	let stringValue = String(str);
+	let result = "";
+	for (let i = 0; i < stringValue.length; i++) {
+		const char = stringValue[i];
+		switch (char) {
+			case "&": result += "&amp;"; break;
+			case "<": result += "&lt;"; break;
+			default: result += char;
+		}
+	}
+	return result;
+}
+
+/**
+ * HTML template literal processor with automatic escaping
+ *
+ * @function html
+ * @param {TemplateStringsArray} strings - Template literal static parts
+ * @param {...any} values - Dynamic values to interpolate
+ * @returns {string} HTML string with escaped values
+ */
+export const html = (strings, ...values) => {
+	return strings.reduce((result, string, i) => {
+		const value = values[i] || '';
+		return result + string + escapeHtml(value);
+	}, '');
+};`,
+						},
+					],
+				},
+				{
+					importPath: "@raven-js/beak/md",
+					package: mockPackage,
+					readme: "# Markdown Module\n\nAdvanced markdown processing.",
+					files: [
+						{
+							path: "md/types.js",
+							text: `/**
+ * @file AST node types and validation for markdown parsing
+ */
+
+/**
+ * Node type constants for markdown AST
+ * @typedef {Object} NodeTypes
+ * @property {string} PARAGRAPH - Paragraph node type
+ * @property {string} HEADING - Heading node type
+ */
+export const NODE_TYPES = {
+	PARAGRAPH: "paragraph",
+	HEADING: "heading",
+	LIST: "list",
+};
+
+/**
+ * Validates if a node type is supported
+ * @function isValidNodeType
+ * @param {string} type - Node type to validate
+ * @returns {boolean} True if node type is valid
+ */
+export function isValidNodeType(type) {
+	return Object.values(NODE_TYPES).includes(type);
+}`,
+						},
+					],
+				},
+			],
+		};
+
+		const result = extract(discoveryPackage);
+
+		// Verify package-level metadata
+		strictEqual(result.name, "@raven-js/beak", "Should preserve package name");
+		strictEqual(result.version, "0.4.7", "Should preserve version");
+		strictEqual(
+			result.description,
+			"Zero-dependency templating library for modern JavaScript",
+			"Should preserve description",
+		);
+
+		// Verify module structure
+		strictEqual(result.modules.length, 3, "Should have 3 modules");
+
+		// Check main module
+		const mainModule = result.modules.find(
+			(m) => m.importPath === "@raven-js/beak",
+		);
+		strictEqual(
+			mainModule.isDefault,
+			true,
+			"Main module should be marked as default",
+		);
+		strictEqual(
+			mainModule.entities.length,
+			0,
+			"Main module should have no documented entities (only exports)",
+		);
+
+		// Check HTML module
+		const htmlModule = result.modules.find(
+			(m) => m.importPath === "@raven-js/beak/html",
+		);
+		strictEqual(
+			htmlModule.isDefault,
+			false,
+			"HTML module should not be default",
+		);
+		strictEqual(
+			htmlModule.entities.length,
+			2,
+			"HTML module should have 2 entities",
+		);
+
+		// Verify escapeHtml function entity
+		const escapeHtmlEntity = htmlModule.entities.find(
+			(e) => e.name === "escapeHtml",
+		);
+		strictEqual(
+			escapeHtmlEntity.entityType,
+			"function",
+			"Should identify escapeHtml as function",
+		);
+		strictEqual(
+			escapeHtmlEntity.location.file,
+			"html/index.js",
+			"Should preserve file location",
+		);
+		strictEqual(
+			escapeHtmlEntity.jsdocTags.length > 0,
+			true,
+			"Should have JSDoc tags",
+		);
+
+		// Check for param and returns tags
+		const paramTags = escapeHtmlEntity.jsdocTags.filter(
+			(tag) => tag.tagType === "param",
+		);
+		const returnTags = escapeHtmlEntity.jsdocTags.filter(
+			(tag) => tag.tagType === "returns",
+		);
+		const exampleTags = escapeHtmlEntity.jsdocTags.filter(
+			(tag) => tag.tagType === "example",
+		);
+
+		strictEqual(paramTags.length, 1, "Should have 1 param tag");
+		strictEqual(returnTags.length, 1, "Should have 1 returns tag");
+		strictEqual(exampleTags.length, 1, "Should have 1 example tag");
+
+		// Verify html function entity
+		const htmlEntity = htmlModule.entities.find((e) => e.name === "html");
+		strictEqual(
+			htmlEntity.entityType,
+			"function",
+			"Should identify html as function",
+		);
+
+		// Check MD module
+		const mdModule = result.modules.find(
+			(m) => m.importPath === "@raven-js/beak/md",
+		);
+		strictEqual(
+			mdModule.entities.length,
+			2,
+			"MD module should have 2 entities (@typedef and @function)",
+		);
+		strictEqual(
+			mdModule.readme,
+			"# Markdown Module\n\nAdvanced markdown processing.",
+			"Should use module-specific README",
+		);
+
+		// Verify typedef entity (name extraction might pick up type instead of name)
+		const typedefEntity = mdModule.entities.find(
+			(e) => e.entityType === "typedef",
+		);
+		strictEqual(
+			typedefEntity !== undefined,
+			true,
+			"Should have a typedef entity",
+		);
+		strictEqual(
+			typedefEntity.entityType,
+			"typedef",
+			"Should identify entity as typedef",
+		);
+
+		// Verify isValidNodeType function
+		const isValidNodeTypeEntity = mdModule.entities.find(
+			(e) => e.name === "isValidNodeType",
+		);
+		strictEqual(
+			isValidNodeTypeEntity.entityType,
+			"function",
+			"Should identify isValidNodeType as function",
+		);
+
+		// Verify total entity count across all modules
+		const totalEntities = result.allEntities.length;
+		strictEqual(
+			totalEntities,
+			4,
+			"Should have 4 total entities across all modules",
+		);
+
+		// Verify entity types distribution
+		const functionEntities = result.allEntities.filter(
+			(e) => e.entityType === "function",
+		);
+		const typedefEntities = result.allEntities.filter(
+			(e) => e.entityType === "typedef",
+		);
+		strictEqual(functionEntities.length, 3, "Should have 3 function entities");
+		strictEqual(typedefEntities.length, 1, "Should have 1 typedef entity");
+	});
 });

@@ -68,6 +68,10 @@ function createEntityFromBlock(block, filePath) {
 		return null;
 	}
 
+	// Extract and set description content (JSDoc block content with tags stripped)
+	const description = extractDescriptionFromJSDocBlock(block.content);
+	entity.setDescription(description);
+
 	// Parse and attach JSDoc tags
 	for (const tagData of block.tags) {
 		const tag = createTag(tagData.name, tagData.content);
@@ -176,6 +180,69 @@ function extractJSDocBlocks(sourceCode) {
 }
 
 /**
+ * Extract description content from JSDoc block (strip all @tag content including multiline)
+ *
+ * Returns the descriptive text content from JSDoc block with all @tag content
+ * removed. Uses the same multiline tag parsing logic to ensure accurate separation.
+ *
+ * @param {string} content - JSDoc block content (without comment markers)
+ * @returns {string} Description text with all tag content stripped
+ */
+function extractDescriptionFromJSDocBlock(content) {
+	if (typeof content !== "string") {
+		return "";
+	}
+
+	const lines = content.split(/\r?\n/);
+	const descriptionLines = [];
+	let inTagContent = false;
+
+	for (const line of lines) {
+		// Remove leading asterisk and whitespace
+		const cleanLine = line.replace(/^\s*\*?\s?/, "");
+
+		// Check if this line starts a new @tag
+		const tagMatch = cleanLine.match(/^@(\w+)(?:\s+(.*))?$/);
+
+		if (tagMatch) {
+			// Found a tag line - start skipping content
+			inTagContent = true;
+			continue;
+		}
+
+		if (inTagContent && cleanLine !== "") {
+			// Skip non-empty lines that belong to current tag
+			continue;
+		}
+
+		// If we hit an empty line while in tag content, we might be done with the tag
+		// but we need to continue checking for more tag content
+		if (inTagContent && cleanLine === "") {
+			continue;
+		}
+
+		// If we're not in tag content, this is description content
+		if (!inTagContent) {
+			// Skip leading empty lines
+			if (cleanLine === "" && descriptionLines.length === 0) {
+				continue;
+			}
+			descriptionLines.push(cleanLine);
+		}
+	}
+
+	// Remove trailing empty lines
+	while (
+		descriptionLines.length > 0 &&
+		descriptionLines[descriptionLines.length - 1] === ""
+	) {
+		descriptionLines.pop();
+	}
+
+	return descriptionLines.join("\n").trim();
+}
+
+/**
  * Parse JSDoc tags from comment block content
  *
  * Extracts @tag lines and their content using regex pattern matching.
@@ -190,19 +257,43 @@ function parseJSDocTags(content) {
 	}
 
 	const tags = [];
-	const tagRegex = /^\s*\*?\s*@(\w+)(?:\s+(.*))?$/gm;
-	let match = tagRegex.exec(content);
+	const lines = content.split(/\r?\n/);
 
-	while (match !== null) {
-		const tagName = match[1];
-		const tagContent = match[2] || "";
+	let currentTag = null;
+	let currentContent = [];
 
+	for (const line of lines) {
+		// Remove leading asterisk and whitespace
+		const cleanLine = line.replace(/^\s*\*?\s?/, "");
+
+		// Check if this line starts a new @tag
+		const tagMatch = cleanLine.match(/^@(\w+)(?:\s+(.*))?$/);
+
+		if (tagMatch) {
+			// Save previous tag if exists
+			if (currentTag) {
+				tags.push({
+					name: currentTag,
+					content: currentContent.join("\n").trim(),
+				});
+			}
+
+			// Start new tag
+			currentTag = tagMatch[1];
+			currentContent = tagMatch[2] ? [tagMatch[2]] : [];
+		} else if (currentTag && cleanLine !== "") {
+			// Add content line to current tag
+			currentContent.push(cleanLine);
+		}
+		// Ignore empty lines and lines that don't belong to a tag
+	}
+
+	// Save the last tag if exists
+	if (currentTag) {
 		tags.push({
-			name: tagName,
-			content: tagContent.trim(),
+			name: currentTag,
+			content: currentContent.join("\n").trim(),
 		});
-
-		match = tagRegex.exec(content);
 	}
 
 	return tags;
