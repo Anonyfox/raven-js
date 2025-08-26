@@ -30,14 +30,6 @@ let listener = null;
 let isBatching = false;
 
 /**
- * Global flag to track if we're currently in an update cycle.
- * Prevents effects from running until all signals have updated.
- *
- * @type {boolean}
- */
-const isInUpdateCycle = false;
-
-/**
  * Tracks the current batch depth for nested batches.
  *
  * @type {number}
@@ -194,8 +186,8 @@ export function signal(initial) {
 		if (listener) {
 			subs.add(listener);
 			// Also track this signal as a dependency in the effect if it supports it
-			if (listener._trackDependency) {
-				listener._trackDependency(read);
+			if (/** @type {any} */ (listener)._trackDependency) {
+				/** @type {any} */ (listener)._trackDependency(read);
 			}
 		}
 		return value;
@@ -277,6 +269,14 @@ export function signal(initial) {
  * **Performance**: Only re-runs when dependencies actually change.
  * **Cleanup**: Automatic dependency cleanup when effect re-runs.
  *
+ * **Dependency Management**: Effects automatically unsubscribe from signals
+ * that aren't read during the current execution. This provides optimal memory
+ * management but requires careful handling of conditional signal reads.
+ *
+ * **Limitation**: For conditional signal reading patterns where a signal might
+ * be read again in future runs, consider using `untrack()` or explicit
+ * subscription management to avoid unwanted unsubscriptions.
+ *
  * @param {function(): void|Promise<void>} fn - Function to run reactively
  * @returns {function(): void|Promise<void>} Disposal function to stop the effect
  *
@@ -298,17 +298,22 @@ export function signal(initial) {
  *
  * @example
  * ```javascript
- * // Async effects work seamlessly
- * const data = signal(null);
+ * // Dependency cleanup - effect switches from reading 'a' to 'b'
+ * const condition = signal(true);
+ * const a = signal(1);
+ * const b = signal(100);
  *
- * effect(async () => {
- *   if (data()) {
- *     await fetch('/api/track', {
- *       method: 'POST',
- *       body: JSON.stringify(data())
- *     });
+ * effect(() => {
+ *   if (condition()) {
+ *     console.log('a:', a()); // Subscribes to 'a'
+ *   } else {
+ *     console.log('b:', b()); // Subscribes to 'b', unsubscribes from 'a'
  *   }
  * });
+ *
+ * condition.set(false); // Effect now only tracks 'b', not 'a'
+ * a.set(999); // No effect execution (unsubscribed)
+ * b.set(200); // Effect runs (still subscribed)
  * ```
  */
 export function effect(fn) {
@@ -405,23 +410,24 @@ export function effect(fn) {
 		});
 
 		const prev = listener;
-		const previousDependencies = new Set(currentDependencies);
+
+		// Track what dependencies we had before this run
+		const dependenciesBeforeRun = new Set(currentDependencies);
 
 		// Clear current dependencies - will be rebuilt during execution
 		currentDependencies.clear();
 
 		// Add dependency tracking capability to the execute function
-		execute._trackDependency = (signal) => {
+		/** @type {any} */ (execute)._trackDependency = (
+			/** @type {any} */ signal,
+		) => {
 			currentDependencies.add(signal);
 		};
 
 		listener = execute;
 
-		// Wrap resource APIs during effect execution - but only for non-test environment
-		const restore =
-			typeof process !== "undefined" && process.env.NODE_ENV === "test"
-				? () => {} // No-op in tests to prevent hanging
-				: wrapResourceAPIs();
+		// Wrap resource APIs during effect execution
+		const restore = wrapResourceAPIs();
 
 		try {
 			const result = fn();
@@ -438,9 +444,9 @@ export function effect(fn) {
 			restore();
 			listener = prev;
 
-			// Clean up previous dependencies AFTER effect execution completes
-			// This prevents re-entrant issues during the current notification cycle
-			for (const signal of previousDependencies) {
+			// Smart dependency cleanup: clean up dependencies not read in current run
+			// This handles complete dependency switches while preserving conditional reads
+			for (const signal of dependenciesBeforeRun) {
 				if (signal._unsubscribe && !currentDependencies.has(signal)) {
 					signal._unsubscribe(execute);
 				}
