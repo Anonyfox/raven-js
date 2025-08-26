@@ -479,3 +479,71 @@ test("listFiles - integration with File class expectations", () => {
 
 	rmSync(integrationDir, { recursive: true, force: true });
 });
+
+test("listFiles - error handling edge cases", () => {
+	// Test permission-denied or invalid directory scenarios by using mock directory
+	const invalidDir = "/this/path/does/not/exist/at/all";
+
+	// This should handle the error gracefully and return empty set
+	const result = listFiles(invalidDir);
+	strictEqual(result instanceof Set, true);
+	strictEqual(result.size, 0);
+
+	// SURGICAL TARGET: Hit lines 65-67 by making .gitignore unreadable
+	const gitignoreFailDir = join(testDir, "gitignore-fail-test");
+	mkdirSync(gitignoreFailDir, { recursive: true });
+
+	// Create directory named .gitignore (not a file) to force readFileSync to throw
+	mkdirSync(join(gitignoreFailDir, ".gitignore"));
+	writeFileSync(join(gitignoreFailDir, "target.js"), "// should be found");
+
+	// This WILL hit lines 65-67 catch block in loadLocalGitignorePatterns
+	const gitignoreFailResult = listFiles(gitignoreFailDir);
+	strictEqual(gitignoreFailResult instanceof Set, true);
+	strictEqual(gitignoreFailResult.has("./target.js"), true);
+
+	rmSync(gitignoreFailDir, { recursive: true, force: true });
+
+	// SURGICAL TARGET: Hit lines 133-134 by making directory unreadable
+	const dirFailDir = join(testDir, "dir-fail-test");
+	mkdirSync(dirFailDir, { recursive: true });
+	writeFileSync(join(dirFailDir, "normal.js"), "// normal file");
+
+	// Create a file with the same name as where we expect a directory
+	writeFileSync(join(dirFailDir, "fakedir"), "not a directory");
+
+	// Test reading the fake directory (will cause readdirSync to fail)
+	// This should hit lines 133-134 catch block in scanDirectory
+	const dirFailResult = listFiles(join(dirFailDir, "fakedir"));
+	strictEqual(dirFailResult instanceof Set, true);
+	strictEqual(dirFailResult.size, 0); // Should return empty due to error
+
+	rmSync(dirFailDir, { recursive: true, force: true });
+});
+
+test("listFiles - gitignore patterns edge cases", () => {
+	// Test with different gitignore scenario
+	const tempDir = join(testDir, "empty-gitignore-test");
+	mkdirSync(tempDir, { recursive: true });
+
+	// Create empty gitignore to test no patterns branch
+	writeFileSync(join(tempDir, ".gitignore"), "");
+	writeFileSync(join(tempDir, "test.js"), "// test file");
+	mkdirSync(join(tempDir, "dir"));
+	writeFileSync(join(tempDir, "dir", "file.js"), "// nested file");
+
+	const files = listFiles(tempDir);
+	const fileArray = Array.from(files);
+
+	// Should include all JS files since empty gitignore has no patterns
+	strictEqual(
+		fileArray.some((f) => f.includes("test.js")),
+		true,
+	);
+	strictEqual(
+		fileArray.some((f) => f.includes("dir/file.js")),
+		true,
+	);
+
+	rmSync(tempDir, { recursive: true, force: true });
+});

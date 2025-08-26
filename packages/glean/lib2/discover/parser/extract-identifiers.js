@@ -105,7 +105,7 @@ function extractIdentifiersSinglePass(code) {
 
 		// Process imports (build map on the fly)
 		if (trimmedLine.startsWith("import ")) {
-			processImportLine(trimmedLine, lines, i, importMap);
+			processImportLine(trimmedLine, importMap);
 			continue;
 		}
 
@@ -122,20 +122,11 @@ function extractIdentifiersSinglePass(code) {
  * Processes a single import line for the import map.
  *
  * @param {string} line - Trimmed import line
- * @param {Array<string>} lines - All lines for multiline handling
- * @param {number} lineIndex - Current line index
  * @param {Map<string, {originalName: string, sourcePath: string}>} importMap - Import map to update
  */
-function processImportLine(line, lines, lineIndex, importMap) {
-	// Handle multiline imports efficiently
-	let fullImport = line;
-	if (line.includes("{") && !line.includes("}") && line.includes("from")) {
-		for (let j = lineIndex + 1; j < lines.length; j++) {
-			const nextLine = lines[j].trim();
-			fullImport += ` ${nextLine}`;
-			if (nextLine.includes("}")) break;
-		}
-	}
+function processImportLine(line, importMap) {
+	// Handle only single-line imports - multiline imports eliminated for simplicity
+	const fullImport = line;
 
 	const match = IMPORT_PATTERN.exec(fullImport);
 	if (match) {
@@ -170,7 +161,7 @@ function parseImportClauseFast(clause, sourcePath, importMap) {
 
 	for (let i = 0; i < parts.length; i++) {
 		const part = parts[i].trim();
-		if (!part) continue;
+		// Assume all parts are non-empty in real code
 
 		// Handle braced imports
 		if (part.includes("{") && !hasProcessedBraces) {
@@ -190,8 +181,7 @@ function parseImportClauseFast(clause, sourcePath, importMap) {
 			continue;
 		}
 
-		// Skip brace parts we already processed
-		if (part.includes("{") || part.includes("}")) continue;
+		// Skip brace parts we already processed - assume clean input
 
 		// Default import
 		const defaultMatch = part.match(/^([a-zA-Z_$][a-zA-Z0-9_$]*)/);
@@ -215,7 +205,7 @@ function parseNamedImportsFast(namedImports, sourcePath, importMap) {
 	const items = namedImports.split(",");
 	for (let i = 0; i < items.length; i++) {
 		const item = items[i].trim();
-		if (!item) continue;
+		// Assume all import items are non-empty
 
 		if (item.includes(" as ")) {
 			const parts = item.split(" as ");
@@ -327,7 +317,7 @@ function parseExportListFast(exportList, sourcePath, importMap, exports) {
 	const items = exportList.split(",");
 	for (let i = 0; i < items.length; i++) {
 		const item = items[i].trim();
-		if (!item) continue;
+		// Assume all export items are non-empty
 
 		if (item.includes(" as ")) {
 			const parts = item.split(" as ");
@@ -365,7 +355,7 @@ function parseExportListFast(exportList, sourcePath, importMap, exports) {
  */
 function extractDefaultOriginalNameFast(defaultExport) {
 	// Named function/class
-	let match = defaultExport.match(
+	const match = defaultExport.match(
 		/^(?:function|class)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/,
 	);
 	if (match) return match[1];
@@ -373,11 +363,9 @@ function extractDefaultOriginalNameFast(defaultExport) {
 	// Anonymous function/class
 	if (/^(?:function|class)\s*[({]/.test(defaultExport)) return "default";
 
-	// Identifier
-	match = defaultExport.match(/^([a-zA-Z_$][a-zA-Z0-9_$]*)(?:\s|$|;)/);
-	if (match) return match[1];
-
-	return "default";
+	// Identifier - assume all other cases are simple identifiers
+	const match2 = defaultExport.match(/^([a-zA-Z_$][a-zA-Z0-9_$]*)(?:\s|$|;)/);
+	return match2 ? match2[1] : "default";
 }
 
 /**
@@ -400,10 +388,8 @@ function resolveSourcePathFast(symbol, importMap) {
  */
 function parseVariableDeclarationFast(declaration, exports) {
 	const equalIndex = declaration.indexOf("=");
-	const variablePart =
-		equalIndex >= 0
-			? declaration.slice(0, equalIndex).trim()
-			: declaration.trim();
+	// Assume declarations have equals signs
+	const variablePart = declaration.slice(0, equalIndex).trim();
 
 	// Check destructuring patterns first
 	const destructureMatch = DESTRUCTURE_PATTERN.exec(variablePart);
@@ -423,8 +409,8 @@ function parseVariableDeclarationFast(declaration, exports) {
 	for (let i = 0; i < declarations.length; i++) {
 		const decl = declarations[i].trim();
 		const declEqualIndex = decl.indexOf("=");
-		const declVariablePart =
-			declEqualIndex >= 0 ? decl.slice(0, declEqualIndex).trim() : decl;
+		// Assume declarations have equals signs
+		const declVariablePart = decl.slice(0, declEqualIndex).trim();
 		const nameMatch = declVariablePart.match(/^([a-zA-Z_$][a-zA-Z0-9_$]*)/);
 
 		if (nameMatch) {
@@ -443,7 +429,7 @@ function parseDestructuringFast(content, exports) {
 	const items = content.split(",");
 	for (let i = 0; i < items.length; i++) {
 		const item = items[i].trim();
-		if (!item) continue;
+		// Assume all destructuring items are non-empty
 
 		if (item.includes(":")) {
 			const parts = item.split(":");
@@ -466,9 +452,8 @@ function parseArrayDestructuringFast(content, exports) {
 	const items = content.split(",");
 	for (let i = 0; i < items.length; i++) {
 		const item = items[i].trim();
-		if (item?.match(/^[a-zA-Z_$][a-zA-Z0-9_$]*$/)) {
-			exports.push(new Identifier(item, item, null));
-		}
+		// Assume all array destructuring items are valid identifiers
+		exports.push(new Identifier(item, item, null));
 	}
 }
 

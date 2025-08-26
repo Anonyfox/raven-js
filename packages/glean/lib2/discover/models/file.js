@@ -58,7 +58,7 @@ export class File {
 	constructor(path, text) {
 		this.#path = path;
 		this.#text = text;
-		this.#identifiers = extractIdentifiers(text) || [];
+		this.#identifiers = extractIdentifiers(text);
 	}
 
 	/**

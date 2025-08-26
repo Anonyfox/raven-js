@@ -20,6 +20,7 @@ test("pickEntrypointFile - invalid inputs", () => {
 	strictEqual(pickEntrypointFile(new Set(["index.js"]), null), null);
 	strictEqual(pickEntrypointFile(new Set(["index.js"]), ""), null);
 	strictEqual(pickEntrypointFile("not-set", "index.js"), null);
+	strictEqual(pickEntrypointFile(undefined, "index.js"), null);
 });
 
 test("pickEntrypointFile - exact matches", () => {

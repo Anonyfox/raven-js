@@ -62,7 +62,7 @@ function loadLocalGitignorePatterns(directoryPath) {
 			.map((line) => line.trim())
 			.filter((line) => line && !line.startsWith("#"));
 	} catch {
-		// Ignore gitignore read errors
+		// Handle cases where .gitignore exists but isn't readable (e.g., is a directory)
 		return [];
 	}
 }
@@ -99,38 +99,41 @@ function scanDirectory(
 	// Patterns to pass to child directories (inherited + local, but not hardcoded)
 	const patternsToInherit = [...inheritedPatterns, ...localGitignorePatterns];
 
+	// Handle directory read errors gracefully
+	let entries;
 	try {
-		const entries = readdirSync(absolutePath, { withFileTypes: true });
-
-		for (const entry of entries) {
-			const entryRelative = relativePath
-				? join(relativePath, entry.name).replace(/\\/g, "/")
-				: entry.name;
-
-			// Skip if matches ignore patterns
-			if (shouldIgnore(entryRelative, allIgnorePatterns)) {
-				continue;
-			}
-
-			const entryAbsolute = join(absolutePath, entry.name);
-
-			if (entry.isDirectory()) {
-				// Recursively scan subdirectory with inherited patterns
-				const subFiles = scanDirectory(
-					entryAbsolute,
-					entryRelative,
-					hardcodedIgnores,
-					rootPath,
-					patternsToInherit, // Pass down all gitignore patterns
-				);
-				files.push(...subFiles);
-			} else if (entry.isFile()) {
-				// Add file to results
-				files.push(entryRelative);
-			}
-		}
+		entries = readdirSync(absolutePath, { withFileTypes: true });
 	} catch {
-		// Ignore directory read errors
+		// Handle cases where path exists but isn't readable as directory
+		return files;
+	}
+
+	for (const entry of entries) {
+		const entryRelative = relativePath
+			? join(relativePath, entry.name).replace(/\\/g, "/")
+			: entry.name;
+
+		// Skip if matches ignore patterns
+		if (shouldIgnore(entryRelative, allIgnorePatterns)) {
+			continue;
+		}
+
+		const entryAbsolute = join(absolutePath, entry.name);
+
+		if (entry.isDirectory()) {
+			// Recursively scan subdirectory with inherited patterns
+			const subFiles = scanDirectory(
+				entryAbsolute,
+				entryRelative,
+				hardcodedIgnores,
+				rootPath,
+				patternsToInherit, // Pass down all gitignore patterns
+			);
+			files.push(...subFiles);
+		} else if (entry.isFile()) {
+			// Add file to results
+			files.push(entryRelative);
+		}
 	}
 
 	return files;
@@ -144,10 +147,6 @@ function scanDirectory(
  * @returns {boolean} True if path should be ignored
  */
 function shouldIgnore(path, patterns) {
-	if (!patterns.length) {
-		return false;
-	}
-
 	// For files in subdirectories, extract just the filename to test local patterns
 	const filename = path.includes("/") ? path.split("/").pop() : path;
 

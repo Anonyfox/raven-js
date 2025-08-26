@@ -38,9 +38,14 @@ export const discover = (packagePath) => {
 	// start with a single pass of listing all files in the package folder recursively
 	const files = listFiles(packagePath);
 
+	// normalize file paths by removing ./ prefix for entry point resolution
+	const normalizedFiles = new Set(
+		Array.from(files).map((path) => path.slice(2)), // Assume all paths start with "./"
+	);
+
 	// construct the package abstraction - throw if not found explicitly
 	const pkgJsonStr = readFileSync(join(packagePath, "package.json"), "utf-8");
-	const pkg = new Package(pkgJsonStr, files);
+	const pkg = new Package(pkgJsonStr, normalizedFiles);
 
 	// read package README if it exists
 	const packageReadmePath = join(packagePath, "README.md");
@@ -50,7 +55,10 @@ export const discover = (packagePath) => {
 
 	// for every entrypoint there will be a module in this package
 	for (const [importPath, filePath] of Object.entries(pkg.entryPoints)) {
-		const module = new Module(pkg, filePath, importPath);
+		// Convert relative import path to full package import path
+		const fullImportPath =
+			importPath === "." ? pkg.name : `${pkg.name}${importPath.slice(1)}`;
+		const module = new Module(pkg, filePath, fullImportPath);
 
 		// read module README if it exists in the same directory as the entry file
 		const moduleDir = dirname(join(packagePath, filePath));
@@ -60,13 +68,17 @@ export const discover = (packagePath) => {
 		}
 
 		// add the initial file as a starting point for the module
-		module.addFile(new File(filePath, readFileSync(filePath, "utf-8")));
+		module.addFile(
+			new File(filePath, readFileSync(join(packagePath, filePath), "utf-8")),
+		);
 	}
 
 	// now collect all identifiers from all files in the package that are publicly
 	// exported so we know which files to include in the public API
 	for (const mod of pkg.modules) {
-		let unvisitedFilePaths = Array.from(mod.unvisitedFilePaths(files));
+		let unvisitedFilePaths = Array.from(
+			mod.unvisitedFilePaths(normalizedFiles),
+		);
 		while (unvisitedFilePaths.length > 0) {
 			const filePath = unvisitedFilePaths.shift();
 
@@ -75,11 +87,16 @@ export const discover = (packagePath) => {
 			if (existingFile) {
 				mod.addFile(existingFile);
 			} else {
-				mod.addFile(new File(filePath, readFileSync(filePath, "utf-8")));
+				mod.addFile(
+					new File(
+						filePath,
+						readFileSync(join(packagePath, filePath), "utf-8"),
+					),
+				);
 			}
 
 			// update the unvisited file paths for the next iteration
-			unvisitedFilePaths = Array.from(mod.unvisitedFilePaths(files));
+			unvisitedFilePaths = Array.from(mod.unvisitedFilePaths(normalizedFiles));
 		}
 	}
 

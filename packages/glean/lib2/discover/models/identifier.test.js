@@ -7,79 +7,76 @@
  */
 
 /**
- * @file Test suite for the Identifier class.
+ * @file Test suite for the Identifier class - Raven doctrine applied.
  */
 
 import { deepStrictEqual, strictEqual } from "node:assert";
-import { test } from "node:test";
+import { describe, test } from "node:test";
 import { Identifier } from "./identifier.js";
 
-test("Identifier - constructor with all fields", () => {
-	const id = new Identifier("exported", "original", "./source.js");
+describe("core functionality", () => {
+	test("should create instances and provide property access with all combinations", () => {
+		// Test constructor with all fields
+		const fullId = new Identifier("exported", "original", "./source.js");
+		strictEqual(fullId.exportedName, "exported");
+		strictEqual(fullId.originalName, "original");
+		strictEqual(fullId.sourcePath, "./source.js");
 
-	strictEqual(id.exportedName, "exported");
-	strictEqual(id.originalName, "original");
-	strictEqual(id.sourcePath, "./source.js");
-});
+		// Test constructor with null sourcePath
+		const nullSourceId = new Identifier("myExport", "myOriginal", null);
+		strictEqual(nullSourceId.exportedName, "myExport");
+		strictEqual(nullSourceId.originalName, "myOriginal");
+		strictEqual(nullSourceId.sourcePath, null);
+	});
 
-test("Identifier - constructor with null sourcePath", () => {
-	const id = new Identifier("myExport", "myOriginal", null);
+	test("should generate correct string representations for all patterns", () => {
+		// With sourcePath
+		const withSource = new Identifier("exported", "original", "./source.js");
+		strictEqual(withSource.toString(), "exported (original from ./source.js)");
 
-	strictEqual(id.exportedName, "myExport");
-	strictEqual(id.originalName, "myOriginal");
-	strictEqual(id.sourcePath, null);
-});
+		// Without sourcePath, same names
+		const sameNames = new Identifier("same", "same", null);
+		strictEqual(sameNames.toString(), "same");
 
-test("Identifier - toString with sourcePath", () => {
-	const id = new Identifier("exported", "original", "./source.js");
-	const expected = "exported (original from ./source.js)";
+		// Without sourcePath, different names
+		const diffNames = new Identifier("exported", "original", null);
+		strictEqual(diffNames.toString(), "exported (original)");
+	});
 
-	strictEqual(id.toString(), expected);
-});
+	test("should serialize and deserialize maintaining data integrity", () => {
+		const original = new Identifier("exported", "original", "./source.js");
 
-test("Identifier - toString without sourcePath, same names", () => {
-	const id = new Identifier("same", "same", null);
+		// Test toJSON
+		const serialized = original.toJSON();
+		deepStrictEqual(serialized, {
+			exportedName: "exported",
+			originalName: "original",
+			sourcePath: "./source.js",
+		});
 
-	strictEqual(id.toString(), "same");
-});
+		// Test fromObject
+		const deserialized = Identifier.fromObject(serialized);
+		strictEqual(deserialized.exportedName, original.exportedName);
+		strictEqual(deserialized.originalName, original.originalName);
+		strictEqual(deserialized.sourcePath, original.sourcePath);
 
-test("Identifier - toString without sourcePath, different names", () => {
-	const id = new Identifier("exported", "original", null);
-	const expected = "exported (original)";
+		// Test round trip integrity
+		const roundTrip = Identifier.fromObject(original.toJSON());
+		strictEqual(roundTrip.exportedName, original.exportedName);
+		strictEqual(roundTrip.originalName, original.originalName);
+		strictEqual(roundTrip.sourcePath, original.sourcePath);
 
-	strictEqual(id.toString(), expected);
-});
+		// Test toJSON with null sourcePath
+		const nullSourceId = new Identifier("local", "local", null);
+		const nullSerialized = nullSourceId.toJSON();
+		deepStrictEqual(nullSerialized, {
+			exportedName: "local",
+			originalName: "local",
+			sourcePath: null,
+		});
 
-test("Identifier - toJSON", () => {
-	const id = new Identifier("exported", "original", "./source.js");
-	const expected = {
-		exportedName: "exported",
-		originalName: "original",
-		sourcePath: "./source.js",
-	};
-
-	deepStrictEqual(id.toJSON(), expected);
-});
-
-test("Identifier - fromObject", () => {
-	const obj = {
-		exportedName: "exported",
-		originalName: "original",
-		sourcePath: "./source.js",
-	};
-
-	const id = Identifier.fromObject(obj);
-
-	strictEqual(id.exportedName, "exported");
-	strictEqual(id.originalName, "original");
-	strictEqual(id.sourcePath, "./source.js");
-});
-
-test("Identifier - round trip via toJSON and fromObject", () => {
-	const original = new Identifier("exported", "original", "./source.js");
-	const roundTrip = Identifier.fromObject(original.toJSON());
-
-	strictEqual(roundTrip.exportedName, original.exportedName);
-	strictEqual(roundTrip.originalName, original.originalName);
-	strictEqual(roundTrip.sourcePath, original.sourcePath);
+		// Test fromObject with null sourcePath
+		const nullDeserialized = Identifier.fromObject(nullSerialized);
+		strictEqual(nullDeserialized.sourcePath, null);
+	});
 });
