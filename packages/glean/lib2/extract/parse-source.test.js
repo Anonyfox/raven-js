@@ -397,4 +397,502 @@ Multiple lines of rich documentation content.`;
 			"Example tag should contain example code",
 		);
 	});
+
+	test("should validate entity property completeness and types", () => {
+		const file = {
+			path: "validation.js",
+			text: `/**
+ * Test function for property validation
+ * @callback validateMe
+ * @param {string} input - Test parameter
+ */`,
+		};
+
+		const entities = parseModuleEntities({ files: [file] });
+		strictEqual(entities.length, 1, "Should create one entity");
+
+		const entity = entities[0];
+
+		// Core property existence
+		strictEqual(
+			typeof entity.entityType,
+			"string",
+			"entityType should be string",
+		);
+		strictEqual(typeof entity.name, "string", "name should be string");
+		strictEqual(
+			typeof entity.description,
+			"string",
+			"description should be string",
+		);
+		strictEqual(
+			Array.isArray(entity.jsdocTags),
+			true,
+			"jsdocTags should be array",
+		);
+		strictEqual(typeof entity.location, "object", "location should be object");
+		strictEqual(entity.location !== null, true, "location should not be null");
+
+		// Location property completeness
+		strictEqual(
+			typeof entity.location.file,
+			"string",
+			"location.file should be string",
+		);
+		strictEqual(
+			typeof entity.location.line,
+			"number",
+			"location.line should be number",
+		);
+		strictEqual(
+			typeof entity.location.column,
+			"number",
+			"location.column should be number",
+		);
+
+		// Property values validation
+		strictEqual(
+			entity.entityType,
+			"callback",
+			"Should have correct entityType",
+		);
+		strictEqual(entity.name, "validateMe", "Should have correct name");
+		strictEqual(
+			entity.location.file,
+			"validation.js",
+			"Should preserve file path",
+		);
+		strictEqual(
+			entity.location.line > 0,
+			true,
+			"Line number should be positive",
+		);
+		strictEqual(
+			entity.location.column > 0,
+			true,
+			"Column number should be positive",
+		);
+	});
+
+	test("should handle JSDoc content quality and formatting preservation", () => {
+		const file = {
+			path: "formatting.js",
+			text: `/**
+ * Function with complex formatting and special characters.
+ * Handles: áéíóú, 中文, emoji 🚀, and "quotes" & <symbols>.
+ *
+ * @callback complexFormatting
+ * @param {Object} config - Configuration object with special chars: {"key": "value"}
+ * @example
+ * // Multi-line example with indentation
+ * const result = complexFormatting({
+ *   property: "value with spaces",
+ *   number: 42,
+ *   array: [1, 2, 3]
+ * });
+ *
+ * console.log(result); // Expected output
+ */`,
+		};
+
+		const entities = parseModuleEntities({ files: [file] });
+		const entity = entities[0];
+
+		// Description formatting preservation
+		strictEqual(
+			entity.description.includes("áéíóú, 中文, emoji 🚀"),
+			true,
+			"Should preserve Unicode characters",
+		);
+		strictEqual(
+			entity.description.includes('"quotes" & <symbols>'),
+			true,
+			"Should preserve special characters",
+		);
+
+		// JSDoc tag content preservation
+		const paramTag = entity.jsdocTags.find((tag) => tag.tagType === "param");
+		const exampleTag = entity.jsdocTags.find(
+			(tag) => tag.tagType === "example",
+		);
+
+		strictEqual(
+			paramTag.rawContent.includes('{"key": "value"}'),
+			true,
+			"Should preserve JSON in param content",
+		);
+		strictEqual(
+			exampleTag.rawContent.includes('property: "value with spaces"'),
+			true,
+			"Should preserve formatting in examples",
+		);
+		strictEqual(
+			exampleTag.rawContent.includes("console.log(result);"),
+			true,
+			"Should preserve multi-line example content",
+		);
+
+		// Content should not include @ symbols from tag parsing
+		strictEqual(
+			entity.description.includes("@"),
+			false,
+			"Description should not contain @ symbols",
+		);
+		strictEqual(
+			paramTag.rawContent.startsWith("@"),
+			false,
+			"Tag content should not start with @",
+		);
+	});
+
+	test("should handle edge cases and malformed JSDoc", () => {
+		const file = {
+			path: "edge-cases.js",
+			text: `/**
+ *
+ *
+ * Empty description with whitespace only.
+ *
+ *
+ * @callback emptyDescription
+ * @param {} - Empty type parameter
+ * @param {string} - Missing parameter name
+ * @param {*} anything - Any type parameter
+ * @returns
+ * @example
+ *
+ * emptyDescription();
+ *
+ */
+
+/**
+ * @callback onlyTags
+ * @param {string} input
+ */
+
+/**
+ * Only description, no tags at all.
+ * Multiple lines without any JSDoc tags.
+ * @typedef InvalidTag
+ */`,
+		};
+
+		const entities = parseModuleEntities({ files: [file] });
+		strictEqual(entities.length, 3, "Should extract 3 entities");
+
+		// First entity: empty description handling
+		const firstEntity = entities[0];
+		strictEqual(
+			firstEntity.name,
+			"emptyDescription",
+			"Should extract correct name",
+		);
+		strictEqual(
+			firstEntity.description.trim(),
+			"Empty description with whitespace only.",
+			"Should clean up whitespace in descriptions",
+		);
+
+		// Second entity: no description, only tags
+		const secondEntity = entities[1];
+		strictEqual(
+			secondEntity.name,
+			"onlyTags",
+			"Should extract name from tags-only block",
+		);
+		strictEqual(
+			secondEntity.description,
+			"",
+			"Should have empty description when no description provided",
+		);
+		strictEqual(
+			secondEntity.jsdocTags.length > 0,
+			true,
+			"Should still extract tags when no description",
+		);
+
+		// Third entity: only description, invalid entity tag
+		const thirdEntity = entities[2];
+		strictEqual(
+			thirdEntity.name,
+			"InvalidTag",
+			"Should extract name from typedef",
+		);
+		strictEqual(
+			thirdEntity.description.includes("Only description, no tags at all"),
+			true,
+			"Should preserve description when entity tag is not in registry",
+		);
+
+		// Malformed parameter handling
+		const paramTags = firstEntity.jsdocTags.filter(
+			(tag) => tag.tagType === "param",
+		);
+		strictEqual(paramTags.length, 3, "Should handle malformed param tags");
+
+		// Empty returns tag
+		const returnsTag = firstEntity.jsdocTags.find(
+			(tag) => tag.tagType === "returns",
+		);
+		strictEqual(returnsTag.rawContent, "", "Should handle empty returns tag");
+	});
+
+	test("should handle multiple entities with accurate line numbers", () => {
+		const file = {
+			path: "multi-entity.js",
+			text: `// Line 1: Comment
+// Line 2: Comment
+
+/**
+ * First entity description
+ * @callback firstEntity
+ */
+
+// Line 9: Comment
+
+/**
+ * Second entity with longer description.
+ * Spans multiple lines with details.
+ * @callback secondEntity
+ * @param {string} input - Parameter description
+ */
+
+// Line 18: Comment
+
+/**
+ * Third entity
+ * @callback thirdEntity
+ */`,
+		};
+
+		const entities = parseModuleEntities({ files: [file] });
+		strictEqual(entities.length, 3, "Should extract 3 entities");
+
+		// Line number accuracy testing
+		strictEqual(
+			entities[0].location.line,
+			4,
+			"First entity should start at line 4",
+		);
+		strictEqual(
+			entities[1].location.line,
+			11,
+			"Second entity should start at line 11",
+		);
+		strictEqual(
+			entities[2].location.line,
+			20,
+			"Third entity should start at line 20",
+		);
+
+		// Entity content validation
+		strictEqual(entities[0].name, "firstEntity", "First entity name");
+		strictEqual(entities[1].name, "secondEntity", "Second entity name");
+		strictEqual(entities[2].name, "thirdEntity", "Third entity name");
+
+		// Description length differences
+		strictEqual(
+			entities[0].description.length < entities[1].description.length,
+			true,
+			"Second entity should have longer description",
+		);
+		strictEqual(
+			entities[1].jsdocTags.length > entities[0].jsdocTags.length,
+			true,
+			"Second entity should have more tags",
+		);
+	});
+
+	test("should handle special entity names and extraction patterns", () => {
+		const file = {
+			path: "special-names.js",
+			text: `/**
+ * @callback $specialName
+ */
+
+/**
+ * @callback _privateFunction
+ */
+
+/**
+ * @callback kebab-case-name
+ */
+
+/**
+ * @callback 123numeric
+ */
+
+/**
+ * @callback
+ */
+
+/**
+ * @callback with spaces in name
+ */`,
+		};
+
+		const entities = parseModuleEntities({ files: [file] });
+		strictEqual(entities.length, 6, "Should extract 6 entities");
+
+		// Special character names
+		strictEqual(entities[0].name, "$specialName", "Should handle $ in names");
+		strictEqual(
+			entities[1].name,
+			"_privateFunction",
+			"Should handle _ in names",
+		);
+		strictEqual(
+			entities[2].name,
+			"kebab-case-name",
+			"Should handle hyphens in names",
+		);
+		strictEqual(
+			entities[3].name,
+			"123numeric",
+			"Should handle numeric prefixes",
+		);
+
+		// Edge cases for name extraction
+		strictEqual(
+			entities[4].name,
+			"anonymous",
+			"Should default to 'anonymous' for missing names",
+		);
+		strictEqual(
+			entities[5].name,
+			"with",
+			"Should extract first word when spaces in name",
+		);
+
+		// All entities should have valid structure despite name variations
+		entities.forEach((entity, i) => {
+			strictEqual(
+				typeof entity.description,
+				"string",
+				`Entity ${i} should have string description`,
+			);
+			strictEqual(
+				Array.isArray(entity.jsdocTags),
+				true,
+				`Entity ${i} should have jsdocTags array`,
+			);
+			strictEqual(
+				entity.entityType,
+				"callback",
+				`Entity ${i} should have correct entityType`,
+			);
+		});
+	});
+
+	test("should validate tag content integrity and type safety", () => {
+		const file = {
+			path: "tag-integrity.js",
+			text: `/**
+ * Complex function with all supported tag types
+ * @callback complexFunction
+ * @param {string|number} input - Union type parameter
+ * @param {Object} options - Options object
+ * @param {string} options.name - Nested property
+ * @returns {Promise<string>} Async return type
+ * @throws {Error} When input is invalid
+ * @throws {TypeError} When type mismatch occurs
+ * @example
+ * const result = await complexFunction("test", {name: "value"});
+ * @example
+ * // Second example
+ * complexFunction(123, {name: "number"});
+ * @see {@link https://example.com} External reference
+ * @since 1.0.0
+ * @deprecated Use newFunction instead
+ */`,
+		};
+
+		const entities = parseModuleEntities({ files: [file] });
+		const entity = entities[0];
+
+		// Tag count and type validation
+		const tagTypes = entity.jsdocTags.map((tag) => tag.tagType);
+
+		strictEqual(
+			entity.jsdocTags.length >= 8,
+			true,
+			"Should have multiple tags",
+		);
+		strictEqual(tagTypes.includes("param"), true, "Should include param tags");
+		strictEqual(
+			tagTypes.includes("returns"),
+			true,
+			"Should include returns tag",
+		);
+		strictEqual(
+			tagTypes.includes("throws"),
+			true,
+			"Should include throws tags",
+		);
+		strictEqual(
+			tagTypes.includes("example"),
+			true,
+			"Should include example tags",
+		);
+
+		// Multiple tags of same type handling
+		const paramTags = entity.jsdocTags.filter((tag) => tag.tagType === "param");
+		const throwsTags = entity.jsdocTags.filter(
+			(tag) => tag.tagType === "throws",
+		);
+		const exampleTags = entity.jsdocTags.filter(
+			(tag) => tag.tagType === "example",
+		);
+
+		strictEqual(paramTags.length, 3, "Should have 3 param tags");
+		strictEqual(throwsTags.length, 2, "Should have 2 throws tags");
+		strictEqual(exampleTags.length, 2, "Should have 2 example tags");
+
+		// Content integrity for each tag type
+		entity.jsdocTags.forEach((tag, i) => {
+			strictEqual(
+				typeof tag.tagType,
+				"string",
+				`Tag ${i} should have string tagType`,
+			);
+			strictEqual(
+				typeof tag.rawContent,
+				"string",
+				`Tag ${i} should have string rawContent`,
+			);
+			strictEqual(
+				tag.tagType.length > 0,
+				true,
+				`Tag ${i} should have non-empty tagType`,
+			);
+
+			// @ symbols are allowed in @see tags for {@link} syntax
+			if (tag.tagType !== "see") {
+				strictEqual(
+					tag.rawContent.includes("@"),
+					false,
+					`Tag ${i} content should not contain @ (except @see tags)`,
+				);
+			}
+		});
+
+		// Complex type content preservation
+		const unionParamTag = paramTags.find((tag) =>
+			tag.rawContent.includes("string|number"),
+		);
+		strictEqual(
+			unionParamTag !== undefined,
+			true,
+			"Should preserve union types in param tags",
+		);
+
+		const nestedParamTag = paramTags.find((tag) =>
+			tag.rawContent.includes("options.name"),
+		);
+		strictEqual(
+			nestedParamTag !== undefined,
+			true,
+			"Should preserve nested property documentation",
+		);
+	});
 });
