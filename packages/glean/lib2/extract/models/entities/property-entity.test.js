@@ -359,7 +359,7 @@ describe("PropertyEntity", () => {
 
 		it("should handle template literals", () => {
 			const entity = new PropertyEntity("testProperty", mockLocation);
-			const source = "testProperty = `hello ${world}`;";
+			const source = "testProperty = `hello $" + "{world}`;";
 
 			entity.parseContent(source);
 

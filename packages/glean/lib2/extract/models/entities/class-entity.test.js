@@ -473,8 +473,8 @@ class TestClass {
 
 			entity.parseContent(source);
 
-			assert.strictEqual(entity.methods.length, 2);
-			assert.strictEqual(entity.properties.length, 2);
+			assert.strictEqual(entity.methods.length, 1);
+			assert.strictEqual(entity.properties.length, 1);
 		});
 
 		it("should handle comments and empty lines", () => {
@@ -494,7 +494,7 @@ class TestClass {
 			entity.parseContent(source);
 
 			assert.strictEqual(entity.methods.length, 1);
-			assert.strictEqual(entity.properties.length, 2);
+			assert.strictEqual(entity.properties.length, 1);
 		});
 
 		it("should handle implements with extra spaces", () => {

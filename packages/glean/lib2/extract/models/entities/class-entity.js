@@ -1,6 +1,9 @@
 /**
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
+ * @see https://github.com/Anonyfox/ravenjs
+ * @see https://ravenjs.dev
+ * @see https://anonyfox.com
  */
 
 /**
@@ -171,12 +174,38 @@ export class ClassEntity extends EntityBase {
 			// Track class body boundaries
 			if (trimmed.includes("class") && trimmed.includes(this.name)) {
 				inClassBody = true;
+				// Count braces on class declaration line
+				for (const char of line) {
+					if (char === "{") braceDepth++;
+					if (char === "}") braceDepth--;
+				}
 				continue;
 			}
 
 			if (!inClassBody) continue;
 
-			// Track brace depth
+			// Skip empty lines and comments
+			if (
+				!trimmed ||
+				trimmed.startsWith("//") ||
+				trimmed.startsWith("/*") ||
+				trimmed.endsWith("*/")
+			) {
+				// Still need to track brace depth for comments that contain braces
+				for (const char of line) {
+					if (char === "{") braceDepth++;
+					if (char === "}") braceDepth--;
+				}
+				continue;
+			}
+
+			// Detect methods and properties only at class level (not inside method bodies)
+			// Check BEFORE updating brace depth
+			if (braceDepth === 1) {
+				this._analyzeMember(trimmed, i + 1);
+			}
+
+			// Track brace depth AFTER analyzing
 			for (const char of line) {
 				if (char === "{") braceDepth++;
 				if (char === "}") braceDepth--;
@@ -186,14 +215,6 @@ export class ClassEntity extends EntityBase {
 			if (braceDepth === 0 && trimmed === "}") {
 				break;
 			}
-
-			// Skip empty lines and comments
-			if (!trimmed || trimmed.startsWith("//") || trimmed.startsWith("/*")) {
-				continue;
-			}
-
-			// Detect methods and properties
-			this._analyzeMember(trimmed, i + 1);
 		}
 	}
 

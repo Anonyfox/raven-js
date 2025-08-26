@@ -365,7 +365,7 @@ describe("VariableEntity", () => {
 
 		it("should handle template literals", () => {
 			const entity = new VariableEntity("testVar", mockLocation);
-			const source = "const testVar = `hello ${world}`;";
+			const source = "const testVar = `hello $" + "{world}`;";
 
 			entity.parseContent(source);
 

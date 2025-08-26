@@ -330,13 +330,17 @@ function testFunc(
 
 		it("should handle template literals in defaults", () => {
 			const entity = new FunctionEntity("testFunc", mockLocation);
-			const source = "function testFunc(a = `hello ${world}`) { return a; }";
+			const source =
+				"function testFunc(a = `hello $" + "{world}`) { return a; }";
 
 			entity.parseContent(source);
 
 			assert.strictEqual(entity.parameters.length, 1);
 			assert.strictEqual(entity.parameters[0].hasDefault, true);
-			assert.strictEqual(entity.parameters[0].defaultValue, "`hello ${world}`");
+			assert.strictEqual(
+				entity.parameters[0].defaultValue,
+				"`hello $" + "{world}`",
+			);
 		});
 	});
 
