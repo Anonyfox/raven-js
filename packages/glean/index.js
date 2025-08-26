@@ -100,8 +100,8 @@ export async function processCodebase(options) {
 	console.log("🎉 Glean complete!");
 }
 
-// Export analyze command from dedicated module
-export { runAnalyzeCommand } from "./lib/analyze.js";
+// Export analyze command from lib2 (superior validation)
+export { runAnalyzeCommand } from "./lib2/analyze.js";
 
 /**
  * Run the build command for extract + render
