@@ -55,7 +55,7 @@ export class EntityBase {
 
 		/** @type {string} General description from comment block (JSDoc tags stripped) */
 		this.description = "";
-		/** @type {Array} Collection of parsed JSDoc tags */
+		/** @type {Array<{tagType: string, toObject?: Function}>} Collection of parsed JSDoc tags */
 		this.jsdocTags = [];
 		/** @type {string} Raw source code for this entity */
 		this.source = "";
@@ -75,17 +75,17 @@ export class EntityBase {
 
 	/**
 	 * Add JSDoc tag to entity
-	 * @param {Object} tag - JSDoc tag instance
+	 * @param {{tagType: string, toObject?: Function}} tag - JSDoc tag instance
 	 */
 	addJSDocTag(tag) {
-		if (tag && typeof tag === "object") {
+		if (tag && typeof tag === "object" && "tagType" in tag) {
 			this.jsdocTags.push(tag);
 		}
 	}
 
 	/**
 	 * Get all JSDoc tags
-	 * @returns {Array} All JSDoc tags
+	 * @returns {Array<{tagType: string, toObject?: Function}>} All JSDoc tags
 	 */
 	getAllJSDocTags() {
 		return this.jsdocTags;
@@ -94,7 +94,7 @@ export class EntityBase {
 	/**
 	 * Get JSDoc tags by type
 	 * @param {string} tagType - Tag type to filter by
-	 * @returns {Array} Tags of specified type
+	 * @returns {Array<{tagType: string, toObject?: Function}>} Tags of specified type
 	 */
 	getJSDocTagsByType(tagType) {
 		return this.jsdocTags.filter((tag) => tag.tagType === tagType);
@@ -163,7 +163,11 @@ export class EntityBase {
 	 */
 	validate() {
 		this.isValidated = Boolean(
-			this.entityType && this.name && this.location && this.location.file,
+			this.entityType &&
+				this.name &&
+				this.location &&
+				typeof this.location === "object" &&
+				"file" in this.location,
 		);
 	}
 

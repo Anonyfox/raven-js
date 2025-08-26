@@ -73,6 +73,7 @@ import { JSDocTypedefTag } from "./typedef-tag.js";
 /**
  * Tag registry for dynamic tag creation
  * Maps tag names to their corresponding class constructors
+ * @type {Record<string, any>}
  */
 export const TAG_REGISTRY = {
 	// Function documentation
@@ -126,9 +127,10 @@ export const TAG_REGISTRY = {
  * Create JSDoc tag instance from tag name and content
  * @param {string} tagName - Tag name (e.g., 'param', 'returns')
  * @param {string} content - Tag content
- * @returns {JSDocTagBase|null} Tag instance or null if unknown tag
+ * @returns {import('./base.js').JSDocTagBase|null} Tag instance or null if unknown tag
  */
 export function createTag(tagName, content) {
+	/** @type {any} */
 	const TagClass = TAG_REGISTRY[tagName.toLowerCase()];
 	return TagClass ? new TagClass(content) : null;
 }

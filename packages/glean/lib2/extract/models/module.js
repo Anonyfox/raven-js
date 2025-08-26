@@ -91,6 +91,7 @@ export class Module {
 	 * @returns {Object<string, Array<import('./entities/base.js').EntityBase>>} Entities grouped by type
 	 */
 	get entityGroups() {
+		/** @type {Object<string, Array<import('./entities/base.js').EntityBase>>} */
 		const groups = {};
 		for (const entity of this.entities) {
 			const type = entity.entityType || "unknown";
@@ -107,6 +108,7 @@ export class Module {
 	 * @returns {Object<string, Array<import('./entities/base.js').EntityBase>>} Public entities grouped by type
 	 */
 	get publicEntityGroups() {
+		/** @type {Object<string, Array<import('./entities/base.js').EntityBase>>} */
 		const groups = {};
 		for (const entity of this.publicEntities) {
 			const type = entity.entityType || "unknown";

@@ -9,7 +9,7 @@
 /**
  * @file Typedef entity model - surgical type definition documentation
  *
- * Ravens extract JSDoc @typedef constructs with precision.
+ * Ravens extract JSDoc typedef constructs with precision.
  * Handles custom type definitions, object type schemas, and type aliases.
  * Essential for TypeScript-style documentation in JavaScript projects.
  * Zero external dependencies, pure extraction.

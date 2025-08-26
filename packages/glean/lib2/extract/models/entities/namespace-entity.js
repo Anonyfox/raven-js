@@ -53,7 +53,7 @@ export class NamespaceEntity extends EntityBase {
 		this.parentNamespace = null;
 		/** @type {Array<string>} Child namespaces */
 		this.childNamespaces = [];
-		/** @type {Array<string>} Member entities (functions, classes, etc.) */
+		/** @type {Array<{name: string, type: string}>} Member entities (functions, classes, etc.) */
 		this.members = [];
 		/** @type {string} Namespace signature */
 		this.signature = "";

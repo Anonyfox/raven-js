@@ -9,6 +9,6 @@
     "skipLibCheck": true,
     "maxNodeModuleJsDepth": 0
   },
-  "include": ["*.js", "bin/**/*.js", "lib/**/*.js"],
+  "include": ["*.js", "bin/**/*.js", "lib/**/*.js", "lib2/**/*.js"],
   "exclude": ["**/*.test.js", "static/**/*"]
 }

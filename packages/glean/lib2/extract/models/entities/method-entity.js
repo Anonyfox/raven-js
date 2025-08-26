@@ -239,6 +239,7 @@ export class MethodEntity extends EntityBase {
 			name: "",
 			isRest: false,
 			hasDefault: false,
+			/** @type {any} */
 			defaultValue: null,
 			isDestructured: false,
 			fullSignature: paramStr,

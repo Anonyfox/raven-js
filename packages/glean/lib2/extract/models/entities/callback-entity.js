@@ -51,9 +51,9 @@ export class CallbackEntity extends EntityBase {
 		this.isAsync = false;
 		/** @type {Array<Object>} Callback parameters */
 		this.parameters = [];
-		/** @type {string|null} Return type */
+		/** @type {{type: string, description: string}|null} Return type */
 		this.returnType = null;
-		/** @type {Array<string>} Exception types this callback might throw */
+		/** @type {Array<{type: string, description: string}>} Exception types this callback might throw */
 		this.throwsTypes = [];
 		/** @type {string} Callback signature */
 		this.signature = "";

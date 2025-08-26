@@ -41,6 +41,7 @@ import { VariableEntity } from "./variable-entity.js";
 /**
  * Entity registry for dynamic entity creation
  * Maps entity types to their corresponding class constructors
+ * @type {Record<string, any>}
  */
 export const ENTITY_REGISTRY = {
 	// Core JavaScript constructs
@@ -72,9 +73,10 @@ export const ENTITY_REGISTRY = {
  * @param {string} location.file - Relative file path
  * @param {number} location.line - Line number
  * @param {number} location.column - Column number
- * @returns {EntityBase|null} Entity instance or null if unknown type
+ * @returns {import('./base.js').EntityBase|null} Entity instance or null if unknown type
  */
 export function createEntity(entityType, name, location) {
+	/** @type {any} */
 	const EntityClass = ENTITY_REGISTRY[entityType.toLowerCase()];
 	return EntityClass ? new EntityClass(name, location) : null;
 }
@@ -103,7 +105,7 @@ export function isEntityTypeSupported(entityType) {
  * @param {string} codeEntity.name - Entity name
  * @param {Object} codeEntity.location - Location metadata
  * @param {string} [sourceCode] - Source code for parsing
- * @returns {EntityBase|null} Parsed entity instance
+ * @returns {import('./base.js').EntityBase|null} Parsed entity instance
  */
 export function createEntityFromCode(codeEntity, sourceCode) {
 	if (!codeEntity || !codeEntity.type || !codeEntity.name) {
@@ -113,7 +115,9 @@ export function createEntityFromCode(codeEntity, sourceCode) {
 	const entity = createEntity(
 		codeEntity.type,
 		codeEntity.name,
-		codeEntity.location,
+		/** @type {{ file: string; line: number; column: number; }} */ (
+			codeEntity.location
+		),
 	);
 
 	if (entity && sourceCode) {

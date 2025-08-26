@@ -84,6 +84,7 @@ function scanDirectory(
 	rootPath,
 	inheritedPatterns,
 ) {
+	/** @type {Array<string>} */
 	const files = [];
 
 	// Load local gitignore patterns for this directory
