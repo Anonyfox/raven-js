@@ -49,7 +49,7 @@ export async function runAnalyzeCommand(args) {
 
 /**
  * Display analysis report in terminal (copied from lib1 for compatibility)
- * @param {Object} report - Analysis report from lib2 validate
+ * @param {import('./validate.js').ValidationReport} report - Analysis report from lib2 validate
  * @param {boolean} verbose - Show detailed output
  */
 function displayAnalysisReport(report, verbose) {
@@ -73,7 +73,10 @@ function displayAnalysisReport(report, verbose) {
 	}
 
 	// List files with issues
-	const filesWithIssues = files.filter((f) => f.issues.length > 0);
+	const filesWithIssues = files.filter(
+		/** @param {import('./validate.js').FileValidationResult} f */ (f) =>
+			f.issues.length > 0,
+	);
 
 	if (filesWithIssues.length > 0) {
 		console.log(`\n📝 Issues found:`);
@@ -83,34 +86,55 @@ function displayAnalysisReport(report, verbose) {
 			console.log(`\n   ${relativePath} (score: ${file.score}/100)`);
 
 			// Group issues by severity
-			const errors = file.issues.filter((i) => i.severity === "error");
-			const warnings = file.issues.filter((i) => i.severity === "warning");
-			const info = file.issues.filter((i) => i.severity === "info");
+			const errors = file.issues.filter(
+				/** @param {import('./validate.js').ValidationIssue} i */ (i) =>
+					i.severity === "error",
+			);
+			const warnings = file.issues.filter(
+				/** @param {import('./validate.js').ValidationIssue} i */ (i) =>
+					i.severity === "warning",
+			);
+			const info = file.issues.filter(
+				/** @param {import('./validate.js').ValidationIssue} i */ (i) =>
+					i.severity === "info",
+			);
 
 			if (errors.length > 0) {
 				console.log(`     ❌ ${errors.length} error(s)`);
 				if (verbose) {
-					errors.forEach((issue) => {
-						console.log(`        Line ${issue.line}: ${issue.message}`);
-					});
+					errors.forEach(
+						/** @param {import('./validate.js').ValidationIssue} issue */ (
+							issue,
+						) => {
+							console.log(`        Line ${issue.line}: ${issue.message}`);
+						},
+					);
 				}
 			}
 
 			if (warnings.length > 0) {
 				console.log(`     ⚠️  ${warnings.length} warning(s)`);
 				if (verbose) {
-					warnings.forEach((issue) => {
-						console.log(`        Line ${issue.line}: ${issue.message}`);
-					});
+					warnings.forEach(
+						/** @param {import('./validate.js').ValidationIssue} issue */ (
+							issue,
+						) => {
+							console.log(`        Line ${issue.line}: ${issue.message}`);
+						},
+					);
 				}
 			}
 
 			if (info.length > 0) {
 				console.log(`     ℹ️  ${info.length} info`);
 				if (verbose) {
-					info.forEach((issue) => {
-						console.log(`        Line ${issue.line}: ${issue.message}`);
-					});
+					info.forEach(
+						/** @param {import('./validate.js').ValidationIssue} issue */ (
+							issue,
+						) => {
+							console.log(`        Line ${issue.line}: ${issue.message}`);
+						},
+					);
 				}
 			}
 		}

@@ -126,8 +126,8 @@ function getUniqueFilePaths(module) {
 
 	// Add entity file paths
 	for (const entity of module.entities) {
-		if (entity.location && entity.location.file) {
-			filePaths.add(entity.location.file);
+		if (entity.location && /** @type {any} */ (entity.location).file) {
+			filePaths.add(/** @type {any} */ (entity.location).file);
 		}
 	}
 
@@ -145,7 +145,8 @@ function validateModuleFile(module, filePath) {
 
 	// Find entities in this file
 	const entitiesInFile = module.entities.filter(
-		(entity) => entity.location && entity.location.file === filePath,
+		/** @param {any} entity */ (entity) =>
+			entity.location && entity.location.file === filePath,
 	);
 
 	for (const entity of entitiesInFile) {
@@ -161,7 +162,7 @@ function validateModuleFile(module, filePath) {
 
 /**
  * Validate JSDoc documentation for an entity
- * @param {Object} entity - Entity to validate
+ * @param {any} entity - Entity to validate
  * @param {string} filePath - File path for issue reporting
  * @returns {ValidationIssue[]} Array of JSDoc validation issues
  */
@@ -232,7 +233,7 @@ function validateEntityJSDoc(entity, filePath) {
 
 /**
  * Validate entity structure and consistency
- * @param {Object} entity - Entity to validate
+ * @param {any} entity - Entity to validate
  * @param {string} filePath - File path for issue reporting
  * @returns {ValidationIssue[]} Array of structural validation issues
  */
@@ -280,7 +281,9 @@ function validateEntityStructure(entity, filePath) {
 		// Check if function has parameters documented but no @param tags
 		if (entity.parameters && entity.parameters.length > 0) {
 			const paramTags = entity.jsdoc
-				? entity.jsdoc.filter((tag) => tag.tag === "param")
+				? entity.jsdoc.filter(
+						/** @param {any} tag */ (tag) => tag.tag === "param",
+					)
 				: [];
 
 			if (paramTags.length === 0) {
