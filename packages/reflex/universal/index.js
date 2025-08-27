@@ -711,7 +711,7 @@ async function settleAllPromises(context, timeout, maxAttempts) {
 		// Wrap each promise with individual timeout
 		const timeoutWrappedPromises = currentPromises.map((promise) => {
 			return withTimeout(promise, individualTimeout).catch(
-				(/** @type {Error} */ error) => {
+				/** @type {(error: Error) => null} */ (error) => {
 					if (error.message.includes("Promise timeout")) {
 						const key = promise.toString();
 						if (!timeoutWarnings.has(key)) {

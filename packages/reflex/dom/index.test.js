@@ -46,8 +46,12 @@ describe("dom/index.js", () => {
 			assert.strictEqual(typeof mounted.unmount, "function");
 			assert.strictEqual(typeof mounted.element, "object");
 
-			// Should append to target
-			assert.strictEqual(target.children.length, 1);
+			// Target reuse: if empty, target becomes the mount element (no wrapper)
+			// If target has children, a wrapper is created and appended
+			assert.ok(
+				target.children.length === 0 || target.children.length === 1,
+				"Target should either be reused (0 children) or have wrapper (1 child)",
+			);
 		});
 
 		it("should automatically update when signal changes", async () => {
@@ -93,7 +97,12 @@ describe("dom/index.js", () => {
 			};
 
 			const mounted = dom.mount(templateFn, target);
-			assert.strictEqual(target.children.length, 1);
+
+			// Target reuse logic: empty target gets reused directly (no wrapper added)
+			assert.ok(
+				target.children.length === 0 || target.children.length === 1,
+				"Target should either be reused (0 children) or have wrapper (1 child)",
+			);
 
 			// Should support unmount
 			assert.strictEqual(typeof mounted.unmount, "function");
@@ -167,6 +176,93 @@ describe("dom/index.js", () => {
 
 			// Manual cleanup
 			mounted.unmount();
+		});
+
+		it("should reuse empty target instead of creating wrapper", () => {
+			const templateFn = () => "<p>Direct target</p>";
+			const target = {
+				children: [],
+				innerHTML: "",
+				appendChild(child) {
+					this.children.push(child);
+				},
+			};
+
+			const mounted = dom.mount(templateFn, target);
+
+			// Target should be reused as mount element (isTargetReused = true)
+			assert.strictEqual(mounted.isTargetReused, true);
+			assert.strictEqual(mounted.element, target);
+			assert.strictEqual(target.children.length, 0); // No wrapper created
+		});
+
+		it("should create wrapper when target has existing children", () => {
+			const templateFn = () => "<p>With wrapper</p>";
+			const existingChild = { tagName: "span" };
+			const target = {
+				children: [existingChild], // Target already has children
+				appendChild(child) {
+					this.children.push(child);
+				},
+			};
+
+			const mounted = dom.mount(templateFn, target);
+
+			// Wrapper should be created (isTargetReused = false)
+			assert.strictEqual(mounted.isTargetReused, false);
+			assert.notStrictEqual(mounted.element, target);
+			assert.strictEqual(target.children.length, 2); // Existing + wrapper
+		});
+
+		it("should prevent double cleanup with isDisposed flag", () => {
+			const templateFn = () => "<p>Cleanup test</p>";
+			const target = {
+				children: [],
+				appendChild(child) {
+					this.children.push(child);
+				},
+			};
+
+			const mounted = dom.mount(templateFn, target);
+			let cleanupCount = 0;
+
+			// Mock the dispose effect to count calls
+			const originalDispose = mounted.disposeEffect;
+			mounted.disposeEffect = () => {
+				cleanupCount++;
+				if (originalDispose) originalDispose();
+			};
+
+			// First cleanup
+			mounted.cleanup();
+			assert.strictEqual(cleanupCount, 1);
+			assert.strictEqual(mounted.isDisposed, true);
+
+			// Second cleanup should be ignored
+			mounted.cleanup();
+			assert.strictEqual(cleanupCount, 1); // No additional calls
+		});
+
+		it("should skip identical HTML updates", async () => {
+			const content = signal("initial");
+			const templateFn = () => `<p>${content()}</p>`;
+			const target = {
+				children: [],
+				innerHTML: "",
+				appendChild(child) {
+					this.children.push(child);
+				},
+			};
+
+			const mounted = dom.mount(templateFn, target);
+			const initialHtml = mounted.element.innerHTML;
+
+			// Change signal to same value
+			content.set("initial");
+			await new Promise((resolve) => setTimeout(resolve, 20));
+
+			// HTML should remain unchanged (identity check prevented update)
+			assert.strictEqual(mounted.element.innerHTML, initialHtml);
 		});
 	});
 });

@@ -117,10 +117,12 @@ class VirtualElement {
 		const tagLower = this.tagName.toLowerCase();
 		let attrs = "";
 
+		// Include id attribute
 		if (this.id) {
 			attrs += ` id="${this.id}"`;
 		}
 
+		// Include style attribute
 		const styleStr = Object.entries(this.style)
 			.map(([key, value]) => `${key}: ${value}`)
 			.join("; ");
@@ -128,7 +130,21 @@ class VirtualElement {
 			attrs += ` style="${styleStr}"`;
 		}
 
-		return `<${tagLower}${attrs}>${this.innerHTML}</${tagLower}>`;
+		// Serialize children first if they exist, otherwise use innerHTML
+		let content = "";
+		if (this.children.length > 0) {
+			content = this.children
+				.map((child) =>
+					typeof child.toHTML === "function" ? child.toHTML() : String(child),
+				)
+				.join("");
+		} else if (this.innerHTML) {
+			content = this.innerHTML;
+		} else if (this.textContent) {
+			content = this.textContent;
+		}
+
+		return `<${tagLower}${attrs}>${content}</${tagLower}>`;
 	}
 }
 
@@ -149,29 +165,78 @@ class DOMAdapter {
 	}
 
 	/**
-	 * Apply browser performance optimizations transparently.
+	 * Apply narrow CSS containment optimizations to mount roots only.
+	 * Users can opt-out via data-reflex-no-contain attribute.
 	 * @param {any} element
 	 */
 	applyPerformanceOptimizations(element) {
 		if (!ENV.isBrowser) return;
 
-		// CSS Containment for layout performance
-		if (ENV.capabilities.cssContainment) {
-			element.style.contain = "layout style";
+		// Allow opt-out via attribute
+		if (element.hasAttribute?.("data-reflex-no-contain")) {
+			return;
 		}
 
-		// Content visibility for viewport optimization
-		if (ENV.capabilities.contentVisibility) {
-			element.style.contentVisibility = "auto";
+		// Apply safer CSS containment (content instead of layout style)
+		if (ENV.capabilities.cssContainment) {
+			// Prefer contain: content (safer than layout style)
+			if (CSS.supports("contain", "content")) {
+				element.style.contain = "content";
+			} else {
+				element.style.contain = "layout style";
+			}
 		}
 	}
 
 	/**
+	 * Fast, safe HTML replacement using modern DOM APIs when available.
+	 * Preserves scroll position for scrollable elements.
 	 * @param {any} element
 	 * @param {string} html
 	 */
 	setInnerHTML(element, html) {
+		if (!ENV.isBrowser) {
+			element.innerHTML = html;
+			return;
+		}
+
+		// Preserve scroll position for scrollable elements
+		let scrollTop = 0;
+		let scrollLeft = 0;
+		const isScrollable =
+			element.scrollHeight > element.clientHeight ||
+			element.scrollWidth > element.clientWidth ||
+			element === document.scrollingElement;
+
+		if (isScrollable) {
+			scrollTop = element.scrollTop;
+			scrollLeft = element.scrollLeft;
+		}
+
+		// Use replaceChildren + createContextualFragment for better performance
+		if (typeof element.replaceChildren === "function" && document.createRange) {
+			try {
+				const range = document.createRange();
+				const fragment = range.createContextualFragment(html);
+				element.replaceChildren(fragment);
+
+				// Restore scroll position
+				if (isScrollable) {
+					element.scrollTop = scrollTop;
+					element.scrollLeft = scrollLeft;
+				}
+				return;
+			} catch (_error) {
+				// Fallback if parsing fails
+			}
+		}
+
+		// Fallback to innerHTML with scroll preservation
 		element.innerHTML = html;
+		if (isScrollable) {
+			element.scrollTop = scrollTop;
+			element.scrollLeft = scrollLeft;
+		}
 	}
 
 	/**
@@ -205,8 +270,8 @@ class DOMAdapter {
 const domAdapter = new DOMAdapter();
 
 /**
- * Optimized scheduling for DOM updates.
- * Uses best available scheduling API transparently.
+ * Paint-aligned scheduling for DOM updates.
+ * Prioritizes visual smoothness by aligning with browser paint cycles.
  * @param {function(): any} callback
  * @returns {Promise<any>}
  */
@@ -216,30 +281,19 @@ function scheduleUpdate(callback) {
 		return Promise.resolve().then(callback);
 	}
 
-	// Browser: use best available scheduler
-	// @ts-expect-error - scheduler exists when capability is true
-	if (ENV.capabilities.scheduler && globalThis.scheduler) {
-		// @ts-expect-error - scheduler exists when capability is true
-		return globalThis.scheduler.postTask(callback, {
-			priority: "user-visible",
-		});
-	}
-
-	// Fallback: requestIdleCallback
-	if (typeof requestIdleCallback !== "undefined") {
+	// Browser: prefer requestAnimationFrame for paint alignment
+	if (typeof requestAnimationFrame !== "undefined") {
 		return new Promise((resolve) => {
-			requestIdleCallback(() => {
-				Promise.resolve(callback()).then(resolve);
+			requestAnimationFrame(() => {
+				Promise.resolve(callback())
+					.then(resolve)
+					.catch(() => resolve());
 			});
 		});
 	}
 
-	// Final fallback: setTimeout
-	return new Promise((resolve) => {
-		setTimeout(() => {
-			Promise.resolve(callback()).then(resolve);
-		}, 0);
-	});
+	// Fallback: microtask for immediate scheduling
+	return Promise.resolve().then(callback);
 }
 
 /**
@@ -276,12 +330,17 @@ class MemoryManager {
 	}
 
 	/**
-	 * Manual cleanup.
+	 * Manual cleanup with double-cleanup protection.
 	 * @param {any} instance
 	 */
 	cleanup(instance) {
 		const cleanup = this.instances.get(instance);
 		if (cleanup) {
+			// Check if instance has isDisposed flag and respect it
+			if (instance && typeof instance === "object" && instance.isDisposed) {
+				return; // Already disposed
+			}
+
 			cleanup();
 			this.instances.delete(instance);
 		}
@@ -305,10 +364,22 @@ class AutoUnmountDetector {
 
 		if (ENV.isBrowser && typeof MutationObserver !== "undefined") {
 			this.observer = new MutationObserver((mutations) => {
+				// Collect removed nodes for batch processing
+				/** @type {Node[]} */
+				const removedNodes = [];
 				for (const mutation of mutations) {
 					for (const node of mutation.removedNodes) {
-						this.handleRemovedNode(node);
+						removedNodes.push(node);
 					}
+				}
+
+				// Defer cleanup to next microtask to avoid false positives during reparenting
+				if (removedNodes.length > 0) {
+					queueMicrotask(() => {
+						for (const node of removedNodes) {
+							this.handleRemovedNode(node);
+						}
+					});
 				}
 			});
 			// Watch entire document for removed elements
@@ -330,13 +401,22 @@ class AutoUnmountDetector {
 
 	/**
 	 * Handle removed DOM node and cleanup associated instances.
+	 * Includes isConnected check to prevent false unmounts during reparenting.
 	 * @param {any} node
 	 */
 	handleRemovedNode(node) {
-		// Check if this node or any child nodes have tracked instances
+		// Skip if node is still connected (was moved, not removed)
+		if (node.isConnected) {
+			return;
+		}
+
+		// Check if this node has tracked instances
 		const instance = this.elementToInstance.get(node);
 		if (instance && typeof instance.cleanup === "function") {
-			instance.cleanup();
+			// Check isDisposed flag before cleanup
+			if (!instance.isDisposed) {
+				instance.cleanup();
+			}
 			this.elementToInstance.delete(node);
 		}
 
@@ -344,9 +424,17 @@ class AutoUnmountDetector {
 		if (node.querySelectorAll) {
 			const descendants = node.querySelectorAll("*");
 			for (const descendant of descendants) {
+				// Skip if descendant is still connected
+				if (descendant.isConnected) {
+					continue;
+				}
+
 				const childInstance = this.elementToInstance.get(descendant);
 				if (childInstance && typeof childInstance.cleanup === "function") {
-					childInstance.cleanup();
+					// Check isDisposed flag before cleanup
+					if (!childInstance.isDisposed) {
+						childInstance.cleanup();
+					}
 					this.elementToInstance.delete(descendant);
 				}
 			}
@@ -385,19 +473,44 @@ function resolveTarget(target) {
  * @param {any} target
  */
 function createReactiveMount(templateFn, target) {
-	const element = domAdapter.createElement("div");
-	let isDisposed = false;
+	// Reuse target as mount element if it's empty, otherwise create wrapper
+	let element;
+	let isTargetReused = false;
+
+	// Check if target is empty (no children)
+	const isEmpty = !target.children || target.children.length === 0;
+
+	if (isEmpty) {
+		// Target is empty: use it directly (no extra wrapper)
+		element = target;
+		isTargetReused = true;
+		if (ENV.isBrowser) {
+			domAdapter.applyPerformanceOptimizations(element);
+		}
+	} else {
+		// Target has children: create wrapper to avoid conflicts
+		element = domAdapter.createElement("div");
+		isTargetReused = false;
+	}
+
+	// Per-mount coalescing state
+	let pendingToken = 0;
+	let lastHtml = "";
 
 	const mountInstance = {
 		/** @type {any} */
 		element,
 		/** @type {function|null} */
 		disposeEffect: null,
+		/** @type {boolean} */
+		isTargetReused,
+		/** @type {boolean} */
+		isDisposed: false,
 
 		// Internal cleanup method (automatic via DOM removal detection)
 		cleanup() {
-			if (isDisposed) return;
-			isDisposed = true;
+			if (this.isDisposed) return;
+			this.isDisposed = true;
 
 			if (this.disposeEffect) {
 				this.disposeEffect();
@@ -409,51 +522,70 @@ function createReactiveMount(templateFn, target) {
 		unmount() {
 			this.cleanup();
 
-			// Remove from DOM if still attached
-			if (element.parentNode) {
+			// Only remove from DOM if we created a wrapper (not reusing target)
+			if (!isTargetReused && element.parentNode) {
 				element.parentNode.removeChild(element);
+			} else if (isTargetReused) {
+				// Clear content of reused target
+				element.innerHTML = "";
 			}
 		},
 	};
 
-	// Set up reactive effect with optimized scheduling
+	// Set up reactive effect with optimized scheduling and coalescing
 	let isFirstRender = true;
 	mountInstance.disposeEffect = effect(() => {
-		if (isDisposed) return;
+		if (mountInstance.isDisposed) return;
 
 		const html = templateFn();
+
+		// Skip if HTML hasn't changed (identity check)
+		if (!isFirstRender && html === lastHtml) {
+			return;
+		}
 
 		if (isFirstRender) {
 			// First render: immediate for synchronous mounting
 			domAdapter.setInnerHTML(element, html);
+			lastHtml = html;
 			isFirstRender = false;
 		} else {
-			// Subsequent updates: use optimized scheduling
+			// Subsequent updates: use coalesced scheduling
+			const currentToken = ++pendingToken;
+
 			scheduleUpdate(() => {
-				if (isDisposed) return;
+				// Bail if this update was superseded by a newer one
+				if (currentToken !== pendingToken || mountInstance.isDisposed) {
+					return;
+				}
+
+				// Skip if HTML is now identical (could have changed since effect ran)
+				if (html === lastHtml) {
+					return;
+				}
+
 				domAdapter.setInnerHTML(element, html);
+				lastHtml = html;
 			});
 		}
 	});
 
-	// Append to target
-	if (target.appendChild) {
-		domAdapter.appendChild(target, element);
-	} else {
-		throw new Error("Target element must support appendChild");
+	// Append to target only if we created a wrapper (not reusing target)
+	if (!isTargetReused) {
+		if (target.appendChild) {
+			domAdapter.appendChild(target, element);
+		} else {
+			throw new Error("Target element must support appendChild");
+		}
 	}
 
 	// Track for automatic DOM removal detection
 	autoUnmountDetector.track(element, mountInstance);
 
-	// Track for automatic memory cleanup (prevent recursion)
+	// Track for automatic memory cleanup with double-cleanup protection
 	memoryManager.track(mountInstance, () => {
-		if (!isDisposed) {
-			isDisposed = true; // Prevent recursive cleanup
-			if (mountInstance.disposeEffect) {
-				mountInstance.disposeEffect();
-				mountInstance.disposeEffect = null;
-			}
+		if (!mountInstance.isDisposed) {
+			mountInstance.cleanup();
 		}
 	});
 
