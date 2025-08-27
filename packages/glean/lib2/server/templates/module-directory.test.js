@@ -500,4 +500,72 @@ describe("moduleDirectoryTemplate", () => {
 		assert(html.includes("test-package"), "Still contains package name");
 		assert(html.includes("<!DOCTYPE html>"), "Still valid HTML");
 	});
+
+	test("should use correct responsive grid classes", () => {
+		const data = {
+			moduleList: [
+				{
+					importPath: "test-module-1",
+					isDefault: false,
+					hasReadme: false,
+					readmePreview: "",
+					hasDescription: false,
+					description: "",
+					entityCount: 5,
+					publicEntityCount: 3,
+					entityTypes: ["function", "class"],
+					sampleEntities: [],
+				},
+				{
+					importPath: "test-module-2",
+					isDefault: false,
+					hasReadme: false,
+					readmePreview: "",
+					hasDescription: false,
+					description: "",
+					entityCount: 3,
+					publicEntityCount: 2,
+					entityTypes: ["function"],
+					sampleEntities: [],
+				},
+				{
+					importPath: "test-module-3",
+					isDefault: false,
+					hasReadme: false,
+					readmePreview: "",
+					hasDescription: false,
+					description: "",
+					entityCount: 7,
+					publicEntityCount: 4,
+					entityTypes: ["function", "class", "typedef"],
+					sampleEntities: [],
+				},
+			],
+			directoryStats: {
+				totalModules: 3,
+				totalPublicEntities: 9,
+				entityTypeDistribution: { function: 6, class: 2, typedef: 1 },
+			},
+			packageName: "test-package",
+			packageDescription: "Test package description",
+			hasModules: true,
+			hasPublicEntities: true,
+		};
+
+		const html = moduleDirectoryTemplate(data);
+
+		// Should use responsive grid classes
+		assert(
+			html.includes('class="col-md-6 col-lg-4 col-xl-3"'),
+			"Should use responsive grid classes",
+		);
+		assert(
+			html.includes('class="row g-4"'),
+			"Should use grid with proper spacing",
+		);
+		assert(
+			html.includes('class="card border-0 shadow-sm h-100"'),
+			"Should use full-height cards",
+		);
+	});
 });

@@ -110,8 +110,8 @@ export function moduleDirectoryTemplate(data) {
 					${moduleList.map(
 						/** @param {any} module */
 						(module) => html`
-					<div class="col-lg-6 col-xl-4">
-						<div class="card h-100 border-0 shadow-sm">
+					<div class="col-md-6 col-lg-4 col-xl-3">
+						<div class="card border-0 shadow-sm h-100">
 							<!-- Module Header -->
 							<div class="card-header bg-white border-bottom-0 pb-0">
 								<div class="d-flex align-items-center justify-content-between">
@@ -132,13 +132,15 @@ export function moduleDirectoryTemplate(data) {
 							</div>
 
 							<!-- Module Content -->
-							<div class="card-body pt-3">
+							<div class="card-body pt-3 d-flex flex-column">
 								${
 									module.hasDescription
 										? html`
 								<!-- Module Description -->
 								<div class="mb-3">
-									<p class="text-muted mb-0">${module.description}</p>
+									<div class="text-muted mb-0" style="max-height: 3rem; overflow: hidden;">
+										${module.description}
+									</div>
 								</div>
 								`
 										: ""
@@ -149,7 +151,10 @@ export function moduleDirectoryTemplate(data) {
 								<!-- README Preview -->
 								<div class="mb-3">
 									<div class="small text-muted bg-light p-2 rounded">
-										${module.readmePreview}${module.readmePreview.length >= 200 ? "..." : ""}
+										<div style="max-height: 4rem; overflow: hidden;">
+											${module.readmePreview}
+										</div>
+										${module.readmePreview.length >= 200 ? html`<small class="text-muted">...</small>` : ""}
 									</div>
 								</div>
 								`
@@ -183,40 +188,45 @@ export function moduleDirectoryTemplate(data) {
 								${
 									module.sampleEntities.length > 0
 										? html`
-								<div class="mb-0">
+								<div class="mb-0 flex-grow-1">
 									<div class="small text-muted mb-2">Featured APIs:</div>
-									${module.sampleEntities.map(
-										/** @param {any} entity */
-										(entity) => html`
-									<div class="border rounded p-2 mb-2 bg-light">
-										<div class="d-flex align-items-center justify-content-between">
-											<div>
-												<strong class="text-primary">${entity.name}</strong>
-												<span class="badge bg-secondary ms-1">${entity.type}</span>
+									<div style="max-height: 12rem; overflow-y: auto;">
+										${module.sampleEntities.map(
+											/** @param {any} entity */
+											(entity) => html`
+										<div class="border rounded p-2 mb-2 bg-light">
+											<div class="d-flex align-items-center justify-content-between">
+												<div>
+													<strong class="text-primary">${entity.name}</strong>
+													<span class="badge bg-secondary ms-1">${entity.type}</span>
+												</div>
 											</div>
+											${
+												entity.description
+													? html`
+											<div class="small text-muted mt-1">
+												<div style="max-height: 2.5rem; overflow: hidden;">
+													${md`${entity.description}`}
+												</div>
+												${entity.description.length >= 100 ? html`<small class="text-muted">...</small>` : ""}
+											</div>
+											`
+													: ""
+											}
 										</div>
-										${
-											entity.description
-												? html`
-										<div class="small text-muted mt-1">
-											${md`${entity.description}`}${entity.description.length >= 100 ? "..." : ""}
-										</div>
-										`
-												: ""
-										}
+										`,
+										)}
 									</div>
-									`,
-									)}
 								</div>
 								`
 										: html`
-								<div class="text-muted small fst-italic">No public entities available</div>
+								<div class="text-muted small fst-italic flex-grow-1">No public entities available</div>
 								`
 								}
 							</div>
 
 							<!-- Module Footer -->
-							<div class="card-footer bg-white border-top-0 pt-0">
+							<div class="card-footer bg-white border-top-0 pt-0 mt-auto">
 								<div class="d-flex gap-2">
 									<a href="/modules/${module.importPath.split("/").pop()}/" class="btn btn-primary btn-sm flex-fill">
 										📖 Explore Module
