@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { describe, it } from "node:test";
-import { signal } from "../core/index.js";
+import { signal } from "../index.js";
 import * as dom from "./index.js";
 
 describe("dom/index.js", () => {

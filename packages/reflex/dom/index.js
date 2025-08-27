@@ -12,7 +12,7 @@
  * Isomorphic DOM mounting with automatic signal tracking.
  */
 
-import { effect } from "../core/index.js";
+import { effect } from "../index.js";
 
 /**
  * Environment detection with performance capability testing.

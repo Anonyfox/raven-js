@@ -6,31 +6,29 @@
   "files": [
     "*.js",
     "*.d.ts",
-    "core/**/*.js",
-    "universal/**/*.js",
-    "dom/**/*.js",
+    "**/*.js",
+    "index.js",
     "types.*.d.ts",
     "LICENSE",
     "README.md"
   ],
   "exports": {
     ".": {
-      "import": "./core/index.js",
-      "types": "./types.core.d.ts"
-    },
-    "./universal": {
-      "import": "./universal/index.js",
-      "types": "./types.universal.d.ts"
+      "import": "./index.js",
+      "types": "./types.d.ts"
     },
     "./dom": {
       "import": "./dom/index.js",
       "types": "./types.dom.d.ts"
+    },
+    "./ssr": {
+      "import": "./ssr/index.js",
+      "types": "./types.ssr.d.ts"
     }
   },
   "scripts": {
     "nest:validate": "node ../nest/bin/nest.js validate",
     "nest:docs": "node ../nest/bin/nest.js build-docs",
-    "prepublishOnly": "npm run test && npm run test:style",
     "test": "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
     "test:code": "timeout 10s node --no-warnings --test --test-reporter=dot",
     "test:coverage": "node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",

@@ -13,7 +13,7 @@
  * fetch interception, and seamless client hydration.
  */
 
-import { contextStack } from "../core/index.js";
+import { contextStack } from "../index.js";
 
 /**
  * Creates a canonical cache key for fetch requests.

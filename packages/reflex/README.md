@@ -38,7 +38,7 @@ count.set(5); // Logs: "Count: 5, Doubled: 10"
 ### Universal SSR
 
 ```javascript
-import { reactive } from "@raven-js/reflex/universal";
+import { reactive } from "@raven-js/reflex/ssr";
 
 // Same code runs on server and client
 const App = reactive(async () => {
@@ -61,20 +61,21 @@ const App = reactive(async () => {
 ### DOM Utilities
 
 ```javascript
-import { mount, patch } from "@raven-js/reflex/dom";
+import { mount } from "@raven-js/reflex/dom";
 
 // Mount reactive components (browser-only)
-mount(component, document.getElementById("app"));
+mount(() => `<h1>Hello ${signal("World")()}</h1>`, "#app");
 ```
 
 ## Features
 
 - **Universal Signals** - Work identically everywhere
+- **Diamond Problem Solved** - Automatic scheduling eliminates glitches
 - **Automatic SSR** - No configuration needed
 - **Perfect Hydration** - No flicker, no duplicate requests
 - **Zero Dependencies** - Pure JavaScript only
 - **Framework Agnostic** - Integrates with any server/router
-- **Performance Optimized** - Minimal overhead, fast updates
+- **Performance Optimized** - Paint-aligned updates, efficient DOM operations
 
 ### 🔮 Automagic Features
 
@@ -82,6 +83,8 @@ mount(component, document.getElementById("app"));
 - **SSR Timeout Protection** - Graceful degradation with individual promise timeouts and exponential backoff
 - **Browser API Shims** - Automatic localStorage, window, navigator shims prevent SSR crashes
 - **Memory Leak Prevention** - Deterministic cleanup prevents hanging processes
+- **DOM Optimizations** - Target reuse, scroll preservation, coalesced updates, safe HTML replacement
+- **XSS Protection** - Automatic escaping and size caps for SSR data injection
 
 ## Wings Integration
 
