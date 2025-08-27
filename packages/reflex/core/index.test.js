@@ -673,7 +673,7 @@ describe("effect behavior & reentrancy", () => {
 		let errorCaught = false;
 		let errorContext = null;
 
-		globalThis.__REFLEX_ON_ERROR__ = (error, context) => {
+		globalThis.__REFLEX_ON_ERROR__ = (_error, context) => {
 			errorCaught = true;
 			errorContext = context;
 		};
@@ -944,10 +944,10 @@ describe("dev hook", () => {
 
 		// Mock console.error to verify it's called after hook
 		const originalConsoleError = console.error;
-		let consoleErrorCalled = false;
+		let _consoleErrorCalled = false;
 
-		console.error = (...args) => {
-			consoleErrorCalled = true;
+		console.error = (..._args) => {
+			_consoleErrorCalled = true;
 			// Verify hook was called first
 			assert.strictEqual(
 				hookCalled,

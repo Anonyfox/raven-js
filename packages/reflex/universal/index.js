@@ -16,6 +16,71 @@
 import { contextStack } from "../core/index.js";
 
 /**
+ * Creates a canonical cache key for fetch requests.
+ * Ensures server and client use identical keys for proper hydration matching.
+ *
+ * @param {string|URL|Request} url - Request URL (may be relative) or Request object
+ * @param {RequestInit} [opts={}] - Fetch options
+ * @returns {string} Canonical cache key
+ */
+function createCacheKey(url, opts = {}) {
+	// Convert URL object or Request to string if needed
+	let urlString;
+	if (url instanceof URL) {
+		urlString = url.toString();
+	} else if (typeof url === "object" && url.url) {
+		// Handle Request objects
+		urlString = url.url;
+	} else {
+		urlString = String(url);
+	}
+	// Normalize base URL consistently
+	let baseUrl = globalThis.location?.href || "http://localhost/";
+
+	// Ensure baseUrl is a valid absolute URL
+	if (baseUrl === "/" || !baseUrl.includes("://")) {
+		baseUrl = "http://localhost/";
+	}
+
+	const absoluteUrl = new URL(urlString, baseUrl).toString();
+
+	// Extract and normalize options
+	const method = (opts.method || "GET").toUpperCase();
+
+	// Normalize headers to lowercase keys
+	/** @type {Record<string, string>} */
+	const headers = {};
+	if (opts.headers) {
+		if (opts.headers instanceof Headers) {
+			for (const [key, value] of opts.headers.entries()) {
+				headers[key.toLowerCase()] = value;
+			}
+		} else if (typeof opts.headers === "object") {
+			for (const [key, value] of Object.entries(opts.headers)) {
+				headers[key.toLowerCase()] = String(value);
+			}
+		}
+	}
+
+	// Create body hash for non-GET requests
+	let bodyHash = null;
+	if (opts.body && method !== "GET") {
+		// Simple hash for body content
+		bodyHash =
+			typeof opts.body === "string"
+				? `${opts.body.length}:${opts.body.slice(0, 100)}`
+				: "[object]";
+	}
+
+	return JSON.stringify({
+		url: absoluteUrl,
+		method,
+		headers,
+		bodyHash,
+	});
+}
+
+/**
  * Environment detection utilities.
  * Determines the current runtime context for reactive behavior.
  */
@@ -82,7 +147,7 @@ const env = {
 			if (typeof globalThis.window === "undefined") {
 				/** @type {any} */ (globalThis).window = {
 					location: {
-						href: "/",
+						href: "http://localhost/",
 						hostname: "localhost",
 						pathname: "/",
 						search: "",
@@ -178,7 +243,7 @@ const env = {
 			// location shim
 			if (typeof globalThis.location === "undefined") {
 				/** @type {any} */ (globalThis).location = {
-					href: "/",
+					href: "http://localhost/",
 					hostname: "localhost",
 					pathname: "/",
 					search: "",
@@ -330,38 +395,89 @@ export function reactive(fn, options = {}) {
 
 			// Intercept fetch calls and use cached data
 			globalThis.fetch = /** @type {any} */ (
-				(/** @type {any} */ url, /** @type {any} */ opts) => {
-					const cached = /** @type {any} */ (window).__SSR_DATA__?.fetch?.[url];
+				(/** @type {any} */ url, /** @type {any} */ opts = {}) => {
+					const cacheKey = createCacheKey(url, opts);
+					const ssrData = /** @type {any} */ (window).__SSR_DATA__;
+					const cached = ssrData?.fetch?.[cacheKey];
 
 					if (cached) {
-						// Return cached response as Promise
+						// Delete this specific cache entry after use (per-entry consumption)
+						delete ssrData.fetch[cacheKey];
+
+						// If fetch cache is now empty, clean up the entire __SSR_DATA__
+						if (Object.keys(ssrData.fetch).length === 0) {
+							delete (/** @type {any} */ (window).__SSR_DATA__);
+						}
+
+						// Create absolute URL for Response.url field
+						let urlString;
+						if (url instanceof URL) {
+							urlString = url.toString();
+						} else if (typeof url === "object" && url.url) {
+							urlString = url.url;
+						} else {
+							urlString = String(url);
+						}
+
+						let baseUrl = globalThis.location?.href || "http://localhost/";
+						if (baseUrl === "/" || !baseUrl.includes("://")) {
+							baseUrl = "http://localhost/";
+						}
+
+						// Return cached response as Promise with complete Response shape parity
+						const absoluteUrl = new URL(urlString, baseUrl).toString();
 						return Promise.resolve({
 							ok: cached.ok,
 							status: cached.status,
 							statusText: cached.statusText,
 							headers: new Headers(cached.headers),
+							url: absoluteUrl,
+							redirected: false,
+							type: "basic",
+							body: null,
+							bodyUsed: false,
 							json: () => Promise.resolve(cached.json),
 							text: () => Promise.resolve(cached.text),
 							arrayBuffer: () => Promise.resolve(cached.arrayBuffer),
 							blob: () => Promise.resolve(cached.blob),
+							formData: () =>
+								Promise.reject(
+									new Error("formData not available in SSR cache"),
+								),
+							clone: function () {
+								return this;
+							},
 						});
 					}
 
 					// Fall back to normal fetch for non-cached requests
-					return originalFetch(url, opts);
+					// Use absolute URL for fetch fallback
+					let baseUrl = globalThis.location?.href || "http://localhost/";
+					if (baseUrl === "/" || !baseUrl.includes("://")) {
+						baseUrl = "http://localhost/";
+					}
+					const absoluteUrl = new URL(url, baseUrl).toString();
+					return originalFetch(absoluteUrl, opts);
 				}
 			);
+
+			// Schedule fetch restoration after first microtask to limit interception scope
+			queueMicrotask(() => {
+				globalThis.fetch = originalFetch;
+			});
 
 			try {
 				const result = await fn.apply(this, args);
 
-				// Clean up hydration mode after first run
-				delete (/** @type {any} */ (window).__SSR_DATA__);
+				// Note: SSR data is cleaned up per-entry in fetch interception above
 
 				return result;
 			} finally {
-				// Restore original fetch
-				globalThis.fetch = originalFetch;
+				// Ensure fetch is restored even if handler throws
+				// (Note: microtask restoration above handles the normal case)
+				if (globalThis.fetch !== originalFetch) {
+					globalThis.fetch = originalFetch;
+				}
 			}
 		}
 
@@ -391,63 +507,107 @@ export function reactive(fn, options = {}) {
 
 			const originalFetch = globalThis.fetch;
 
-			// Intercept fetch calls and cache responses
-			globalThis.fetch = async (url, opts) => {
-				const cacheKey = JSON.stringify({ url, opts });
+			// Intercept fetch calls and cache responses (GET only)
+			globalThis.fetch = async (url, opts = {}) => {
+				try {
+					const method = (opts.method || "GET").toUpperCase();
+					const cacheKey = createCacheKey(url, opts);
 
-				if (context.fetchCache.has(cacheKey)) {
-					return context.fetchCache.get(cacheKey);
+					// Only cache GET requests for idempotency
+					if (method === "GET" && context.fetchCache.has(cacheKey)) {
+						return context.fetchCache.get(cacheKey);
+					}
+
+					const fetchPromise = originalFetch(url, opts).then(
+						async (response) => {
+							// Cache the response data
+							const cloned = response.clone();
+							const responseData = {
+								ok: response.ok,
+								status: response.status,
+								statusText: response.statusText,
+								headers: Array.from(response.headers.entries()),
+								/** @type {any} */
+								json: null,
+								/** @type {any} */
+								text: null,
+								/** @type {any} */
+								arrayBuffer: null,
+								/** @type {any} */
+								blob: null,
+							};
+
+							// Wrap response in Proxy to track body reads for settlement
+							const responseProxy = new Proxy(response, {
+								get(target, prop) {
+									const value = /** @type {any} */ (target)[
+										/** @type {any} */ (prop)
+									];
+
+									// Track body reading methods
+									if (
+										typeof value === "function" &&
+										[
+											"json",
+											"text",
+											"arrayBuffer",
+											"blob",
+											"formData",
+										].includes(String(prop))
+									) {
+										return (/** @type {...any} */ ...args) => {
+											const promise = value.apply(target, args);
+											context.track(promise);
+											return promise;
+										};
+									}
+
+									return value;
+								},
+							});
+
+							// Try to read as different formats (using cloned response to avoid proxy tracking)
+							try {
+								const contentType = response.headers.get("content-type") || "";
+
+								if (contentType.includes("application/json")) {
+									responseData.json = await cloned.json();
+								} else if (contentType.includes("text/")) {
+									responseData.text = await cloned.text();
+								} else {
+									responseData.arrayBuffer = await cloned.arrayBuffer();
+								}
+							} catch (_error) {
+								// If parsing fails, store as text (using cloned to avoid proxy tracking)
+								responseData.text = await cloned.text();
+							}
+
+							// Store in SSR cache for client hydration (GET only)
+							if (method === "GET") {
+								if (!context.ssrData) {
+									context.ssrData = { fetch: {} };
+								}
+								/** @type {any} */ (context.ssrData).fetch[cacheKey] =
+									responseData;
+							}
+
+							return responseProxy;
+						},
+					);
+
+					context.track(fetchPromise);
+
+					// Only cache GET requests for idempotency
+					if (method === "GET") {
+						context.fetchCache.set(cacheKey, fetchPromise);
+					}
+
+					return fetchPromise;
+				} catch (error) {
+					// Ensure fetch is restored even if interception fails
+					globalThis.fetch = originalFetch;
+					throw error;
 				}
-
-				const fetchPromise = originalFetch(url, opts).then(async (response) => {
-					// Cache the response data
-					const cloned = response.clone();
-					const responseData = {
-						ok: response.ok,
-						status: response.status,
-						statusText: response.statusText,
-						headers: Array.from(response.headers.entries()),
-						/** @type {any} */
-						json: null,
-						/** @type {any} */
-						text: null,
-						/** @type {any} */
-						arrayBuffer: null,
-						/** @type {any} */
-						blob: null,
-					};
-
-					// Try to read as different formats
-					try {
-						const contentType = response.headers.get("content-type") || "";
-
-						if (contentType.includes("application/json")) {
-							responseData.json = await cloned.json();
-						} else if (contentType.includes("text/")) {
-							responseData.text = await cloned.text();
-						} else {
-							responseData.arrayBuffer = await cloned.arrayBuffer();
-						}
-					} catch (_error) {
-						// If parsing fails, store as text
-						responseData.text = await response.clone().text();
-					}
-
-					// Store in SSR cache for client hydration
-					if (!context.ssrData) {
-						context.ssrData = { fetch: {} };
-					}
-					/** @type {any} */ (context.ssrData).fetch[
-						/** @type {string} */ (url)
-					] = responseData;
-
-					return response;
-				});
-
-				context.track(fetchPromise);
-				context.fetchCache.set(cacheKey, fetchPromise);
-
-				return fetchPromise;
 			};
 
 			try {
@@ -550,19 +710,21 @@ async function settleAllPromises(context, timeout, maxAttempts) {
 
 		// Wrap each promise with individual timeout
 		const timeoutWrappedPromises = currentPromises.map((promise) => {
-			return withTimeout(promise, individualTimeout).catch((error) => {
-				if (error.message.includes("Promise timeout")) {
-					const key = promise.toString();
-					if (!timeoutWarnings.has(key)) {
-						timeoutWarnings.add(key);
-						console.warn(
-							`Individual promise timeout (${individualTimeout}ms):`,
-							error.message,
-						);
+			return withTimeout(promise, individualTimeout).catch(
+				(/** @type {Error} */ error) => {
+					if (error.message.includes("Promise timeout")) {
+						const key = promise.toString();
+						if (!timeoutWarnings.has(key)) {
+							timeoutWarnings.add(key);
+							console.warn(
+								`Individual promise timeout (${individualTimeout}ms):`,
+								error.message,
+							);
+						}
 					}
-				}
-				return null; // Graceful degradation - continue with null value
-			});
+					return null; // Graceful degradation - continue with null value
+				},
+			);
 		});
 
 		// Wait for current batch with graceful error handling
@@ -597,7 +759,23 @@ async function settleAllPromises(context, timeout, maxAttempts) {
 }
 
 /**
+ * Safely escapes JSON for embedding in HTML script tags.
+ * Prevents XSS by escaping dangerous characters and Unicode line separators.
+ *
+ * @param {any} data - Data to escape
+ * @returns {string} XSS-safe JSON string
+ */
+function escapeJsonForScript(data) {
+	return JSON.stringify(data)
+		.replace(/</g, "\\u003c") // Escape < to prevent </script> injection
+		.replace(/>/g, "\\u003e") // Escape > for symmetry
+		.replace(/\u2028/g, "\\u2028") // Escape Unicode line separator
+		.replace(/\u2029/g, "\\u2029"); // Escape Unicode paragraph separator
+}
+
+/**
  * Injects SSR data into HTML as a script tag.
+ * Includes XSS protection and size cap to prevent payload abuse.
  *
  * @param {string} html - The HTML content
  * @param {Object} ssrData - The SSR data to inject
@@ -608,7 +786,22 @@ function injectSSRData(html, ssrData) {
 		return html;
 	}
 
-	const ssrScript = `<script>window.__SSR_DATA__ = ${JSON.stringify(ssrData)};</script>`;
+	// Size cap: skip injection if payload is too large (512KB)
+	const jsonString = escapeJsonForScript(ssrData);
+	const maxSize = 512 * 1024; // 512KB
+
+	if (jsonString.length > maxSize) {
+		console.warn(
+			`SSR payload too large (${Math.round(jsonString.length / 1024)}KB > ${maxSize / 1024}KB). Skipping injection to prevent HTML bloat.`,
+		);
+		return html;
+	}
+
+	// Check for optional CSP nonce
+	const nonce = /** @type {any} */ (globalThis).__REFLEX_CSP_NONCE__;
+	const nonceAttr = nonce ? ` nonce="${nonce}"` : "";
+
+	const ssrScript = `<script${nonceAttr}>window.__SSR_DATA__ = ${jsonString};</script>`;
 
 	// Try to inject before closing head tag
 	if (html.includes("</head>")) {
