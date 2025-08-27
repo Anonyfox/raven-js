@@ -728,4 +728,70 @@ describe("entityPageTemplate", () => {
 		assert(html.includes("default module"), "Shows default module badge");
 		assert(html.includes("import { simpleVar }"), "Shows import statement");
 	});
+
+	test("should render entity description with markdown formatting", () => {
+		const data = {
+			entity: {
+				name: "testFunction",
+				type: "function",
+				description:
+					"This is a **bold** function with `inline code` and a [link](https://example.com).",
+				importPath: "test-module",
+				importStatement: "import { testFunction } from 'test-module';",
+				isDefault: false,
+				location: { file: "test.js", line: 10 },
+			},
+			documentation: {
+				parameters: [],
+				returns: { type: "string", description: "" },
+				examples: [],
+				since: "",
+				deprecated: null,
+				author: [],
+				see: [],
+				throws: [],
+				typeInfo: { signature: "" },
+			},
+			relatedEntities: {
+				sameModule: [],
+				similar: [],
+			},
+			navigation: {
+				allModules: [],
+				moduleEntities: [],
+			},
+			packageName: "test-package",
+			moduleName: "test-module",
+			hasParameters: false,
+			hasReturns: false,
+			hasExamples: false,
+			hasRelatedEntities: false,
+			hasTypeInfo: false,
+			isDeprecated: false,
+			hasSource: false,
+			hasLocation: true,
+		};
+
+		const html = entityPageTemplate(data);
+
+		// Should render markdown in description
+		assert(
+			html.includes("<strong>bold</strong>"),
+			"Should render bold markdown",
+		);
+		assert(
+			html.includes("<code>inline code</code>"),
+			"Should render inline code markdown",
+		);
+		assert(
+			html.includes('<a href="https://example.com">link</a>'),
+			"Should render link markdown",
+		);
+		assert(
+			html.includes(
+				'This is a <strong>bold</strong> function with <code>inline code</code> and a <a href="https://example.com">link</a>.',
+			),
+			"Should render complete markdown description",
+		);
+	});
 });

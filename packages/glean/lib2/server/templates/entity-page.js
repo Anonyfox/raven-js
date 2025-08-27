@@ -14,7 +14,7 @@
  * Follows WEBAPP.md specification for detailed API documentation pages.
  */
 
-import { html } from "@raven-js/beak";
+import { html, md } from "@raven-js/beak";
 import { baseTemplate } from "./base.js";
 
 /**
@@ -148,7 +148,7 @@ export function entityPageTemplate(data) {
 						</div>
 						${
 							ent.description
-								? html`<p class="lead text-muted mb-3">${ent.description}</p>`
+								? html`<div class="lead text-muted mb-3">${md`${ent.description}`}</div>`
 								: ""
 						}
 
@@ -256,7 +256,7 @@ export function entityPageTemplate(data) {
 													: html`<span class="text-muted">any</span>`
 											}
 										</td>
-										<td>${param.description || html`<em class="text-muted">No description</em>`}</td>
+										<td>${param.description ? md`${param.description}` : html`<em class="text-muted">No description</em>`}</td>
 										<td>
 											${
 												param.defaultValue
@@ -301,7 +301,7 @@ export function entityPageTemplate(data) {
 						</div>
 						${
 							docs.returns.description
-								? html`<p class="mt-2 mb-0">${docs.returns.description}</p>`
+								? html`<div class="mt-2 mb-0">${md`${docs.returns.description}`}</div>`
 								: ""
 						}
 					</div>
@@ -333,7 +333,7 @@ export function entityPageTemplate(data) {
 										(throwsInfo) => html`
 									<tr>
 										<td><code class="text-danger">${throwsInfo.type}</code></td>
-										<td>${throwsInfo.description || html`<em class="text-muted">No description</em>`}</td>
+										<td>${throwsInfo.description ? md`${throwsInfo.description}` : html`<em class="text-muted">No description</em>`}</td>
 									</tr>
 									`,
 									)}
@@ -504,11 +504,11 @@ export function entityPageTemplate(data) {
 												</h6>
 												<span class="badge ${getTypeBadgeClass(related.type)}">${related.type}</span>
 											</div>
-											${
-												related.description
-													? html`<p class="card-text text-muted small mb-0">${related.description}</p>`
-													: ""
-											}
+																			${
+																				related.description
+																					? html`<div class="card-text text-muted small mb-0">${md`${related.description}`}</div>`
+																					: ""
+																			}
 										</div>
 									</div>
 								</div>
@@ -538,11 +538,11 @@ export function entityPageTemplate(data) {
 												</h6>
 												<span class="badge bg-secondary">${similar.moduleName}</span>
 											</div>
-											${
-												similar.description
-													? html`<p class="card-text text-muted small mb-0">${similar.description}</p>`
-													: ""
-											}
+																			${
+																				similar.description
+																					? html`<div class="card-text text-muted small mb-0">${md`${similar.description}`}</div>`
+																					: ""
+																			}
 										</div>
 									</div>
 								</div>

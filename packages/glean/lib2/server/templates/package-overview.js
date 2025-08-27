@@ -59,7 +59,7 @@ export function packageOverviewTemplate(data) {
 					<div>
 						<h1 class="display-4 fw-bold text-primary mb-2">${name}</h1>
 						${version ? html`<span class="badge bg-secondary fs-6 mb-3">v${version}</span>` : ""}
-						${description ? html`<p class="lead text-muted mb-0">${description}</p>` : ""}
+						${description ? html`<div class="lead text-muted mb-0">${md`${description}`}</div>` : ""}
 					</div>
 					<div class="text-end">
 						<div class="row g-3">

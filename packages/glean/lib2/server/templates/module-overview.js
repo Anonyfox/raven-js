@@ -218,9 +218,9 @@ export function moduleOverviewTemplate(data) {
 												${
 													entity.description
 														? html`
-												<p class="card-text text-muted small mb-0">
-													${entity.description}
-												</p>
+												<div class="card-text text-muted small mb-0">
+													${md`${entity.description}`}
+												</div>
 												`
 														: html`
 												<p class="card-text text-muted small fst-italic mb-0">

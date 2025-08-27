@@ -575,4 +575,78 @@ describe("moduleOverviewTemplate", () => {
 		assert(htmlPlural.includes("5 Entities"), "Uses plural entity label");
 		assert(htmlPlural.includes("FUNCTIONS (2)"), "Shows plural function count");
 	});
+
+	test("should render entity descriptions with markdown formatting", () => {
+		const data = {
+			module: {
+				name: "test-module",
+				fullName: "test-package/test-module",
+				isDefault: false,
+				readme: "",
+				hasReadme: false,
+				entityCount: 1,
+				availableTypes: ["function"],
+			},
+			organizedEntities: {
+				function: [
+					{
+						name: "testFunction",
+						description:
+							"This is a **bold** function with `inline code` and a [link](https://example.com).",
+						location: { file: "test.js", line: 10 },
+						hasParams: false,
+						hasReturns: false,
+						hasExamples: false,
+						isDeprecated: false,
+						link: "/modules/test-module/testFunction/",
+						isReexport: false,
+					},
+				],
+			},
+			navigation: {
+				allModules: [
+					{
+						name: "test-module",
+						fullImportPath: "test-package/test-module",
+						entityCount: 1,
+						link: "/modules/test-module/",
+						isCurrent: true,
+						isDefault: false,
+					},
+				],
+			},
+			stats: {
+				totalEntities: 1,
+				entitiesByType: { function: 1 },
+				deprecatedCount: 0,
+				withExamplesCount: 0,
+			},
+			packageName: "test-package",
+			hasEntities: true,
+			hasDeprecatedEntities: false,
+			hasExampleEntities: false,
+		};
+
+		const html = moduleOverviewTemplate(data);
+
+		// Should render markdown in entity description
+		assert(
+			html.includes("<strong>bold</strong>"),
+			"Should render bold markdown",
+		);
+		assert(
+			html.includes("<code>inline code</code>"),
+			"Should render inline code markdown",
+		);
+		assert(
+			html.includes('<a href="https://example.com">link</a>'),
+			"Should render link markdown",
+		);
+		assert(
+			html.includes(
+				'This is a <strong>bold</strong> function with <code>inline code</code> and a <a href="https://example.com">link</a>.',
+			),
+			"Should render complete markdown description",
+		);
+	});
 });

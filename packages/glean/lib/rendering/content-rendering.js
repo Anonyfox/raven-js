@@ -39,7 +39,7 @@ export function generateEntityList(entities) {
 					<a href="../entities/${entityId.replace(/\//g, "-")}.html">${entityName}</a>
 				</h4>
 				<span class="entity-type">${entityType}</span>
-				${description ? html`<p class="entity-description">${description}</p>` : ""}
+				${description ? html`<div class="entity-description">${md`${description}`}</div>` : ""}
 			</div>
 		`;
 		})

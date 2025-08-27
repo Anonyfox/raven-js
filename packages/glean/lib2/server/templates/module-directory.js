@@ -14,7 +14,7 @@
  * specification for module directory presentation.
  */
 
-import { html } from "@raven-js/beak";
+import { html, md } from "@raven-js/beak";
 import { baseTemplate } from "./base.js";
 
 /**
@@ -199,7 +199,7 @@ export function moduleDirectoryTemplate(data) {
 											entity.description
 												? html`
 										<div class="small text-muted mt-1">
-											${entity.description}${entity.description.length >= 100 ? "..." : ""}
+											${md`${entity.description}`}${entity.description.length >= 100 ? "..." : ""}
 										</div>
 										`
 												: ""
