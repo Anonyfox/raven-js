@@ -13,707 +13,360 @@
  * Zero dependencies, zero transpilation, zero framework lock-in.
  */
 
-/**
- * Global listener for dependency tracking.
- * When set, signal reads will register the listener as a dependency.
- *
- * @type {Function|null}
- */
-let listener = null;
+/** @type {Function|null} */
+let listener = null; // current observer during reads
+/** @type {Array<{track: function(Promise<any>): void}>} */
+export const contextStack = []; // SSR/hydration integration
 
-/**
- * Global flag to prevent effect execution during batching.
- * When true, signal updates won't trigger immediate effect execution.
- *
- * @type {boolean}
- */
-let isBatching = false;
+// ---- scheduler (diamond problem solution) ----------------------------------
 
-/**
- * Tracks the current batch depth for nested batches.
- *
- * @type {number}
- */
-let batchDepth = 0;
+const pendingComputeds = new Set();
+const pendingEffects = new Set();
+let scheduled = false;
+let flushing = false;
+/** @type {Array<any>} */
+let _afterFlush = []; // waiters resolved after flush
 
-/**
- * Set of signals that need to flush notifications after batch completes.
- * Used to ensure effects run after batch() finishes.
- *
- * @type {Set<function>}
- */
-const batchedSignals = new Set();
+function afterFlushPromise() {
+	return new Promise((r) => {
+		_afterFlush.push(r);
+		scheduleFlush();
+	});
+}
 
-/**
- * Flag to prevent re-entrant flushing during batch flush phase.
- *
- * @type {boolean}
- */
-let isFlushing = false;
-
-/**
- * Global context stack for tracking reactive operations and their promises.
- * Used by effects to track async operations and by universal module for SSR.
- *
- * @type {Array<{track: function(Promise<any>): void}>}
- */
-export const contextStack = [];
-
-/**
- * Flushes all batched signals and runs their effects exactly once.
- * Used by both automatic microtask batching and explicit batch() calls.
- */
-function flushBatchedSignals() {
-	if (isFlushing || batchedSignals.size === 0) {
-		return;
+function scheduleFlush() {
+	if (!scheduled) {
+		scheduled = true;
+		queueMicrotask(flush);
 	}
+}
 
-	isFlushing = true;
-
+function flush() {
+	if (flushing) return;
+	flushing = true;
 	try {
-		const signalsToFlush = Array.from(batchedSignals);
-		batchedSignals.clear();
-
-		// Collect all unique effects to run exactly once
-		const uniqueEffects = new Set();
-		for (const signal of signalsToFlush) {
-			// Access signal's subscribers directly and add to set for deduplication
-			/** @type {Set<Function>} */
-			const subscribers = /** @type {any} */ (signal)._getSubscribers();
-			for (const effect of subscribers) {
-				uniqueEffects.add(effect);
+		// Phase 1: Update all computeds first (dependency order)
+		while (pendingComputeds.size) {
+			const computeds = Array.from(pendingComputeds);
+			pendingComputeds.clear();
+			for (const update of computeds) {
+				try {
+					update();
+				} catch (e) {
+					onError(e, "computed");
+				}
 			}
 		}
 
-		// Run each effect exactly once
-		for (const effect of uniqueEffects) {
-			try {
-				effect();
-			} catch (error) {
-				console.error("Batch effect execution error:", error);
+		// Phase 2: Run all effects after computeds are stable
+		if (pendingEffects.size) {
+			const effects = Array.from(pendingEffects);
+			pendingEffects.clear();
+			for (const effect of effects) {
+				try {
+					effect();
+				} catch (e) {
+					onError(e, "effect");
+				}
 			}
 		}
 	} finally {
-		isFlushing = false;
+		const waiters = _afterFlush;
+		_afterFlush = [];
+		for (const resolve of waiters) resolve();
+		scheduled = false;
+		flushing = false;
 	}
 }
 
 /**
- * Creates a reactive signal that can hold and notify changes to a value.
- *
- * Signals are the fundamental reactive primitive. They store a value and
- * notify subscribers when the value changes. Reading a signal automatically
- * tracks dependencies when inside an effect or computed.
- *
- * **Isomorphic**: Works identically across all JavaScript runtimes.
- * **Performance**: Optimized for frequent reads and infrequent writes.
- * **Memory**: Automatic cleanup when all subscribers are removed.
- *
+ * @param {any} err - The error that occurred
+ * @param {string} where - Where the error occurred
+ */
+function onError(err, where) {
+	try {
+		/** @type {any} */ (globalThis).__REFLEX_ON_ERROR__?.(err, where);
+	} catch {}
+	console.error(err);
+}
+
+// ---- resource auto-cleanup -------------------------------------------------
+
+/** @type {any} */
+let activeEffect = null;
+const _origTO = globalThis.setTimeout,
+	_origTI = globalThis.setInterval;
+
+/** @type {any} */
+globalThis.setTimeout = /** @type {any} */ (
+	(/** @type {any} */ fn, /** @type {any} */ ms, /** @type {any} */ ...a) => {
+		const id = _origTO(fn, ms, ...a);
+		if (activeEffect) activeEffect._cleanups.add(() => clearTimeout(id));
+		return id;
+	}
+);
+
+/** @type {any} */
+globalThis.setInterval = /** @type {any} */ (
+	(/** @type {any} */ fn, /** @type {any} */ ms, /** @type {any} */ ...a) => {
+		const id = _origTI(fn, ms, ...a);
+		if (activeEffect) activeEffect._cleanups.add(() => clearInterval(id));
+		return id;
+	}
+);
+
+if (typeof globalThis.EventTarget !== "undefined") {
+	const P = globalThis.EventTarget.prototype;
+	const _add = P.addEventListener,
+		_rem = P.removeEventListener;
+	P.addEventListener = function (type, handler, opts) {
+		_add.call(this, type, handler, opts);
+		if (activeEffect)
+			activeEffect._cleanups.add(() => _rem.call(this, type, handler, opts));
+	};
+}
+
+// ---- signal -----------------------------------------------------------------
+
+/**
  * @template T
- * @param {T} [initial] - The initial value of the signal
- * @returns {function(): T} Signal accessor with methods
- *
- * @example
- * ```javascript
- * // Create signal
- * const count = signal(0);
- *
- * // Read value (tracks dependency if in effect/computed)
- * console.log(count()); // 0
- *
- * // Update value
- * count.set(5);
- * count.update(n => n + 1); // 6
- *
- * // Read without tracking
- * console.log(count.peek()); // 6
- *
- * // Subscribe to changes
- * const unsub = count.subscribe(value => console.log('New:', value));
- * count.set(10); // Logs: "New: 10"
- * unsub(); // Clean up
- * ```
- *
- * @example
- * ```javascript
- * // Isomorphic usage - same code everywhere
- * const data = signal(null);
- *
- * // Works in Node.js
- * if (typeof process !== 'undefined') {
- *   data.set({ platform: 'node' });
- * }
- *
- * // Works in browser
- * if (typeof window !== 'undefined') {
- *   data.set({ platform: 'browser' });
- * }
- *
- * // Works in Deno/Bun
- * data.set({ platform: 'universal' });
- * ```
+ * @param {T} initial
+ * @returns {{(): T, peek(): T, set(value: T): Promise<void>, update(fn: function(T): T): Promise<void>, subscribe(fn: function(T): void): function(): void, _unsubscribe(fn: any): void}}
  */
 export function signal(initial) {
 	let value = initial;
-	const subs = new Set();
+	const subscribers = new Set();
 
-	/**
-	 * Notifies all subscribers with current value.
-	 * @returns {Promise<void[]>} Promise that resolves when all subscribers finish
-	 */
-	const notifySubscribers = async () => {
-		const updates = [];
-		for (const sub of subs) {
-			try {
-				const result = sub(value);
-				if (result && typeof result.then === "function") {
-					updates.push(result);
-				}
-			} catch (error) {
-				// Continue notifying other subscribers even if one fails
-				console.error("Signal subscriber error:", error);
-			}
-		}
-		return Promise.all(updates);
-	};
-
-	/**
-	 * Reads the current signal value and tracks dependency.
-	 * @returns {T} The current value
-	 */
-	function read() {
-		// Track dependency if we're in an effect/computed context
+	const read = () => {
+		// Track dependency if there's a listener
 		if (listener) {
-			subs.add(listener);
-			// Also track this signal as a dependency in the effect if it supports it
-			if (/** @type {any} */ (listener)._trackDependency) {
-				/** @type {any} */ (listener)._trackDependency(read);
+			subscribers.add(listener);
+			// For effects, track the dependency bidirectionally
+			/** @type {any} */
+			const listenerAny = listener;
+			if (listenerAny._isEffect && listenerAny._addDependency) {
+				listenerAny._addDependency(read);
+			} else if (listenerAny._isComputed && listenerAny._trackDependency) {
+				listenerAny._trackDependency(read);
 			}
 		}
 		return value;
-	}
-
-	/**
-	 * Sets a new value and notifies all subscribers.
-	 * @param {T} newValue - The new value to set
-	 * @returns {Promise<void[]>} Promise that resolves when all subscribers finish
-	 */
-	read.set = async (newValue) => {
-		// Avoid unnecessary updates for same value
-		if (Object.is(value, newValue)) {
-			return Promise.resolve([]);
-		}
-
-		value = newValue;
-
-		// If explicitly batching, collect signal for later flush
-		if (isBatching && !isFlushing) {
-			batchedSignals.add(read);
-			return Promise.resolve([]);
-		}
-
-		// Immediate notification for all subscribers
-		return notifySubscribers();
 	};
 
-	// Expose methods for batch flushing
-	read._getSubscribers = () => subs;
-
-	/**
-	 * Removes a subscriber from this signal.
-	 * @param {function} subscriber - The subscriber to remove
-	 */
-	read._unsubscribe = (subscriber) => {
-		subs.delete(subscriber);
-	};
-
-	/**
-	 * Updates the value using a function and notifies subscribers.
-	 * @param {function(T): T} fn - Function that receives current value and returns new value
-	 * @returns {Promise<void[]>} Promise that resolves when all subscribers finish
-	 */
-	read.update = (fn) => {
-		try {
-			return read.set(fn(value));
-		} catch (error) {
-			return Promise.reject(error);
-		}
-	};
-
-	/**
-	 * Reads the current value without tracking dependencies.
-	 * @returns {T} The current value
-	 */
 	read.peek = () => value;
 
-	/**
-	 * Subscribes to value changes.
-	 * @param {function(T): void|Promise<void>} fn - Callback for value changes
-	 * @returns {function(): void} Unsubscribe function
-	 */
-	read.subscribe = (fn) => {
-		subs.add(fn);
-		return () => subs.delete(fn);
+	read.subscribe = (/** @type {any} */ fn) => {
+		subscribers.add(fn);
+		return () => subscribers.delete(fn);
+	};
+
+	read._unsubscribe = (/** @type {any} */ fn) => {
+		subscribers.delete(fn);
+	};
+
+	read.set = async (/** @type {any} */ next) => {
+		if (Object.is(value, next)) return;
+		value = next;
+
+		// Schedule all reactive subscribers
+		for (const subscriber of subscribers) {
+			if (subscriber._isComputed) {
+				subscriber._invalidate();
+				pendingComputeds.add(subscriber._update);
+			} else if (subscriber._isEffect) {
+				pendingEffects.add(subscriber);
+			} else if (typeof subscriber === "function") {
+				// Direct subscriber - call immediately
+				try {
+					subscriber(value);
+				} catch (e) {
+					onError(e, "subscriber");
+				}
+			}
+		}
+
+		scheduleFlush();
+		return afterFlushPromise();
+	};
+
+	read.update = async (/** @type {any} */ fn) => {
+		return await read.set(fn(value));
 	};
 
 	return read;
 }
 
-/**
- * Creates a reactive effect that automatically tracks signal dependencies.
- *
- * Effects automatically re-run when any signals they read change. This is the
- * foundation of reactive programming - side effects that stay in sync with state.
- *
- * **Isomorphic**: Works identically across all JavaScript runtimes.
- * **Performance**: Only re-runs when dependencies actually change.
- * **Cleanup**: Automatic dependency cleanup when effect re-runs.
- *
- * **Dependency Management**: Effects automatically unsubscribe from signals
- * that aren't read during the current execution. This provides optimal memory
- * management but requires careful handling of conditional signal reads.
- *
- * **Limitation**: For conditional signal reading patterns where a signal might
- * be read again in future runs, consider using `untrack()` or explicit
- * subscription management to avoid unwanted unsubscriptions.
- *
- * @param {function(): void|Promise<void>} fn - Function to run reactively
- * @returns {function(): void|Promise<void>} Disposal function to stop the effect
- *
- * @example
- * ```javascript
- * // Basic reactive effect
- * const count = signal(0);
- *
- * const dispose = effect(() => {
- *   console.log('Count is:', count());
- * });
- *
- * count.set(1); // Logs: "Count is: 1"
- * count.set(2); // Logs: "Count is: 2"
- *
- * dispose(); // Stop the effect
- * count.set(3); // No log (effect disposed)
- * ```
- *
- * @example
- * ```javascript
- * // Dependency cleanup - effect switches from reading 'a' to 'b'
- * const condition = signal(true);
- * const a = signal(1);
- * const b = signal(100);
- *
- * effect(() => {
- *   if (condition()) {
- *     console.log('a:', a()); // Subscribes to 'a'
- *   } else {
- *     console.log('b:', b()); // Subscribes to 'b', unsubscribes from 'a'
- *   }
- * });
- *
- * condition.set(false); // Effect now only tracks 'b', not 'a'
- * a.set(999); // No effect execution (unsubscribed)
- * b.set(200); // Effect runs (still subscribed)
- * ```
- */
-export function effect(fn) {
-	let isDisposed = false;
-	const currentRunResources = new Set();
-	const currentDependencies = new Set();
-
-	/**
-	 * Wraps global APIs to auto-track resources for cleanup.
-	 * @returns {function} Restore function to unwrap APIs and cleanup current run
-	 */
-	const wrapResourceAPIs = () => {
-		// Clear previous run resources before starting new run
-		for (const cleanup of currentRunResources) {
-			try {
-				cleanup();
-			} catch (error) {
-				console.error("Effect resource cleanup error:", error);
-			}
-		}
-		currentRunResources.clear();
-
-		const originalSetInterval = globalThis.setInterval;
-		const originalSetTimeout = globalThis.setTimeout;
-		const originalAddEventListener = globalThis.addEventListener;
-
-		// Wrap setInterval to auto-track
-		/** @type {any} */ (globalThis).setInterval = (
-			/** @type {any} */ callback,
-			/** @type {any} */ delay,
-			/** @type {...any} */ ...args
-		) => {
-			if (isDisposed) return originalSetInterval(callback, delay, ...args);
-			const id = originalSetInterval(callback, delay, ...args);
-			currentRunResources.add(() => clearInterval(id));
-			return id;
-		};
-
-		// Wrap setTimeout to auto-track
-		/** @type {any} */ (globalThis).setTimeout = (
-			/** @type {any} */ callback,
-			/** @type {any} */ delay,
-			/** @type {...any} */ ...args
-		) => {
-			if (isDisposed) return originalSetTimeout(callback, delay, ...args);
-			const id = originalSetTimeout(callback, delay, ...args);
-			currentRunResources.add(() => clearTimeout(id));
-			return id;
-		};
-
-		// Wrap addEventListener to auto-track (only if available)
-		if (originalAddEventListener) {
-			globalThis.addEventListener = (
-				/** @type {any} */ type,
-				/** @type {any} */ listener,
-				/** @type {any} */ options,
-			) => {
-				originalAddEventListener(type, listener, options);
-				if (!isDisposed) {
-					currentRunResources.add(() =>
-						globalThis.removeEventListener?.(type, listener, options),
-					);
-				}
-			};
-		}
-
-		// Return restore function
-		return () => {
-			/** @type {any} */ (globalThis).setInterval = originalSetInterval;
-			/** @type {any} */ (globalThis).setTimeout = originalSetTimeout;
-			if (originalAddEventListener) {
-				/** @type {any} */ (globalThis).addEventListener =
-					originalAddEventListener;
-			}
-		};
-	};
-
-	let runCount = 0; // Track consecutive runs to detect infinite loops
-	const MAX_RUNS = 100; // Reasonable limit for recursive effects
-
-	const execute = () => {
-		if (isDisposed) return;
-
-		// Infinite loop protection
-		runCount++;
-		if (runCount > MAX_RUNS) {
-			console.error("Effect infinite loop detected - stopping execution");
-			return;
-		}
-
-		// Reset counter after a microtask (allows legitimate recursion)
-		queueMicrotask(() => {
-			runCount = Math.max(0, runCount - 1);
-		});
-
-		const prev = listener;
-
-		// Track what dependencies we had before this run
-		const dependenciesBeforeRun = new Set(currentDependencies);
-
-		// Clear current dependencies - will be rebuilt during execution
-		currentDependencies.clear();
-
-		// Add dependency tracking capability to the execute function
-		/** @type {any} */ (execute)._trackDependency = (
-			/** @type {any} */ signal,
-		) => {
-			currentDependencies.add(signal);
-		};
-
-		listener = execute;
-
-		// Wrap resource APIs during effect execution
-		const restore = wrapResourceAPIs();
-
-		try {
-			const result = fn();
-
-			// Track promises returned by effects in reactive contexts
-			const ctx = contextStack[contextStack.length - 1];
-			if (result && typeof result.then === "function" && ctx) {
-				ctx.track(result);
-			}
-
-			return result;
-		} finally {
-			// Always restore APIs after execution
-			restore();
-			listener = prev;
-
-			// Smart dependency cleanup: clean up dependencies not read in current run
-			// This handles complete dependency switches while preserving conditional reads
-			for (const signal of dependenciesBeforeRun) {
-				if (signal._unsubscribe && !currentDependencies.has(signal)) {
-					signal._unsubscribe(execute);
-				}
-			}
-		}
-	};
-
-	// Run immediately
-	execute();
-
-	// Return disposal function with deterministic cleanup
-	return () => {
-		isDisposed = true;
-
-		// Clean up signal dependencies
-		for (const signal of currentDependencies) {
-			if (signal._unsubscribe) {
-				signal._unsubscribe(execute);
-			}
-		}
-		currentDependencies.clear();
-
-		// Auto-cleanup all tracked resources from current run
-		for (const cleanup of currentRunResources) {
-			try {
-				cleanup();
-			} catch (error) {
-				console.error("Effect resource cleanup error:", error);
-			}
-		}
-		currentRunResources.clear();
-	};
-}
+// ---- computed ---------------------------------------------------------------
 
 /**
- * Creates a computed value that lazily evaluates and caches based on dependencies.
- *
- * Computed values automatically track signals they read and only re-compute when
- * those dependencies change. They cache their result for efficient repeated access.
- *
- * **Isomorphic**: Works identically across all JavaScript runtimes.
- * **Performance**: Lazy evaluation - only computes when needed and dependencies change.
- * **Memory**: Automatic cleanup when all computed values are disposed.
- *
  * @template T
- * @param {function(): T} fn - Function that computes the value
- * @returns {function(): T} Computed accessor that returns cached value
- *
- * @example
- * ```javascript
- * // Basic computed value
- * const count = signal(1);
- * const doubled = computed(() => count() * 2);
- *
- * console.log(doubled()); // 2 (computes)
- * console.log(doubled()); // 2 (cached)
- *
- * count.set(3);
- * console.log(doubled()); // 6 (re-computes)
- * ```
- *
- * @example
- * ```javascript
- * // Complex computed with multiple dependencies
- * const firstName = signal("John");
- * const lastName = signal("Doe");
- * const age = signal(30);
- *
- * const profile = computed(() => ({
- *   fullName: `${firstName()} ${lastName()}`,
- *   isAdult: age() >= 18,
- *   initials: `${firstName()[0]}${lastName()[0]}`
- * }));
- *
- * console.log(profile().fullName); // "John Doe"
- * firstName.set("Jane");
- * console.log(profile().fullName); // "Jane Doe" (re-computed)
- * ```
+ * @param {function(): T} fn
+ * @returns {{(): T, peek(): T, _unsubscribe(fn: any): void}}
  */
 export function computed(fn) {
 	/** @type {any} */
 	let value;
-	let isStale = true;
-	let isComputing = false;
-	const subs = new Set();
+	let isValid = false;
+	let computing = false;
+	const dependencies = new Set();
+	const dependents = new Set();
 
-	const notifySubscribers = () => {
-		if (isBatching) return;
-
-		// Immediate notification for all subscribers
-		for (const sub of subs) {
-			try {
-				sub();
-			} catch (error) {
-				console.error("Computed subscriber error:", error);
-			}
+	function cleanup() {
+		for (const dep of dependencies) {
+			dep._unsubscribe(computedInstance);
 		}
-	};
+		dependencies.clear();
+	}
 
-	const markStale = () => {
-		if (!isStale) {
-			isStale = true;
-			// Notify subscribers that computed is stale (they should re-read)
-			notifySubscribers();
-		}
-	};
+	function recompute() {
+		if (computing) throw new Error("Circular dependency in computed");
+		computing = true;
 
-	const compute = () => {
-		if (isComputing) {
-			throw new Error("Circular dependency detected in computed");
-		}
-
-		isComputing = true;
-		const prev = listener;
-		listener = markStale;
+		const prevListener = listener;
+		cleanup(); // Remove old dependencies
+		listener = computedInstance;
 
 		try {
 			const newValue = fn();
-			const hasChanged = !Object.is(value, newValue);
+			const changed = !Object.is(value, newValue);
 			value = newValue;
-			isStale = false;
+			isValid = true;
 
-			// Check if we're in an initial read (the effect that's reading us is already subscribed)
-			const isInitialRead = prev && subs.has(prev);
-
-			// Only notify subscribers if value actually changed and not during initial read
-			if (hasChanged && !isBatching && !isInitialRead) {
-				notifySubscribers();
+			// Schedule dependents if value changed
+			if (changed) {
+				for (const dependent of dependents) {
+					if (dependent._isComputed) {
+						dependent._invalidate();
+						pendingComputeds.add(dependent._update);
+					} else if (dependent._isEffect) {
+						pendingEffects.add(dependent);
+					}
+				}
 			}
 
-			return value;
+			return changed;
 		} finally {
-			listener = prev;
-			isComputing = false;
+			listener = prevListener;
+			computing = false;
 		}
-	};
+	}
 
-	/**
-	 * Reads the computed value, computing if stale.
-	 * @returns {T} The computed value
-	 */
-	function read() {
-		// Track this computed as a dependency
+	const computedInstance = () => {
+		// Track this computed as a dependency if there's a listener
 		if (listener) {
-			subs.add(listener);
+			dependents.add(listener);
 		}
 
-		if (isStale) {
-			return compute();
+		if (!isValid) {
+			recompute();
 		}
-
 		return value;
-	}
-
-	/**
-	 * Reads the current cached value without computing.
-	 * @returns {T} The cached value (may be stale)
-	 */
-	read.peek = () => value;
-
-	/**
-	 * Removes a subscriber from this computed.
-	 * @param {function} subscriber - The subscriber to remove
-	 */
-	read._unsubscribe = (subscriber) => {
-		subs.delete(subscriber);
 	};
 
-	return read;
+	computedInstance._isComputed = true;
+	computedInstance._invalidate = () => {
+		isValid = false;
+	};
+	computedInstance._update = recompute;
+	computedInstance._trackDependency = (/** @type {any} */ dep) => {
+		dependencies.add(dep);
+	};
+	computedInstance.peek = () => value;
+	computedInstance._unsubscribe = (/** @type {any} */ fn) => {
+		dependents.delete(fn);
+		if (dependents.size === 0) {
+			cleanup(); // Cleanup when no dependents
+		}
+	};
+
+	// Initial computation
+	recompute();
+
+	return computedInstance;
 }
 
-/**
- * Groups multiple signal updates into a single batch to avoid redundant computations.
- *
- * When multiple signals are updated within a batch, dependent computed values
- * and effects will only run once at the end, improving performance.
- *
- * **Isomorphic**: Works identically across all JavaScript runtimes.
- * **Performance**: Eliminates redundant computations from multiple updates.
- * **Synchronous**: Batch completes before returning.
- *
- * @param {function(): void} fn - Function containing signal updates
- * @returns {void}
- *
- * @example
- * ```javascript
- * const a = signal(1);
- * const b = signal(2);
- * const sum = computed(() => a() + b());
- *
- * effect(() => console.log("Sum:", sum()));
- *
- * // Without batch: logs "Sum: 3", "Sum: 5", "Sum: 9"
- * a.set(2);
- * b.set(3);
- * a.set(4);
- *
- * // With batch: only logs "Sum: 9" once
- * batch(() => {
- *   a.set(2);
- *   b.set(3);
- *   a.set(4);
- * });
- * ```
- */
-export function batch(fn) {
-	// Track batch depth for nested batches
-	batchDepth++;
+// ---- effect -----------------------------------------------------------------
 
-	// Set batching flag if this is the first batch
-	if (batchDepth === 1) {
-		isBatching = true;
+/**
+ * @param {function(): any} fn
+ * @returns {function(): void}
+ */
+export function effect(fn) {
+	let disposed = false;
+	const dependencies = new Set();
+	const cleanups = new Set();
+
+	function cleanup() {
+		for (const dep of dependencies) {
+			dep._unsubscribe(effectInstance);
+		}
+		dependencies.clear();
 	}
 
-	try {
-		fn();
-	} finally {
-		batchDepth--;
+	function run() {
+		if (disposed) return;
 
-		// Only flush when exiting the outermost batch
-		if (batchDepth === 0) {
-			isBatching = false;
-			flushBatchedSignals();
+		const prevListener = listener;
+		const prevActive = activeEffect;
+
+		// Clear old dependencies before running
+		const oldDeps = new Set(dependencies);
+		for (const dep of oldDeps) {
+			dep._unsubscribe(effectInstance);
+		}
+		dependencies.clear();
+
+		listener = effectInstance;
+		activeEffect = effectInstance;
+		/** @type {any} */ (effectInstance)._cleanups = cleanups;
+
+		try {
+			const result = fn();
+			const ctx = contextStack[contextStack.length - 1];
+			if (result && typeof result.then === "function" && ctx) {
+				ctx.track(result);
+			}
+			return result;
+		} finally {
+			listener = prevListener;
+			activeEffect = prevActive;
 		}
 	}
+
+	const effectInstance = /** @type {any} */ (run);
+	effectInstance._isEffect = true;
+	effectInstance._cleanups = cleanups;
+	effectInstance._addDependency = (/** @type {any} */ dep) => {
+		dependencies.add(dep);
+	};
+
+	// Initial run
+	run();
+
+	return () => {
+		disposed = true;
+		cleanup();
+		for (const cleanupFn of cleanups) {
+			try {
+				cleanupFn();
+			} catch (e) {
+				onError(e, "cleanup");
+			}
+		}
+		cleanups.clear();
+	};
 }
 
+// ---- untrack ----------------------------------------------------------------
+
 /**
- * Reads signals without creating dependency tracking.
- *
- * When called within an effect or computed, untrack prevents the signals
- * read inside from becoming dependencies. Useful for conditional logic
- * and side effects that shouldn't trigger re-runs.
- *
- * **Isomorphic**: Works identically across all JavaScript runtimes.
- * **Performance**: Avoids unnecessary effect re-runs.
- * **Selective**: Only affects signals read within the untrack function.
- *
  * @template T
- * @param {function(): T} fn - Function to run without dependency tracking
- * @returns {T} The result of the function
- *
- * @example
- * ```javascript
- * const condition = signal(true);
- * const value = signal(1);
- * const debug = signal("debug info");
- *
- * const result = computed(() => {
- *   if (condition()) {
- *     // This creates a dependency on debug
- *     console.log("Debug:", debug());
- *     return value() * 2;
- *   }
- *
- *   // This does NOT create a dependency on debug
- *   untrack(() => console.log("Untracked debug:", debug()));
- *   return value();
- * });
- *
- * // Changing debug will trigger re-computation only in first case
- * ```
+ * @param {function(): T} fn
+ * @returns {T}
  */
 export function untrack(fn) {
 	const prev = listener;
 	listener = null;
-
 	try {
 		return fn();
 	} finally {
