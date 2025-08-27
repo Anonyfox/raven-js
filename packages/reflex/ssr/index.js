@@ -292,7 +292,7 @@ const env = {
 };
 
 /**
- * Universal reactive wrapper that handles SSR, hydration, and async operations.
+ * SSR wrapper that handles server-side rendering, hydration, and async operations.
  *
  * This function wraps handler functions to provide automatic SSR data injection,
  * fetch interception, client-side hydration, and async operation management.
@@ -313,7 +313,7 @@ const env = {
  * **Performance**: Eliminates server round-trips during hydration.
  *
  * @template T
- * @param {function(...any[]): T|Promise<T>} fn - Handler function to make reactive
+ * @param {function(...any[]): T|Promise<T>} fn - Handler function to wrap with SSR
  * @param {Object} [options={}] - Configuration options
  * @param {number} [options.timeout=10000] - Maximum time to wait for async operations (ms)
  * @param {number} [options.maxSettleAttempts=100] - Maximum attempts to settle all async operations
@@ -324,11 +324,11 @@ const env = {
  * // Express/Wings route handler
  * import { Router } from "@raven-js/wings";
  * import { html } from "@raven-js/beak";
- * import { reactive, signal } from "@raven-js/reflex";
+ * import { ssr, signal } from "@raven-js/reflex";
  *
  * const router = new Router();
  *
- * router.get("/todos", reactive(async (ctx) => {
+ * router.get("/todos", ssr(async (ctx) => {
  *   const todos = signal([]);
  *
  *   // This fetch works on server AND client
@@ -355,9 +355,9 @@ const env = {
  * ```javascript
  * // Pure Node.js usage
  * import { createServer } from "http";
- * import { reactive, signal, effect } from "@raven-js/reflex";
+ * import { ssr, signal, effect } from "@raven-js/reflex";
  *
- * const handler = reactive(async () => {
+ * const handler = ssr(async () => {
  *   const data = signal("loading...");
  *
  *   // Automatic fetch interception and caching
@@ -375,9 +375,9 @@ const env = {
  * }).listen(3000);
  * ```
  */
-export function reactive(fn, options = {}) {
+export function ssr(fn, options = {}) {
 	// Prevent double-wrapping
-	if (/** @type {any} */ (fn)._reactiveWrapped) {
+	if (/** @type {any} */ (fn)._ssrWrapped) {
 		return /** @type {any} */ (fn);
 	}
 
@@ -643,7 +643,7 @@ export function reactive(fn, options = {}) {
 	};
 
 	// Mark as wrapped to prevent double-wrapping
-	/** @type {any} */ (wrapped)._reactiveWrapped = true;
+	/** @type {any} */ (wrapped)._ssrWrapped = true;
 
 	return wrapped;
 }

@@ -1,8 +1,8 @@
 import assert from "node:assert";
 import { afterEach, beforeEach, describe, it, mock } from "node:test";
-import * as universal from "./index.js";
+import * as ssr from "./index.js";
 
-describe("universal/index.js", () => {
+describe("ssr/index.js", () => {
 	let originalWindow;
 	let originalFetch;
 
@@ -19,31 +19,31 @@ describe("universal/index.js", () => {
 	});
 
 	describe("exports", () => {
-		it("should export reactive function", () => {
-			assert.strictEqual(typeof universal.reactive, "function");
+		it("should export ssr function", () => {
+			assert.strictEqual(typeof ssr.ssr, "function");
 		});
 	});
 
-	describe("reactive()", () => {
-		it("should create reactive wrapper function", () => {
+	describe("ssr()", () => {
+		it("should create ssr wrapper function", () => {
 			const handler = () => "test";
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 
 			assert.strictEqual(typeof wrapped, "function");
-			assert.strictEqual(wrapped._reactiveWrapped, true);
+			assert.strictEqual(wrapped._ssrWrapped, true);
 		});
 
 		it("should prevent double-wrapping", () => {
 			const handler = () => "test";
-			const wrapped1 = universal.reactive(handler);
-			const wrapped2 = universal.reactive(wrapped1);
+			const wrapped1 = ssr.ssr(handler);
+			const wrapped2 = ssr.ssr(wrapped1);
 
 			assert.strictEqual(wrapped1, wrapped2);
 		});
 
 		it("should handle basic function execution", async () => {
 			const handler = (arg) => `result: ${arg}`;
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 
 			const result = await wrapped("test");
 			assert.strictEqual(result, "result: test");
@@ -54,7 +54,7 @@ describe("universal/index.js", () => {
 				await new Promise((resolve) => setTimeout(resolve, 1));
 				return `async result: ${arg}`;
 			};
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 
 			const result = await wrapped("test");
 			assert.strictEqual(result, "async result: test");
@@ -64,7 +64,7 @@ describe("universal/index.js", () => {
 			const handler = () => {
 				throw new Error("Handler error");
 			};
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 
 			await assert.rejects(() => wrapped(), /Handler error/);
 		});
@@ -72,7 +72,7 @@ describe("universal/index.js", () => {
 		it("should pass custom options", () => {
 			const handler = () => "test";
 			const options = { timeout: 5000, maxSettleAttempts: 50 };
-			const wrapped = universal.reactive(handler, options);
+			const wrapped = ssr.ssr(handler, options);
 
 			assert.strictEqual(typeof wrapped, "function");
 		});
@@ -86,7 +86,7 @@ describe("universal/index.js", () => {
 
 		it("should detect server environment", async () => {
 			const handler = () => "server response";
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 
 			const result = await wrapped();
 			assert.strictEqual(result, "server response");
@@ -111,7 +111,7 @@ describe("universal/index.js", () => {
 				return `data: ${data.data}`;
 			};
 
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 			const result = await wrapped();
 
 			assert.strictEqual(result, "data: test");
@@ -138,7 +138,7 @@ describe("universal/index.js", () => {
 				return `<html><head><title>Test</title></head><body><h1>${data.message}</h1></body></html>`;
 			};
 
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 			const result = await wrapped();
 
 			// Should contain SSR data injection
@@ -152,7 +152,7 @@ describe("universal/index.js", () => {
 				return "<html><head><title>Test</title></head><body>no fetch</body></html>";
 			};
 
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 			const result = await wrapped();
 
 			// Should NOT contain SSR data injection
@@ -193,7 +193,7 @@ describe("universal/index.js", () => {
 				return `hydrated: ${data.cached}`;
 			};
 
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 			const result = await wrapped();
 
 			assert.strictEqual(result, "hydrated: data");
@@ -216,7 +216,7 @@ describe("universal/index.js", () => {
 				return `fresh: ${data.fresh}`;
 			};
 
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 			const result = await wrapped();
 
 			assert.strictEqual(result, "fresh: data");
@@ -245,7 +245,7 @@ describe("universal/index.js", () => {
 				return `client: ${data.client}`;
 			};
 
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 			const result = await wrapped();
 
 			assert.strictEqual(result, "client: data");
@@ -272,7 +272,7 @@ describe("universal/index.js", () => {
 				}
 			};
 
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 			const result = await wrapped();
 
 			assert.ok(result.includes("Error: Network error"));
@@ -297,7 +297,7 @@ describe("universal/index.js", () => {
 				throw new Error("Handler error");
 			};
 
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 
 			await assert.rejects(() => wrapped(), /Handler error/);
 
@@ -330,7 +330,7 @@ describe("universal/index.js", () => {
 				return "<html><body>handled parsing error</body></html>";
 			};
 
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 			const result = await wrapped();
 
 			// Should still inject SSR data despite JSON parsing error
@@ -343,7 +343,7 @@ describe("universal/index.js", () => {
 				return "Just plain text response";
 			};
 
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 			const result = await wrapped();
 
 			// Should not try to inject SSR data into non-HTML
@@ -360,12 +360,12 @@ describe("universal/index.js", () => {
 			};
 
 			const outerHandler = async () => {
-				const inner = universal.reactive(handler);
+				const inner = ssr.ssr(handler);
 				await inner();
 				return "<html><body>tracked</body></html>";
 			};
 
-			const wrapped = universal.reactive(outerHandler);
+			const wrapped = ssr.ssr(outerHandler);
 			const result = await wrapped();
 
 			assert.ok(result.includes("tracked"));
@@ -375,7 +375,7 @@ describe("universal/index.js", () => {
 	describe("options handling", () => {
 		it("should use default options when none provided", () => {
 			const handler = () => "test";
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 
 			assert.strictEqual(typeof wrapped, "function");
 		});
@@ -383,7 +383,7 @@ describe("universal/index.js", () => {
 		it("should merge provided options with defaults", () => {
 			const handler = () => "test";
 			const options = { timeout: 5000 }; // Only partial options
-			const wrapped = universal.reactive(handler, options);
+			const wrapped = ssr.ssr(handler, options);
 
 			assert.strictEqual(typeof wrapped, "function");
 		});
@@ -431,7 +431,7 @@ describe("universal/index.js", () => {
 			};
 
 			// Use very short timeout to test timeout handling
-			const wrapped = universal.reactive(handler, {
+			const wrapped = ssr.ssr(handler, {
 				timeout: 50,
 				maxSettleAttempts: 2,
 			});
@@ -502,7 +502,7 @@ describe("universal/index.js", () => {
 				return `<html><body>Data: ${fastData}</body></html>`;
 			};
 
-			const wrapped = universal.reactive(handler, {
+			const wrapped = ssr.ssr(handler, {
 				timeout: 100,
 				maxSettleAttempts: 3,
 			});
@@ -553,7 +553,7 @@ describe("universal/index.js", () => {
 				return `<html><body>Data: ${texts.join(", ")}</body></html>`;
 			};
 
-			const wrapped = universal.reactive(handler, {
+			const wrapped = ssr.ssr(handler, {
 				timeout: 500,
 				maxSettleAttempts: 10,
 			});
@@ -610,7 +610,7 @@ describe("universal/index.js", () => {
 					return `<html><body>Handler returned early, fetch is pending...</body></html>`;
 				};
 
-				const wrapped = universal.reactive(handler, {
+				const wrapped = ssr.ssr(handler, {
 					timeout: 30, // Very short timeout, promise takes 1000ms
 					maxSettleAttempts: 10, // More attempts to trigger timeout logic
 				});
@@ -675,7 +675,7 @@ describe("universal/index.js", () => {
 			delete globalThis.sessionStorage;
 
 			// Call installBrowserAPIShims directly
-			universal.env.installBrowserAPIShims();
+			ssr.env.installBrowserAPIShims();
 
 			// localStorage should be shimmed
 			assert.ok(globalThis.localStorage, "localStorage should exist");
@@ -699,7 +699,7 @@ describe("universal/index.js", () => {
 			// Ensure server environment and clean state
 			delete globalThis.window;
 
-			universal.env.installBrowserAPIShims();
+			ssr.env.installBrowserAPIShims();
 
 			assert.ok(globalThis.window, "window should exist");
 			assert.ok(globalThis.window.location, "window.location should exist");
@@ -715,7 +715,7 @@ describe("universal/index.js", () => {
 			delete globalThis.window;
 			delete globalThis.navigator;
 
-			universal.env.installBrowserAPIShims();
+			ssr.env.installBrowserAPIShims();
 
 			assert.ok(globalThis.navigator, "navigator should exist");
 			assert.strictEqual(globalThis.navigator.userAgent, "Node.js");
@@ -730,7 +730,7 @@ describe("universal/index.js", () => {
 			delete globalThis.confirm;
 			delete globalThis.prompt;
 
-			universal.env.installBrowserAPIShims();
+			ssr.env.installBrowserAPIShims();
 
 			assert.ok(globalThis.alert, "alert should exist");
 			assert.ok(globalThis.confirm, "confirm should exist");
@@ -751,7 +751,7 @@ describe("universal/index.js", () => {
 			/** @type {any} */ (globalThis).window = {};
 			delete globalThis.localStorage;
 
-			universal.env.installBrowserAPIShims();
+			ssr.env.installBrowserAPIShims();
 
 			// Should not have installed shims (env.isServer() returns false when window exists)
 			assert.strictEqual(typeof globalThis.localStorage, "undefined");
@@ -776,7 +776,7 @@ describe("universal/index.js", () => {
 				return `<html><body>Theme: ${theme}, Online: ${online}, URL: ${href}</body></html>`;
 			};
 
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 			const result = await wrapped();
 
 			// Should have worked without throwing
@@ -848,7 +848,7 @@ describe("universal/index.js", () => {
 				return "<html><body>test</body></html>";
 			};
 
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 			const result = await wrapped();
 
 			// Should contain SSR data injection (only GET cached)
@@ -905,7 +905,7 @@ describe("universal/index.js", () => {
 				return `hydrated: ${data1.hydrated}`;
 			};
 
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 			const result = await wrapped();
 
 			// Give microtask a chance to run
@@ -960,7 +960,7 @@ describe("universal/index.js", () => {
 				return data.data;
 			};
 
-			const wrapped1 = universal.reactive(handler1);
+			const wrapped1 = ssr.ssr(handler1);
 			const result1 = await wrapped1();
 
 			assert.strictEqual(result1, "first");
@@ -978,7 +978,7 @@ describe("universal/index.js", () => {
 				return data.data;
 			};
 
-			const wrapped2 = universal.reactive(handler2);
+			const wrapped2 = ssr.ssr(handler2);
 			const result2 = await wrapped2();
 
 			assert.strictEqual(result2, "second");
@@ -1037,7 +1037,7 @@ describe("universal/index.js", () => {
 				return data.test;
 			};
 
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 			const result = await wrapped();
 
 			assert.strictEqual(result, "data");
@@ -1071,7 +1071,7 @@ describe("universal/index.js", () => {
 				return "<html><head><title>Test</title></head><body>content</body></html>";
 			};
 
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 			const result = await wrapped();
 
 			// Should contain escaped characters, not raw dangerous content
@@ -1111,7 +1111,7 @@ describe("universal/index.js", () => {
 					return "<html><head><title>Test</title></head><body>content</body></html>";
 				};
 
-				const wrapped = universal.reactive(handler);
+				const wrapped = ssr.ssr(handler);
 				const result = await wrapped();
 
 				// Should NOT contain SSR data injection due to size cap
@@ -1143,7 +1143,7 @@ describe("universal/index.js", () => {
 					return "<html><head><title>Test</title></head><body>content</body></html>";
 				};
 
-				const wrapped = universal.reactive(handler);
+				const wrapped = ssr.ssr(handler);
 				const result = await wrapped();
 
 				// Should contain nonce attribute
@@ -1175,7 +1175,7 @@ describe("universal/index.js", () => {
 				return "<html><head><title>Test</title></head><body>content</body></html>";
 			};
 
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 			const result = await wrapped();
 
 			// Should NOT contain nonce attribute
@@ -1222,7 +1222,7 @@ describe("universal/index.js", () => {
 				return `<html><body>Data: ${data.delayed}</body></html>`;
 			};
 
-			const wrapped = universal.reactive(handler, { timeout: 200 });
+			const wrapped = ssr.ssr(handler, { timeout: 200 });
 			const result = await wrapped();
 
 			// Should have waited for the body read to complete
@@ -1280,7 +1280,7 @@ describe("universal/index.js", () => {
 				return "<html><body>All methods called</body></html>";
 			};
 
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 			const result = await wrapped();
 
 			// All body read methods should have been called and tracked
@@ -1326,7 +1326,7 @@ describe("universal/index.js", () => {
 			const mockFetch = () => Promise.resolve(mockResponse);
 			globalThis.fetch = mockFetch;
 
-			const wrapped = universal.reactive(handler);
+			const wrapped = ssr.ssr(handler);
 
 			try {
 				await wrapped();

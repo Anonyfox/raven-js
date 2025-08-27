@@ -38,10 +38,10 @@ count.set(5); // Logs: "Count: 5, Doubled: 10"
 ### Universal SSR
 
 ```javascript
-import { reactive } from "@raven-js/reflex/ssr";
+import { ssr } from "@raven-js/reflex/ssr";
 
 // Same code runs on server and client
-const App = reactive(async () => {
+const App = ssr(async () => {
   const data = signal([]);
 
   // Automatic fetch caching during SSR
@@ -93,14 +93,14 @@ Reflex integrates seamlessly with [@raven-js/wings](https://github.com/Anonyfox/
 ```javascript
 import { Router } from "@raven-js/wings";
 import { html } from "@raven-js/beak";
-import { reactive, signal, computed } from "@raven-js/reflex";
+import { ssr, signal, computed } from "@raven-js/reflex";
 
 const router = new Router();
 
 // Reactive route handlers - same code runs server & client
 router.get(
   "/todos",
-  reactive(async (ctx) => {
+  ssr(async (ctx) => {
     // Create reactive state
     const todos = signal([]);
     const filter = signal("all");
