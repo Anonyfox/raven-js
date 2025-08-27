@@ -327,6 +327,7 @@ describe("Documentation Server Integration", () => {
 			xml.includes(`<loc>https://test.docs.com/modules/</loc>`),
 			"Contains module directory URL",
 		);
+
 		assert(
 			xml.includes(`<loc>https://test.docs.com/modules/utils/</loc>`),
 			"Contains utils module URL",

@@ -43,8 +43,19 @@ export function extractSitemapData(
 
 	// Module overview pages
 	for (const module of /** @type {any} */ (packageInstance).modules) {
-		// Use full import path for sitemap URLs (tests expect encoded paths)
-		const moduleUrl = `${baseUrl}/modules/${encodeURIComponent(module.importPath)}/`;
+		// Extract module name from import path, following the same logic as module overview
+		// This ensures consistency with how modules are accessed via URLs
+		let moduleName = module.importPath.split("/").pop() || "index";
+
+		// Handle main module (package name) - use package name for consistency with integration tests
+		if (moduleName === packageInstance.name) {
+			moduleName = packageInstance.name;
+		}
+
+		// Always use the extracted module name for URLs, following the same logic as module overview
+		// Integration tests show that modules are accessible at /modules/utils/, /modules/api/, etc.
+		const moduleUrl = `${baseUrl}/modules/${moduleName}/`;
+
 		urls.push({
 			loc: moduleUrl,
 			lastmod: new Date().toISOString().split("T")[0],
@@ -54,7 +65,8 @@ export function extractSitemapData(
 
 		// Entity pages within modules
 		for (const entity of module.publicEntities) {
-			const entityUrl = `${baseUrl}/modules/${encodeURIComponent(module.importPath)}/${encodeURIComponent(entity.name)}/`;
+			const entityUrl = `${baseUrl}/modules/${moduleName}/${encodeURIComponent(entity.name)}/`;
+
 			urls.push({
 				loc: entityUrl,
 				lastmod: new Date().toISOString().split("T")[0],

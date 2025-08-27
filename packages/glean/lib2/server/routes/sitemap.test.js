@@ -101,7 +101,7 @@ describe("createSitemapHandler", () => {
 			"Includes default module URL",
 		);
 		assert(
-			xml.includes(`<loc>${baseUrl}/modules/test-package%2Futils/</loc>`),
+			xml.includes(`<loc>${baseUrl}/modules/utils/</loc>`),
 			"Includes utils module URL",
 		);
 
@@ -115,9 +115,7 @@ describe("createSitemapHandler", () => {
 			"Includes class URL",
 		);
 		assert(
-			xml.includes(
-				`<loc>${baseUrl}/modules/test-package%2Futils/helperFunction/</loc>`,
-			),
+			xml.includes(`<loc>${baseUrl}/modules/utils/helperFunction/</loc>`),
 			"Includes helper URL",
 		);
 	});

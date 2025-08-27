@@ -65,15 +65,12 @@ describe("extractSitemapData", () => {
 		);
 		assert(
 			data.urls.some(
-				(url) =>
-					url.loc === "https://docs.example.com/modules/test-package%2Futils/",
+				(url) => url.loc === "https://docs.example.com/modules/utils/",
 			),
 		);
 		assert(
 			data.urls.some(
-				(url) =>
-					url.loc ===
-					"https://docs.example.com/modules/test-package%2Fhelpers/",
+				(url) => url.loc === "https://docs.example.com/modules/helpers/",
 			),
 		);
 
@@ -95,15 +92,13 @@ describe("extractSitemapData", () => {
 		assert(
 			data.urls.some(
 				(url) =>
-					url.loc ===
-					"https://docs.example.com/modules/test-package%2Futils/helperFunction/",
+					url.loc === "https://docs.example.com/modules/utils/helperFunction/",
 			),
 		);
 		assert(
 			data.urls.some(
 				(url) =>
-					url.loc ===
-					"https://docs.example.com/modules/test-package%2Futils/UtilityClass/",
+					url.loc === "https://docs.example.com/modules/utils/UtilityClass/",
 			),
 		);
 	});
@@ -123,12 +118,12 @@ describe("extractSitemapData", () => {
 		// Default module should have higher priority than non-default
 		const defaultModule = data.urls.find(
 			(url) =>
-				url.loc.includes("/modules/test-package/") && !url.loc.includes("%2F"),
+				url.loc.includes("/modules/test-package/") &&
+				!url.loc.includes("utils"),
 		);
 		const nonDefaultModule = data.urls.find(
 			(url) =>
-				url.loc.includes("/modules/test-package%2Futils/") &&
-				!url.loc.includes("Function"),
+				url.loc.includes("/modules/utils/") && !url.loc.includes("Function"),
 		);
 		assert.strictEqual(defaultModule.priority, "0.8");
 		assert.strictEqual(nonDefaultModule.priority, "0.7");
@@ -188,9 +183,9 @@ describe("extractSitemapData", () => {
 
 		const data = extractSitemapData(mockPackage);
 
-		// Should properly encode module path
+		// Should extract module name from path and use it directly
 		assert(
-			data.urls.some((url) => url.loc.includes("test%2Fpath%20with%20spaces")),
+			data.urls.some((url) => url.loc.includes("/modules/path with spaces/")),
 		);
 
 		// Should properly encode entity names
