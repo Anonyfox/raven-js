@@ -1,6 +1,6 @@
 # Three-Tiered Template Engine Benchmark Results
 
-**Generated:** 2025-08-25T12:49:36.003Z
+**Generated:** 2025-08-27T18:12:01.901Z
 **Test Environment:** Node.js v22.5.0
 **Iterations:** 1000 renders per engine per category
 
@@ -19,15 +19,15 @@ Measures pure template engine overhead with static HTML content.
 
 | Rank | Engine | Avg Time (ms) | Renders/sec | vs Fastest |
 |------|--------|---------------|-------------|------------|
-| 1 | **doT** | 0.00 | 9019979 | baseline |
-| 2 | **Pug** | 0.00 | 5097619 | 1.77x slower |
-| 3 | **Beak (RavenJS)** | 0.00 | 3756870 | 2.40x slower |
-| 4 | **Mustache** | 0.00 | 1333232 | 6.77x slower |
-| 5 | **Handlebars** | 0.01 | 178516 | 50.53x slower |
-| 6 | **EJS** | 0.01 | 126433 | 71.34x slower |
-| 7 | **Eta** | 0.02 | 44235 | 203.91x slower |
-| 8 | **Nunjucks** | 0.03 | 35534 | 253.84x slower |
-| 9 | **Liquid** | 0.07 | 15131 | 596.12x slower |
+| 1 | **doT** | 0.00 | 8634684 | baseline |
+| 2 | **Pug** | 0.00 | 5203807 | 1.66x slower |
+| 3 | **Beak (RavenJS)** | 0.00 | 3796363 | 2.27x slower |
+| 4 | **Mustache** | 0.00 | 1279951 | 6.75x slower |
+| 5 | **Handlebars** | 0.00 | 205661 | 41.99x slower |
+| 6 | **EJS** | 0.01 | 133678 | 64.59x slower |
+| 7 | **Eta** | 0.02 | 51626 | 167.25x slower |
+| 8 | **Nunjucks** | 0.03 | 37324 | 231.34x slower |
+| 9 | **Liquid** | 0.07 | 14470 | 596.74x slower |
 
 ## Component Benchmark Results
 
@@ -36,15 +36,15 @@ Tests typical component rendering with loops, conditionals, and data processing.
 
 | Rank | Engine | Avg Time (ms) | Renders/sec | vs Fastest |
 |------|--------|---------------|-------------|------------|
-| 1 | **doT** | 0.01 | 90615 | baseline |
-| 2 | **Pug** | 0.03 | 31147 | 2.91x slower |
-| 3 | **Beak (RavenJS)** | 0.07 | 13892 | 6.52x slower |
-| 4 | **Eta** | 0.08 | 13239 | 6.84x slower |
-| 5 | **Mustache** | 0.08 | 13168 | 6.88x slower |
-| 6 | **Handlebars** | 0.19 | 5155 | 17.58x slower |
-| 7 | **EJS** | 0.28 | 3573 | 25.36x slower |
-| 8 | **Nunjucks** | 0.63 | 1591 | 56.97x slower |
-| 9 | **Liquid** | 2.58 | 387 | 234.13x slower |
+| 1 | **doT** | 0.01 | 89688 | baseline |
+| 2 | **Pug** | 0.03 | 32160 | 2.79x slower |
+| 3 | **Beak (RavenJS)** | 0.06 | 16787 | 5.34x slower |
+| 4 | **Eta** | 0.07 | 13721 | 6.54x slower |
+| 5 | **Mustache** | 0.08 | 12086 | 7.42x slower |
+| 6 | **Handlebars** | 0.20 | 4953 | 18.11x slower |
+| 7 | **EJS** | 0.28 | 3593 | 24.96x slower |
+| 8 | **Nunjucks** | 0.64 | 1566 | 57.27x slower |
+| 9 | **Liquid** | 2.51 | 399 | 224.73x slower |
 
 ## Complex Benchmark Results
 
@@ -53,23 +53,23 @@ Full application complexity with comprehensive data processing and transformatio
 
 | Rank | Engine | Avg Time (ms) | Renders/sec | vs Fastest |
 |------|--------|---------------|-------------|------------|
-| 1 | **doT** | 0.13 | 7893 | baseline |
-| 2 | **Pug** | 0.19 | 5221 | 1.51x slower |
-| 3 | **Eta** | 0.22 | 4583 | 1.72x slower |
-| 4 | **Mustache** | 0.67 | 1502 | 5.26x slower |
-| 5 | **Beak (RavenJS)** | 0.75 | 1342 | 5.88x slower |
-| 6 | **Handlebars** | 1.37 | 731 | 10.79x slower |
-| 7 | **EJS** | 2.05 | 488 | 16.18x slower |
-| 8 | **Nunjucks** | 2.82 | 355 | 22.26x slower |
-| 9 | **Liquid** | 4.29 | 233 | 33.85x slower |
+| 1 | **doT** | 0.13 | 7890 | baseline |
+| 2 | **Pug** | 0.19 | 5307 | 1.49x slower |
+| 3 | **Eta** | 0.22 | 4619 | 1.71x slower |
+| 4 | **Mustache** | 0.67 | 1491 | 5.29x slower |
+| 5 | **Beak (RavenJS)** | 0.70 | 1419 | 5.56x slower |
+| 6 | **Handlebars** | 1.36 | 736 | 10.72x slower |
+| 7 | **EJS** | 2.10 | 475 | 16.59x slower |
+| 8 | **Nunjucks** | 2.84 | 353 | 22.38x slower |
+| 9 | **Liquid** | 4.23 | 236 | 33.39x slower |
 
 ## Performance Analysis
 
 ### Engine Scaling Patterns
 
-**Baseline:** doT leads at 0.00ms, 596.1x performance spread
-**Component:** doT leads at 0.01ms, 234.1x performance spread
-**Complex:** doT leads at 0.13ms, 33.8x performance spread
+**Baseline:** doT leads at 0.00ms, 596.7x performance spread
+**Component:** doT leads at 0.01ms, 224.7x performance spread
+**Complex:** doT leads at 0.13ms, 33.4x performance spread
 
 ### Why This Matters
 
@@ -111,14 +111,14 @@ Startup overhead from fresh engine creation to first render completion:
 
 | Rank | Engine | Cold Start | Warm Time | Startup Overhead | vs Fastest |
 |------|--------|------------|-----------|------------------|------------|
-| 1 | **mustache** | 1.49ms | 650μs | 838μs | baseline |
-| 2 | **eta** | 1.87ms | 210μs | 1.66ms | 1.98x slower |
-| 3 | **dot** | 2.12ms | 120μs | 2.00ms | 2.38x slower |
-| 4 | **ejs** | 4.49ms | 1.94ms | 2.55ms | 3.05x slower |
-| 5 | **beak** | 3.37ms | 750μs | 2.62ms | 3.12x slower |
-| 6 | **liquid** | 8.47ms | 3.84ms | 4.63ms | 5.52x slower |
-| 7 | **nunjucks** | 10.5ms | 2.60ms | 7.89ms | 9.41x slower |
-| 8 | **pug** | 22.7ms | 180μs | 22.5ms | 26.82x slower |
+| 1 | **mustache** | 1.29ms | 650μs | 641μs | baseline |
+| 2 | **dot** | 1.80ms | 120μs | 1.68ms | 2.62x slower |
+| 3 | **eta** | 1.96ms | 210μs | 1.75ms | 2.73x slower |
+| 4 | **beak** | 3.23ms | 750μs | 2.48ms | 3.87x slower |
+| 5 | **ejs** | 4.48ms | 1.94ms | 2.54ms | 3.97x slower |
+| 6 | **liquid** | 8.00ms | 3.84ms | 4.16ms | 6.50x slower |
+| 7 | **nunjucks** | 9.42ms | 2.60ms | 6.82ms | 10.64x slower |
+| 8 | **pug** | 21.5ms | 180μs | 21.3ms | 33.19x slower |
 
 ### Cold Start Analysis
 
