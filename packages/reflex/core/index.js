@@ -341,10 +341,21 @@ export function effect(fn) {
 	};
 
 	// Initial run
-	run();
+	try {
+		run();
+	} catch (e) {
+		onError(e, "effect");
+	}
 
 	return () => {
 		disposed = true;
+
+		// Unsubscribe from all dependencies (signals and computeds)
+		for (const dep of dependencies) {
+			dep._unsubscribe(effectInstance);
+		}
+		dependencies.clear();
+
 		cleanup();
 		for (const cleanupFn of cleanups) {
 			try {
