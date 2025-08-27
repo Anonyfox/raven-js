@@ -7,20 +7,20 @@
 ## Why This Flock Is Organized the Way It Is
 
 RavenJS is not another "all-or-nothing" framework.
-It's a **toolkit of sharp, standalone parts** (capabilities) and **focused movements** (activities) you can drop into _any_ modern JavaScript project — plus a full framework (`@raven-js/raven`) that stitches them together when you want the whole bird.
+It's a **toolkit of sharp, standalone parts** (libraries) and **focused movements** (tools) you can drop into _any_ modern JavaScript project — plus a full framework (`@raven-js/raven`) that stitches them together when you want the whole bird.
 
-- **Capabilities** — the raven's **body parts**: direct, in-app features you import into your own codebase. Standalone, zero bloat, tree-shakable.
-- **Activities** — the raven's **movements**: operational steps you run _with_ your apps/packages — building, bundling, shipping.
-- **Identity & habitat** — the raven itself, its nest, and its call: the glue and tooling that make the ecosystem feel seamless.
+- **Libraries** — runtime dependencies you import into your codebase. Standalone, zero bloat, tree-shakable.
+- **Tools** — CLI executables you run on your apps/packages — building, bundling, shipping.
+- **Platform** — the framework foundation and ecosystem glue that makes everything feel seamless.
 
 > Everything here is designed so you can pick only what you need, without carrying dead weight.
 > Every package (except the full `raven` framework and workspace tools) is valuable on its own.
 
 ---
 
-## 📦 Capabilities — The Raven's Body Parts (Standalone)
+## 📦 Libraries — Runtime Dependencies (Standalone)
 
-**Capabilities** are drop-in functionalities you `npm install` and use directly in your application code. These are dependency-free standalone utilities that become part of your application's runtime. Think of them as the raven's body parts - each one provides a specific function you can import and use immediately. They're designed to be lightweight, focused, and tree-shakable, so you only bundle what you actually use.
+**Libraries** are drop-in functionalities you `npm install` and use directly in your application code. These are dependency-free standalone utilities that become part of your application's runtime. Each one provides a specific function you can import and use immediately. They're designed to be lightweight, focused, and tree-shakable, so you only bundle what you actually use.
 
 ### 🦜 Beak — _Templating_
 
@@ -28,23 +28,20 @@ It's a **toolkit of sharp, standalone parts** (capabilities) and **focused movem
   <img src="../media/raven-logo-beak.png" alt="Beak Logo" width="120" height="120">
 </div>
 
-The raven's voice and craft: zero-dep HTML/CSS/SQL rendering.
+JSX-like templates without the weight. 4.2KB minified+gzipped vs 201KB (Pug). Zero build dependency, complete JavaScript runtime access, platform-native performance.
 
-**Status:** ✅ **Complete** - Ready for production use
+**Status:** ✅ **Complete** - Production ready with 48x smaller bundles than alternatives
 
 **Features:**
 
-- [x] HTML templating with XSS protection
-- [x] CSS-in-JS with automatic optimization
+- [x] HTML templating with XSS protection and automatic escaping
+- [x] CSS-in-JS with object→kebab-case conversion and minification
 - [x] SQL query building with injection prevention
-- [x] Markdown parsing and rendering
-- [x] JavaScript code generation
-- [x] Component architecture support
-- [x] VS Code extension with syntax highlighting
-
-**Roadmap:**
-
-- [ ] Optional terminal output utilities (tables, progress, spinners)
+- [x] GitHub Flavored Markdown parsing in 4KB
+- [x] JavaScript code generation and component architecture
+- [x] SEO meta generators (OpenGraph, Twitter, robots)
+- [x] VS Code & Cursor extension with full syntax highlighting
+- [x] Performance benchmarks: 0.68ms rendering, 2.83ms cold starts
 
 ---
 
@@ -54,19 +51,20 @@ The raven's voice and craft: zero-dep HTML/CSS/SQL rendering.
   <img src="../media/raven-logo-wings.png" alt="Wings Logo" width="120" height="120">
 </div>
 
-Your app's flight control: isomorphic router with submodules for **SPA** (pushState), **Server** (HTTP routing), and **CLI** (route patterns → commands). A single route is a **Feather** — light, movable, composable.
+Zero-dependency isomorphic routing that actually works. Same routes everywhere - server, CLI, wherever. DevServer with WebSocket reload, ClusteredServer for production scaling, built-in HTTPS support.
 
-**Status:** 🚧 **In Development**
+**Status:** ✅ **Complete** - Production ready with multi-environment support
 
 **Features:**
 
-- [ ] Isomorphic routing (SPA, Server, CLI)
-- [ ] Lightweight route definitions (Feathers)
-- [ ] PushState navigation for SPAs
-- [ ] HTTP routing for server-side apps
-- [ ] CLI command routing
-- [ ] Route composition and nesting
-- [ ] Middleware support
+- [x] Isomorphic routing (Server HTTP + CLI commands)
+- [x] DevServer with WebSocket-based live reload and HTTPS
+- [x] ClusteredServer with automatic worker restart and CPU scaling
+- [x] Built-in HTTPS support with certificate generation
+- [x] CLI command routing via Terminal module
+- [x] Interactive CLI utilities (ask, confirm, table, colored output)
+- [x] Logger middleware with performance indicators
+- [x] Combined runtimes (single app handles web + CLI operations)
 
 ---
 
@@ -140,25 +138,48 @@ See into the dark: mocks, doubles, spies, fake timers, and request stubs.
   <img src="../media/raven-logo-reflex.png" alt="Reflex Logo" width="120" height="120">
 </div>
 
-Quick reflexes: tiny signals/stores, DOM mount/patch, effect scheduling. Plays best with Wings/Beak, but never required.
+Universal reactive signals with automatic SSR, seamless hydration, and zero-dependency DOM updates. Works everywhere - browser, Node.js, Deno, Bun. Perfect integration with Wings routing and Beak templating.
 
-**Status:** 📋 **Planned**
+**Status:** ✅ **Complete** - Production ready with universal reactivity
 
 **Features:**
 
-- [ ] Tiny signals and stores
-- [ ] DOM mounting and patching
-- [ ] Effect scheduling and cleanup
-- [ ] Reactive state management
-- [ ] Component lifecycle hooks
-- [ ] Integration with Wings and Beak
-- [ ] Performance optimizations
+- [x] Universal signals (signal, computed, effect) that work everywhere
+- [x] Automatic SSR with embedded state and fetch caching
+- [x] Perfect hydration with no flicker or duplicate requests
+- [x] DOM mounting and patching utilities for browser environments
+- [x] Automatic resource cleanup (timers, event listeners)
+- [x] SSR timeout protection with graceful degradation
+- [x] Browser API shims prevent SSR crashes
+- [x] Seamless Wings integration for fullstack reactivity
 
 ---
 
-## 🛠 Activities — The Raven's Movements (Standalone)
+## 🛠 Tools — CLI Executables (Standalone)
 
-**Activities** are tooling packages you use in your Node.js/npm project to do something with your whole application. They might have a few handpicked dependencies but won't interfere with your app code itself. These can be used directly with runners like `npx` without needing local installation. Think of them as the raven's movements - they help you build, bundle, deploy, and manage your projects from the outside, not as part of your application's runtime.
+**Tools** are CLI packages you use in your Node.js/npm project to operate on your whole application. They might have a few handpicked dependencies but won't interfere with your app code itself. These can be used directly with runners like `npx` without needing local installation. They help you build, bundle, deploy, and manage your projects from the outside, not as part of your application's runtime.
+
+### 🔍 Glean — _Documentation_
+
+<div align="center">
+  <img src="../media/raven-logo-eye.png" alt="Glean Logo" width="120" height="120">
+</div>
+
+Glean documentation gold from your codebase. JSDoc parsing, validation, and beautiful doc generation with surgical precision.
+
+**Status:** 🚧 **In Development** - Core architecture complete, features in progress
+
+**Features:**
+
+- [x] JSDoc parsing and extraction from JavaScript files
+- [x] Documentation validation and completeness checking
+- [x] Fast in-memory class tree analysis
+- [x] Zero dependencies with pure Node.js implementation
+- [ ] Beautiful documentation site generation
+- [ ] Advanced validation rules and reporting
+- [ ] Integration with build pipelines
+
+---
 
 ### 🐣 Fledge — _Build & Bundle_
 
@@ -204,7 +225,7 @@ Take to the sky: clean submodule exports for **cloudflare**, **aws-lambda**, **d
 
 ---
 
-## 🏠 Identity & Habitat — The Bird & Its Home (Ecosystem Glue)
+## 🏠 Platform — Framework Foundation (Ecosystem Glue)
 
 ### 🦅 Raven — _Application Framework_
 
@@ -234,9 +255,9 @@ The full bird: bootable/extendable framework that composes all capabilities into
   <img src="../media/raven-logo-simple.png" alt="Nest Logo" width="120" height="120">
 </div>
 
-The janitor and automation tool for the RavenJS monorepo itself. Handles package validation, testing, documentation generation, version management, and release workflows. This is internal tooling that keeps the RavenJS ecosystem clean and organized.
+The janitor and automation tool for the RavenJS monorepo itself. Handles package validation, testing, documentation generation, version management, and release workflows. This is private internal tooling that keeps the RavenJS ecosystem clean and organized.
 
-**Status:** 🚧 **In Development**
+**Status:** ✅ **Complete** - Private package for internal monorepo management
 
 **Features:**
 

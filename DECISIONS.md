@@ -20,9 +20,9 @@ This document explains the key technical and strategic decisions made in RavenJS
 
 **Why this matters:** Teams that have experienced framework migrations understand the cost of monolithic coupling. This approach prioritizes long-term adaptability over short-term convenience.
 
-## 2. Zero Dependencies Policy (Capabilities)
+## 2. Zero Dependencies Policy (Libraries)
 
-**Decision:** Runtime packages (Capabilities) have absolutely zero external dependencies, while CLI tools (Activities) may include necessary dependencies.
+**Decision:** Runtime packages (Libraries) have absolutely zero external dependencies, while CLI tools (Tools) may include necessary dependencies.
 
 **Tradeoffs:**
 
@@ -172,12 +172,12 @@ This document explains the key technical and strategic decisions made in RavenJS
 
 **Practical impact:** Since zero-dependency packages install quickly regardless of package manager, npm's performance disadvantage is negligible for RavenJS use cases.
 
-## 10. Capabilities vs Activities Architecture
+## 10. Libraries vs Tools Architecture
 
-**Decision:** Distinguish between runtime libraries (Capabilities) and development tools (Activities) with different dependency policies.
+**Decision:** Distinguish between runtime libraries (Libraries) and development tools (Tools) with different dependency policies.
 
-**Capabilities:** Zero dependencies, installed via `npm install`, become part of application runtime
-**Activities:** May have dependencies, used via `npx`, operate on applications from outside
+**Libraries:** Zero dependencies, installed via `npm install`, become part of application runtime
+**Tools:** May have dependencies, used via `npx`, operate on applications from outside
 
 **Advantages:**
 
@@ -194,8 +194,8 @@ This document explains the key technical and strategic decisions made in RavenJS
 
 **Tradeoffs:**
 
-- **Package size:** Doubles the file count and storage requirements for Activity packages
-- **Complexity:** Requires build process for Activities while maintaining source-as-runtime for Capabilities
+- **Package size:** Doubles the file count and storage requirements for Tool packages
+- **Complexity:** Requires build process for Tools while maintaining source-as-runtime for Libraries
 
 **Advantages:**
 
