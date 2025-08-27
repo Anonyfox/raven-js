@@ -15,72 +15,117 @@
 
 export { compile } from "../compile/index.js";
 
+// Template cache for memoized code generation
+const TEMPLATE_CACHE = new WeakMap();
+
+// Hoisted regex constants - avoid recreation on every call
+const NEEDS_ESC = /[&<>"']/;
+const DANGEROUS = /(?:javascript|vbscript|data):|on[a-z]+=/i;
+
 /**
- * Character-level HTML escaping with XSS protection.
- * Switch-based for V8 optimization. Blocks dangerous protocols/events.
+ * Hybrid HTML escaping with zero-cost fast path.
+ * Probes with regex first, only escapes when needed.
  *
  * @param {string} str - String to escape
  * @returns {string} HTML-escaped string
  */
 export function escapeHtml(str) {
-	let stringValue = String(str);
+	const stringValue = `${str}`;
 
-	// Pre-processing: neutralize dangerous patterns with minimal overhead
-	if (stringValue.includes("javascript:")) {
-		stringValue = stringValue.replace(/javascript:/gi, "blocked:");
-	}
-	if (stringValue.includes("vbscript:")) {
-		stringValue = stringValue.replace(/vbscript:/gi, "blocked:");
-	}
-	if (stringValue.includes("data:")) {
-		stringValue = stringValue.replace(/data:/gi, "blocked:");
-	}
-	// Neutralize event handlers by converting to safe attributes
-	if (stringValue.includes("on")) {
-		stringValue = stringValue.replace(/\bon([a-z]+)=/gi, "blocked-$1=");
-	}
+	// Fast probe - zero cost when no escaping needed
+	const match = NEEDS_ESC.exec(stringValue);
 
-	let result = "";
-	for (let i = 0; i < stringValue.length; i++) {
-		const char = stringValue[i];
-		switch (char) {
-			case "&":
-				result += "&amp;";
-				break;
-			case "<":
-				result += "&lt;";
-				break;
-			case ">":
-				result += "&gt;";
-				break;
-			case '"':
-				result += "&quot;";
-				break;
-			case "'":
-				result += "&#x27;";
-				break;
-			default:
-				result += char;
-				break;
+	let result;
+	if (!match) {
+		result = stringValue;
+	} else {
+		// Slice builder starting at first hit
+		let out = "";
+		let last = 0;
+		let i = match.index;
+
+		for (; i < stringValue.length; i++) {
+			const ch = stringValue.charCodeAt(i);
+			let rep = null;
+			if (ch === 38)
+				rep = "&amp;"; // &
+			else if (ch === 60)
+				rep = "&lt;"; // <
+			else if (ch === 62)
+				rep = "&gt;"; // >
+			else if (ch === 34)
+				rep = "&quot;"; // "
+			else if (ch === 39) rep = "&#x27;"; // '
+
+			if (rep) {
+				if (last !== i) out += stringValue.slice(last, i);
+				out += rep;
+				last = i + 1;
+			}
 		}
+
+		result =
+			last === 0
+				? stringValue
+				: last < stringValue.length
+					? out + stringValue.slice(last)
+					: out;
 	}
+
+	// Security check: block dangerous protocols and event handlers (after escaping)
+	if (DANGEROUS.test(result)) {
+		return result
+			.replace(/javascript:/g, "blocked:")
+			.replace(/vbscript:/g, "blocked:")
+			.replace(/data:/g, "blocked:")
+			.replace(/\bon([a-z]+)=/g, "blocked-$1=");
+	}
+
 	return result;
 }
 
 /**
- * Monomorphic value processing for V8 optimization.
- * Arrays flatten, falsy filtered except 0, no escaping.
+ * Fast path processor for common primitives.
+ * Inlined in generated code for maximum performance.
  *
  * @param {any} value - Value to process
  * @returns {string} Processed string value
  */
-function processValue(value) {
-	if (value == null) return "";
+function processValueFast(value) {
+	if (value == null || value === false) return "";
+	if (value === true) return "true";
 	if (typeof value === "string") return value;
-	if (typeof value === "number") return String(value);
-	if (typeof value === "boolean") return value ? String(value) : "";
-	if (Array.isArray(value)) return value.map((v) => processValue(v)).join("");
-	return String(value);
+	if (typeof value === "number") return `${value}`;
+	// Function-type values get stringified
+	if (typeof value === "function") return String(value);
+	return processValueSlow(value);
+}
+
+/**
+ * Slow path processor for arrays, objects, and complex types.
+ * Only called when fast path cannot handle the value.
+ *
+ * @param {any} value - Value to process
+ * @returns {string} Processed string value
+ */
+function processValueSlow(value) {
+	if (Array.isArray(value)) {
+		const parts = [];
+		/** @type {any[]} */
+		const stack = [value];
+		while (stack.length) {
+			/** @type {any} */
+			const cur = stack.pop();
+			if (cur == null || cur === false) continue;
+			if (Array.isArray(cur)) {
+				for (let i = cur.length - 1; i >= 0; i--) stack.push(cur[i]);
+			} else {
+				parts.push(typeof cur === "string" ? cur : `${cur}`);
+			}
+		}
+		return parts.join("");
+	}
+	return `${value}`;
 }
 
 /**
@@ -116,11 +161,53 @@ function processValueSafe(value, seen) {
  * @returns {string} Rendered HTML string
  */
 export function html(strings, ...values) {
-	let result = strings[0];
-	for (let i = 0; i < values.length; i++) {
-		result += processValue(values[i]) + strings[i + 1];
+	// Check cache for compiled template
+	let fn = TEMPLATE_CACHE.get(strings);
+	if (!fn) {
+		// Static-only optimization: no interpolations
+		if (values.length === 0) {
+			fn = () => strings[0].trim();
+		} else {
+			// Choose variadic vs array-indexed specialization
+			if (values.length <= 8) {
+				// Variadic specialization for short templates - fixed arity
+				let src = "return (";
+				for (let i = 0; i < values.length; i++) {
+					// Pre-trim first string, keep middle strings as-is
+					const str = i === 0 ? strings[i].trimStart() : strings[i];
+					src += `${JSON.stringify(str)} + _p(v${i}) + `;
+				}
+				// Handle the final string with trimEnd
+				const finalStr = strings[values.length].trimEnd();
+				src += `${JSON.stringify(finalStr)}).trim();`;
+				fn = new Function(
+					"_p",
+					...Array.from({ length: values.length }, (_, i) => `v${i}`),
+					src,
+				).bind(null, processValueFast);
+			} else {
+				// Array-indexed specialization for longer templates
+				let src = "return (";
+				for (let i = 0; i < values.length; i++) {
+					// Pre-trim first string, keep middle strings as-is
+					const str = i === 0 ? strings[i].trimStart() : strings[i];
+					src += `${JSON.stringify(str)} + _p(a[${i}]) + `;
+				}
+				// Handle the final string with trimEnd
+				const finalStr = strings[values.length].trimEnd();
+				src += `${JSON.stringify(finalStr)}).trim();`;
+				fn = new Function("_p", "a", src).bind(null, processValueFast);
+			}
+		}
+		TEMPLATE_CACHE.set(strings, fn);
 	}
-	return result.trim();
+
+	// Call with appropriate arity based on template length
+	if (values.length <= 8) {
+		return fn.apply(null, values);
+	} else {
+		return fn(values);
+	}
 }
 
 /**
@@ -140,5 +227,15 @@ export function safeHtml(strings, ...values) {
 	for (let i = 0; i < values.length; i++) {
 		result += processValueSafe(values[i], seen) + strings[i + 1];
 	}
+
+	// Security check: block dangerous protocols and event handlers (post-concat)
+	if (DANGEROUS.test(result)) {
+		result = result
+			.replace(/javascript:/g, "blocked:")
+			.replace(/vbscript:/g, "blocked:")
+			.replace(/data:/g, "blocked:")
+			.replace(/\bon([a-z]+)=/g, "blocked-$1=");
+	}
+
 	return result.trim();
 }
