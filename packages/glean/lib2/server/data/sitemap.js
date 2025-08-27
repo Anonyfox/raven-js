@@ -15,7 +15,7 @@
 
 /**
  * Extract sitemap data from package instance
- * @param {Object} packageInstance - Package instance with modules and entities
+ * @param {{name: string, modules: Array<{importPath: string, isDefault: boolean, publicEntities: Array<{name: string}>}>}} packageInstance - Package instance with modules and entities
  * @param {string} baseUrl - Base URL for the documentation site
  * @returns {{urls: Array<{loc: string, lastmod: string, changefreq: string, priority: string}>, totalUrls: number, generatedAt: string}} Sitemap data with URLs, priorities, and metadata
  */

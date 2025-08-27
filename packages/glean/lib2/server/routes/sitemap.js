@@ -18,7 +18,7 @@ import { sitemapTemplate } from "../templates/sitemap.js";
 
 /**
  * Create sitemap route handler
- * @param {Object} packageInstance - Package instance with modules and entities
+ * @param {{name: string, modules: Array<{importPath: string, isDefault: boolean, publicEntities: Array<{name: string}>}>}} packageInstance - Package instance with modules and entities
  * @param {Object} options - Configuration options
  * @param {string} [options.baseUrl] - Base URL for the documentation site
  * @returns {Function} Wings route handler for sitemap.xml
