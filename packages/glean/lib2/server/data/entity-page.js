@@ -1,0 +1,481 @@
+/**
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ */
+
+/**
+ * Entity page data extractor for /modules/{moduleName}/{entityName}/ route
+ *
+ * Implements comprehensive entity documentation extraction including JSDoc processing,
+ * cross-references, related entities, and navigation context following WEBAPP.md
+ * specification for detailed API documentation pages.
+ */
+
+/**
+ * Extract entity page data for documentation rendering
+ * @param {import('../../extract/models/package.js').Package} packageInstance - Package data
+ * @param {string} moduleName - Module name from URL parameter
+ * @param {string} entityName - Entity name from URL parameter
+ * @returns {Object} Complete entity page data structure
+ */
+export function extractEntityPageData(packageInstance, moduleName, entityName) {
+	/** @type {any} */
+	const pkg = packageInstance;
+	// STEP 1: Find the target entity
+	const packageName = packageInstance.name || "";
+
+	// Find target module using same logic as module overview
+	let module = null;
+	if (packageInstance.findModuleByImportPath) {
+		module = packageInstance.findModuleByImportPath(moduleName);
+	} else {
+		module = packageInstance.modules.find((m) => m.importPath === moduleName);
+	}
+
+	// If not found, try constructing full import path
+	if (!module && packageName) {
+		const fullImportPath = `${packageName}/${moduleName}`;
+		if (packageInstance.findModuleByImportPath) {
+			module = packageInstance.findModuleByImportPath(fullImportPath);
+		} else {
+			module = packageInstance.modules.find(
+				(m) => m.importPath === fullImportPath,
+			);
+		}
+	}
+
+	// If still not found, try finding by module name (last part of import path)
+	if (!module) {
+		module = packageInstance.modules.find(
+			(m) => m.importPath.split("/").pop() === moduleName,
+		);
+	}
+
+	if (!module) {
+		throw new Error(
+			`Module '${moduleName}' not found in package '${packageName}'`,
+		);
+	}
+
+	// Find target entity within the module
+	/** @type {any} */
+	let entity = null;
+	/** @type {any} */
+	const mod = module;
+	if (mod.findEntityByName) {
+		entity = mod.findEntityByName(entityName);
+	} else if (mod.entities) {
+		entity = mod.entities.find(
+			/** @param {any} e */ (e) => e.name === entityName,
+		);
+	}
+
+	if (!entity) {
+		throw new Error(
+			`Entity '${entityName}' not found in module '${mod.importPath}'`,
+		);
+	}
+
+	// STEP 2: Core entity information
+	const entityData = {
+		name: entity.name,
+		type: entity.entityType || "unknown",
+		description: entity.description || "",
+		source: entity.source || "",
+		location: entity.location || null,
+		moduleId: entity.moduleId || mod.importPath,
+
+		// Import statement generation
+		importPath: mod.importPath,
+		importStatement: `import { ${entity.name} } from '${mod.importPath}';`,
+		isDefault: mod.isDefault || false,
+	};
+
+	// STEP 3: JSDoc documentation extraction
+	const documentation = {
+		// Parameters
+		parameters: extractParameters(entity),
+
+		// Return information
+		returns: extractReturns(entity),
+
+		// Examples
+		examples: extractExamples(entity),
+
+		// Other JSDoc tags
+		since: extractSinceVersion(entity),
+		deprecated: extractDeprecationInfo(entity),
+		author: extractAuthorInfo(entity),
+		see: extractSeeReferences(entity),
+		throws: extractThrowsInfo(entity),
+
+		// Type information for TypeScript users
+		typeInfo: extractTypeInfo(entity),
+	};
+
+	// STEP 4: Related entities and cross-references
+	const relatedEntities = {
+		// Entities in the same module
+		sameModule: getSameModuleEntities(mod, entity),
+
+		// Entities that reference this entity
+		referencedBy: getReferencingEntities(pkg, entity),
+
+		// Entities that this entity references
+		references: getReferencedEntities(pkg, entity),
+
+		// Similar entities (same type across modules)
+		similar: getSimilarEntities(pkg, entity),
+	};
+
+	// STEP 5: Navigation context
+	const navigationContext = {
+		packageName: packageName,
+		currentModule: {
+			name: moduleName,
+			fullImportPath: mod.importPath,
+			link: `/modules/${moduleName}/`,
+		},
+		currentEntity: {
+			name: entityName,
+			type: entity.entityType || "unknown",
+		},
+		allModules: pkg.modules.map(
+			/** @param {any} m */ (m) => ({
+				name: m.importPath.split("/").pop(),
+				fullImportPath: m.importPath,
+				isCurrent: m.importPath === mod.importPath,
+				isDefault: m.isDefault || false,
+				link: `/modules/${m.importPath.split("/").pop()}/`,
+				entityCount: m.publicEntityCount || 0,
+			}),
+		),
+		moduleEntities: getModuleEntityNavigation(mod, entity),
+	};
+
+	// STEP 6: Build complete data structure
+	/** @type {any} */
+	const docs = documentation;
+	return {
+		entity: entityData,
+		documentation,
+		relatedEntities,
+		navigation: navigationContext,
+		packageName: packageName,
+		moduleName: moduleName,
+
+		// Computed flags for conditional rendering
+		hasParameters: docs.parameters.length > 0,
+		hasReturns: Boolean(docs.returns.description),
+		hasExamples: docs.examples.length > 0,
+		hasRelatedEntities:
+			relatedEntities.sameModule.length > 0 ||
+			relatedEntities.referencedBy.length > 0 ||
+			relatedEntities.references.length > 0,
+		hasTypeInfo: Boolean(docs.typeInfo.signature),
+		isDeprecated: Boolean(docs.deprecated.isDeprecated),
+		hasSource: Boolean(entityData.source),
+		hasLocation: Boolean(entityData.location),
+	};
+}
+
+/**
+ * Extract parameter information from JSDoc tags
+ * @param {Object} entity - Entity instance
+ * @returns {Array<Object>} Parameter documentation
+ */
+function extractParameters(entity) {
+	/** @type {any} */
+	const ent = entity;
+	if (!ent.getJSDocTagsByType) return [];
+
+	return ent.getJSDocTagsByType("param").map(
+		/** @param {any} paramTag */ (paramTag) => ({
+			name: paramTag.name || "",
+			type: paramTag.type || "",
+			description: paramTag.description || "",
+			isOptional: paramTag.optional || false,
+			defaultValue: paramTag.defaultValue || null,
+		}),
+	);
+}
+
+/**
+ * Extract return information from JSDoc tags
+ * @param {Object} entity - Entity instance
+ * @returns {Object} Return documentation
+ */
+function extractReturns(entity) {
+	/** @type {any} */
+	const ent = entity;
+	if (!ent.getJSDocTag) return { type: "", description: "" };
+
+	const returnsTag = ent.getJSDocTag("returns") || ent.getJSDocTag("return");
+	return {
+		type: returnsTag?.type || "",
+		description: returnsTag?.description || "",
+	};
+}
+
+/**
+ * Extract code examples from JSDoc tags
+ * @param {Object} entity - Entity instance
+ * @returns {Array<Object>} Example code blocks
+ */
+function extractExamples(entity) {
+	/** @type {any} */
+	const ent = entity;
+	if (!ent.getJSDocTagsByType) return [];
+
+	return ent
+		.getJSDocTagsByType("example")
+		.map((/** @type {any} */ exampleTag, /** @type {any} */ index) => ({
+			code: exampleTag.description || exampleTag.code || "",
+			title: exampleTag.title || `Example ${index + 1}`,
+			language: exampleTag.language || "javascript",
+		}));
+}
+
+/**
+ * Extract version information from JSDoc tags
+ * @param {Object} entity - Entity instance
+ * @returns {string} Version information
+ */
+function extractSinceVersion(entity) {
+	/** @type {any} */
+	const ent = entity;
+	if (!ent.getJSDocTag) return "";
+	const sinceTag = ent.getJSDocTag("since");
+	return sinceTag?.description || "";
+}
+
+/**
+ * Extract deprecation information from JSDoc tags
+ * @param {Object} entity - Entity instance
+ * @returns {Object} Deprecation details
+ */
+function extractDeprecationInfo(entity) {
+	/** @type {any} */
+	const ent = entity;
+	if (!ent.hasJSDocTag || !ent.getJSDocTag) {
+		return { isDeprecated: false, reason: "", since: "" };
+	}
+
+	const isDeprecated = ent.hasJSDocTag("deprecated");
+	if (!isDeprecated) {
+		return { isDeprecated: false, reason: "", since: "" };
+	}
+
+	const deprecatedTag = ent.getJSDocTag("deprecated");
+	return {
+		isDeprecated: true,
+		reason: deprecatedTag?.description || "This API is deprecated",
+		since: deprecatedTag?.since || "",
+	};
+}
+
+/**
+ * Extract author information from JSDoc tags
+ * @param {Object} entity - Entity instance
+ * @returns {Array<string>} Author information
+ */
+function extractAuthorInfo(entity) {
+	/** @type {any} */
+	const ent = entity;
+	if (!ent.getJSDocTagsByType) return [];
+	return ent
+		.getJSDocTagsByType("author")
+		.map(/** @param {any} tag */ (tag) => tag.description || "");
+}
+
+/**
+ * Extract see-also references from JSDoc tags
+ * @param {Object} entity - Entity instance
+ * @returns {Array<Object>} Reference links
+ */
+function extractSeeReferences(entity) {
+	/** @type {any} */
+	const ent = entity;
+	if (!ent.getJSDocTagsByType) return [];
+
+	return ent.getJSDocTagsByType("see").map(
+		/** @param {any} seeTag */ (seeTag) => ({
+			text: seeTag.description || seeTag.text || "",
+			link: seeTag.link || null,
+			isExternal: seeTag.link?.startsWith("http") || false,
+		}),
+	);
+}
+
+/**
+ * Extract exception/error information from JSDoc tags
+ * @param {Object} entity - Entity instance
+ * @returns {Array<Object>} Exception documentation
+ */
+function extractThrowsInfo(entity) {
+	/** @type {any} */
+	const ent = entity;
+	if (!ent.getJSDocTagsByType) return [];
+
+	return ent
+		.getJSDocTagsByType("throws")
+		.concat(ent.getJSDocTagsByType("exception") || [])
+		.map(
+			/** @param {any} throwsTag */ (throwsTag) => ({
+				type: throwsTag.type || "Error",
+				description: throwsTag.description || "",
+			}),
+		);
+}
+
+/**
+ * Extract TypeScript type information
+ * @param {Object} entity - Entity instance
+ * @returns {Object} Type information for TS users
+ */
+function extractTypeInfo(entity) {
+	/** @type {any} */
+	const ent = entity;
+	return {
+		signature: ent.signature || "",
+		typeParameters: ent.typeParameters || [],
+		namespace: ent.namespace || "",
+	};
+}
+
+/**
+ * Get entities in the same module (excluding current entity)
+ * @param {Object} module - Module instance
+ * @param {Object} currentEntity - Current entity
+ * @returns {Array<Object>} Same module entities
+ */
+function getSameModuleEntities(module, currentEntity) {
+	/** @type {any} */
+	const mod = module;
+	/** @type {any} */
+	const curr = currentEntity;
+	if (!mod.entities) return [];
+
+	return mod.entities
+		.filter(/** @param {any} e */ (e) => e.name !== curr.name)
+		.filter(
+			/** @param {any} e */ (e) =>
+				!e.hasJSDocTag?.("private") && !e.name?.startsWith("_"),
+		)
+		.slice(0, 10) // Limit for performance
+		.map(
+			/** @param {any} entity */ (entity) => ({
+				name: entity.name,
+				type: entity.entityType || "unknown",
+				description: (entity.description || "").slice(0, 100),
+				link: `/modules/${mod.importPath.split("/").pop()}/${entity.name}/`,
+			}),
+		);
+}
+
+/**
+ * Get entities that reference this entity
+ * @param {Object} packageInstance - Package instance
+ * @param {Object} _entity - Current entity (unused in current implementation)
+ * @returns {Array<Object>} Referencing entities
+ */
+function getReferencingEntities(packageInstance, /** @type {any} */ _entity) {
+	/** @type {any} */
+	const pkg = packageInstance;
+	if (!pkg.allEntities) return [];
+
+	// This would require more sophisticated analysis in a real implementation
+	// For now, return empty array as this needs dependency graph analysis
+	return [];
+}
+
+/**
+ * Get entities that this entity references
+ * @param {Object} packageInstance - Package instance
+ * @param {Object} entity - Current entity
+ * @returns {Array<Object>} Referenced entities
+ */
+function getReferencedEntities(packageInstance, entity) {
+	/** @type {any} */
+	const pkg = packageInstance;
+	/** @type {any} */
+	const ent = entity;
+	if (!pkg.allEntities || !ent.source) return [];
+
+	// This would require parsing the source code for references
+	// For now, return empty array as this needs AST analysis
+	return [];
+}
+
+/**
+ * Get similar entities (same type across other modules)
+ * @param {Object} packageInstance - Package instance
+ * @param {Object} entity - Current entity
+ * @returns {Array<Object>} Similar entities
+ */
+function getSimilarEntities(packageInstance, entity) {
+	/** @type {any} */
+	const pkg = packageInstance;
+	/** @type {any} */
+	const ent = entity;
+	if (!pkg.allEntities) return [];
+
+	const currentType = ent.entityType || "unknown";
+	const currentModulePath = ent.moduleId;
+
+	return pkg.allEntities
+		.filter(/** @param {any} e */ (e) => e.entityType === currentType)
+		.filter(/** @param {any} e */ (e) => e.moduleId !== currentModulePath)
+		.filter(
+			/** @param {any} e */ (e) =>
+				!e.hasJSDocTag?.("private") && !e.name?.startsWith("_"),
+		)
+		.slice(0, 5) // Limit for performance
+		.map(
+			/** @param {any} similarEntity */ (similarEntity) => {
+				// Find the module for this entity
+				const parentModule = pkg.modules.find(
+					/** @param {any} m */ (m) => m.entities?.includes(similarEntity),
+				);
+
+				return {
+					name: similarEntity.name,
+					type: similarEntity.entityType || "unknown",
+					description: (similarEntity.description || "").slice(0, 100),
+					moduleName: parentModule?.importPath?.split("/").pop() || "unknown",
+					link: `/modules/${parentModule?.importPath?.split("/").pop()}/${similarEntity.name}/`,
+				};
+			},
+		);
+}
+
+/**
+ * Get navigation data for entities within the current module
+ * @param {Object} module - Module instance
+ * @param {Object} currentEntity - Current entity
+ * @returns {Array<Object>} Module entity navigation
+ */
+function getModuleEntityNavigation(module, currentEntity) {
+	/** @type {any} */
+	const mod = module;
+	/** @type {any} */
+	const curr = currentEntity;
+	if (!mod.entities) return [];
+
+	return mod.entities
+		.filter(
+			/** @param {any} e */ (e) =>
+				!e.hasJSDocTag?.("private") && !e.name?.startsWith("_"),
+		)
+		.map(
+			/** @param {any} entity */ (entity) => ({
+				name: entity.name,
+				type: entity.entityType || "unknown",
+				isCurrent: entity.name === curr.name,
+				link: `/modules/${mod.importPath.split("/").pop()}/${entity.name}/`,
+			}),
+		);
+}

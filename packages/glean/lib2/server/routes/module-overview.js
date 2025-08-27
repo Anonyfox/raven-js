@@ -1,0 +1,67 @@
+/**
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ */
+
+/**
+ * Module overview route handler for /modules/{moduleName}/ endpoint
+ *
+ * Handles individual module documentation display with URL parameter validation,
+ * data extraction, template rendering, and comprehensive error handling.
+ * Follows WEBAPP.md specification for module overview presentation.
+ */
+
+import { extractModuleOverviewData } from "../data/module-overview.js";
+import { moduleOverviewTemplate } from "../templates/module-overview.js";
+
+/**
+ * Create route handler for module overview page
+ * @param {import('../../extract/models/package.js').Package} packageInstance - Package data
+ * @returns {Function} Wings route handler function
+ */
+export function createModuleOverviewHandler(packageInstance) {
+	/**
+	 * Handle module overview page requests
+	 * @param {import('@raven-js/wings').Context} ctx - Wings request context
+	 */
+	return function moduleOverviewHandler(ctx) {
+		try {
+			// Extract and validate module name parameter
+			const moduleName = ctx.pathParams?.moduleName;
+			if (!moduleName || typeof moduleName !== "string") {
+				return ctx.error("Missing or invalid module name parameter");
+			}
+
+			// Validate module name format (basic security check)
+			if (
+				moduleName.includes("..") ||
+				moduleName.includes("//") ||
+				moduleName.startsWith("/")
+			) {
+				return ctx.error("Invalid module name format");
+			}
+
+			// Extract data for the specific module
+			const data = extractModuleOverviewData(packageInstance, moduleName);
+
+			// Generate HTML using template
+			const html = moduleOverviewTemplate(/** @type {any} */ (data));
+
+			// Send HTML response with caching
+			ctx.html(html);
+			ctx.responseHeaders.set("Cache-Control", "public, max-age=3600");
+		} catch (error) {
+			// Handle module not found specifically
+			if (error.message.includes("not found")) {
+				return ctx.notFound(`Module not found: ${error.message}`);
+			}
+
+			// Handle other errors as internal server errors
+			console.error("Module overview generation error:", error);
+			ctx.error(`Failed to generate module overview: ${error.message}`);
+		}
+	};
+}

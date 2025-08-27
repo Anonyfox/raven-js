@@ -80,5 +80,9 @@
   },
   "devDependencies": {
     "esbuild": "^0.25.9"
+  },
+  "dependencies": {
+    "@raven-js/beak": "^0.4.8",
+    "@raven-js/wings": "^0.4.8"
   }
 }

@@ -19,7 +19,8 @@ import {
 	processCodebase,
 	runAnalyzeCommand,
 	runBuildCommand,
-			showBanner,
+	runServerCommand,
+	showBanner,
 	showHelp,
 } from "../index.js";
 
@@ -52,13 +53,16 @@ async function main() {
 				await runAnalyzeCommand(subArgs);
 				break;
 			case "extract":
-				await (subArgs);
+				await subArgs;
 				break;
 			case "render":
-				await (subArgs);
+				await subArgs;
 				break;
 			case "build":
 				await runBuildCommand(subArgs);
+				break;
+			case "server":
+				await runServerCommand(subArgs);
 				break;
 			default: {
 				// Fallback to legacy processing for backwards compatibility

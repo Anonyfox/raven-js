@@ -50,16 +50,20 @@ Usage: glean <command> [options]
 Commands:
   analyze <path>              Validate JSDoc quality and report issues
   build <path> <output>       Generate documentation site
+  server [path]               Start live documentation server
 
 Options:
   --domain <domain>          Domain for SEO tags (e.g. --domain example.com)
+  --port <port>              Port for server command (default: 3000)
   --verbose, -v              Show detailed output
   --help, -h                 Show this help message
 
 Examples:
-  glean analyze .            Analyze current directory
-  glean build . ./docs       Generate documentation site
-  glean build . ./docs --domain example.com    Build with custom domain
+  glean analyze .                              Analyze current directory
+  glean build . ./docs                        Generate documentation site
+  glean build . ./docs --domain example.com   Build with custom domain
+  glean server                                 Start server for current directory
+  glean server ./my-project --port 8080       Start server on custom port
 
 Documentation: https://ravenjs.dev/packages/glean
 `);
@@ -102,6 +106,12 @@ export async function processCodebase(options) {
 
 // Export analyze command from lib2 (superior validation)
 export { runAnalyzeCommand } from "./lib2/analyze.js";
+
+// Export server functionality
+export {
+	createDocumentationServer,
+	startDocumentationServer,
+} from "./lib2/server/index.js";
 
 /**
  * Run the build command for extract + render
@@ -160,5 +170,63 @@ export async function runBuildCommand(args) {
 		console.log(`\n🎉 Build complete!`);
 	} catch (error) {
 		throw new Error(`Build failed: ${error.message}`);
+	}
+}
+
+/**
+ * Run the server command for live documentation serving
+ * @param {string[]} args - Command arguments
+ * @returns {Promise<void>}
+ */
+export async function runServerCommand(args) {
+	const verbose = args.includes("--verbose") || args.includes("-v");
+
+	// Parse domain flag
+	const domainIndex = args.indexOf("--domain");
+	const domain =
+		domainIndex !== -1 && args[domainIndex + 1] ? args[domainIndex + 1] : null;
+
+	// Parse port flag
+	const portIndex = args.indexOf("--port");
+	const port =
+		portIndex !== -1 && args[portIndex + 1]
+			? parseInt(args[portIndex + 1], 10)
+			: 3000;
+
+	// Parse target directory (first non-flag argument)
+	const targetDir = args.find((arg) => !arg.startsWith("-")) || ".";
+
+	console.log(`🚀 Starting documentation server...`);
+	console.log(`📁 Target directory: ${targetDir}`);
+	console.log(`🌐 Port: ${port}`);
+	if (domain) {
+		console.log(`🌍 Domain: ${domain}`);
+	}
+
+	try {
+		// Import server functions
+		const { startDocumentationServer } = await import("./lib2/server/index.js");
+
+		// Start the documentation server
+		await startDocumentationServer(targetDir, {
+			port,
+			domain,
+			enableLogging: verbose,
+		});
+
+		console.log(`\n🎉 Documentation server running!`);
+		console.log(`📖 Open: http://localhost:${port}`);
+		if (domain) {
+			console.log(`🌐 Production: https://${domain}`);
+		}
+		console.log(`\n⏹️  Press Ctrl+C to stop server\n`);
+
+		// Keep the process alive
+		process.on("SIGINT", () => {
+			console.log("\n👋 Shutting down documentation server...");
+			process.exit(0);
+		});
+	} catch (error) {
+		throw new Error(`Server failed to start: ${error.message}`);
 	}
 }
