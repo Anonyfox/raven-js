@@ -49,7 +49,27 @@ function createEntityFromBlock(block, filePath) {
 	if (entityTypeTag) {
 		// Explicit JSDoc entity tag
 		entityType = entityTypeTag.name.toLowerCase();
-		entityName = entityTypeTag.content.split(/\s+/)[0] || "anonymous";
+
+		// Special handling for @typedef tags which have format: @typedef {Type} Name
+		if (entityType === "typedef") {
+			entityName = extractTypedefName(entityTypeTag.content);
+		} else {
+			entityName = entityTypeTag.content.split(/\s+/)[0] || "anonymous";
+		}
+
+		// For @callback and @typedef, we don't require exported code as they're type definitions
+		// For other entity types, we must verify the entity is exported
+		if (
+			entityType !== "callback" &&
+			entityType !== "typedef" &&
+			block.followingCode
+		) {
+			const codeAnalysis = analyzeFollowingCode(block.followingCode);
+			if (!codeAnalysis) {
+				// Not exported - don't create entity
+				return null;
+			}
+		}
 	} else if (block.followingCode) {
 		// Analyze code following JSDoc to infer entity type and name
 		const codeAnalysis = analyzeFollowingCode(block.followingCode);
@@ -575,11 +595,13 @@ function parseJSDocTags(content) {
 /**
  * Analyze JavaScript code following JSDoc block to detect entity type and name
  *
- * **Patterns detected:**
- * - `export function name()` / `function name()` → function entity
- * - `export class Name` / `class Name` → class entity
- * - `export const name` / `const name` → variable entity
+ * **Patterns detected (PUBLIC EXPORTS ONLY):**
+ * - `export function name()` → function entity
+ * - `export class Name` → class entity
+ * - `export const name` → variable entity
  * - `export default function` / `export default class` → default export
+ * - `export const name = () => {}` → arrow function
+ * - `export { name1, name2 } from './module'` → re-export
  *
  * @param {string} code - JavaScript code following JSDoc block
  * @returns {{type: string, name: string}|null} Entity type and name, or null if not detected
@@ -592,12 +614,10 @@ function analyzeFollowingCode(code) {
 	// Clean the code - preserve structure but normalize whitespace within lines
 	const cleanCode = code.trim();
 
-	// Function patterns
+	// Function patterns - ONLY exported functions
 	const functionPatterns = [
 		/^export\s+function\s+(\w+)/,
-		/^function\s+(\w+)/,
 		/^export\s+async\s+function\s+(\w+)/,
-		/^async\s+function\s+(\w+)/,
 	];
 
 	for (const pattern of functionPatterns) {
@@ -607,8 +627,8 @@ function analyzeFollowingCode(code) {
 		}
 	}
 
-	// Class patterns
-	const classPatterns = [/^export\s+class\s+(\w+)/, /^class\s+(\w+)/];
+	// Class patterns - ONLY exported classes
+	const classPatterns = [/^export\s+class\s+(\w+)/];
 
 	for (const pattern of classPatterns) {
 		const match = cleanCode.match(pattern);
@@ -617,14 +637,11 @@ function analyzeFollowingCode(code) {
 		}
 	}
 
-	// Variable/constant patterns (exported functions, constants, etc.)
+	// Variable/constant patterns - ONLY exported variables
 	const variablePatterns = [
 		/^export\s+const\s+(\w+)/,
 		/^export\s+let\s+(\w+)/,
 		/^export\s+var\s+(\w+)/,
-		/^const\s+(\w+)/,
-		/^let\s+(\w+)/,
-		/^var\s+(\w+)/,
 	];
 
 	for (const pattern of variablePatterns) {
@@ -643,9 +660,9 @@ function analyzeFollowingCode(code) {
 		return { type: "class", name: "default" };
 	}
 
-	// Arrow function patterns (const name = () => {})
+	// Arrow function patterns - ONLY exported arrow functions
 	const arrowMatch = cleanCode.match(
-		/^(?:export\s+)?const\s+(\w+)\s*=\s*(?:async\s+)?\(/,
+		/^export\s+const\s+(\w+)\s*=\s*(?:async\s+)?\(/,
 	);
 	if (arrowMatch) {
 		return { type: "function", name: arrowMatch[1] };
@@ -676,4 +693,39 @@ function analyzeFollowingCode(code) {
 	}
 
 	return null;
+}
+
+/**
+ * Extract typedef name from JSDoc typedef tag content
+ *
+ * Handles formats like:
+ * - @typedef {string} MyType
+ * - @typedef {Object} MyObject
+ * - @typedef {Array<Map<string, number>>} ComplexType
+ * - @typedef {string|number|boolean} UnionType
+ *
+ * @param {string} content - The content of the @typedef tag
+ * @returns {string} The typedef name, or "anonymous" if not found
+ */
+function extractTypedefName(content) {
+	if (typeof content !== "string" || !content.trim()) {
+		return "anonymous";
+	}
+
+	// Pattern to match: {Type} Name
+	// This handles complex types like {Array<Map<string, number>>} TestType
+	const typedefPattern = /^\s*\{[^}]*\}\s+(\w+)/;
+	const match = content.match(typedefPattern);
+
+	if (match) {
+		return match[1];
+	}
+
+	// Fallback: if no braces, try to get the last word as the name
+	const words = content.trim().split(/\s+/);
+	if (words.length > 0) {
+		return words[words.length - 1];
+	}
+
+	return "anonymous";
 }

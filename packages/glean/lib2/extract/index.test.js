@@ -154,8 +154,8 @@ describe("extract()", () => {
 		);
 		strictEqual(
 			defaultModule.readme,
-			"Package README",
-			"Should use package README for empty module README",
+			"",
+			"Should not use package README for empty module README",
 		);
 
 		// Check second module (submodule)
@@ -177,7 +177,7 @@ describe("extract()", () => {
 		);
 	});
 
-	test("should use package readme when module readme is empty", () => {
+	test("should not use package readme when module readme is empty", () => {
 		const mockPackage = { name: "pkg" };
 		const discoveryPackage = {
 			name: "pkg",
@@ -198,8 +198,8 @@ describe("extract()", () => {
 
 		strictEqual(
 			result.modules[0].readme,
-			"Fallback README",
-			"Should fallback to package README",
+			"",
+			"Should not fallback to package README",
 		);
 	});
 
@@ -512,5 +512,65 @@ export function isValidNodeType(type) {
 		);
 		strictEqual(functionEntities.length, 3, "Should have 3 function entities");
 		strictEqual(typedefEntities.length, 1, "Should have 1 typedef entity");
+	});
+
+	test("should not show package README on individual module pages", () => {
+		const mockPackage = { name: "test-pkg" };
+		const discoveryPackage = {
+			name: "test-pkg",
+			version: "1.0.0",
+			description: "Test package",
+			readme:
+				"# Package README\n\nThis is the package-level README that should only appear on the package overview page.",
+			modules: [
+				{
+					importPath: "test-pkg",
+					package: mockPackage,
+					readme: "", // Module has no README
+					files: [
+						{
+							path: "index.js",
+							content: "/** @function test */\nfunction test() {}",
+						},
+					],
+				},
+				{
+					importPath: "test-pkg/utils",
+					package: mockPackage,
+					readme: "# Utils Module README\n\nThis is the module's own README.", // Module has its own README
+					files: [
+						{
+							path: "utils.js",
+							content: "/** @class Util */\nclass Util {}",
+						},
+					],
+				},
+			],
+		};
+
+		const result = extract(discoveryPackage);
+
+		// Package should have the package README
+		strictEqual(
+			result.readme,
+			"# Package README\n\nThis is the package-level README that should only appear on the package overview page.",
+			"Package should have package README",
+		);
+
+		// First module (no README) should have empty README
+		const defaultModule = result.modules[0];
+		strictEqual(
+			defaultModule.readme,
+			"",
+			"Module without README should have empty README, not package README",
+		);
+
+		// Second module (has README) should have its own README
+		const utilsModule = result.modules[1];
+		strictEqual(
+			utilsModule.readme,
+			"# Utils Module README\n\nThis is the module's own README.",
+			"Module with README should have its own README",
+		);
 	});
 });

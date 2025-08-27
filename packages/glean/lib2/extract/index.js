@@ -60,7 +60,7 @@ export function extract(discoveryPackage) {
 		const extractModule = new ExtractModule(
 			discoveryModule.importPath,
 			isDefault,
-			discoveryModule.readme || discoveryPackage.readme,
+			discoveryModule.readme || "", // Only use module's own README, never fall back to package README
 			entities,
 			description,
 			reexports,

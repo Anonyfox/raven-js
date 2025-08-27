@@ -57,7 +57,7 @@ describe("parseModuleEntities()", () => {
  * @param {string} input - Test parameter
  * @returns {boolean} Test result
  */
-function testFunc(input) { return true; }`,
+export function testFunc(input) { return true; }`,
 				},
 				{
 					path: "class.js",
@@ -65,7 +65,7 @@ function testFunc(input) { return true; }`,
  * @class TestClass
  * @param {string} name - Class name
  */
-class TestClass {
+export class TestClass {
 	constructor(name) {
 		this.name = name;
 	}
@@ -128,7 +128,7 @@ class TestClass {
  * @author Someone
  * @since 1.0.0
  */
-function someFunction() {}`,
+export function someFunction() {}`,
 				},
 			],
 		};
@@ -156,16 +156,17 @@ function someFunction() {}`,
 					text: `/**
  * @function first
  */
-function first() {}
+export function first() {}
 
 /**
  * @class Second
  */
-class Second {}
+export class Second {}
 
 /**
  * @typedef ThirdType
- */`,
+ */
+export const ThirdType = {};`,
 				},
 			],
 		};
@@ -185,10 +186,10 @@ class Second {}
 					path: "malformed.js",
 					text: `/**
  * Incomplete block without closing
-function broken() {}
+export function broken() {}
 
 /** @function validFunc */
-function validFunc() {}`,
+export function validFunc() {}`,
 				},
 			],
 		};
@@ -220,7 +221,7 @@ line 2
 /**
  * @function testLocation
  */
-function testLocation() {}`,
+export function testLocation() {}`,
 				},
 			],
 		};
@@ -257,7 +258,7 @@ function testLocation() {}`,
  * @since 1.2.0
  * @deprecated Use newFunc instead
  */
-function richFunc(input, count) {}`,
+export function richFunc(input, count) {}`,
 				},
 			],
 		};
@@ -289,7 +290,7 @@ function richFunc(input, count) {}`,
 					text: `/**
  * @function complex name here
  */
-function complexFunc() {}`,
+export function complexFunc() {}`,
 				},
 			],
 		};
@@ -308,7 +309,7 @@ function complexFunc() {}`,
 					text: `/**
  * @function
  */
-function anonymousFunc() {}`,
+export function anonymousFunc() {}`,
 				},
 			],
 		};
@@ -327,7 +328,7 @@ function anonymousFunc() {}`,
 					text: `/**
  * @unknown unsupportedType
  */
-function someFunc() {}`,
+export function someFunc() {}`,
 				},
 			],
 		};
@@ -925,6 +926,218 @@ Multiple lines of rich documentation content.`;
 			nestedParamTag !== undefined,
 			true,
 			"Should preserve nested property documentation",
+		);
+	});
+
+	test("should NOT extract non-exported entities", () => {
+		const discoveryModule = {
+			files: [
+				{
+					path: "internal.js",
+					text: `/**
+ * Internal function - should NOT be extracted
+ * @param {string} input - Internal parameter
+ * @returns {boolean} Internal result
+ */
+function internalFunction(input) {
+	return input.length > 0;
+}
+
+/**
+ * Internal class - should NOT be extracted
+ * @class InternalClass
+ */
+class InternalClass {
+	constructor() {
+		this.internal = true;
+	}
+}
+
+/**
+ * Internal constant - should NOT be extracted
+ * @const {string} INTERNAL_CONST
+ */
+const INTERNAL_CONST = "internal";
+
+/**
+ * Public function - SHOULD be extracted
+ * @param {string} input - Public parameter
+ * @returns {string} Public result
+ */
+export function publicFunction(input) {
+	return input.toUpperCase();
+}
+
+/**
+ * Public class - SHOULD be extracted
+ * @class PublicClass
+ */
+export class PublicClass {
+	constructor() {
+		this.public = true;
+	}
+}
+
+/**
+ * Public constant - SHOULD be extracted
+ * @const {string} PUBLIC_CONST
+ */
+export const PUBLIC_CONST = "public";`,
+				},
+			],
+		};
+
+		const result = parseModuleEntities(discoveryModule);
+
+		// Should only extract exported entities
+		strictEqual(result.length, 3, "Should only extract exported entities");
+
+		// Verify only exported entities are present
+		const entityNames = result.map((entity) => entity.name).sort();
+		const expectedNames = [
+			"publicFunction",
+			"PublicClass",
+			"PUBLIC_CONST",
+		].sort();
+
+		deepStrictEqual(
+			entityNames,
+			expectedNames,
+			"Should only contain exported entity names",
+		);
+
+		// Verify internal entities are NOT present
+		const hasInternalFunction = result.some(
+			(entity) => entity.name === "internalFunction",
+		);
+		const hasInternalClass = result.some(
+			(entity) => entity.name === "InternalClass",
+		);
+		const hasInternalConst = result.some(
+			(entity) => entity.name === "INTERNAL_CONST",
+		);
+
+		strictEqual(
+			hasInternalFunction,
+			false,
+			"Should NOT extract internal function",
+		);
+		strictEqual(hasInternalClass, false, "Should NOT extract internal class");
+		strictEqual(
+			hasInternalConst,
+			false,
+			"Should NOT extract internal constant",
+		);
+	});
+
+	test("should extract typedef names correctly", () => {
+		const discoveryModule = {
+			files: [
+				{
+					path: "typedefs.js",
+					text: `/**
+ * Simple string type
+ * @typedef {string} StringType
+ */
+
+/**
+ * Object type with properties
+ * @typedef {Object} UserObject
+ * @property {string} name - User name
+ * @property {number} age - User age
+ */
+
+/**
+ * Complex generic type
+ * @typedef {Array<Map<string, number>>} ComplexType
+ */
+
+/**
+ * Union type
+ * @typedef {string|number|boolean} UnionType
+ */
+
+/**
+ * Function type
+ * @typedef {function(string, number): boolean} FunctionType
+ */
+
+/**
+ * Simple typedef without braces
+ * @typedef SimpleType
+ */`,
+				},
+			],
+		};
+
+		const result = parseModuleEntities(discoveryModule);
+
+		// Should extract all typedef entities
+		strictEqual(result.length, 6, "Should extract all typedef entities");
+
+		// Verify correct names are extracted
+		const entityNames = result.map((entity) => entity.name).sort();
+		const expectedNames = [
+			"StringType",
+			"UserObject",
+			"ComplexType",
+			"UnionType",
+			"FunctionType",
+			"SimpleType",
+		].sort();
+
+		deepStrictEqual(
+			entityNames,
+			expectedNames,
+			"Should extract correct typedef names",
+		);
+
+		// Verify all are typedef entities
+		for (const entity of result) {
+			strictEqual(
+				entity.entityType,
+				"typedef",
+				"Should be typedef entity type",
+			);
+		}
+	});
+
+	test("should extract typedef names from complex formats", () => {
+		const discoveryModule = {
+			files: [
+				{
+					path: "seo/pinterest.js",
+					text: `/**
+ * Pinterest configuration object
+ * @typedef {Object} PinterestConfig
+ * @property {string} appId - Pinterest app ID
+ * @property {string} apiKey - Pinterest API key
+ */`,
+				},
+			],
+		};
+
+		const result = parseModuleEntities(discoveryModule);
+
+		// Should extract the typedef entity
+		strictEqual(result.length, 1, "Should extract typedef entity");
+
+		const entity = result[0];
+		strictEqual(
+			entity.name,
+			"PinterestConfig",
+			"Should extract correct typedef name",
+		);
+		strictEqual(entity.entityType, "typedef", "Should be typedef entity type");
+		strictEqual(
+			entity.location.file,
+			"seo/pinterest.js",
+			"Should preserve file path",
+		);
+		strictEqual(
+			entity.location.line,
+			1,
+			"Should calculate correct line number",
 		);
 	});
 });
