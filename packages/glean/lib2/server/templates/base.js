@@ -150,6 +150,46 @@ export function baseTemplate({
 			border-radius: 0.25rem;
 		}
 
+		/* Module Directory Card Improvements */
+		.card {
+			transition: transform 0.2s ease, box-shadow 0.2s ease;
+		}
+
+		.card:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+		}
+
+		/* Improve text overflow handling */
+		.text-truncate {
+			word-wrap: break-word;
+			overflow-wrap: break-word;
+		}
+
+		/* Better markdown content handling */
+		.card-body .text-muted div {
+			line-height: 1.4;
+		}
+
+		/* Improve entity badges */
+		.badge {
+			font-size: 0.75rem;
+			font-weight: 500;
+		}
+
+		/* Better responsive grid */
+		@media (max-width: 1400px) {
+			.col-xl-3 {
+				margin-bottom: 1rem;
+			}
+		}
+
+		@media (max-width: 992px) {
+			.col-lg-4 {
+				margin-bottom: 1rem;
+			}
+		}
+
 		@media (max-width: 768px) {
 			.content-area {
 				padding: 1rem;
@@ -158,6 +198,32 @@ export function baseTemplate({
 			.sidebar {
 				min-height: auto;
 			}
+
+			.card-body {
+				padding: 1rem;
+			}
+
+			.col-md-6 {
+				margin-bottom: 1rem;
+			}
+		}
+
+		/* Ensure grid items have proper spacing */
+		.row.g-4 > [class*="col-"] {
+			margin-bottom: 1.5rem;
+		}
+
+		/* Improve card sizing */
+		.card {
+			height: 100%;
+			display: flex;
+			flex-direction: column;
+		}
+
+		.card-body {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
 		}
 	</style>
 </head>
