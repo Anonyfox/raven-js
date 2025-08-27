@@ -134,6 +134,16 @@ export function moduleDirectoryTemplate(data) {
 							<!-- Module Content -->
 							<div class="card-body pt-3">
 								${
+									module.hasDescription
+										? html`
+								<!-- Module Description -->
+								<div class="mb-3">
+									<p class="text-muted mb-0">${module.description}</p>
+								</div>
+								`
+										: ""
+								}
+								${
 									module.hasReadme
 										? html`
 								<!-- README Preview -->

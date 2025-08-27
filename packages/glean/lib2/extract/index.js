@@ -16,7 +16,11 @@
 
 import { Module as ExtractModule } from "./models/module.js";
 import { Package as ExtractPackage } from "./models/package.js";
-import { parseModuleEntities } from "./parse-source.js";
+import {
+	parseModuleDescription,
+	parseModuleEntities,
+	parseModuleReexports,
+} from "./parse-source.js";
 
 /**
  * Transform discovery package into extraction package
@@ -46,6 +50,8 @@ export function extract(discoveryPackage) {
 	// Transform each discovery module into documentation module
 	for (const discoveryModule of discoveryPackage.modules) {
 		const entities = parseModuleEntities(discoveryModule);
+		const reexports = parseModuleReexports(discoveryModule);
+		const description = parseModuleDescription(discoveryModule);
 
 		// Determine if this is the default module (main package export)
 		const isDefault =
@@ -56,6 +62,8 @@ export function extract(discoveryPackage) {
 			isDefault,
 			discoveryModule.readme || discoveryPackage.readme,
 			entities,
+			description,
+			reexports,
 		);
 
 		extractPackage.addModule(extractModule);

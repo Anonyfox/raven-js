@@ -41,6 +41,20 @@ describe("Documentation Server Integration", () => {
 
 		console.log(`🚀 Starting server for ${tempDir} on port ${port}`);
 
+		// Debug: Check what was actually created (can be removed later)
+		const { readdirSync, existsSync, readFileSync } = await import("node:fs");
+		console.log("📁 Files created:", readdirSync(tempDir));
+		const pkgPath = join(tempDir, "package.json");
+		if (existsSync(pkgPath)) {
+			const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
+			console.log(
+				"📦 Package.json:",
+				pkg.name,
+				pkg.version,
+				Object.keys(pkg.exports || {}),
+			);
+		}
+
 		// Start documentation server
 		server = await startDocumentationServer(tempDir, {
 			port,
@@ -139,7 +153,7 @@ describe("Documentation Server Integration", () => {
 
 		// Should contain JSDoc descriptions
 		assert(
-			html.includes("Format text with options"),
+			html.includes("Format text with various options"),
 			"Contains formatText description",
 		);
 		assert(
@@ -224,7 +238,10 @@ describe("Documentation Server Integration", () => {
 		assert(html.includes("options"), "Contains options parameter");
 
 		// JSDoc documentation
-		assert(html.includes("Format text with options"), "Contains description");
+		assert(
+			html.includes("Format text with various options"),
+			"Contains description",
+		);
 		assert(html.includes("uppercase"), "Contains option details");
 		assert(html.includes("string"), "Contains return type");
 

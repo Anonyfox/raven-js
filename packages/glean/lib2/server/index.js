@@ -79,7 +79,7 @@ export function createDocumentationServer(packagePath, options = {}) {
 	const moduleOverviewHandler = createModuleOverviewHandler(packageInstance);
 	const entityPageHandler = createEntityPageHandler(packageInstance);
 	const sitemapHandler = createSitemapHandler(packageInstance, {
-		baseUrl: domain,
+		baseUrl: domain ? `https://${domain}` : "https://docs.example.com",
 	});
 
 	// Register all documentation routes

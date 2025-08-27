@@ -43,6 +43,7 @@ export function extractSitemapData(
 
 	// Module overview pages
 	for (const module of /** @type {any} */ (packageInstance).modules) {
+		// Use full import path for sitemap URLs (tests expect encoded paths)
 		const moduleUrl = `${baseUrl}/modules/${encodeURIComponent(module.importPath)}/`;
 		urls.push({
 			loc: moduleUrl,

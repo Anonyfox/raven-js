@@ -27,9 +27,9 @@ import { createTag } from "./models/jsdoc/index.js";
  * 3. Extract entity name from code patterns
  * 4. Create appropriate entity type with JSDoc tags
  *
- * @param {{content: string, startLine: number, tags: Array<{name: string, content: string}>}} block - JSDoc block data
+ * @param {{content: string, startLine: number, tags: Array<{name: string, content: string}>, followingCode?: string}} block - JSDoc block data
  * @param {string} filePath - Relative file path for location metadata
- * @returns {import('./models/entities/base.js').EntityBase|null} Entity instance or null
+ * @returns {import('./models/entities/base.js').EntityBase|Array<import('./models/entities/base.js').EntityBase>|null} Entity instance, array of entities (for re-exports), or null
  */
 function createEntityFromBlock(block, filePath) {
 	if (!block || !block.tags || !Array.isArray(block.tags)) {
@@ -50,9 +50,21 @@ function createEntityFromBlock(block, filePath) {
 		// Explicit JSDoc entity tag
 		entityType = entityTypeTag.name.toLowerCase();
 		entityName = entityTypeTag.content.split(/\s+/)[0] || "anonymous";
+	} else if (block.followingCode) {
+		// Analyze code following JSDoc to infer entity type and name
+		const codeAnalysis = analyzeFollowingCode(block.followingCode);
+		if (codeAnalysis) {
+			if (codeAnalysis.type === "reexport") {
+				// Handle re-exports: create multiple entities for each exported name
+				return createReexportEntities(codeAnalysis, block, filePath);
+			} else {
+				entityType = codeAnalysis.type;
+				entityName = codeAnalysis.name;
+			}
+		} else {
+			return null;
+		}
 	} else {
-		// Try to infer from code patterns (simplified for now)
-		// In a full implementation, this would analyze the code following the JSDoc block
 		return null;
 	}
 
@@ -78,6 +90,56 @@ function createEntityFromBlock(block, filePath) {
 		if (tag) {
 			entity.jsdocTags.push(tag);
 		}
+
+		// Extract cross-references from @see tags
+		if (tagData.name.toLowerCase() === "see") {
+			const linkMatches = tagData.content.match(/{@link\s+(\w+)}/g);
+			if (linkMatches) {
+				for (const linkMatch of linkMatches) {
+					const entityName = linkMatch.match(/{@link\s+(\w+)}/)?.[1];
+					if (entityName) {
+						entity.addCrossReference(entityName, "see", tagData.content);
+					}
+				}
+			}
+		}
+	}
+
+	// Set the source code if available and extract function call references
+	if (block.followingCode) {
+		entity.setSource(block.followingCode);
+
+		// Extract cross-references from function calls in the source code
+		const functionCallMatches = block.followingCode.match(/\b(\w+)\s*\(/g);
+		if (functionCallMatches) {
+			for (const callMatch of functionCallMatches) {
+				const functionName = callMatch.replace(/\s*\($/, "");
+				// Skip common keywords and the entity's own name
+				if (
+					functionName !== entity.name &&
+					![
+						"if",
+						"for",
+						"while",
+						"switch",
+						"try",
+						"catch",
+						"function",
+						"return",
+						"throw",
+						"new",
+						"typeof",
+						"instanceof",
+					].includes(functionName)
+				) {
+					entity.addCrossReference(
+						functionName,
+						"calls",
+						"Function call in code",
+					);
+				}
+			}
+		}
 	}
 
 	return entity;
@@ -101,51 +163,192 @@ export function parseModuleEntities(discoveryModule) {
 	const entities = [];
 
 	for (const file of discoveryModule.files) {
-		const fileEntities = parseFileEntities(file);
-		entities.push(...fileEntities);
+		const result = parseFileEntities(file);
+		entities.push(...result.entities);
+		// Note: reexports are handled separately in parseModuleReexports
 	}
 
 	return entities;
 }
 
 /**
- * Parse single file to extract entities from JSDoc blocks
+ * Parse module re-exports separately
+ * @param {import('../discover/models/module.js').Module} discoveryModule - Discovery module with file contents
+ * @returns {Array<Object>} Array of re-export references
+ */
+export function parseModuleReexports(discoveryModule) {
+	if (!discoveryModule || !Array.isArray(discoveryModule.files)) {
+		return [];
+	}
+
+	const reexports = [];
+
+	for (const file of discoveryModule.files) {
+		const result = parseFileEntities(file);
+		reexports.push(...result.reexports);
+	}
+
+	return reexports;
+}
+
+/**
+ * Extract module description from @file JSDoc tags across all files in module
+ *
+ * Searches all files in the module for @file JSDoc tags and returns the first
+ * description found. Gives preference to the main module file if multiple @file
+ * tags exist.
+ *
+ * @param {import('../discover/models/module.js').Module} discoveryModule - Discovery module with file contents
+ * @returns {string} Module description from @file tag, or empty string
+ */
+export function parseModuleDescription(discoveryModule) {
+	if (!discoveryModule || !Array.isArray(discoveryModule.files)) {
+		return "";
+	}
+
+	// Look for @file descriptions in all files, preferring main files
+	const descriptions = [];
+
+	for (const file of discoveryModule.files) {
+		const fileDescription = parseFileDescription(file);
+		if (fileDescription) {
+			// Prefer main/index files for module description
+			const isMainFile =
+				file.path.includes("index.") ||
+				file.path === `${discoveryModule.importPath}.js`;
+			descriptions.push({ description: fileDescription, isMain: isMainFile });
+		}
+	}
+
+	// Return first main file description, or first description found
+	const mainDescription = descriptions.find((d) => d.isMain);
+	const firstDescription = descriptions[0];
+
+	return (mainDescription || firstDescription)?.description || "";
+}
+
+/**
+ * Extract @file description from a single file's JSDoc blocks
+ *
+ * @param {import('../discover/models/file.js').File} file - File instance with content
+ * @returns {string} File description from @file tag, or empty string
+ */
+function parseFileDescription(file) {
+	if (!file || !file.text) {
+		return "";
+	}
+
+	const jsdocBlocks = extractJSDocBlocks(file.text);
+
+	for (const block of jsdocBlocks) {
+		// Look for @file tag in this block
+		const fileTag = block.tags.find((tag) => tag.name.toLowerCase() === "file");
+		if (fileTag?.content) {
+			// Return the content of the @file tag as the description
+			return fileTag.content.trim();
+		}
+	}
+
+	return "";
+}
+
+/**
+ * Create re-export references for statements
+ *
+ * Handles `export { name1, name2 } from './module'` statements by creating
+ * reference objects that link to original entities instead of duplicating them.
+ *
+ * @param {Object} codeAnalysis - Re-export analysis result
+ * @param {Object} block - JSDoc block data
+ * @param {string} filePath - Current file path
+ * @returns {Array<Object>} Array of re-export reference objects
+ */
+function createReexportEntities(codeAnalysis, block, filePath) {
+	const reexportRefs = [];
+	const { exportedNames, sourceModule } = codeAnalysis;
+
+	for (const exportedName of exportedNames) {
+		// Create re-export reference instead of duplicate entity
+		const reexportRef = {
+			type: "reexport",
+			name: exportedName,
+			originalName: exportedName,
+			sourceModule: sourceModule,
+			location: {
+				file: filePath,
+				line: block.startLine,
+				column: 1,
+			},
+			// JSDoc from the re-export statement (usually minimal)
+			description: extractDescriptionFromJSDocBlock(block.content),
+			jsdocTags: block.tags
+				.map((tagData) => {
+					const tag = createTag(tagData.name, tagData.content);
+					return tag;
+				})
+				.filter((tag) => tag !== null),
+		};
+
+		reexportRefs.push(reexportRef);
+	}
+
+	return reexportRefs;
+}
+
+/**
+ * Parse single file to extract entities and re-exports from JSDoc blocks
  *
  * **Algorithm:**
  * 1. Extract JSDoc comment blocks using regex
  * 2. For each block, analyze following code to determine entity type/name
- * 3. Create entity instance and parse JSDoc tags
- * 4. Return array of valid entities
+ * 3. Create entity instance and parse JSDoc tags, or create re-export references
+ * 4. Return object with entities and re-exports arrays
  *
  * @param {import('../discover/models/file.js').File} file - File instance with content
- * @returns {Array<import('./models/entities/base.js').EntityBase>} Array of entities from file
+ * @returns {{entities: Array<import('./models/entities/base.js').EntityBase>, reexports: Array<Object>}} Entities and re-exports from file
  */
 function parseFileEntities(file) {
 	if (!file || !file.text) {
-		return [];
+		return { entities: [], reexports: [] };
 	}
 
 	const jsdocBlocks = extractJSDocBlocks(file.text);
 	const entities = [];
+	const reexports = [];
 
 	for (const block of jsdocBlocks) {
-		const entity = createEntityFromBlock(block, file.path);
-		if (entity) {
-			entities.push(entity);
+		const result = createEntityFromBlock(block, file.path);
+		if (result) {
+			// Handle different return types
+			if (Array.isArray(result)) {
+				// Check if array contains entities or re-exports
+				for (const item of result) {
+					if (item.type === "reexport") {
+						reexports.push(item);
+					} else {
+						entities.push(item);
+					}
+				}
+			} else if (result.type === "reexport") {
+				reexports.push(result);
+			} else {
+				entities.push(result);
+			}
 		}
 	}
 
-	return entities;
+	return { entities, reexports };
 }
 
 /**
- * Extract JSDoc comment blocks from source code
+ * Extract JSDoc comment blocks from source code with following code analysis
  *
  * Uses platform-native regex to find JSDoc blocks with content.
- * Returns structured block data with line position and parsed tag content.
+ * Returns structured block data with line position, parsed tag content,
+ * and the JavaScript code that follows each JSDoc block.
  *
  * @param {string} sourceCode - Source file content
- * @returns {Array<{content: string, startLine: number, tags: Array<{name: string, content: string}>}>} JSDoc blocks
+ * @returns {Array<{content: string, startLine: number, tags: Array<{name: string, content: string}>, followingCode: string}>} JSDoc blocks
  */
 function extractJSDocBlocks(sourceCode) {
 	if (typeof sourceCode !== "string") {
@@ -159,10 +362,15 @@ function extractJSDocBlocks(sourceCode) {
 	while (match !== null) {
 		const content = match[1];
 		const startPos = match.index;
+		const endPos = match.index + match[0].length;
 
 		// Calculate line number by counting newlines before match
 		const beforeMatch = sourceCode.substring(0, startPos);
 		const startLine = (beforeMatch.match(/\n/g) || []).length + 1;
+
+		// Extract the code following this JSDoc block (up to next JSDoc or reasonable limit)
+		const afterJSDoc = sourceCode.substring(endPos);
+		const followingCode = extractFollowingCode(afterJSDoc);
 
 		// Parse JSDoc tags from block content
 		const tags = parseJSDocTags(content);
@@ -171,12 +379,77 @@ function extractJSDocBlocks(sourceCode) {
 			content: content.trim(),
 			startLine,
 			tags,
+			followingCode,
 		});
 
 		match = jsdocRegex.exec(sourceCode);
 	}
 
 	return blocks;
+}
+
+/**
+ * Extract JavaScript code following a JSDoc block
+ *
+ * Captures the relevant code section that follows a JSDoc comment,
+ * stopping at logical boundaries like other JSDoc blocks or export statements.
+ *
+ * @param {string} codeAfterJSDoc - Source code after JSDoc block
+ * @returns {string} Relevant following code (first few meaningful lines)
+ */
+function extractFollowingCode(codeAfterJSDoc) {
+	if (typeof codeAfterJSDoc !== "string") {
+		return "";
+	}
+
+	// Split into lines and process
+	const lines = codeAfterJSDoc.split(/\r?\n/);
+	const codeLines = [];
+	let braceCount = 0;
+	let inExportBlock = false;
+
+	for (const line of lines) {
+		const trimmedLine = line.trim();
+
+		// Skip empty lines at the beginning
+		if (trimmedLine === "" && codeLines.length === 0) {
+			continue;
+		}
+
+		// Stop if we hit another JSDoc block
+		if (trimmedLine.startsWith("/**")) {
+			break;
+		}
+
+		// Add this line
+		codeLines.push(line);
+
+		// Check if we're starting an export block
+		if (trimmedLine.startsWith("export") && trimmedLine.includes("{")) {
+			inExportBlock = true;
+		}
+
+		// Count braces to handle multi-line export statements
+		braceCount += (trimmedLine.match(/\{/g) || []).length;
+		braceCount -= (trimmedLine.match(/\}/g) || []).length;
+
+		// Stop conditions
+		if (inExportBlock && braceCount === 0) {
+			// End of export block
+			break;
+		} else if (
+			!inExportBlock &&
+			(trimmedLine.includes("{") || trimmedLine.endsWith(";"))
+		) {
+			// Simple statement or function/class declaration
+			break;
+		} else if (codeLines.length >= 10) {
+			// Safety limit
+			break;
+		}
+	}
+
+	return codeLines.join("\n").trim();
 }
 
 /**
@@ -297,4 +570,110 @@ function parseJSDocTags(content) {
 	}
 
 	return tags;
+}
+
+/**
+ * Analyze JavaScript code following JSDoc block to detect entity type and name
+ *
+ * **Patterns detected:**
+ * - `export function name()` / `function name()` → function entity
+ * - `export class Name` / `class Name` → class entity
+ * - `export const name` / `const name` → variable entity
+ * - `export default function` / `export default class` → default export
+ *
+ * @param {string} code - JavaScript code following JSDoc block
+ * @returns {{type: string, name: string}|null} Entity type and name, or null if not detected
+ */
+function analyzeFollowingCode(code) {
+	if (typeof code !== "string" || !code.trim()) {
+		return null;
+	}
+
+	// Clean the code - preserve structure but normalize whitespace within lines
+	const cleanCode = code.trim();
+
+	// Function patterns
+	const functionPatterns = [
+		/^export\s+function\s+(\w+)/,
+		/^function\s+(\w+)/,
+		/^export\s+async\s+function\s+(\w+)/,
+		/^async\s+function\s+(\w+)/,
+	];
+
+	for (const pattern of functionPatterns) {
+		const match = cleanCode.match(pattern);
+		if (match) {
+			return { type: "function", name: match[1] };
+		}
+	}
+
+	// Class patterns
+	const classPatterns = [/^export\s+class\s+(\w+)/, /^class\s+(\w+)/];
+
+	for (const pattern of classPatterns) {
+		const match = cleanCode.match(pattern);
+		if (match) {
+			return { type: "class", name: match[1] };
+		}
+	}
+
+	// Variable/constant patterns (exported functions, constants, etc.)
+	const variablePatterns = [
+		/^export\s+const\s+(\w+)/,
+		/^export\s+let\s+(\w+)/,
+		/^export\s+var\s+(\w+)/,
+		/^const\s+(\w+)/,
+		/^let\s+(\w+)/,
+		/^var\s+(\w+)/,
+	];
+
+	for (const pattern of variablePatterns) {
+		const match = cleanCode.match(pattern);
+		if (match) {
+			return { type: "variable", name: match[1] };
+		}
+	}
+
+	// Default export patterns
+	if (cleanCode.match(/^export\s+default\s+function/)) {
+		return { type: "function", name: "default" };
+	}
+
+	if (cleanCode.match(/^export\s+default\s+class/)) {
+		return { type: "class", name: "default" };
+	}
+
+	// Arrow function patterns (const name = () => {})
+	const arrowMatch = cleanCode.match(
+		/^(?:export\s+)?const\s+(\w+)\s*=\s*(?:async\s+)?\(/,
+	);
+	if (arrowMatch) {
+		return { type: "function", name: arrowMatch[1] };
+	}
+
+	// Re-export patterns (export { name1, name2 } from './module')
+	// Handle both single-line and multi-line re-exports
+	const reexportMatch = cleanCode.match(
+		/^export\s*\{\s*([\s\S]*?)\s*\}\s*from\s*['"]([^'"]+)['"]/m,
+	);
+	if (reexportMatch) {
+		const exportedNames = reexportMatch[1]
+			.split(",")
+			.map((name) => name.trim())
+			.filter((name) => name.length > 0);
+		const sourceModule = reexportMatch[2];
+
+		// For re-exports, we'll return info about the first exported name
+		// The consumer can handle multiple names if needed
+		if (exportedNames.length > 0) {
+			return {
+				type: "reexport",
+				name: exportedNames[0],
+				exportedNames,
+				sourceModule,
+			};
+		}
+	}
+
+	return null;
 }

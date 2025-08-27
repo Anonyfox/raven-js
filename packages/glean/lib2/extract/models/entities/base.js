@@ -63,6 +63,8 @@ export class EntityBase {
 		this.moduleId = "";
 		/** @type {boolean} Whether entity has been validated */
 		this.isValidated = false;
+		/** @type {Array<Object>} Cross-references to other entities */
+		this.crossReferences = [];
 	}
 
 	/**
@@ -140,6 +142,22 @@ export class EntityBase {
 	 */
 	setModuleId(moduleId) {
 		this.moduleId = moduleId || "";
+	}
+
+	/**
+	 * Add cross-reference to another entity
+	 * @param {string} entityName - Name of referenced entity
+	 * @param {string} type - Type of reference (see, calls, etc.)
+	 * @param {string} [context] - Additional context about the reference
+	 */
+	addCrossReference(entityName, type, context) {
+		if (entityName && type) {
+			this.crossReferences.push({
+				entityName,
+				type,
+				context: context || "",
+			});
+		}
 	}
 
 	/**

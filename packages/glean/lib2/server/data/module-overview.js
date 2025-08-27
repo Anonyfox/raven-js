@@ -83,25 +83,77 @@ export function extractModuleOverviewData(packageInstance, moduleName) {
 		availableTypes: module.availableEntityTypes || [],
 	};
 
-	// STEP 3: Entity listings organized by type
+	// STEP 3: Entity listings organized by type (including re-exported entities)
 	/** @type {Object<string, Array<Object>>} */
 	const organizedEntities = {};
+
+	// First, add all regular entities from this module
 	Object.entries(moduleData.publicEntityGroups).forEach(([type, entities]) => {
-		organizedEntities[type] = entities.map((entity) => ({
-			name: entity.name,
-			description: entity.description || "",
-			location: entity.location || null,
+		organizedEntities[type] = entities
+			.filter((entity) => entity.entityType !== "reexport") // Exclude re-export references
+			.map((entity) => ({
+				name: entity.name,
+				description: entity.description || "",
+				location: entity.location || null,
 
-			// Quick metadata for listing
-			hasParams: entity.hasJSDocTag?.("param") || false,
-			hasReturns: entity.hasJSDocTag?.("returns") || false,
-			hasExamples: entity.hasJSDocTag?.("example") || false,
-			isDeprecated: entity.hasJSDocTag?.("deprecated") || false,
+				// Quick metadata for listing
+				hasParams: entity.hasJSDocTag?.("param") || false,
+				hasReturns: entity.hasJSDocTag?.("returns") || false,
+				hasExamples: entity.hasJSDocTag?.("example") || false,
+				isDeprecated: entity.hasJSDocTag?.("deprecated") || false,
 
-			// Direct link generation
-			link: `/modules/${moduleName}/${entity.name}/`,
-		}));
+				// Direct link to this module's entity
+				link: `/modules/${moduleName}/${entity.name}/`,
+				isReexport: false,
+			}));
 	});
+
+	// Then, add re-exported entities from other modules
+	for (const reexport of module.reexports || []) {
+		const sourceModuleName = /** @type {{sourceModule: string}} */ (
+			reexport
+		).sourceModule
+			.replace("./", "")
+			.replace(".js", "");
+		const sourceModule = packageInstance.modules.find(
+			(m) =>
+				m.importPath.endsWith(sourceModuleName) ||
+				m.importPath.split("/").pop() === sourceModuleName,
+		);
+
+		if (sourceModule) {
+			// Find the original entity in the source module
+			const originalEntity = sourceModule.entities.find(
+				(e) =>
+					e.name ===
+					/** @type {{originalName: string}} */ (reexport).originalName,
+			);
+			if (originalEntity) {
+				const entityType = originalEntity.entityType || "function";
+				if (!organizedEntities[entityType]) {
+					organizedEntities[entityType] = [];
+				}
+
+				// Add the original entity with link to its original location
+				organizedEntities[entityType].push({
+					name: originalEntity.name,
+					description: originalEntity.description || "",
+					location: originalEntity.location || null,
+
+					// Use original entity's metadata
+					hasParams: originalEntity.hasJSDocTag?.("param") || false,
+					hasReturns: originalEntity.hasJSDocTag?.("returns") || false,
+					hasExamples: originalEntity.hasJSDocTag?.("example") || false,
+					isDeprecated: originalEntity.hasJSDocTag?.("deprecated") || false,
+
+					// Link to the original entity's location
+					link: `/modules/${sourceModuleName}/${originalEntity.name}/`,
+					isReexport: true,
+					originalModule: sourceModuleName,
+				});
+			}
+		}
+	}
 
 	// STEP 4: Navigation context
 	const navigationContext = {

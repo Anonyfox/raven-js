@@ -376,6 +376,50 @@ export function entityPageTemplate(data) {
 						: ""
 				}
 
+				<!-- Cross-references -->
+				${
+					ent.crossReferences && ent.crossReferences.length > 0
+						? html`
+				<div class="card mb-4">
+					<div class="card-header bg-white border-bottom">
+						<h3 class="h5 mb-0">🔗 Related Functions</h3>
+					</div>
+					<div class="card-body p-0">
+						<div class="table-responsive">
+							<table class="table table-striped mb-0">
+								<thead class="table-light">
+									<tr>
+										<th>Function</th>
+										<th>Type</th>
+										<th>Context</th>
+									</tr>
+								</thead>
+								<tbody>
+									${ent.crossReferences.map(
+										/** @param {any} ref */
+										(ref) => html`
+									<tr>
+										<td>
+											<a href="/modules/utils/${ref.entityName}/" class="text-decoration-none">
+												<code class="bg-light px-2 py-1 rounded">${ref.entityName}</code>
+											</a>
+										</td>
+										<td>
+											<span class="badge ${ref.type === "see" ? "bg-info" : "bg-secondary"}">${ref.type}</span>
+										</td>
+										<td class="text-muted small">${ref.context}</td>
+									</tr>
+									`,
+									)}
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+				`
+						: ""
+				}
+
 				<!-- Source Code -->
 				${
 					hasSource

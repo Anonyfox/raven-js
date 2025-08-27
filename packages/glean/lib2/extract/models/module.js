@@ -37,8 +37,10 @@ export class Module {
 	 * @param {boolean} isDefault - Whether this is the default "." export module
 	 * @param {string} readme - Module README content or inherited package README
 	 * @param {Array<import('./entities/base.js').EntityBase>} entities - Array of entities in this module
+	 * @param {string} [description] - Module description from @file JSDoc tag
+	 * @param {Array<Object>} [reexports] - Array of re-export references
 	 */
-	constructor(importPath, isDefault, readme, entities) {
+	constructor(importPath, isDefault, readme, entities, description, reexports) {
 		/** @type {string} Module import path for import statements */
 		this.importPath = importPath || "";
 		/** @type {boolean} Whether this is the default "." export module */
@@ -47,6 +49,10 @@ export class Module {
 		this.readme = readme || "";
 		/** @type {Array<import('./entities/base.js').EntityBase>} Array of entities in this module */
 		this.entities = Array.isArray(entities) ? entities : [];
+		/** @type {string} Module description from @file JSDoc tag */
+		this.description = description || "";
+		/** @type {Array<Object>} Array of re-export references */
+		this.reexports = Array.isArray(reexports) ? reexports : [];
 	}
 
 	/**
@@ -56,6 +62,21 @@ export class Module {
 	addEntity(entity) {
 		if (entity && typeof entity === "object") {
 			this.entities.push(entity);
+		}
+	}
+
+	/**
+	 * Add re-export reference to module
+	 * @param {Object} reexport - Re-export reference to add
+	 * @param {string} reexport.name - Name of the re-exported entity
+	 */
+	addReexport(reexport) {
+		if (
+			reexport &&
+			typeof reexport === "object" &&
+			typeof reexport.name === "string"
+		) {
+			this.reexports.push(reexport);
 		}
 	}
 
@@ -74,10 +95,11 @@ export class Module {
 	}
 
 	/**
-	 * Get public entities (non-private)
+	 * Get public entities (non-private, excluding re-exports)
 	 * @returns {Array<import('./entities/base.js').EntityBase>} Public entities only
 	 */
 	get publicEntities() {
+		// Filter private entities (re-exports are handled separately)
 		return this.entities.filter((entity) => {
 			// Check for @private JSDoc tag or private naming convention
 			const hasPrivateTag = entity.hasJSDocTag?.("private");
@@ -104,7 +126,7 @@ export class Module {
 	}
 
 	/**
-	 * Get public entities grouped by type
+	 * Get public entities grouped by type (excluding re-exports)
 	 * @returns {Object<string, Array<import('./entities/base.js').EntityBase>>} Public entities grouped by type
 	 */
 	get publicEntityGroups() {

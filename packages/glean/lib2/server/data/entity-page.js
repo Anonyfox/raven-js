@@ -92,6 +92,9 @@ export function extractEntityPageData(packageInstance, moduleName, entityName) {
 		importPath: mod.importPath,
 		importStatement: `import { ${entity.name} } from '${mod.importPath}';`,
 		isDefault: mod.isDefault || false,
+
+		// Cross-references to other entities
+		crossReferences: entity.crossReferences || [],
 	};
 
 	// STEP 3: JSDoc documentation extraction

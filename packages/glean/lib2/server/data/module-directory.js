@@ -34,6 +34,8 @@ export function extractModuleDirectoryData(packageInstance) {
 			// Content preview
 			hasReadme: Boolean(module.readme),
 			readmePreview: module.readme ? module.readme.slice(0, 200) : "",
+			hasDescription: Boolean(module.description),
+			description: module.description || "",
 
 			// Entity statistics
 			entityCount: module.entityCount,

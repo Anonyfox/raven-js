@@ -134,7 +134,18 @@ function someFunction() {}`,
 		};
 
 		const result = parseModuleEntities(discoveryModule);
-		deepStrictEqual(result, [], "Should handle JSDoc without entity tags");
+		// Now that code analysis is implemented, this should detect the function
+		strictEqual(result.length, 1, "Should detect function from code analysis");
+		strictEqual(
+			result[0].name,
+			"someFunction",
+			"Should extract function name from code",
+		);
+		strictEqual(
+			result[0].entityType,
+			"function",
+			"Should detect entity type as function",
+		);
 	});
 
 	test("should extract multiple entities from single file", () => {
@@ -186,8 +197,14 @@ function validFunc() {}`,
 
 		strictEqual(
 			result.length,
-			0,
-			"Should not extract from malformed JSDoc (no complete blocks)",
+			1,
+			"Should extract from valid JSDoc blocks despite malformed ones",
+		);
+		strictEqual(result[0].name, "validFunc", "Should extract valid function");
+		strictEqual(
+			result[0].entityType,
+			"function",
+			"Should detect valid function type",
 		);
 		// The malformed test actually has no complete JSDoc blocks - the first is unclosed,
 		// so no entities should be extracted
@@ -316,7 +333,22 @@ function someFunc() {}`,
 		};
 
 		const result = parseModuleEntities(discoveryModule);
-		deepStrictEqual(result, [], "Should ignore unsupported entity types");
+		// Even with unsupported JSDoc tags, code analysis should detect the function
+		strictEqual(
+			result.length,
+			1,
+			"Should detect function from code analysis despite unsupported tags",
+		);
+		strictEqual(
+			result[0].name,
+			"someFunc",
+			"Should extract function name from code",
+		);
+		strictEqual(
+			result[0].entityType,
+			"function",
+			"Should detect entity type as function",
+		);
 	});
 
 	test("should extract description content separately from JSDoc tags", () => {
