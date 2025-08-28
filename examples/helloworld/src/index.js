@@ -1,7 +1,7 @@
 import { Router } from "@raven-js/wings";
 import { Greet } from "./server/pages/greet.js";
 import { Index } from "./server/pages/index.js";
-import { Todos } from "./server/pages/todos.js";
+import { TodosPage } from "./server/pages/todos.js";
 
 export const router = new Router();
 
@@ -14,7 +14,7 @@ router.get("/greet", (ctx) => {
 });
 
 router.get("/todos", (ctx) => {
-	ctx.html(Todos);
+	ctx.html(TodosPage());
 });
 
 router.get("/api/todos/examples", (ctx) => {
