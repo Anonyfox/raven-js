@@ -20,6 +20,7 @@ import {
 	runAnalyzeCommand,
 	runBuildCommand,
 	runServerCommand,
+	runSsgCommand,
 	showBanner,
 	showHelp,
 } from "../index.js";
@@ -63,6 +64,9 @@ async function main() {
 				break;
 			case "server":
 				await runServerCommand(subArgs);
+				break;
+			case "ssg":
+				await runSsgCommand(subArgs);
 				break;
 			default: {
 				// Fallback to legacy processing for backwards compatibility

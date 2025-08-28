@@ -49,7 +49,8 @@ Usage: glean <command> [options]
 
 Commands:
   analyze <path>              Validate JSDoc quality and report issues
-  build <path> <output>       Generate documentation site
+  build <path> <output>       Generate documentation site (legacy)
+  ssg <path> <output>         Generate static documentation site (lib2)
   server [path]               Start live documentation server
 
 Options:
@@ -60,8 +61,9 @@ Options:
 
 Examples:
   glean analyze .                              Analyze current directory
-  glean build . ./docs                        Generate documentation site
-  glean build . ./docs --domain example.com   Build with custom domain
+  glean ssg . ./docs                          Generate static documentation site
+  glean ssg . ./docs --domain example.com     Generate with custom domain
+  glean build . ./docs                        Generate documentation site (legacy)
   glean server                                 Start server for current directory
   glean server ./my-project --port 8080       Start server on custom port
 
@@ -170,6 +172,59 @@ export async function runBuildCommand(args) {
 		console.log(`\n🎉 Build complete!`);
 	} catch (error) {
 		throw new Error(`Build failed: ${error.message}`);
+	}
+}
+
+/**
+ * Run the ssg (static site generation) command using lib2
+ * @param {string[]} args - Command arguments
+ * @returns {Promise<void>}
+ */
+export async function runSsgCommand(args) {
+	const verbose = args.includes("--verbose") || args.includes("-v");
+
+	// Parse domain flag
+	const domainIndex = args.indexOf("--domain");
+	const domain =
+		domainIndex !== -1 && args[domainIndex + 1] ? args[domainIndex + 1] : null;
+
+	const sourceDir = args.find((arg) => !arg.startsWith("-"));
+	const outputDir = args.find(
+		(arg, index) => !arg.startsWith("-") && index > args.indexOf(sourceDir),
+	);
+
+	if (!sourceDir || !outputDir) {
+		throw new Error("Usage: glean ssg <source-dir> <output-dir>");
+	}
+
+	console.log(`🚀 Generating static documentation site...`);
+	console.log(`📦 Source package: ${sourceDir}`);
+	console.log(`📁 Output directory: ${outputDir}`);
+	if (domain) {
+		console.log(`🌐 Using domain for SEO: ${domain}`);
+	}
+
+	try {
+		// Import lib2 static generation
+		const { generateStaticSite } = await import("./lib2/static-generate.js");
+
+		// Generate static site using lib2
+		const stats = await generateStaticSite(sourceDir, outputDir, { domain });
+
+		console.log(`\n📊 Generation Results:`);
+		console.log(`   Files generated: ${stats.totalFiles}`);
+		console.log(`   Total size: ${Math.round(stats.totalBytes / 1024)}KB`);
+		console.log(`   Generated at: ${stats.generatedAt}`);
+		console.log(`   Output: ${outputDir}`);
+
+		console.log(`\n🎉 Static site generation complete!`);
+		if (verbose) {
+			console.log(
+				`💡 Deploy the '${outputDir}' folder to any static hosting service`,
+			);
+		}
+	} catch (error) {
+		throw new Error(`Static site generation failed: ${error.message}`);
 	}
 }
 
