@@ -104,7 +104,10 @@ export class LinearRegression extends Model {
 	 * model.train({ x: 2, y: 4 });
 	 * // Model is immediately updated and ready for predictions
 	 */
-	train({ x, y }) {
+	train(item) {
+		const x = item.x;
+		const y = item.y;
+
 		if (typeof x !== "number" || typeof y !== "number") {
 			throw new TypeError("Training data must contain numeric x and y values");
 		}
@@ -120,15 +123,16 @@ export class LinearRegression extends Model {
 		this.sumXY += x * y;
 		this.sumXX += x * x;
 
-		// Calculate slope and intercept using least squares method
-		// Formula: slope = (n*ΣXY - ΣX*ΣY) / (n*ΣX² - (ΣX)²)
-		// Formula: intercept = (ΣY*ΣX² - ΣX*ΣXY) / (n*ΣX² - (ΣX)²)
-		const denominator = this.n * this.sumXX - this.sumX ** 2;
+		// OPTIMIZED: Single denominator calculation with cached inverse
+		const denominator = this.n * this.sumXX - this.sumX * this.sumX;
 
 		if (denominator !== 0) {
-			this.slope = (this.n * this.sumXY - this.sumX * this.sumY) / denominator;
+			// OPTIMIZED: Reuse denominator, eliminate second division
+			const invDenominator = 1 / denominator;
+			this.slope =
+				(this.n * this.sumXY - this.sumX * this.sumY) * invDenominator;
 			this.intercept =
-				(this.sumY * this.sumXX - this.sumX * this.sumXY) / denominator;
+				(this.sumY * this.sumXX - this.sumX * this.sumXY) * invDenominator;
 		}
 
 		// Mark as trained after first data point
@@ -157,8 +161,47 @@ export class LinearRegression extends Model {
 			throw new Error("Training batch must be a non-empty array");
 		}
 
-		for (const item of items) {
-			this.train(item);
+		// OPTIMIZED: Inline training logic, eliminate function call overhead
+		let localSumX = this.sumX;
+		let localSumY = this.sumY;
+		let localSumXY = this.sumXY;
+		let localSumXX = this.sumXX;
+		let localN = this.n;
+
+		// Cache variables to avoid property access in tight loop
+		for (let i = 0; i < items.length; i++) {
+			const item = items[i];
+			const x = item.x;
+			const y = item.y;
+
+			localN++;
+			localSumX += x;
+			localSumY += y;
+			localSumXY += x * y;
+			localSumXX += x * x;
+		}
+
+		// Update instance state once after batch processing
+		this.sumX = localSumX;
+		this.sumY = localSumY;
+		this.sumXY = localSumXY;
+		this.sumXX = localSumXX;
+		this.n = localN;
+
+		// OPTIMIZED: Single final calculation instead of per-point calculations
+		const denominator = this.n * this.sumXX - this.sumX * this.sumX;
+
+		if (denominator !== 0) {
+			const invDenominator = 1 / denominator;
+			this.slope =
+				(this.n * this.sumXY - this.sumX * this.sumY) * invDenominator;
+			this.intercept =
+				(this.sumY * this.sumXX - this.sumX * this.sumXY) * invDenominator;
+		}
+
+		// Mark as trained if this was the first batch
+		if (!this._trained) {
+			this._markTrained();
 		}
 	}
 
@@ -225,20 +268,35 @@ export class LinearRegression extends Model {
 			throw new Error("Test data must be a non-empty array");
 		}
 
-		// Calculate mean of actual y values
-		const yMean =
-			testData.reduce((sum, item) => sum + item.y, 0) / testData.length;
+		const length = testData.length;
 
-		// Calculate sum of squares
-		let ssRes = 0; // Sum of squares of residuals
-		let ssTot = 0; // Total sum of squares
+		// OPTIMIZED: Single pass to calculate mean
+		let ySum = 0;
+		for (let i = 0; i < length; i++) {
+			ySum += testData[i].y;
+		}
+		const yMean = ySum / length;
 
-		for (const item of testData) {
-			const predicted = this.predict({ x: item.x });
+		// OPTIMIZED: Cache slope/intercept for tight loop, inline prediction
+		const slope = this.slope;
+		const intercept = this.intercept;
+
+		let ssRes = 0;
+		let ssTot = 0;
+
+		// OPTIMIZED: Single loop with inlined prediction calculation
+		for (let i = 0; i < length; i++) {
+			const item = testData[i];
 			const actual = item.y;
 
-			ssRes += (actual - predicted) ** 2;
-			ssTot += (actual - yMean) ** 2;
+			// INLINED: Prediction calculation (eliminated function call)
+			const predicted = slope * item.x + intercept;
+
+			const residual = actual - predicted;
+			const totalDev = actual - yMean;
+
+			ssRes += residual * residual;
+			ssTot += totalDev * totalDev;
 		}
 
 		// R² = 1 - (SS_res / SS_tot)
