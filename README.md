@@ -28,7 +28,7 @@ Inspired by apex predators who survive through intelligence, not dependencies:
 
 - 🦜 **[Beak](packages/beak/README.md)** - Templates (4.2KB vs Pug's 201KB) • ✅ Production Ready
 - 🦅 **[Wings](packages/wings/README.md)** - Routing (Server + CLI) • ✅ Production Ready
-- ⚡ **[Reflex](packages/reflex/README.md)** - Reactivity (Universal SSR) • ✅ Production Ready
+- ⚡ **[Reflex](packages/reflex/README.md)** - Reactivity (Universal SSR) • 🚧 In Development
 
 ### Raven Actions (Tools)
 
