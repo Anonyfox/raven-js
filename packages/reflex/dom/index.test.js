@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { describe, it } from "node:test";
-import { signal } from "../index.js";
+import { effect, signal } from "../index.js";
 import * as dom from "./index.js";
 
 describe("dom/index.js", () => {
@@ -263,6 +263,72 @@ describe("dom/index.js", () => {
 
 			// HTML should remain unchanged (identity check prevented update)
 			assert.strictEqual(mounted.element.innerHTML, initialHtml);
+		});
+
+		it("should prevent infinite loops from effects in components", async () => {
+			let fetchCount = 0;
+			let renderCount = 0;
+			const data = signal(null);
+
+			// Mock fetch that increments counter
+			const originalFetch = globalThis.fetch;
+			globalThis.fetch = async () => {
+				fetchCount++;
+				return {
+					ok: true,
+					json: async () => ({ id: fetchCount, message: `data ${fetchCount}` }),
+				};
+			};
+
+			try {
+				// Component that fetches data in an effect - this would cause infinite loop without fix
+				const ComponentWithFetch = () => {
+					renderCount++;
+
+					// This effect would previously cause infinite re-renders
+					effect(async () => {
+						if (data() === null) {
+							const response = await fetch("/api/test");
+							const result = await response.json();
+							data.set(result);
+						}
+					});
+
+					return `<div>Data: ${data() ? JSON.stringify(data()) : "loading"}</div>`;
+				};
+
+				const target = {
+					children: [],
+					innerHTML: "",
+					appendChild(child) {
+						this.children.push(child);
+					},
+				};
+
+				const mounted = dom.mount(ComponentWithFetch, target);
+
+				// Wait for effects to settle
+				await new Promise((resolve) => setTimeout(resolve, 100));
+
+				// Should have made exactly one fetch call (no infinite loop)
+				assert.strictEqual(fetchCount, 1, "Should only fetch once");
+
+				// Should have rendered at most a few times (initial + data update)
+				assert.ok(
+					renderCount >= 2 && renderCount <= 4,
+					`Render count should be reasonable: ${renderCount}`,
+				);
+
+				// Should show the fetched data
+				assert.ok(
+					mounted.element.innerHTML.includes("data 1"),
+					"Should display fetched data",
+				);
+
+				mounted.unmount();
+			} finally {
+				globalThis.fetch = originalFetch;
+			}
 		});
 	});
 });

@@ -12,7 +12,7 @@
  * Isomorphic DOM mounting with automatic signal tracking.
  */
 
-import { effect } from "../index.js";
+import { effect, withTemplateContext } from "../index.js";
 
 /**
  * Environment detection with performance capability testing.
@@ -537,7 +537,7 @@ function createReactiveMount(templateFn, target) {
 	mountInstance.disposeEffect = effect(() => {
 		if (mountInstance.isDisposed) return;
 
-		const html = templateFn();
+		const html = withTemplateContext(templateFn);
 
 		// Skip if HTML hasn't changed (identity check)
 		if (!isFirstRender && html === lastHtml) {

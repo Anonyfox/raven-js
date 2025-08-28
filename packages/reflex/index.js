@@ -18,6 +18,49 @@ let listener = null; // current observer during reads
 /** @type {Array<{track: function(Promise<any>): void}>} */
 export const contextStack = []; // SSR/hydration integration
 
+// ---- template rendering context (infinite loop prevention) ----------------
+
+/** @type {boolean} */
+let isRenderingTemplate = false; // tracks when inside template execution
+/** @type {Array<function(): void>} */
+let deferredEffects = []; // effects deferred until template completes
+
+/**
+ * Execute function within template rendering context.
+ * Effects created during template rendering are deferred until completion.
+ * @template T
+ * @param {function(): T} fn - Function to execute in template context
+ * @returns {T} Result of function execution
+ */
+export function withTemplateContext(fn) {
+	const wasRendering = isRenderingTemplate;
+	isRenderingTemplate = true;
+	const savedEffects = wasRendering ? deferredEffects : [];
+	if (!wasRendering) deferredEffects = [];
+
+	try {
+		const result = fn();
+
+		// Execute deferred effects after template completes (only for root template)
+		if (!wasRendering && deferredEffects.length) {
+			const effects = deferredEffects;
+			deferredEffects = [];
+			for (const effectFn of effects) {
+				try {
+					effectFn();
+				} catch (e) {
+					onError(e, "deferred effect");
+				}
+			}
+		}
+
+		return result;
+	} finally {
+		isRenderingTemplate = wasRendering;
+		if (!wasRendering) deferredEffects = savedEffects;
+	}
+}
+
 // ---- scheduler (diamond problem solution) ----------------------------------
 
 const pendingComputeds = new Set();
@@ -340,11 +383,23 @@ export function effect(fn) {
 		dependencies.add(dep);
 	};
 
-	// Initial run
-	try {
-		run();
-	} catch (e) {
-		onError(e, "effect");
+	// Initial run - defer if inside template rendering to prevent infinite loops
+	if (isRenderingTemplate) {
+		// Defer execution until template render completes
+		deferredEffects.push(() => {
+			try {
+				run();
+			} catch (e) {
+				onError(e, "effect");
+			}
+		});
+	} else {
+		// Run immediately as normal
+		try {
+			run();
+		} catch (e) {
+			onError(e, "effect");
+		}
 	}
 
 	return () => {
