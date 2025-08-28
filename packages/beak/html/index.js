@@ -101,6 +101,28 @@ function processValueFast(value) {
 	return processValueSlow(value);
 }
 
+// Counter for auto-generated handler names
+let handlerCounter = 0;
+
+/**
+ * Event attribute processor - transparently binds functions to global scope.
+ * Enables isomorphic event handlers without manual registration.
+ *
+ * @param {any} value - Value to process
+ * @returns {string} Processed string value
+ */
+function processEventAttr(value) {
+	if (typeof value === "function") {
+		const name =
+			value.name && /^[A-Za-z_$][\w$]*$/.test(value.name)
+				? value.name
+				: `__h${++handlerCounter}`;
+		if (typeof window !== "undefined") window[name] = value; // expose globally in browser
+		return `${name}(event)`; // make the attribute call it
+	}
+	return processValueFast(value);
+}
+
 /**
  * Slow path processor for arrays, objects, and complex types.
  * Only called when fast path cannot handle the value.
@@ -175,28 +197,37 @@ export function html(strings, ...values) {
 				for (let i = 0; i < values.length; i++) {
 					// Pre-trim first string, keep middle strings as-is
 					const str = i === 0 ? strings[i].trimStart() : strings[i];
-					src += `${JSON.stringify(str)} + _p(v${i}) + `;
+					// Detect event attribute context
+					const isEventAttr = /\bon[a-z]+\s*=\s*$/.test(str);
+					src += `${JSON.stringify(str)} + ${isEventAttr ? "_pe" : "_p"}(v${i}) + `;
 				}
 				// Handle the final string with trimEnd
 				const finalStr = strings[values.length].trimEnd();
 				src += `${JSON.stringify(finalStr)}).trim();`;
 				fn = new Function(
 					"_p",
+					"_pe",
 					...Array.from({ length: values.length }, (_, i) => `v${i}`),
 					src,
-				).bind(null, processValueFast);
+				).bind(null, processValueFast, processEventAttr);
 			} else {
 				// Array-indexed specialization for longer templates
 				let src = "return (";
 				for (let i = 0; i < values.length; i++) {
 					// Pre-trim first string, keep middle strings as-is
 					const str = i === 0 ? strings[i].trimStart() : strings[i];
-					src += `${JSON.stringify(str)} + _p(a[${i}]) + `;
+					// Detect event attribute context
+					const isEventAttr = /\bon[a-z]+\s*=\s*$/.test(str);
+					src += `${JSON.stringify(str)} + ${isEventAttr ? "_pe" : "_p"}(a[${i}]) + `;
 				}
 				// Handle the final string with trimEnd
 				const finalStr = strings[values.length].trimEnd();
 				src += `${JSON.stringify(finalStr)}).trim();`;
-				fn = new Function("_p", "a", src).bind(null, processValueFast);
+				fn = new Function("_p", "_pe", "a", src).bind(
+					null,
+					processValueFast,
+					processEventAttr,
+				);
 			}
 		}
 		TEMPLATE_CACHE.set(strings, fn);
