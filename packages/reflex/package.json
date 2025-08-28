@@ -1,7 +1,7 @@
 {
   "name": "@raven-js/reflex",
   "description": "Universal reactive signals for modern JavaScript - zero dependencies, SSR/hydration, DOM updates",
-  "version": "0.4.8",
+  "version": "0.4.9",
   "type": "module",
   "files": [
     "*.js",
