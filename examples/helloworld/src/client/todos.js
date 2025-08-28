@@ -3,7 +3,7 @@
  * Three operations. Zero excuses. Framework apocalypse.
  */
 
-import { computed, signal } from "@raven-js/reflex";
+import { computed, effect, signal } from "@raven-js/reflex";
 import { mount } from "@raven-js/reflex/dom";
 
 // Reactive state - the murder's intelligence
@@ -78,16 +78,7 @@ const TodosApp = () => {
 	);
 };
 
-// Input container template for controlled input behavior
-const InputApp = () => {
-	return `<input
-        type="text"
-        class="add-input"
-        placeholder="Add a todo..."
-        value="${escapeHtml(inputValue())}"
-        autocomplete="off"
-    />`;
-};
+// Input synchronization handled manually in setupEventDelegation
 
 // Stats template
 const StatsApp = () => {
@@ -166,18 +157,39 @@ function setupEventDelegation() {
 	todoInput.focus();
 }
 
+// Fetch initial examples from API - reactive side effect
+const loadExamples = async () => {
+	try {
+		const response = await fetch("/api/todos/examples");
+		if (response.ok) {
+			const examples = await response.json();
+			// Update signal - automatic UI update via reactivity
+			todos.set(examples);
+			// Update counter to continue from fetched IDs
+			const maxId = Math.max(...examples.map((t) => t.id), 0);
+			todoIdCounter = maxId + 1;
+		}
+	} catch (error) {
+		console.error("Failed to load example todos:", error);
+		// Fail gracefully - empty state handles this
+	}
+};
+
 // Initialize the battleground
 document.addEventListener("DOMContentLoaded", () => {
 	// Mount reactive components
 	mount(TodosApp, "#todos-list");
 	mount(StatsApp, "#stats");
 
-	// Handle input manually (avoid conflict with existing input element)
-	const todoInput = document.getElementById("todo-input");
-
 	// Setup event handling
 	setupEventDelegation();
 
+	// Load initial examples using effect for clean reactive side effect
+	effect(() => {
+		loadExamples();
+	});
+
 	console.log("🦅 Todos Battleground initialized");
 	console.log("⚔️ Three operations. Zero excuses. Framework apocalypse.");
+	console.log("📡 Loading example todos from API...");
 });
