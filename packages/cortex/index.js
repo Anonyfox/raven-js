@@ -59,4 +59,4 @@ export function hello(name) {
 }
 
 // Export learning algorithms
-export { LinearRegression, Model } from "./learning/index.js";
+export { LinearRegression, Model, NeuralNetwork } from "./learning/index.js";
