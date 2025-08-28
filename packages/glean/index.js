@@ -18,9 +18,9 @@
  */
 
 // Import lib2 functionality
-import { runAnalyzeCommand } from "./lib2/analyze.js";
-import { startDocumentationServer } from "./lib2/server/index.js";
-import { generateStaticSite } from "./lib2/static-generate.js";
+import { runAnalyzeCommand } from "./lib/analyze.js";
+import { startDocumentationServer } from "./lib/server/index.js";
+import { generateStaticSite } from "./lib/static-generate.js";
 
 /**
  * Get the current version of Glean
@@ -174,12 +174,12 @@ export async function runServerCommand(args) {
 	}
 }
 
-export { discover } from "./lib2/discover/index.js";
-export { extract } from "./lib2/extract/index.js";
+export { discover } from "./lib/discover/index.js";
+export { extract } from "./lib/extract/index.js";
 // Export lib2 core functionality for programmatic use
 export {
 	createDocumentationServer,
 	startDocumentationServer,
-} from "./lib2/server/index.js";
-export { generateStaticSite } from "./lib2/static-generate.js";
-export { validate } from "./lib2/validate.js";
+} from "./lib/server/index.js";
+export { generateStaticSite } from "./lib/static-generate.js";
+export { validate } from "./lib/validate.js";
