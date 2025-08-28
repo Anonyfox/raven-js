@@ -16,6 +16,24 @@
 import { contextStack } from "../index.js";
 
 /**
+ * Generates a unique component ID for each ssr() call.
+ * Uses crypto.randomUUID() when available, falls back to timestamp + random.
+ *
+ * @returns {string} Unique component identifier
+ */
+function generateComponentId() {
+	if (typeof crypto !== "undefined" && crypto.randomUUID) {
+		// Use Web Crypto API when available (Node 16.7+, modern browsers)
+		return crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+	} else {
+		// Fallback for older environments
+		return (
+			Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+		).slice(-8);
+	}
+}
+
+/**
  * Creates a canonical cache key for fetch requests.
  * Ensures server and client use identical keys for proper hydration matching.
  *
@@ -89,20 +107,43 @@ const env = {
 	 * Check if running in a server environment.
 	 * @returns {boolean} True if server environment
 	 */
-	isServer: () => typeof window === "undefined",
+	isServer: () => {
+		// In Node.js tests, check if window was artificially created (has limited properties)
+		if (typeof window !== "undefined" && typeof process !== "undefined") {
+			// If window exists but lacks real browser APIs, we're in server with shims
+			return (
+				!window.document?.createElement ||
+				window.navigator?.userAgent === "Node.js"
+			);
+		}
+		// Standard server detection
+		return typeof window === "undefined";
+	},
 
 	/**
 	 * Check if running in a browser environment.
 	 * @returns {boolean} True if browser environment
 	 */
-	isClient: () => typeof window !== "undefined",
+	isClient: () => {
+		// Real browser: has window and no process, or has rich browser APIs
+		return (
+			typeof window !== "undefined" &&
+			(typeof process === "undefined" ||
+				(window.document?.createElement &&
+					window.navigator?.userAgent !== "Node.js"))
+		);
+	},
 
 	/**
 	 * Check if client is in hydration mode (SSR data available).
 	 * @returns {boolean} True if hydrating from SSR
 	 */
-	isHydrating: () =>
-		typeof window !== "undefined" && /** @type {any} */ (window).__SSR_DATA__,
+	isHydrating: () => {
+		if (typeof window === "undefined") return false;
+		// Check for any component-scoped SSR data
+		const win = /** @type {any} */ (window);
+		return Object.keys(win).some((key) => key.startsWith("__SSR_DATA__"));
+	},
 
 	/**
 	 * Check if this is the root reactive call (no parent context).
@@ -294,20 +335,22 @@ const env = {
 /**
  * SSR wrapper that handles server-side rendering, hydration, and async operations.
  *
- * This function wraps handler functions to provide automatic SSR data injection,
+ * This function wraps handler functions to provide automatic component-scoped SSR data injection,
  * fetch interception, client-side hydration, and async operation management.
  * The same wrapped function runs on both server and client with different behavior.
  *
  * **Server Behavior:**
  * - Intercepts fetch calls and caches responses
- * - Injects SSR data into HTML output automatically
+ * - Injects component-scoped SSR data inline after component content
  * - Tracks async operations for completion
  *
  * **Client Behavior:**
- * - Uses cached SSR data for initial hydration
+ * - Uses component-scoped cached SSR data for initial hydration
  * - Falls back to normal fetch after hydration
  * - Manages reactive state updates
  *
+ * **Component-Scoped**: Each ssr() call gets its own unique component ID and SSR data.
+ * **Inline Injection**: SSR data is injected directly after component content, not at HTML structure points.
  * **Isomorphic**: Same code runs everywhere with environment-specific optimizations.
  * **Automatic**: No manual SSR/hydration setup required.
  * **Performance**: Eliminates server round-trips during hydration.
@@ -317,6 +360,7 @@ const env = {
  * @param {Object} [options={}] - Configuration options
  * @param {number} [options.timeout=10000] - Maximum time to wait for async operations (ms)
  * @param {number} [options.maxSettleAttempts=100] - Maximum attempts to settle all async operations
+ * @param {string} [options._testComponentId] - Component ID for testing (internal use only)
  * @returns {function(...any[]): Promise<T>} Wrapped function that handles SSR/hydration
  *
  * @example
@@ -381,7 +425,14 @@ export function ssr(fn, options = {}) {
 		return /** @type {any} */ (fn);
 	}
 
-	const { timeout = 10000, maxSettleAttempts = 100 } = options;
+	const {
+		timeout = 10000,
+		maxSettleAttempts = 100,
+		_testComponentId,
+	} = options;
+
+	// Generate unique component ID for this ssr() call (or use test override)
+	const componentId = _testComponentId || generateComponentId();
 
 	const wrapped = async function (/** @type {...any} */ ...args) {
 		const isServer = env.isServer();
@@ -389,24 +440,28 @@ export function ssr(fn, options = {}) {
 		const isHydrating = env.isHydrating();
 		const isRoot = env.isRoot();
 
-		// CLIENT: Use cached SSR data if hydrating
+		// CLIENT: Use component-scoped cached SSR data if hydrating
 		if (isClient && isHydrating && isRoot) {
 			const originalFetch = globalThis.fetch;
 
-			// Intercept fetch calls and use cached data
+			// Intercept fetch calls and use component-scoped cached data
 			globalThis.fetch = /** @type {any} */ (
 				(/** @type {any} */ url, /** @type {any} */ opts = {}) => {
 					const cacheKey = createCacheKey(url, opts);
-					const ssrData = /** @type {any} */ (window).__SSR_DATA__;
+					const ssrData = /** @type {any} */ (window)[
+						`__SSR_DATA__${componentId}`
+					];
 					const cached = ssrData?.fetch?.[cacheKey];
 
 					if (cached) {
 						// Delete this specific cache entry after use (per-entry consumption)
 						delete ssrData.fetch[cacheKey];
 
-						// If fetch cache is now empty, clean up the entire __SSR_DATA__
+						// If fetch cache is now empty, clean up the component-scoped __SSR_DATA__
 						if (Object.keys(ssrData.fetch).length === 0) {
-							delete (/** @type {any} */ (window).__SSR_DATA__);
+							delete (
+								/** @type {any} */ (window)[`__SSR_DATA__${componentId}`]
+							);
 						}
 
 						// Create absolute URL for Response.url field
@@ -491,6 +546,7 @@ export function ssr(fn, options = {}) {
 				fetchCache: new Map(),
 				/** @type {{fetch: any}|null} */
 				ssrData: null,
+				componentId,
 				track: (/** @type {Promise<any>} */ promise) => {
 					if (promise && typeof promise.then === "function") {
 						context.promises.add(promise);
@@ -518,7 +574,26 @@ export function ssr(fn, options = {}) {
 						return context.fetchCache.get(cacheKey);
 					}
 
-					const fetchPromise = originalFetch(url, opts).then(
+					// Resolve relative URLs to absolute URLs for Node.js fetch
+					const absoluteUrl = (() => {
+						let urlString;
+						if (url instanceof URL) {
+							return url.toString();
+						} else if (typeof url === "object" && url.url) {
+							urlString = url.url;
+						} else {
+							urlString = String(url);
+						}
+						// If already absolute, return as-is
+						if (urlString.includes("://")) {
+							return urlString;
+						}
+						// Resolve relative URL
+						const baseUrl = globalThis.location?.href || "http://localhost/";
+						return new URL(urlString, baseUrl).toString();
+					})();
+
+					const fetchPromise = originalFetch(absoluteUrl, opts).then(
 						async (response) => {
 							// Cache the response data
 							const cloned = response.clone();
@@ -617,9 +692,9 @@ export function ssr(fn, options = {}) {
 				// Wait for all async operations to complete
 				await settleAllPromises(context, timeout, maxSettleAttempts);
 
-				// Inject SSR data into HTML if it's an HTML response
-				if (typeof result === "string" && result.includes("<html")) {
-					return injectSSRData(result, /** @type {any} */ (context.ssrData));
+				// Inject component-scoped SSR data inline after component content
+				if (typeof result === "string" && context.ssrData) {
+					return injectComponentSSRData(result, context.ssrData, componentId);
 				}
 
 				return result;
@@ -774,16 +849,17 @@ function escapeJsonForScript(data) {
 }
 
 /**
- * Injects SSR data into HTML as a script tag.
+ * Injects component-scoped SSR data inline after component content.
  * Includes XSS protection and size cap to prevent payload abuse.
  *
- * @param {string} html - The HTML content
+ * @param {string} componentContent - The component's HTML content
  * @param {Object} ssrData - The SSR data to inject
- * @returns {string} HTML with injected SSR data
+ * @param {string} componentId - Unique component identifier
+ * @returns {string} Component content with inline SSR data
  */
-function injectSSRData(html, ssrData) {
+function injectComponentSSRData(componentContent, ssrData, componentId) {
 	if (!ssrData || Object.keys(ssrData).length === 0) {
-		return html;
+		return componentContent;
 	}
 
 	// Size cap: skip injection if payload is too large (512KB)
@@ -794,32 +870,18 @@ function injectSSRData(html, ssrData) {
 		console.warn(
 			`SSR payload too large (${Math.round(jsonString.length / 1024)}KB > ${maxSize / 1024}KB). Skipping injection to prevent HTML bloat.`,
 		);
-		return html;
+		return componentContent;
 	}
 
 	// Check for optional CSP nonce
 	const nonce = /** @type {any} */ (globalThis).__REFLEX_CSP_NONCE__;
 	const nonceAttr = nonce ? ` nonce="${nonce}"` : "";
 
-	const ssrScript = `<script${nonceAttr}>window.__SSR_DATA__ = ${jsonString};</script>`;
+	// Create component-scoped SSR script that injects inline after component content
+	const ssrScript = `<script${nonceAttr}>window.__SSR_DATA__${componentId} = ${jsonString};</script>`;
 
-	// Try to inject before closing head tag
-	if (html.includes("</head>")) {
-		return html.replace("</head>", `${ssrScript}</head>`);
-	}
-
-	// Fallback: inject before closing body tag
-	if (html.includes("</body>")) {
-		return html.replace("</body>", `${ssrScript}</body>`);
-	}
-
-	// Fallback: inject before closing html tag
-	if (html.includes("</html>")) {
-		return html.replace("</html>", `${ssrScript}</html>`);
-	}
-
-	// Last resort: append to end
-	return html + ssrScript;
+	// Inject inline after component content - truly colocated
+	return componentContent + ssrScript;
 }
 
 // Export env for testing
