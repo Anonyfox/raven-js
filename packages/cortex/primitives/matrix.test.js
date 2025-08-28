@@ -174,16 +174,16 @@ describe("Matrix", () => {
 			assert.ok(hasVariation, "Random matrix should have variation");
 		});
 
-		it("should create random matrix with custom mean and stddev", () => {
-			const matrix = Matrix.random(2, 2, 5, 0.1);
+		it("should create random matrix with custom range", () => {
+			const matrix = Matrix.random(2, 2, 2, 8); // min=2, max=8 (uniform distribution)
 
-			// Check values are roughly around mean (allowing for random variation)
+			// Check all values are within range
 			for (let i = 0; i < 2; i++) {
 				for (let j = 0; j < 2; j++) {
 					const value = matrix.get(i, j);
 					assert.ok(
-						Math.abs(value - 5) < 2,
-						`Value ${value} should be near mean 5`,
+						value >= 2 && value <= 8,
+						`Value ${value} should be between 2 and 8`,
 					);
 				}
 			}
