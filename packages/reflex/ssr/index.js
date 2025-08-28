@@ -333,27 +333,40 @@ const env = {
 };
 
 /**
- * SSR wrapper that handles server-side rendering, hydration, and async operations.
+ * Universal SSR wrapper with **component-scoped inline data injection**.
  *
- * This function wraps handler functions to provide automatic component-scoped SSR data injection,
- * fetch interception, client-side hydration, and async operation management.
- * The same wrapped function runs on both server and client with different behavior.
+ * Revolutionizes SSR by embedding fetch cache directly with component output, making SSR
+ * completely **layout-independent** and **component-scoped**. No more global state, no more
+ * dependency on HTML structure - each component is self-contained with its own SSR data.
  *
- * **Server Behavior:**
- * - Intercepts fetch calls and caches responses
- * - Injects component-scoped SSR data inline after component content
- * - Tracks async operations for completion
+ * ## 🎯 **Key Innovation: Inline Component-Scoped Injection**
  *
- * **Client Behavior:**
- * - Uses component-scoped cached SSR data for initial hydration
- * - Falls back to normal fetch after hydration
- * - Manages reactive state updates
+ * **Traditional SSR**: `<html><body><component/></body><script>window.__SSR_DATA__ = {...}</script></html>`
+ * **Reflex SSR**: `<component-content/><script>window.__SSR_DATA__abc123 = {...}</script>`
  *
- * **Component-Scoped**: Each ssr() call gets its own unique component ID and SSR data.
- * **Inline Injection**: SSR data is injected directly after component content, not at HTML structure points.
- * **Isomorphic**: Same code runs everywhere with environment-specific optimizations.
- * **Automatic**: No manual SSR/hydration setup required.
- * **Performance**: Eliminates server round-trips during hydration.
+ * Each ssr() call generates a unique component ID and injects its SSR data immediately after
+ * the component's rendered content - no matter where the component appears in the DOM tree.
+ *
+ * ## 🚀 **Server Behavior**
+ * - Automatically intercepts fetch calls and caches responses
+ * - Generates unique component ID via crypto.randomUUID()
+ * - Injects component-scoped SSR data inline: `<script>window.__SSR_DATA__${componentId} = {...}</script>`
+ * - Tracks async operations for completion with timeout protection
+ * - Installs browser API shims to prevent crashes
+ *
+ * ## ⚡ **Client Behavior**
+ * - Detects component-scoped SSR data via `window.__SSR_DATA__${componentId}`
+ * - Intercepts matching fetch calls to use cached responses instantly
+ * - Per-entry consumption: deletes cache entries after use
+ * - Auto-cleanup: removes component's SSR data when fully consumed
+ * - Restores original fetch after first microtask for fresh requests
+ *
+ * ## ✨ **Benefits**
+ * - **Layout Independent**: Works in any HTML structure - header, footer, nested, anywhere
+ * - **Component Scoped**: Each ssr() call isolated with unique data - no global conflicts
+ * - **Zero Configuration**: Drop in any component, works automatically
+ * - **Perfect Hydration**: Client uses exact server responses, zero duplicate requests
+ * - **Optimal Performance**: Eliminates server round-trips during hydration
  *
  * @template T
  * @param {function(...any[]): T|Promise<T>} fn - Handler function to wrap with SSR
@@ -365,58 +378,72 @@ const env = {
  *
  * @example
  * ```javascript
- * // Express/Wings route handler
- * import { Router } from "@raven-js/wings";
- * import { html } from "@raven-js/beak";
+ * // 🎯 Layout-Independent Components: Works anywhere in DOM tree!
  * import { ssr, signal } from "@raven-js/reflex";
  *
- * const router = new Router();
+ * // Header component - can be used in <head>, <header>, anywhere
+ * const HeaderWidget = ssr(async () => {
+ *   const response = await fetch("/api/user-stats");
+ *   const stats = await response.json();
+ *   return `<span>Welcome ${stats.username}! (${stats.notifications} new)</span>`;
+ * });
  *
- * router.get("/todos", ssr(async (ctx) => {
- *   const todos = signal([]);
+ * // Sidebar component - works in sidebar, footer, modal, etc.
+ * const WeatherWidget = ssr(async () => {
+ *   const response = await fetch("/api/weather");
+ *   const weather = await response.json();
+ *   return `<div class="weather">${weather.temp}°C - ${weather.condition}</div>`;
+ * });
  *
- *   // This fetch works on server AND client
- *   const response = await fetch("/api/todos");
- *   const data = await response.json();
- *   todos.set(data);
- *
- *   return ctx.html(html`
- *     <html>
- *       <head><title>Todos</title></head>
- *       <body>
- *         <h1>Todo List</h1>
- *         <ul>
- *           ${todos().map(todo => html`<li>${todo.title}</li>`)}
- *         </ul>
- *         <script src="/client.js"></script>
- *       </body>
- *     </html>
- *   `);
- * }));
+ * // Each component gets its own SSR data, no conflicts!
+ * // Server output:
+ * // <span>Welcome Alice! (3 new)</span><script>window.__SSR_DATA__abc123 = {...}</script>
+ * // <div class="weather">22°C - Sunny</div><script>window.__SSR_DATA__def456 = {...}</script>
  * ```
  *
  * @example
  * ```javascript
- * // Pure Node.js usage
- * import { createServer } from "http";
- * import { ssr, signal, effect } from "@raven-js/reflex";
+ * // 🚀 Perfect for Complex Layouts - No Structure Dependency
+ * import { Router } from "@raven-js/wings";
+ * import { html } from "@raven-js/beak";
+ * import { ssr } from "@raven-js/reflex";
  *
- * const handler = ssr(async () => {
- *   const data = signal("loading...");
+ * const router = new Router();
  *
- *   // Automatic fetch interception and caching
- *   const result = await fetch("https://api.example.com/data");
- *   data.set(await result.text());
- *
- *   return \`<html><body><h1>\${data()}</h1></body></html>\`;
- * });
- *
- * createServer((req, res) => {
- *   handler().then(html => {
- *     res.writeHead(200, { "Content-Type": "text/html" });
- *     res.end(html);
+ * // Main page handler
+ * router.get("/dashboard", ssr(async (ctx) => {
+ *   // Each section is independent with its own SSR data
+ *   const HeaderComponent = ssr(async () => {
+ *     const user = await fetch("/api/user").then(r => r.json());
+ *     return \`<nav>Hello \${user.name}</nav>\`;
  *   });
- * }).listen(3000);
+ *
+ *   const SidebarComponent = ssr(async () => {
+ *     const menu = await fetch("/api/menu").then(r => r.json());
+ *     return \`<aside>\${menu.map(item => \`<a href="\${item.url}">\${item.title}</a>\`).join("")}</aside>\`;
+ *   });
+ *
+ *   const ContentComponent = ssr(async () => {
+ *     const posts = await fetch("/api/posts").then(r => r.json());
+ *     return \`<main>\${posts.map(post => \`<article>\${post.title}</article>\`).join("")}</main>\`;
+ *   });
+ *
+ *   return ctx.html(html\`
+ *     <html>
+ *       <head><title>Dashboard</title></head>
+ *       <body>
+ *         \${await HeaderComponent()}    <!-- Independent SSR data -->
+ *         <div class="layout">
+ *           \${await SidebarComponent()} <!-- Independent SSR data -->
+ *           \${await ContentComponent()} <!-- Independent SSR data -->
+ *         </div>
+ *       </body>
+ *     </html>
+ *   \`);
+ * }));
+ *
+ * // Result: Each component's fetch cache is embedded inline with its output!
+ * // No global state, no HTML structure dependency, complete isolation.
  * ```
  */
 export function ssr(fn, options = {}) {

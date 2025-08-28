@@ -35,28 +35,45 @@ effect(() => {
 count.set(5); // Logs: "Count: 5, Doubled: 10"
 ```
 
-### Universal SSR
+### Revolutionary Component-Scoped SSR
+
+Reflex introduces **inline component-scoped SSR** - a breakthrough that makes SSR completely **layout-independent** and **component-isolated**.
 
 ```javascript
 import { ssr } from "@raven-js/reflex/ssr";
 
-// Same code runs on server and client
-const App = ssr(async () => {
-  const data = signal([]);
-
-  // Automatic fetch caching during SSR
-  const response = await fetch("/api/data");
-  data.set(await response.json());
-
-  return () =>
-    `<div>${data()
-      .map((item) => `<p>${item}</p>`)
-      .join("")}</div>`;
+// 🎯 Each component is self-contained with its own SSR data
+const UserWidget = ssr(async () => {
+  const response = await fetch("/api/user");
+  const user = await response.json();
+  return `<span>Hello ${user.name}!</span>`;
 });
 
-// Server: renders HTML with embedded state
-// Client: hydrates automatically, no duplicate fetches
+const WeatherWidget = ssr(async () => {
+  const response = await fetch("/api/weather");
+  const weather = await response.json();
+  return `<div>${weather.temp}°C</div>`;
+});
+
+// 🚀 Works anywhere in your HTML - header, footer, modal, anywhere!
+const layout = `
+  <header>${await UserWidget()}</header>    <!-- Independent SSR data -->
+  <main>Content here</main>
+  <footer>${await WeatherWidget()}</footer> <!-- Independent SSR data -->
+`;
+
+// Server output:
+// <span>Hello Alice!</span><script>window.__SSR_DATA__abc123 = {...}</script>
+// <div>22°C</div><script>window.__SSR_DATA__def456 = {...}</script>
+
+// ✨ Client hydrates perfectly - zero duplicate requests, zero conflicts!
 ```
+
+**Key Innovation:**
+
+- **Traditional SSR**: Global state at HTML structure points (`</head>`, `</body>`)
+- **Reflex SSR**: Component-scoped data injected inline with each component
+- **Result**: True component isolation, works in any layout, zero configuration
 
 ### DOM Utilities
 
@@ -69,17 +86,20 @@ mount(() => `<h1>Hello ${signal("World")()}</h1>`, "#app");
 
 ## Features
 
+- **Revolutionary SSR** - Component-scoped inline data injection, layout-independent
 - **Universal Signals** - Work identically everywhere
 - **Diamond Problem Solved** - Automatic scheduling eliminates glitches
-- **Automatic SSR** - No configuration needed
-- **Perfect Hydration** - No flicker, no duplicate requests
+- **Perfect Hydration** - Zero flicker, zero duplicate requests, zero conflicts
+- **True Component Isolation** - Each ssr() call has unique ID and cache
 - **Zero Dependencies** - Pure JavaScript only
 - **Framework Agnostic** - Integrates with any server/router
 - **Performance Optimized** - Paint-aligned updates, efficient DOM operations
 
 ### 🔮 Automagic Features
 
-- **Resource Auto-Cleanup** - Timers, event listeners automatically cleaned up on effect disposal
+- **Component-Scoped SSR** - Automatic unique ID generation, inline injection, zero configuration
+- **Layout Independence** - SSR components work in any HTML structure, any nesting level
+- **Smart Cache Management** - Per-component cache isolation, automatic cleanup after consumption
 - **SSR Timeout Protection** - Graceful degradation with individual promise timeouts and exponential backoff
 - **Browser API Shims** - Automatic localStorage, window, navigator shims prevent SSR crashes
 - **Memory Leak Prevention** - Deterministic cleanup prevents hanging processes
@@ -150,8 +170,9 @@ router.listen(3000);
 **Key Benefits:**
 
 - **Zero Configuration** - Wings + Reflex work together automatically
-- **SSR Data Injection** - Fetch responses embedded in HTML, no client round-trips
-- **Seamless Hydration** - Client picks up exactly where server left off
+- **Component-Scoped SSR** - Each component's data injected inline, complete isolation
+- **Layout Independent** - SSR components work anywhere in HTML structure
+- **Perfect Hydration** - Client uses exact server responses, zero duplicate requests
 - **Reactive Updates** - Signal changes update DOM efficiently
 - **Beak Integration** - Clean HTML templating with reactive interpolation
 
