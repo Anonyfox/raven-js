@@ -7,48 +7,27 @@
  */
 
 /**
- * @file Tests for Glean main module - surgical validation of core functionality.
+ * @file Tests for Glean main module (lib2-only) - surgical validation of core functionality.
  */
 
 import { strict as assert } from "node:assert";
-import { mkdir, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { test } from "node:test";
-import { getVersion, parseArguments, showHelp } from "./index.js";
+import {
+	discover,
+	extract,
+	generateStaticSite,
+	getVersion,
+	runServerCommand,
+	runSsgCommand,
+	runValidateCommand,
+	showHelp,
+	validate,
+} from "./index.js";
 
 test("getVersion returns current version", () => {
 	const version = getVersion();
 	assert.equal(typeof version, "string");
-	assert.equal(version, "0.1.0");
-});
-
-test("parseArguments handles flags and target", () => {
-	// Basic parsing
-	const args1 = parseArguments(["src/"]);
-	assert.equal(args1.target, "src/");
-	assert.equal(args1.verbose, false);
-
-	// With verbose flag
-	const args2 = parseArguments(["--verbose", "lib/"]);
-	assert.equal(args2.target, "lib/");
-	assert.equal(args2.verbose, true);
-
-	// Short verbose flag
-	const args3 = parseArguments(["-v"]);
-	assert.equal(args3.target, ".");
-	assert.equal(args3.verbose, true);
-
-	// No arguments
-	const args4 = parseArguments([]);
-	assert.equal(args4.target, ".");
-	assert.equal(args4.validate, true);
-	assert.equal(args4.format, "html");
-});
-
-test.skip("showBanner displays version information", () => {
-	// Test that showBanner doesn't throw - output testing would require mocking console
-	assert.doesNotThrow(() => showBanner());
+	assert.equal(version, "0.4.8");
 });
 
 test("showHelp displays usage information", () => {
@@ -56,124 +35,49 @@ test("showHelp displays usage information", () => {
 	assert.doesNotThrow(() => showHelp());
 });
 
-test.skip("processCodebase completes without errors", async () => {
-	const options = {
-		target: ".",
-		format: "html",
-		validate: true,
-		verbose: false,
-	};
-
-	// Should complete without throwing
-	await assert.doesNotReject(async () => {
-		await processCodebase(options);
-	});
-
-	// Test verbose mode
-	const verboseOptions = { ...options, verbose: true };
-	await assert.doesNotReject(async () => {
-		await processCodebase(verboseOptions);
-	});
+test("lib2 functions are exported", () => {
+	// Verify all lib2 core functions are exported
+	assert.equal(typeof discover, "function");
+	assert.equal(typeof extract, "function");
+	assert.equal(typeof validate, "function");
+	assert.equal(typeof generateStaticSite, "function");
 });
 
-// Analyze command tests moved to lib/analyze.test.js
-
-test.skip("runExtractCommand extracts documentation graph", async () => {
-	const tempDir = join(tmpdir(), `glean-test-${Date.now()}`);
-	await mkdir(tempDir, { recursive: true });
-
-	try {
-		// Create package.json
-		await writeFile(
-			join(tempDir, "package.json"),
-			JSON.stringify({
-				name: "test-extract",
-				version: "1.0.0",
-				description: "Test package for extraction",
-			}),
-		);
-
-		// Create test JavaScript file
-		const testFile = join(tempDir, "test.js");
-		await writeFile(
-			testFile,
-			`
-/**
- * Test function for extraction
- * @param {string} input - Input parameter
- * @returns {string} Processed output
- */
-export function testFunc(input) {
-	return input.toUpperCase();
-}
-		`,
-		);
-
-		// Create README
-		await writeFile(join(tempDir, "README.md"), "# Test Extract Package");
-
-		// Test basic extract command (output to stdout)
-		await assert.doesNotReject(async () => {
-			await runExtractCommand([tempDir]);
-		});
-
-		// Test verbose mode
-		await assert.doesNotReject(async () => {
-			await runExtractCommand([tempDir, "--verbose"]);
-		});
-
-		// Test with output file
-		const outputFile = join(tempDir, "output.json");
-		await assert.doesNotReject(async () => {
-			await runExtractCommand([tempDir, "--output", outputFile]);
-		});
-
-		// Verify output file was created
-		const { readFile } = await import("node:fs/promises");
-		const outputContent = await readFile(outputFile, "utf-8");
-		const graph = JSON.parse(outputContent);
-
-		// Verify graph structure
-		assert.ok(graph.__data.package);
-		assert.equal(graph.__data.package.name, "test-extract");
-		assert.ok(graph.__data.modules);
-		assert.ok(graph.__data.entities);
-		assert.ok(graph.__data.content);
-	} finally {
-		await rm(tempDir, { recursive: true });
-	}
+test("CLI command functions are exported", () => {
+	// Verify all CLI command functions are exported
+	assert.equal(typeof runValidateCommand, "function");
+	assert.equal(typeof runSsgCommand, "function");
+	assert.equal(typeof runServerCommand, "function");
 });
 
-test.skip("runExtractCommand handles extraction errors gracefully", async () => {
-	// Test with inaccessible path - should throw informative error
-	await assert.rejects(async () => {
-		await runExtractCommand(["/nonexistent/deeply/nested/path"]);
-	}, /Extraction failed/);
+test("runValidateCommand validates arguments", async () => {
+	// Test that missing source directory throws proper error for ssg command
+	await assert.rejects(
+		() => runSsgCommand([]),
+		/Usage: glean ssg <source-dir> <output-dir>/,
+	);
+
+	// Test that missing output directory throws proper error for ssg command
+	await assert.rejects(
+		() => runSsgCommand(["./src"]),
+		/Usage: glean ssg <source-dir> <output-dir>/,
+	);
 });
 
-test.skip("runExtractCommand parses arguments correctly", async () => {
-	const tempDir = join(tmpdir(), `glean-test-${Date.now()}`);
-	await mkdir(tempDir, { recursive: true });
+test("runServerCommand validates port argument", async () => {
+	// Test invalid port handling
+	await assert.rejects(
+		() => runServerCommand(["--port", "invalid"]),
+		/Port must be a valid number between 1 and 65535/,
+	);
 
-	try {
-		await writeFile(join(tempDir, "test.js"), "export function test() {}");
+	await assert.rejects(
+		() => runServerCommand(["--port", "0"]),
+		/Port must be a valid number between 1 and 65535/,
+	);
 
-		// Test default target
-		await assert.doesNotReject(async () => {
-			await runExtractCommand(["--verbose"]);
-		});
-
-		// Test explicit target with flags
-		await assert.doesNotReject(async () => {
-			await runExtractCommand([tempDir, "--verbose"]);
-		});
-
-		// Test output flag variations
-		const outputFile = join(tempDir, "test-output.json");
-		await assert.doesNotReject(async () => {
-			await runExtractCommand([tempDir, "-o", outputFile]);
-		});
-	} finally {
-		await rm(tempDir, { recursive: true });
-	}
+	await assert.rejects(
+		() => runServerCommand(["--port", "99999"]),
+		/Port must be a valid number between 1 and 65535/,
+	);
 });

@@ -15,12 +15,9 @@
  */
 
 import {
-	parseArguments,
-	processCodebase,
-	runAnalyzeCommand,
-	runBuildCommand,
 	runServerCommand,
 	runSsgCommand,
+	runValidateCommand,
 	showBanner,
 	showHelp,
 } from "../index.js";
@@ -50,17 +47,8 @@ async function main() {
 		showBanner();
 
 		switch (subcommand) {
-			case "analyze":
-				await runAnalyzeCommand(subArgs);
-				break;
-			case "extract":
-				await subArgs;
-				break;
-			case "render":
-				await subArgs;
-				break;
-			case "build":
-				await runBuildCommand(subArgs);
+			case "validate":
+				await runValidateCommand(subArgs);
 				break;
 			case "server":
 				await runServerCommand(subArgs);
@@ -69,10 +57,9 @@ async function main() {
 				await runSsgCommand(subArgs);
 				break;
 			default: {
-				// Fallback to legacy processing for backwards compatibility
-				const args = parseArguments(rawArgs);
-				await processCodebase(args);
-				break;
+				console.error(`🚨 Unknown command: ${subcommand}`);
+				console.error(`💡 Use 'glean --help' to see available commands`);
+				process.exit(1);
 			}
 		}
 	} catch (error) {
