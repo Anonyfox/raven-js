@@ -7,18 +7,19 @@
  */
 
 /**
- * @file Neural Network implementation for the Cortex neural center
+ * @file Matrix-optimized Neural Network implementation for the Cortex neural center
  *
- * Lightweight feedforward neural network with one hidden layer.
+ * Lightweight feedforward neural network with one hidden layer using Matrix primitives.
  * Designed for small/medium classification and regression tasks.
  * Uses ReLU activation and Xavier weight initialization.
  * Fully serializable and isomorphic across all JavaScript environments.
  */
 
+import { Matrix } from "../primitives/matrix.js";
 import { Model } from "./model.js";
 
 /**
- * A lightweight neural network implementation with one hidden layer.
+ * A lightweight neural network implementation with one hidden layer using Matrix operations.
  *
  * Perfect for classification, regression, and pattern recognition tasks
  * where you need more complexity than linear models but want to avoid
@@ -26,6 +27,7 @@ import { Model } from "./model.js";
  *
  * FEATURES:
  * - Single hidden layer with ReLU activation
+ * - Matrix-optimized operations for better performance
  * - Configurable layer sizes
  * - Xavier weight initialization for stable training
  * - Efficient backpropagation training
@@ -78,11 +80,16 @@ export class NeuralNetwork extends Model {
 		this.hiddenSize = hiddenSize;
 		this.outputSize = outputSize;
 
-		// Weight matrices and bias vectors (initialized below)
-		/** @type {Array<Array<number>>} */ this.w1;
-		/** @type {Array<number>} */ this.b1;
-		/** @type {Array<Array<number>>} */ this.w2;
-		/** @type {Array<number>} */ this.b2;
+		// Weight matrices and bias vectors using Matrix primitives
+		/** @type {Matrix} */ this.w1;
+		/** @type {Matrix} */ this.b1;
+		/** @type {Matrix} */ this.w2;
+		/** @type {Matrix} */ this.b2;
+
+		// Pre-allocated matrices for efficient computation
+		/** @type {Matrix} */ this._hiddenMatrix;
+		/** @type {Matrix} */ this._outputMatrix;
+		/** @type {Matrix} */ this._inputMatrix;
 
 		// Initialize weight matrices and bias vectors
 		this._initializeWeights();
@@ -98,48 +105,21 @@ export class NeuralNetwork extends Model {
 		const scale2 = Math.sqrt(2.0 / (this.hiddenSize + this.outputSize));
 
 		// W1: weights from input to hidden layer [inputSize x hiddenSize]
-		this.w1 = [];
-		for (let i = 0; i < this.inputSize; i++) {
-			this.w1[i] = [];
-			for (let j = 0; j < this.hiddenSize; j++) {
-				this.w1[i][j] = this._randomNormal() * scale1;
-			}
-		}
+		this.w1 = Matrix.random(this.inputSize, this.hiddenSize, 0, scale1);
 
-		// B1: biases for hidden layer [hiddenSize]
-		this.b1 = new Array(this.hiddenSize).fill(0);
+		// B1: biases for hidden layer [1 x hiddenSize]
+		this.b1 = Matrix.zeros(1, this.hiddenSize);
 
 		// W2: weights from hidden to output layer [hiddenSize x outputSize]
-		this.w2 = [];
-		for (let i = 0; i < this.hiddenSize; i++) {
-			this.w2[i] = [];
-			for (let j = 0; j < this.outputSize; j++) {
-				this.w2[i][j] = this._randomNormal() * scale2;
-			}
-		}
+		this.w2 = Matrix.random(this.hiddenSize, this.outputSize, 0, scale2);
 
-		// B2: biases for output layer [outputSize]
-		this.b2 = new Array(this.outputSize).fill(0);
-	}
+		// B2: biases for output layer [1 x outputSize]
+		this.b2 = Matrix.zeros(1, this.outputSize);
 
-	/**
-	 * Generate normally distributed random number using Box-Muller transform.
-	 * @private
-	 * @returns {number} Random number from standard normal distribution
-	 */
-	_randomNormal() {
-		// Box-Muller transform for normal distribution
-		if (this._hasSpareRandom) {
-			this._hasSpareRandom = false;
-			return this._spareRandom;
-		}
-
-		this._hasSpareRandom = true;
-		const u = Math.random();
-		const v = Math.random();
-		const mag = Math.sqrt(-2.0 * Math.log(u));
-		this._spareRandom = mag * Math.cos(2.0 * Math.PI * v);
-		return mag * Math.sin(2.0 * Math.PI * v);
+		// Pre-allocate working matrices to avoid allocations during forward/backward pass
+		this._hiddenMatrix = Matrix.zeros(1, this.hiddenSize);
+		this._outputMatrix = Matrix.zeros(1, this.outputSize);
+		this._inputMatrix = Matrix.zeros(1, this.inputSize);
 	}
 
 	/**
@@ -163,38 +143,37 @@ export class NeuralNetwork extends Model {
 			);
 		}
 
+		// Convert input array to matrix (reuse pre-allocated matrix)
+		for (let i = 0; i < this.inputSize; i++) {
+			this._inputMatrix.set(0, i, input[i]);
+		}
+
 		// Forward pass: input -> hidden -> output
-		return this._forwardPass(input);
+		const output = this._forwardPass(this._inputMatrix);
+
+		// Convert output matrix back to array
+		return output.getRow(0).toFlatArray();
 	}
 
 	/**
-	 * Optimized forward pass implementation.
+	 * Optimized forward pass implementation using Matrix operations.
 	 * @private
-	 * @param {Array<number>} input - Input vector
-	 * @returns {Array<number>} Output vector
+	 * @param {Matrix} inputMatrix - Input matrix (1 x inputSize)
+	 * @returns {Matrix} Output matrix (1 x outputSize)
 	 */
-	_forwardPass(input) {
-		// Input to hidden layer with ReLU activation
-		const hidden = new Array(this.hiddenSize);
-		for (let j = 0; j < this.hiddenSize; j++) {
-			let sum = this.b1[j];
-			for (let k = 0; k < this.inputSize; k++) {
-				sum += input[k] * this.w1[k][j];
-			}
-			hidden[j] = Math.max(0, sum); // ReLU activation
-		}
+	_forwardPass(inputMatrix) {
+		// Input to hidden layer: hidden = input * w1 + b1
+		inputMatrix.multiply(this.w1, this._hiddenMatrix);
+		this._hiddenMatrix.addInPlace(this.b1);
 
-		// Hidden to output layer (linear activation)
-		const output = new Array(this.outputSize);
-		for (let j = 0; j < this.outputSize; j++) {
-			let sum = this.b2[j];
-			for (let k = 0; k < this.hiddenSize; k++) {
-				sum += hidden[k] * this.w2[k][j];
-			}
-			output[j] = sum;
-		}
+		// Apply ReLU activation
+		this._hiddenMatrix.reluInPlace();
 
-		return output;
+		// Hidden to output layer: output = hidden * w2 + b2
+		this._hiddenMatrix.multiply(this.w2, this._outputMatrix);
+		this._outputMatrix.addInPlace(this.b2);
+
+		return this._outputMatrix;
 	}
 
 	/**
@@ -221,11 +200,28 @@ export class NeuralNetwork extends Model {
 			);
 		}
 
+		// Convert arrays to matrices
+		for (let i = 0; i < this.inputSize; i++) {
+			this._inputMatrix.set(0, i, input[i]);
+		}
+
+		const targetMatrix = new Matrix(1, this.outputSize, target);
+
 		// Forward pass
-		const { hidden, output } = this._forwardPassWithHidden(input);
+		const hiddenMatrix = Matrix.zeros(1, this.hiddenSize);
+		const outputMatrix = this._forwardPassWithHidden(
+			this._inputMatrix,
+			hiddenMatrix,
+		);
 
 		// Backward pass
-		this._backwardPass(input, target, hidden, output, learningRate);
+		this._backwardPass(
+			this._inputMatrix,
+			targetMatrix,
+			hiddenMatrix,
+			outputMatrix,
+			learningRate,
+		);
 
 		// Mark as trained
 		if (!this._trained) {
@@ -236,108 +232,131 @@ export class NeuralNetwork extends Model {
 	/**
 	 * Forward pass that returns intermediate hidden layer values.
 	 * @private
-	 * @param {Array<number>} input - Input vector
-	 * @returns {{hidden: Array<number>, output: Array<number>}} Hidden and output layer values
+	 * @param {Matrix} inputMatrix - Input matrix
+	 * @param {Matrix} hiddenMatrix - Pre-allocated hidden matrix to write to
+	 * @returns {Matrix} Output matrix
 	 */
-	_forwardPassWithHidden(input) {
-		// Input to hidden layer with ReLU activation
-		const hidden = new Array(this.hiddenSize);
-		for (let j = 0; j < this.hiddenSize; j++) {
-			let sum = this.b1[j];
-			for (let k = 0; k < this.inputSize; k++) {
-				sum += input[k] * this.w1[k][j];
-			}
-			hidden[j] = Math.max(0, sum); // ReLU activation
-		}
+	_forwardPassWithHidden(inputMatrix, hiddenMatrix) {
+		// Input to hidden layer: hidden = input * w1 + b1
+		inputMatrix.multiply(this.w1, hiddenMatrix);
+		hiddenMatrix.addInPlace(this.b1);
+		hiddenMatrix.reluInPlace();
 
-		// Hidden to output layer (linear activation)
-		const output = new Array(this.outputSize);
-		for (let j = 0; j < this.outputSize; j++) {
-			let sum = this.b2[j];
-			for (let k = 0; k < this.hiddenSize; k++) {
-				sum += hidden[k] * this.w2[k][j];
-			}
-			output[j] = sum;
-		}
+		// Hidden to output layer: output = hidden * w2 + b2
+		const outputMatrix = Matrix.zeros(1, this.outputSize);
+		hiddenMatrix.multiply(this.w2, outputMatrix);
+		outputMatrix.addInPlace(this.b2);
 
-		return { hidden, output };
+		return outputMatrix;
 	}
 
 	/**
-	 * Backpropagation algorithm to update weights and biases.
+	 * Backpropagation algorithm to update weights and biases using Matrix operations.
 	 * @private
-	 * @param {Array<number>} input - Input vector
-	 * @param {Array<number>} target - Target output vector
-	 * @param {Array<number>} hidden - Hidden layer activations
-	 * @param {Array<number>} output - Output layer activations
+	 * @param {Matrix} inputMatrix - Input matrix
+	 * @param {Matrix} targetMatrix - Target output matrix
+	 * @param {Matrix} hiddenMatrix - Hidden layer activations
+	 * @param {Matrix} outputMatrix - Output layer activations
 	 * @param {number} learningRate - Learning rate
 	 */
-	_backwardPass(input, target, hidden, output, learningRate) {
+	_backwardPass(
+		inputMatrix,
+		targetMatrix,
+		hiddenMatrix,
+		outputMatrix,
+		learningRate,
+	) {
 		// Clamp learning rate to prevent numerical instability
 		const clampedLR = Math.max(-10, Math.min(10, learningRate));
 
 		// Calculate output layer gradients (error = output - target)
-		const outputGrad = new Array(this.outputSize);
-		for (let j = 0; j < this.outputSize; j++) {
-			outputGrad[j] = output[j] - target[j];
-			// Clamp gradients to prevent explosion
-			outputGrad[j] = Math.max(-100, Math.min(100, outputGrad[j]));
+		const outputGrad = outputMatrix.subtract(targetMatrix);
+
+		// Clamp output gradients
+		for (let i = 0; i < outputGrad.size; i++) {
+			outputGrad.data[i] = Math.max(-100, Math.min(100, outputGrad.data[i]));
 		}
 
 		// Calculate hidden layer gradients (backpropagate through ReLU)
-		const hiddenGrad = new Array(this.hiddenSize);
-		for (let j = 0; j < this.hiddenSize; j++) {
-			hiddenGrad[j] = 0;
-			if (hidden[j] > 0) {
-				// ReLU derivative: 1 if x > 0, else 0
-				for (let k = 0; k < this.outputSize; k++) {
-					hiddenGrad[j] += outputGrad[k] * this.w2[j][k];
-				}
-				// Clamp hidden gradients to prevent explosion
-				hiddenGrad[j] = Math.max(-100, Math.min(100, hiddenGrad[j]));
+		// hiddenGrad = outputGrad * w2^T, but only where hidden > 0 (ReLU derivative)
+		const w2Transposed = this.w2.transpose();
+		const hiddenGrad = outputGrad.multiply(w2Transposed);
+
+		// Apply ReLU derivative (zero out gradients where hidden <= 0)
+		for (let i = 0; i < this.hiddenSize; i++) {
+			if (hiddenMatrix.get(0, i) <= 0) {
+				hiddenGrad.set(0, i, 0);
 			}
 		}
 
-		// Update W2 (hidden to output weights)
-		for (let j = 0; j < this.hiddenSize; j++) {
-			for (let k = 0; k < this.outputSize; k++) {
-				const update = clampedLR * outputGrad[k] * hidden[j];
-				if (Number.isFinite(update)) {
-					this.w2[j][k] -= update;
-					// Clamp weights to prevent overflow
-					this.w2[j][k] = Math.max(-1000, Math.min(1000, this.w2[j][k]));
-				}
-			}
+		// Clamp hidden gradients
+		for (let i = 0; i < hiddenGrad.size; i++) {
+			hiddenGrad.data[i] = Math.max(-100, Math.min(100, hiddenGrad.data[i]));
 		}
 
-		// Update W1 (input to hidden weights)
-		for (let j = 0; j < this.inputSize; j++) {
-			for (let k = 0; k < this.hiddenSize; k++) {
-				const update = clampedLR * hiddenGrad[k] * input[j];
-				if (Number.isFinite(update)) {
-					this.w1[j][k] -= update;
-					// Clamp weights to prevent overflow
-					this.w1[j][k] = Math.max(-1000, Math.min(1000, this.w1[j][k]));
-				}
-			}
+		// Update W2: w2 -= learningRate * hidden^T * outputGrad
+		const hiddenTransposed = hiddenMatrix.transpose();
+		const w2Update = hiddenTransposed.multiply(outputGrad);
+		w2Update.scaleInPlace(-clampedLR);
+		this.w2.addInPlace(w2Update);
+
+		// Update W1: w1 -= learningRate * input^T * hiddenGrad
+		const inputTransposed = inputMatrix.transpose();
+		const w1Update = inputTransposed.multiply(hiddenGrad);
+		w1Update.scaleInPlace(-clampedLR);
+		this.w1.addInPlace(w1Update);
+
+		// Update B2: b2 -= learningRate * outputGrad
+		const b2Update = outputGrad.clone();
+		b2Update.scaleInPlace(-clampedLR);
+		this.b2.addInPlace(b2Update);
+
+		// Update B1: b1 -= learningRate * hiddenGrad
+		const b1Update = hiddenGrad.clone();
+		b1Update.scaleInPlace(-clampedLR);
+		this.b1.addInPlace(b1Update);
+
+		// Clamp weights to prevent overflow
+		this._clampWeights();
+	}
+
+	/**
+	 * Clamp all weights and biases to prevent overflow.
+	 * @private
+	 */
+	_clampWeights() {
+		const clampRange = 1000;
+
+		// Clamp W1
+		for (let i = 0; i < this.w1.size; i++) {
+			this.w1.data[i] = Math.max(
+				-clampRange,
+				Math.min(clampRange, this.w1.data[i]),
+			);
 		}
 
-		// Update B2 (output biases)
-		for (let j = 0; j < this.outputSize; j++) {
-			const update = clampedLR * outputGrad[j];
-			if (Number.isFinite(update)) {
-				this.b2[j] -= update;
-				this.b2[j] = Math.max(-1000, Math.min(1000, this.b2[j]));
-			}
+		// Clamp W2
+		for (let i = 0; i < this.w2.size; i++) {
+			this.w2.data[i] = Math.max(
+				-clampRange,
+				Math.min(clampRange, this.w2.data[i]),
+			);
 		}
 
-		// Update B1 (hidden biases)
-		for (let j = 0; j < this.hiddenSize; j++) {
-			const update = clampedLR * hiddenGrad[j];
-			if (Number.isFinite(update)) {
-				this.b1[j] -= update;
-				this.b1[j] = Math.max(-1000, Math.min(1000, this.b1[j]));
-			}
+		// Clamp B1
+		for (let i = 0; i < this.b1.size; i++) {
+			this.b1.data[i] = Math.max(
+				-clampRange,
+				Math.min(clampRange, this.b1.data[i]),
+			);
+		}
+
+		// Clamp B2
+		for (let i = 0; i < this.b2.size; i++) {
+			this.b2.data[i] = Math.max(
+				-clampRange,
+				Math.min(clampRange, this.b2.data[i]),
+			);
 		}
 	}
 
@@ -483,8 +502,25 @@ export class NeuralNetwork extends Model {
 	}
 
 	/**
+	 * Serialize neural network to JSON including Matrix weights.
+	 *
+	 * @returns {Object} JSON representation with Matrix data
+	 */
+	toJSON() {
+		const baseJSON = /** @type {any} */ (super.toJSON());
+
+		// Convert Matrix objects to serializable format
+		baseJSON.w1 = this.w1.toJSON();
+		baseJSON.b1 = this.b1.toJSON();
+		baseJSON.w2 = this.w2.toJSON();
+		baseJSON.b2 = this.b2.toJSON();
+
+		return baseJSON;
+	}
+
+	/**
 	 * Create a new NeuralNetwork instance from serialized state.
-	 * Restores the complete network including all weights and biases.
+	 * Restores the complete network including all Matrix weights.
 	 *
 	 * @param {Record<string, any>} json - The serialized network state
 	 * @returns {NeuralNetwork} A new NeuralNetwork instance
@@ -513,28 +549,25 @@ export class NeuralNetwork extends Model {
 			jsonAny.outputSize,
 		);
 
-		// Restore all properties from JSON
+		// Restore Matrix weights from JSON
+		if (jsonAny.w1) {
+			result.w1 = Matrix.fromJSON(jsonAny.w1);
+		}
+		if (jsonAny.b1) {
+			result.b1 = Matrix.fromJSON(jsonAny.b1);
+		}
+		if (jsonAny.w2) {
+			result.w2 = Matrix.fromJSON(jsonAny.w2);
+		}
+		if (jsonAny.b2) {
+			result.b2 = Matrix.fromJSON(jsonAny.b2);
+		}
+
+		// Restore other properties from JSON
 		for (const [key, value] of Object.entries(json)) {
-			if (key !== "_serializedAt") {
+			if (key !== "_serializedAt" && !["w1", "b1", "w2", "b2"].includes(key)) {
 				/** @type {any} */ (result)[key] = value;
 			}
-		}
-
-		// Validate network structure after deserialization
-		if (!result.w1 || !result.w2 || !result.b1 || !result.b2) {
-			throw new Error("Invalid network structure: missing weights or biases");
-		}
-
-		// Validate dimensions match declared sizes
-		if (
-			result.w1.length !== result.inputSize ||
-			result.w1[0].length !== result.hiddenSize ||
-			result.w2.length !== result.hiddenSize ||
-			result.w2[0].length !== result.outputSize ||
-			result.b1.length !== result.hiddenSize ||
-			result.b2.length !== result.outputSize
-		) {
-			throw new Error("Invalid network structure: dimension mismatch");
 		}
 
 		return result;
