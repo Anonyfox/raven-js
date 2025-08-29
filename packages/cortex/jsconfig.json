@@ -11,7 +11,8 @@
     "index.js",
     "index.test.js",
     "learning/**/*.js",
-    "structures/**/*.js"
+    "structures/**/*.js",
+    "temporal/**/*.js"
   ],
   "exclude": ["**/*.test.js"]
 }
