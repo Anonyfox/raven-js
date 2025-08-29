@@ -356,20 +356,18 @@ export function ssr(fn, options = {}) {
 				return orig(absolute, opts);
 			};
 
-			// Schedule delayed restoration for deferred effects
-			const timeoutId = setTimeout(() => {
-				globalThis.fetch = orig;
-			}, 0);
-
+			// Don't restore fetch immediately - let deferred effects run first
 			try {
 				const result = /** @type {any} */ (await fn.apply(this, args));
-				// Clear timeout since we're restoring immediately
-				clearTimeout(timeoutId);
-				globalThis.fetch = orig;
+
+				// Wait for the next flush cycle to complete before restoring fetch
+				// This ensures deferred effects get to use the SSR cache
+				afterFlush().then(() => {
+					globalThis.fetch = orig;
+				});
+
 				return result;
 			} catch (error) {
-				// Clear timeout and restore on error
-				clearTimeout(timeoutId);
 				globalThis.fetch = orig;
 				throw error;
 			}
