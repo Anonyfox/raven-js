@@ -68,12 +68,12 @@ describe("createPackageOverviewHandler", () => {
 		assert(typeof handler === "function", "Returns function");
 	});
 
-	test("generates successful HTML response", () => {
+	test("generates successful HTML response", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createPackageOverviewHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Response status
 		assert.strictEqual(ctx.responseStatusCode, 200, "Sets 200 status code");
@@ -99,7 +99,7 @@ describe("createPackageOverviewHandler", () => {
 		);
 	});
 
-	test("includes package information in response", () => {
+	test("includes package information in response", async () => {
 		const mockPackage = createMockPackage({
 			name: "awesome-package",
 			version: "2.1.0",
@@ -108,7 +108,7 @@ describe("createPackageOverviewHandler", () => {
 		const handler = createPackageOverviewHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Check package information is in HTML
 		assert(
@@ -122,14 +122,14 @@ describe("createPackageOverviewHandler", () => {
 		);
 	});
 
-	test("processes README markdown content", () => {
+	test("processes README markdown content", async () => {
 		const mockPackage = createMockPackage({
 			readme: "# Hello World\n\nThis is **bold** text.",
 		});
 		const handler = createPackageOverviewHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Check markdown is converted to HTML
 		assert(ctx.responseBody.includes("<h1>"), "Converts markdown headers");
@@ -137,7 +137,7 @@ describe("createPackageOverviewHandler", () => {
 		assert(ctx.responseBody.includes("Hello World"), "Contains README content");
 	});
 
-	test("includes module navigation", () => {
+	test("includes module navigation", async () => {
 		const mockPackage = createMockPackage({
 			modules: [
 				{
@@ -163,7 +163,7 @@ describe("createPackageOverviewHandler", () => {
 		const handler = createPackageOverviewHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Check module navigation
 		assert(
@@ -175,7 +175,7 @@ describe("createPackageOverviewHandler", () => {
 		assert(ctx.responseBody.includes("class"), "Contains class type");
 	});
 
-	test("displays package statistics", () => {
+	test("displays package statistics", async () => {
 		const mockPackage = createMockPackage();
 		mockPackage.modules = [
 			{
@@ -203,7 +203,7 @@ describe("createPackageOverviewHandler", () => {
 		const handler = createPackageOverviewHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Check statistics in response
 		assert(ctx.responseBody.includes("1"), "Contains module count");
@@ -211,7 +211,7 @@ describe("createPackageOverviewHandler", () => {
 		assert(ctx.responseBody.includes("5"), "Contains total entity count");
 	});
 
-	test("handles package without modules", () => {
+	test("handles package without modules", async () => {
 		const mockPackage = createMockPackage({
 			modules: [],
 			allEntities: [],
@@ -221,7 +221,7 @@ describe("createPackageOverviewHandler", () => {
 		const handler = createPackageOverviewHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		assert.strictEqual(ctx.responseStatusCode, 200, "Still returns 200");
 		assert(
@@ -231,14 +231,14 @@ describe("createPackageOverviewHandler", () => {
 		assert(ctx.responseBody.includes("0"), "Shows zero statistics");
 	});
 
-	test("handles package without README", () => {
+	test("handles package without README", async () => {
 		const mockPackage = createMockPackage({
 			readme: "",
 		});
 		const handler = createPackageOverviewHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		assert.strictEqual(ctx.responseStatusCode, 200, "Still returns 200");
 		assert(
@@ -247,13 +247,13 @@ describe("createPackageOverviewHandler", () => {
 		);
 	});
 
-	test("handles data extraction errors gracefully", () => {
+	test("handles data extraction errors gracefully", async () => {
 		// Create an invalid package that will cause extraction to fail
 		const invalidPackage = null;
 		const handler = createPackageOverviewHandler(invalidPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Should return 500 error
 		assert.strictEqual(ctx.responseStatusCode, 500, "Returns 500 status code");
@@ -268,7 +268,7 @@ describe("createPackageOverviewHandler", () => {
 		);
 	});
 
-	test("handles template rendering errors gracefully", () => {
+	test("handles template rendering errors gracefully", async () => {
 		// Create package that will pass extraction but potentially fail rendering
 		const mockPackage = createMockPackage();
 		const handler = createPackageOverviewHandler(mockPackage);
@@ -302,12 +302,12 @@ describe("createPackageOverviewHandler", () => {
 		);
 	});
 
-	test("sets appropriate cache headers", () => {
+	test("sets appropriate cache headers", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createPackageOverviewHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		assert.strictEqual(
 			ctx.responseHeaders.get("Cache-Control"),
@@ -316,7 +316,7 @@ describe("createPackageOverviewHandler", () => {
 		);
 	});
 
-	test("handles edge case package data", () => {
+	test("handles edge case package data", async () => {
 		const mockPackage = createMockPackage({
 			name: "",
 			version: null,
@@ -326,7 +326,7 @@ describe("createPackageOverviewHandler", () => {
 		const handler = createPackageOverviewHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Should handle gracefully
 		assert.strictEqual(ctx.responseStatusCode, 200, "Handles edge case data");

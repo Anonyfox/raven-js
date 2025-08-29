@@ -30,7 +30,7 @@ export function createSitemapHandler(packageInstance, options = {}) {
 	 * Handle sitemap.xml requests
 	 * @param {import('@raven-js/wings').Context} ctx - Wings request context
 	 */
-	return function sitemapHandler(ctx) {
+	return async function sitemapHandler(ctx) {
 		try {
 			// Extract sitemap data from package
 			const data = extractSitemapData(packageInstance, baseUrl);
@@ -46,7 +46,7 @@ export function createSitemapHandler(packageInstance, options = {}) {
 			ctx.responseBody = xmlContent;
 		} catch (error) {
 			console.error("Sitemap generation error:", error);
-			ctx.error(`Failed to generate sitemap: ${error.message}`);
+			await ctx.error(`Failed to generate sitemap: ${error.message}`);
 		}
 	};
 }

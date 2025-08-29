@@ -27,12 +27,12 @@ export function createModuleOverviewHandler(packageInstance) {
 	 * Handle module overview page requests
 	 * @param {import('@raven-js/wings').Context} ctx - Wings request context
 	 */
-	return function moduleOverviewHandler(ctx) {
+	return async function moduleOverviewHandler(ctx) {
 		try {
 			// Extract and validate module name parameter
 			const moduleName = ctx.pathParams?.moduleName;
 			if (!moduleName || typeof moduleName !== "string") {
-				return ctx.error("Missing or invalid module name parameter");
+				return await ctx.error("Missing or invalid module name parameter");
 			}
 
 			// Validate module name format (basic security check)
@@ -41,7 +41,7 @@ export function createModuleOverviewHandler(packageInstance) {
 				moduleName.includes("//") ||
 				moduleName.startsWith("/")
 			) {
-				return ctx.error("Invalid module name format");
+				return await ctx.error("Invalid module name format");
 			}
 
 			// Extract data for the specific module
@@ -51,17 +51,17 @@ export function createModuleOverviewHandler(packageInstance) {
 			const html = moduleOverviewTemplate(/** @type {any} */ (data));
 
 			// Send HTML response with caching
-			ctx.html(html);
+			await ctx.html(html);
 			ctx.responseHeaders.set("Cache-Control", "public, max-age=3600");
 		} catch (error) {
 			// Handle module not found specifically
 			if (error.message.includes("not found")) {
-				return ctx.notFound(`Module not found: ${error.message}`);
+				return await ctx.notFound(`Module not found: ${error.message}`);
 			}
 
 			// Handle other errors as internal server errors
 			console.error("Module overview generation error:", error);
-			ctx.error(`Failed to generate module overview: ${error.message}`);
+			await ctx.error(`Failed to generate module overview: ${error.message}`);
 		}
 	};
 }

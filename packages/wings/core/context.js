@@ -1125,17 +1125,25 @@ export class Context {
 	 * It automatically sets the content-type header and calculates the
 	 * content-length for proper HTTP compliance.
 	 *
+	 * **Promise Support**: If data is a promise, it will be awaited and the resolved
+	 * value will be used as the response body. This enables seamless async content
+	 * generation without manual await calls in handler code.
+	 *
 	 * **Note**: Falsy values (null, undefined, 0, false) are converted
 	 * to empty strings to ensure consistent behavior.
 	 *
-	 * @param {string} data - The text content to send
-	 * @returns {Context} The Context instance for method chaining
+	 * @param {string|Promise<string>} data - The text content to send or a promise that resolves to text content
+	 * @returns {Promise<Context>} The Context instance for method chaining
 	 *
 	 * @example
 	 * ```javascript
 	 * // Send simple text response
 	 * ctx.text('Hello, World!');
 	 * // Result: 200 OK, Content-Type: text/plain, Content-Length: 13
+	 *
+	 * // Send async text response
+	 * await ctx.text(fetchDataFromAPI());
+	 * // Automatically awaits the promise and sends the result
 	 *
 	 * // Send empty text response
 	 * ctx.text('');
@@ -1145,15 +1153,18 @@ export class Context {
 	 * ctx.text(null); // Sends empty string
 	 * ctx.text(0); // Sends empty string
 	 *
-	 * // Method chaining
-	 * ctx.text('Success')
-	 *   .responseHeaders.set('x-custom', 'value');
+	 * // Method chaining with promises
+	 * await ctx.text(Promise.resolve('Success'));
+	 * ctx.responseHeaders.set('x-custom', 'value');
 	 * ```
 	 */
-	text(data) {
+	async text(data) {
+		// Await data if it's a promise
+		const resolvedData = await data;
+
 		this.responseStatusCode = STATUS_CODES.OK;
 		this.responseHeaders.set(HEADER_NAMES.CONTENT_TYPE, MIME_TYPES.TEXT_PLAIN);
-		this.#setResponseBodyWithCache(data);
+		this.#setResponseBodyWithCache(resolvedData);
 		this.responseHeaders.set(
 			HEADER_NAMES.CONTENT_LENGTH,
 			this.#getResponseBodyByteLength(),
@@ -1168,11 +1179,15 @@ export class Context {
 	 * It automatically sets the content-type header and calculates the
 	 * content-length for proper HTTP compliance.
 	 *
+	 * **Promise Support**: If data is a promise, it will be awaited and the resolved
+	 * value will be used as the response body. This enables seamless async HTML
+	 * generation for templates and dynamic content.
+	 *
 	 * **Note**: Falsy values (null, undefined, 0, false) are converted
 	 * to empty strings to ensure consistent behavior.
 	 *
-	 * @param {string} data - The HTML content to send
-	 * @returns {Context} The Context instance for method chaining
+	 * @param {string|Promise<string>} data - The HTML content to send or a promise that resolves to HTML content
+	 * @returns {Promise<Context>} The Context instance for method chaining
 	 *
 	 * @example
 	 * ```javascript
@@ -1180,19 +1195,26 @@ export class Context {
 	 * ctx.html('<h1>Welcome</h1><p>Hello, World!</p>');
 	 * // Result: 200 OK, Content-Type: text/html, Content-Length: 35
 	 *
+	 * // Send async HTML response
+	 * await ctx.html(renderTemplate('homepage', { user }));
+	 * // Automatically awaits the template rendering
+	 *
 	 * // Send empty HTML response
 	 * ctx.html('');
 	 * // Result: 200 OK, Content-Type: text/html, Content-Length: 0
 	 *
-	 * // Method chaining with additional headers
-	 * ctx.html('<html><body>Success</body></html>')
-	 *   .responseHeaders.set('cache-control', 'no-cache');
+	 * // Method chaining with promises
+	 * await ctx.html(Promise.resolve('<html><body>Success</body></html>'));
+	 * ctx.responseHeaders.set('cache-control', 'no-cache');
 	 * ```
 	 */
-	html(data) {
+	async html(data) {
+		// Await data if it's a promise
+		const resolvedData = await data;
+
 		this.responseStatusCode = STATUS_CODES.OK;
 		this.responseHeaders.set(HEADER_NAMES.CONTENT_TYPE, MIME_TYPES.TEXT_HTML);
-		this.#setResponseBodyWithCache(data);
+		this.#setResponseBodyWithCache(resolvedData);
 		this.responseHeaders.set(
 			HEADER_NAMES.CONTENT_LENGTH,
 			this.#getResponseBodyByteLength(),
@@ -1207,17 +1229,25 @@ export class Context {
 	 * It automatically sets the content-type header and calculates the
 	 * content-length for proper HTTP compliance.
 	 *
+	 * **Promise Support**: If data is a promise, it will be awaited and the resolved
+	 * value will be used as the response body. This enables seamless async XML
+	 * generation for feeds, API responses, and dynamic XML content.
+	 *
 	 * **Note**: Falsy values (null, undefined, 0, false) are converted
 	 * to empty strings to ensure consistent behavior.
 	 *
-	 * @param {string} data - The XML content to send
-	 * @returns {Context} The Context instance for method chaining
+	 * @param {string|Promise<string>} data - The XML content to send or a promise that resolves to XML content
+	 * @returns {Promise<Context>} The Context instance for method chaining
 	 *
 	 * @example
 	 * ```javascript
 	 * // Send XML response
 	 * ctx.xml('<root><item>value</item></root>');
 	 * // Result: 200 OK, Content-Type: application/xml, Content-Length: 28
+	 *
+	 * // Send async XML response
+	 * await ctx.xml(generateRSSFeed(articles));
+	 * // Automatically awaits the feed generation
 	 *
 	 * // Send RSS feed
 	 * const rss = `<?xml version="1.0"?>
@@ -1229,18 +1259,21 @@ export class Context {
 	 * </rss>`;
 	 * ctx.xml(rss);
 	 *
-	 * // Method chaining
-	 * ctx.xml('<response>success</response>')
-	 *   .responseHeaders.set('x-api-version', '1.0');
+	 * // Method chaining with promises
+	 * await ctx.xml(Promise.resolve('<response>success</response>'));
+	 * ctx.responseHeaders.set('x-api-version', '1.0');
 	 * ```
 	 */
-	xml(data) {
+	async xml(data) {
+		// Await data if it's a promise
+		const resolvedData = await data;
+
 		this.responseStatusCode = STATUS_CODES.OK;
 		this.responseHeaders.set(
 			HEADER_NAMES.CONTENT_TYPE,
 			MIME_TYPES.APPLICATION_XML,
 		);
-		this.#setResponseBodyWithCache(data);
+		this.#setResponseBodyWithCache(resolvedData);
 		this.responseHeaders.set(
 			HEADER_NAMES.CONTENT_LENGTH,
 			this.#getResponseBodyByteLength(),
@@ -1255,14 +1288,18 @@ export class Context {
 	 * It automatically serializes the data to JSON, sets the content-type
 	 * header, and calculates the content-length for proper HTTP compliance.
 	 *
+	 * **Promise Support**: If data is a promise, it will be awaited and the resolved
+	 * value will be used for JSON serialization. This enables seamless async API
+	 * responses from database queries, external API calls, and computed data.
+	 *
 	 * **Error Handling**: If the data contains circular references or
 	 * other non-serializable values, JSON.stringify() will throw a TypeError.
 	 *
 	 * **Note**: Undefined values in objects are omitted from the JSON output
 	 * as per JSON specification.
 	 *
-	 * @param {Object|Array<*>} data - The data to serialize as JSON
-	 * @returns {Context} The Context instance for method chaining
+	 * @param {Object|Array<*>|Promise<Object|Array<*>>} data - The data to serialize as JSON or a promise that resolves to serializable data
+	 * @returns {Promise<Context>} The Context instance for method chaining
 	 *
 	 * @throws {TypeError} When data contains circular references or non-serializable values
 	 *
@@ -1272,6 +1309,10 @@ export class Context {
 	 * ctx.json({ success: true, message: 'Hello World' });
 	 * // Result: 200 OK, Content-Type: application/json
 	 * // Body: {"success":true,"message":"Hello World"}
+	 *
+	 * // Send async JSON response
+	 * await ctx.json(fetchUserFromDatabase(userId));
+	 * // Automatically awaits the database query
 	 *
 	 * // Send JSON array
 	 * ctx.json([1, 2, 3, 4, 5]);
@@ -1295,9 +1336,9 @@ export class Context {
 	 * ctx.json({ name: 'John', age: undefined, active: true });
 	 * // Result: {"name":"John","active":true}
 	 *
-	 * // Method chaining
-	 * ctx.json({ status: 'success' })
-	 *   .responseHeaders.set('x-api-version', '1.0');
+	 * // Method chaining with promises
+	 * await ctx.json(Promise.resolve({ status: 'success' }));
+	 * ctx.responseHeaders.set('x-api-version', '1.0');
 	 *
 	 * // Error case - circular reference
 	 * const obj = { name: 'test' };
@@ -1309,13 +1350,16 @@ export class Context {
 	 * }
 	 * ```
 	 */
-	json(data) {
+	async json(data) {
+		// Await data if it's a promise
+		const resolvedData = await data;
+
 		this.responseStatusCode = STATUS_CODES.OK;
 		this.responseHeaders.set(
 			HEADER_NAMES.CONTENT_TYPE,
 			MIME_TYPES.APPLICATION_JSON,
 		);
-		this.#setResponseBodyWithCache(JSON.stringify(data));
+		this.#setResponseBodyWithCache(JSON.stringify(resolvedData));
 		this.responseHeaders.set(
 			HEADER_NAMES.CONTENT_LENGTH,
 			this.#getResponseBodyByteLength(),
@@ -1330,17 +1374,25 @@ export class Context {
 	 * It automatically sets the content-type header and calculates the
 	 * content-length for proper HTTP compliance.
 	 *
+	 * **Promise Support**: If data is a promise, it will be awaited and the resolved
+	 * value will be used as the response body. This enables seamless async JavaScript
+	 * generation for JSONP callbacks, dynamic modules, and computed scripts.
+	 *
 	 * **Note**: Falsy values (null, undefined, 0, false) are converted
 	 * to empty strings to ensure consistent behavior.
 	 *
-	 * @param {string} data - The JavaScript code to send
-	 * @returns {Context} The Context instance for method chaining
+	 * @param {string|Promise<string>} data - The JavaScript code to send or a promise that resolves to JavaScript code
+	 * @returns {Promise<Context>} The Context instance for method chaining
 	 *
 	 * @example
 	 * ```javascript
 	 * // Send JavaScript response
 	 * ctx.js('console.log("Hello from server!");');
 	 * // Result: 200 OK, Content-Type: application/javascript, Content-Length: 32
+	 *
+	 * // Send async JavaScript response
+	 * await ctx.js(generateDynamicScript(userPreferences));
+	 * // Automatically awaits the script generation
 	 *
 	 * // Send JSONP response
 	 * const callback = ctx.queryParams.get('callback') || 'callback';
@@ -1350,18 +1402,21 @@ export class Context {
 	 * // Send module response
 	 * ctx.js('export const version = "1.0.0";');
 	 *
-	 * // Method chaining
-	 * ctx.js('alert("Success!");')
-	 *   .responseHeaders.set('cache-control', 'no-cache');
+	 * // Method chaining with promises
+	 * await ctx.js(Promise.resolve('alert("Success!");'));
+	 * ctx.responseHeaders.set('cache-control', 'no-cache');
 	 * ```
 	 */
-	js(data) {
+	async js(data) {
+		// Await data if it's a promise
+		const resolvedData = await data;
+
 		this.responseStatusCode = STATUS_CODES.OK;
 		this.responseHeaders.set(
 			HEADER_NAMES.CONTENT_TYPE,
 			MIME_TYPES.APPLICATION_JAVASCRIPT,
 		);
-		this.#setResponseBodyWithCache(data);
+		this.#setResponseBodyWithCache(resolvedData);
 		this.responseHeaders.set(
 			HEADER_NAMES.CONTENT_LENGTH,
 			this.#getResponseBodyByteLength(),
@@ -1376,6 +1431,10 @@ export class Context {
 	 * header and an appropriate status code. The client will automatically
 	 * follow the redirect to the new URL.
 	 *
+	 * **Promise Support**: If url is a promise, it will be awaited and the resolved
+	 * value will be used as the redirect URL. This enables seamless async URL
+	 * generation for dynamic redirects based on computed paths or external services.
+	 *
 	 * **Common Status Codes**:
 	 * - 301: Permanent redirect (cached by browsers)
 	 * - 302: Temporary redirect (default)
@@ -1383,15 +1442,19 @@ export class Context {
 	 * - 307: Temporary redirect (preserves HTTP method)
 	 * - 308: Permanent redirect (preserves HTTP method)
 	 *
-	 * @param {string} url - The URL to redirect to (can be relative or absolute)
+	 * @param {string|Promise<string>} url - The URL to redirect to (can be relative or absolute) or a promise that resolves to a URL
 	 * @param {number} [status=302] - The HTTP status code for the redirect
-	 * @returns {Context} The Context instance for method chaining
+	 * @returns {Promise<Context>} The Context instance for method chaining
 	 *
 	 * @example
 	 * ```javascript
 	 * // Temporary redirect (default)
 	 * ctx.redirect('/new-page');
 	 * // Result: 302 Found, Location: /new-page
+	 *
+	 * // Async redirect
+	 * await ctx.redirect(generateRedirectUrl(userId));
+	 * // Automatically awaits the URL generation
 	 *
 	 * // Permanent redirect
 	 * ctx.redirect('/new-location', 301);
@@ -1407,14 +1470,17 @@ export class Context {
 	 *   // Result: 303 See Other, Location: /success
 	 * }
 	 *
-	 * // Method chaining
-	 * ctx.redirect('/dashboard')
-	 *   .responseHeaders.set('x-redirect-reason', 'authentication');
+	 * // Method chaining with promises
+	 * await ctx.redirect(Promise.resolve('/dashboard'));
+	 * ctx.responseHeaders.set('x-redirect-reason', 'authentication');
 	 * ```
 	 */
-	redirect(url, status = 302) {
+	async redirect(url, status = 302) {
+		// Await url if it's a promise
+		const resolvedUrl = await url;
+
 		this.responseStatusCode = status;
-		this.responseHeaders.set(HEADER_NAMES.LOCATION, url);
+		this.responseHeaders.set(HEADER_NAMES.LOCATION, resolvedUrl);
 		return this;
 	}
 
@@ -1425,11 +1491,15 @@ export class Context {
 	 * It automatically sets the status code to 404, content-type to text/plain,
 	 * and calculates the content-length for proper HTTP compliance.
 	 *
+	 * **Promise Support**: If message is a promise, it will be awaited and the resolved
+	 * value will be used as the error message. This enables seamless async error
+	 * message generation for contextual 404 responses with computed content.
+	 *
 	 * **Note**: Falsy values (null, undefined, 0, false) are converted
 	 * to empty strings to ensure consistent behavior.
 	 *
-	 * @param {string} [message="Not Found"] - Optional custom error message
-	 * @returns {Context} The Context instance for method chaining
+	 * @param {string|Promise<string>} [message="Not Found"] - Optional custom error message or a promise that resolves to an error message
+	 * @returns {Promise<Context>} The Context instance for method chaining
 	 *
 	 * @example
 	 * ```javascript
@@ -1437,6 +1507,10 @@ export class Context {
 	 * ctx.notFound();
 	 * // Result: 404 Not Found, Content-Type: text/plain
 	 * // Body: "Not Found"
+	 *
+	 * // Send async 404 message
+	 * await ctx.notFound(generateContextualNotFoundMessage(requestPath));
+	 * // Automatically awaits the message generation
 	 *
 	 * // Send custom 404 message
 	 * ctx.notFound('User not found');
@@ -1448,9 +1522,9 @@ export class Context {
 	 * // Result: 404 Not Found, Content-Type: text/plain
 	 * // Body: "" (empty string)
 	 *
-	 * // Method chaining
-	 * ctx.notFound('Resource not available')
-	 *   .responseHeaders.set('x-error-code', 'RESOURCE_404');
+	 * // Method chaining with promises
+	 * await ctx.notFound(Promise.resolve('Resource not available'));
+	 * ctx.responseHeaders.set('x-error-code', 'RESOURCE_404');
 	 *
 	 * // Common usage in route handlers
 	 * const user = await getUserById(ctx.pathParams.id);
@@ -1459,10 +1533,13 @@ export class Context {
 	 * }
 	 * ```
 	 */
-	notFound(message = MESSAGES.NOT_FOUND) {
+	async notFound(message = MESSAGES.NOT_FOUND) {
+		// Await message if it's a promise
+		const resolvedMessage = await message;
+
 		this.responseStatusCode = STATUS_CODES.NOT_FOUND;
 		this.responseHeaders.set(HEADER_NAMES.CONTENT_TYPE, MIME_TYPES.TEXT_PLAIN);
-		this.#setResponseBodyWithCache(message);
+		this.#setResponseBodyWithCache(resolvedMessage);
 		this.responseHeaders.set(
 			HEADER_NAMES.CONTENT_LENGTH,
 			this.#getResponseBodyByteLength(),
@@ -1477,11 +1554,15 @@ export class Context {
 	 * It automatically sets the status code to 500, content-type to text/plain,
 	 * and calculates the content-length for proper HTTP compliance.
 	 *
+	 * **Promise Support**: If message is a promise, it will be awaited and the resolved
+	 * value will be used as the error message. This enables seamless async error
+	 * message generation for contextual server error responses with computed content.
+	 *
 	 * **Note**: Falsy values (null, undefined, 0, false) are converted
 	 * to empty strings to ensure consistent behavior.
 	 *
-	 * @param {string} [message="Internal Server Error"] - Optional custom error message
-	 * @returns {Context} The Context instance for method chaining
+	 * @param {string|Promise<string>} [message="Internal Server Error"] - Optional custom error message or a promise that resolves to an error message
+	 * @returns {Promise<Context>} The Context instance for method chaining
 	 *
 	 * @example
 	 * ```javascript
@@ -1489,6 +1570,10 @@ export class Context {
 	 * ctx.error();
 	 * // Result: 500 Internal Server Error, Content-Type: text/plain
 	 * // Body: "Internal Server Error"
+	 *
+	 * // Send async 500 message
+	 * await ctx.error(generateDetailedErrorMessage(error, context));
+	 * // Automatically awaits the message generation
 	 *
 	 * // Send custom 500 message
 	 * ctx.error('Database connection failed');
@@ -1500,9 +1585,9 @@ export class Context {
 	 * // Result: 500 Internal Server Error, Content-Type: text/plain
 	 * // Body: "" (empty string)
 	 *
-	 * // Method chaining
-	 * ctx.error('Service temporarily unavailable')
-	 *   .responseHeaders.set('retry-after', '60');
+	 * // Method chaining with promises
+	 * await ctx.error(Promise.resolve('Service temporarily unavailable'));
+	 * ctx.responseHeaders.set('retry-after', '60');
 	 *
 	 * // Common usage in error handling
 	 * try {
@@ -1524,10 +1609,13 @@ export class Context {
 	 * });
 	 * ```
 	 */
-	error(message = MESSAGES.INTERNAL_SERVER_ERROR) {
+	async error(message = MESSAGES.INTERNAL_SERVER_ERROR) {
+		// Await message if it's a promise
+		const resolvedMessage = await message;
+
 		this.responseStatusCode = STATUS_CODES.INTERNAL_SERVER_ERROR;
 		this.responseHeaders.set(HEADER_NAMES.CONTENT_TYPE, MIME_TYPES.TEXT_PLAIN);
-		this.#setResponseBodyWithCache(message);
+		this.#setResponseBodyWithCache(resolvedMessage);
 		this.responseHeaders.set(
 			HEADER_NAMES.CONTENT_LENGTH,
 			this.#getResponseBodyByteLength(),

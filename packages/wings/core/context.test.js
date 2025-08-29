@@ -75,9 +75,9 @@ describe("Context", () => {
 	});
 
 	describe("response shortcuts", () => {
-		it("should set all response types", () => {
+		it("should set all response types", async () => {
 			// Text response
-			ctx.text("Hello World");
+			await ctx.text("Hello World");
 			assert.equal(ctx.responseStatusCode, 200);
 			assert.equal(ctx.responseHeaders.get("content-type"), "text/plain");
 			assert.equal(ctx.responseBody, "Hello World");
@@ -87,14 +87,14 @@ describe("Context", () => {
 			ctx = new Context("GET", url, headers);
 
 			// HTML response
-			ctx.html("<h1>Hello</h1>");
+			await ctx.html("<h1>Hello</h1>");
 			assert.equal(ctx.responseHeaders.get("content-type"), "text/html");
 
 			// Reset for next test
 			ctx = new Context("GET", url, headers);
 
 			// XML response
-			ctx.xml("<root><item>test</item></root>");
+			await ctx.xml("<root><item>test</item></root>");
 			assert.equal(ctx.responseHeaders.get("content-type"), "application/xml");
 
 			// Reset for next test
@@ -102,7 +102,7 @@ describe("Context", () => {
 
 			// JSON response
 			const data = { name: "test", status: "ok" };
-			ctx.json(data);
+			await ctx.json(data);
 			assert.equal(ctx.responseHeaders.get("content-type"), "application/json");
 			assert.equal(ctx.responseBody, JSON.stringify(data));
 
@@ -110,7 +110,7 @@ describe("Context", () => {
 			ctx = new Context("GET", url, headers);
 
 			// JavaScript response
-			ctx.js("console.log('test');");
+			await ctx.js("console.log('test');");
 			assert.equal(
 				ctx.responseHeaders.get("content-type"),
 				"application/javascript",
@@ -120,17 +120,18 @@ describe("Context", () => {
 			ctx = new Context("GET", url, headers);
 
 			// Redirect responses
-			ctx.redirect("/new-location");
+			await ctx.redirect("/new-location");
 			assert.equal(ctx.responseStatusCode, 302);
 			assert.equal(ctx.responseHeaders.get("location"), "/new-location");
 
-			ctx.redirect("/permanent", 301);
+			await ctx.redirect("/permanent", 301);
 			assert.equal(ctx.responseStatusCode, 301);
 		});
 
-		it("should support method chaining", () => {
+		it("should support method chaining", async () => {
 			// Test chaining with response methods
-			ctx.text("Hello World").responseHeaders.set("custom-header", "value");
+			const result = await ctx.text("Hello World");
+			result.responseHeaders.set("custom-header", "value");
 
 			// Verify the response was set correctly
 			assert.equal(ctx.responseStatusCode, 200);
@@ -142,9 +143,8 @@ describe("Context", () => {
 			ctx = new Context("GET", url, headers);
 
 			// Test chaining with JSON response
-			ctx
-				.json({ success: true, message: "OK" })
-				.responseHeaders.set("cache-control", "no-cache");
+			const jsonResult = await ctx.json({ success: true, message: "OK" });
+			jsonResult.responseHeaders.set("cache-control", "no-cache");
 
 			assert.equal(ctx.responseStatusCode, 200);
 			assert.equal(ctx.responseHeaders.get("content-type"), "application/json");
@@ -155,18 +155,17 @@ describe("Context", () => {
 			ctx = new Context("GET", url, headers);
 
 			// Test chaining with error responses
-			ctx
-				.notFound("Resource not found")
-				.responseHeaders.set("x-error-code", "404");
+			const notFoundResult = await ctx.notFound("Resource not found");
+			notFoundResult.responseHeaders.set("x-error-code", "404");
 
 			assert.equal(ctx.responseStatusCode, 404);
 			assert.equal(ctx.responseBody, "Resource not found");
 			assert.equal(ctx.responseHeaders.get("x-error-code"), "404");
 		});
 
-		it("should handle error responses", () => {
+		it("should handle error responses", async () => {
 			// 404 Not Found
-			ctx.notFound();
+			await ctx.notFound();
 			assert.equal(ctx.responseStatusCode, 404);
 			assert.equal(ctx.responseHeaders.get("content-type"), "text/plain");
 			assert.equal(ctx.responseBody, "Not Found");
@@ -176,7 +175,7 @@ describe("Context", () => {
 			ctx = new Context("GET", url, headers);
 
 			// 404 with custom message
-			ctx.notFound("Resource not found");
+			await ctx.notFound("Resource not found");
 			assert.equal(ctx.responseStatusCode, 404);
 			assert.equal(ctx.responseBody, "Resource not found");
 			assert.equal(ctx.responseHeaders.get("content-length"), "18");
@@ -185,7 +184,7 @@ describe("Context", () => {
 			ctx = new Context("GET", url, headers);
 
 			// 500 Internal Server Error
-			ctx.error();
+			await ctx.error();
 			assert.equal(ctx.responseStatusCode, 500);
 			assert.equal(ctx.responseHeaders.get("content-type"), "text/plain");
 			assert.equal(ctx.responseBody, "Internal Server Error");
@@ -195,7 +194,7 @@ describe("Context", () => {
 			ctx = new Context("GET", url, headers);
 
 			// 500 with custom message
-			ctx.error("Something went wrong");
+			await ctx.error("Something went wrong");
 			assert.equal(ctx.responseStatusCode, 500);
 			assert.equal(ctx.responseBody, "Something went wrong");
 			assert.equal(ctx.responseHeaders.get("content-length"), "20");
@@ -385,7 +384,7 @@ describe("Context", () => {
 	});
 
 	describe("edge cases", () => {
-		it("should handle various edge cases", () => {
+		it("should handle various edge cases", async () => {
 			// Empty headers
 			const emptyHeaders = new Headers();
 			const emptyCtx = new Context("GET", url, emptyHeaders);
@@ -410,12 +409,12 @@ describe("Context", () => {
 			assert.equal(emptyBodyCtx.requestBody(), null);
 
 			// Empty response body
-			ctx.text("");
+			await ctx.text("");
 			assert.equal(ctx.responseBody, "");
 			assert.equal(ctx.responseHeaders.get("content-length"), "0");
 
 			// Unicode content
-			ctx.text("Hello 世界");
+			await ctx.text("Hello 世界");
 			assert.equal(ctx.responseBody, "Hello 世界");
 			assert.equal(ctx.responseHeaders.get("content-length"), "12");
 		});
@@ -701,67 +700,67 @@ describe("Context", () => {
 			assert(!ctx.data.third);
 		});
 
-		it("should handle response method edge cases", () => {
+		it("should handle response method edge cases", async () => {
 			// JSON with circular reference (should throw)
 			const circularObj = { name: "test" };
 			circularObj.self = circularObj;
 
-			assert.throws(() => ctx.json(circularObj), TypeError);
+			await assert.rejects(() => ctx.json(circularObj), TypeError);
 
 			// JSON with undefined values (should be omitted)
 			const objWithUndefined = { name: "test", value: undefined };
-			ctx.json(objWithUndefined);
+			await ctx.json(objWithUndefined);
 			assert.equal(ctx.responseBody, '{"name":"test"}');
 
 			// Empty JSON object
-			ctx.json({});
+			await ctx.json({});
 			assert.equal(ctx.responseBody, "{}");
 
 			// Unicode content in text response
-			ctx.text("Hello 世界 🌍");
+			await ctx.text("Hello 世界 🌍");
 			assert.equal(ctx.responseBody, "Hello 世界 🌍");
 			assert.equal(ctx.responseHeaders.get("content-length"), "17");
 
 			// Very long text
 			const longText = "a".repeat(10000);
-			ctx.text(longText);
+			await ctx.text(longText);
 			assert.equal(ctx.responseBody, longText);
 			assert.equal(ctx.responseHeaders.get("content-length"), "10000");
 
 			// Empty text
-			ctx.text("");
+			await ctx.text("");
 			assert.equal(ctx.responseBody, "");
 			assert.equal(ctx.responseHeaders.get("content-length"), "0");
 
 			// Test falsy values in response methods
-			ctx.text(0);
+			await ctx.text(0);
 			assert.equal(ctx.responseBody, "");
 			assert.equal(ctx.responseHeaders.get("content-length"), "0");
 
-			ctx.text(false);
+			await ctx.text(false);
 			assert.equal(ctx.responseBody, "");
 			assert.equal(ctx.responseHeaders.get("content-length"), "0");
 
-			ctx.html(0);
+			await ctx.html(0);
 			assert.equal(ctx.responseBody, "");
 			assert.equal(ctx.responseHeaders.get("content-type"), "text/html");
 
-			ctx.xml(false);
+			await ctx.xml(false);
 			assert.equal(ctx.responseBody, "");
 			assert.equal(ctx.responseHeaders.get("content-type"), "application/xml");
 
-			ctx.js(0);
+			await ctx.js(0);
 			assert.equal(ctx.responseBody, "");
 			assert.equal(
 				ctx.responseHeaders.get("content-type"),
 				"application/javascript",
 			);
 
-			ctx.notFound(0);
+			await ctx.notFound(0);
 			assert.equal(ctx.responseBody, "");
 			assert.equal(ctx.responseStatusCode, 404);
 
-			ctx.error(false);
+			await ctx.error(false);
 			assert.equal(ctx.responseBody, "");
 			assert.equal(ctx.responseStatusCode, 500);
 		});
@@ -834,7 +833,7 @@ describe("Context", () => {
 			);
 		});
 
-		it("should handle error recovery edge cases", () => {
+		it("should handle error recovery edge cases", async () => {
 			// Test context state after JSON parsing error
 			const malformedJsonBody = Buffer.from('{"name":"test"');
 			const malformedJsonCtx = new Context(
@@ -847,29 +846,259 @@ describe("Context", () => {
 			assert.throws(() => malformedJsonCtx.requestBody(), SyntaxError);
 
 			// Context should still be usable after error
-			malformedJsonCtx.text("Recovery response");
+			await malformedJsonCtx.text("Recovery response");
 			assert.equal(malformedJsonCtx.responseBody, "Recovery response");
 			assert.equal(malformedJsonCtx.responseStatusCode, 200);
 		});
 
-		it("should handle method chaining edge cases", () => {
+		it("should handle method chaining edge cases", async () => {
 			// Chaining with null/undefined values
-			ctx.text(null).responseHeaders.set("x-null", null);
+			const nullResult = await ctx.text(null);
+			nullResult.responseHeaders.set("x-null", null);
 			assert.equal(ctx.responseBody, "");
 			assert.equal(ctx.responseHeaders.get("x-null"), "null");
 
 			// Chaining with very long values
 			const longValue = "a".repeat(1000);
-			ctx.text(longValue).responseHeaders.set("x-long", longValue);
+			const longResult = await ctx.text(longValue);
+			longResult.responseHeaders.set("x-long", longValue);
 			assert.equal(ctx.responseBody, longValue);
 			assert.equal(ctx.responseHeaders.get("x-long"), longValue);
 
 			// Chaining with special characters (without newlines due to Headers API restrictions)
-			ctx
-				.text("Hello World\tTest")
-				.responseHeaders.set("x-special", "Hello World\tTest");
+			const specialResult = await ctx.text("Hello World\tTest");
+			specialResult.responseHeaders.set("x-special", "Hello World\tTest");
 			assert.equal(ctx.responseBody, "Hello World\tTest");
 			assert.equal(ctx.responseHeaders.get("x-special"), "Hello World\tTest");
+		});
+	});
+
+	describe("promise support", () => {
+		it("should handle promise data in text() method", async () => {
+			const promiseData = Promise.resolve("Hello Promise World");
+			await ctx.text(promiseData);
+
+			assert.equal(ctx.responseStatusCode, 200);
+			assert.equal(ctx.responseHeaders.get("content-type"), "text/plain");
+			assert.equal(ctx.responseBody, "Hello Promise World");
+			assert.equal(ctx.responseHeaders.get("content-length"), "19");
+		});
+
+		it("should handle promise data in html() method", async () => {
+			const promiseData = Promise.resolve("<h1>Promise HTML</h1>");
+			await ctx.html(promiseData);
+
+			assert.equal(ctx.responseStatusCode, 200);
+			assert.equal(ctx.responseHeaders.get("content-type"), "text/html");
+			assert.equal(ctx.responseBody, "<h1>Promise HTML</h1>");
+			assert.equal(ctx.responseHeaders.get("content-length"), "21");
+		});
+
+		it("should handle promise data in xml() method", async () => {
+			const promiseData = Promise.resolve("<root><item>promise</item></root>");
+			await ctx.xml(promiseData);
+
+			assert.equal(ctx.responseStatusCode, 200);
+			assert.equal(ctx.responseHeaders.get("content-type"), "application/xml");
+			assert.equal(ctx.responseBody, "<root><item>promise</item></root>");
+			assert.equal(ctx.responseHeaders.get("content-length"), "33");
+		});
+
+		it("should handle promise data in json() method", async () => {
+			const promiseData = Promise.resolve({
+				message: "promise data",
+				value: 42,
+			});
+			await ctx.json(promiseData);
+
+			assert.equal(ctx.responseStatusCode, 200);
+			assert.equal(ctx.responseHeaders.get("content-type"), "application/json");
+			assert.equal(ctx.responseBody, '{"message":"promise data","value":42}');
+			assert.equal(ctx.responseHeaders.get("content-length"), "37");
+		});
+
+		it("should handle promise data in js() method", async () => {
+			const promiseData = Promise.resolve('console.log("promise script");');
+			await ctx.js(promiseData);
+
+			assert.equal(ctx.responseStatusCode, 200);
+			assert.equal(
+				ctx.responseHeaders.get("content-type"),
+				"application/javascript",
+			);
+			assert.equal(ctx.responseBody, 'console.log("promise script");');
+			assert.equal(ctx.responseHeaders.get("content-length"), "30");
+		});
+
+		it("should handle promise url in redirect() method", async () => {
+			const promiseUrl = Promise.resolve("/promise-redirect");
+			await ctx.redirect(promiseUrl);
+
+			assert.equal(ctx.responseStatusCode, 302);
+			assert.equal(ctx.responseHeaders.get("location"), "/promise-redirect");
+		});
+
+		it("should handle promise url with status in redirect() method", async () => {
+			const promiseUrl = Promise.resolve("/permanent-promise");
+			await ctx.redirect(promiseUrl, 301);
+
+			assert.equal(ctx.responseStatusCode, 301);
+			assert.equal(ctx.responseHeaders.get("location"), "/permanent-promise");
+		});
+
+		it("should handle promise message in notFound() method", async () => {
+			const promiseMessage = Promise.resolve("Promise resource not found");
+			await ctx.notFound(promiseMessage);
+
+			assert.equal(ctx.responseStatusCode, 404);
+			assert.equal(ctx.responseHeaders.get("content-type"), "text/plain");
+			assert.equal(ctx.responseBody, "Promise resource not found");
+			assert.equal(ctx.responseHeaders.get("content-length"), "26");
+		});
+
+		it("should handle promise message in error() method", async () => {
+			const promiseMessage = Promise.resolve("Promise server error occurred");
+			await ctx.error(promiseMessage);
+
+			assert.equal(ctx.responseStatusCode, 500);
+			assert.equal(ctx.responseHeaders.get("content-type"), "text/plain");
+			assert.equal(ctx.responseBody, "Promise server error occurred");
+			assert.equal(ctx.responseHeaders.get("content-length"), "29");
+		});
+
+		it("should handle rejected promises properly", async () => {
+			const rejectedPromise = Promise.reject(new Error("Promise rejected"));
+
+			// Test that the async methods properly propagate promise rejections
+			await assert.rejects(async () => await ctx.text(rejectedPromise), {
+				message: "Promise rejected",
+			});
+
+			await assert.rejects(async () => await ctx.html(rejectedPromise), {
+				message: "Promise rejected",
+			});
+
+			await assert.rejects(async () => await ctx.xml(rejectedPromise), {
+				message: "Promise rejected",
+			});
+
+			await assert.rejects(async () => await ctx.json(rejectedPromise), {
+				message: "Promise rejected",
+			});
+
+			await assert.rejects(async () => await ctx.js(rejectedPromise), {
+				message: "Promise rejected",
+			});
+
+			await assert.rejects(async () => await ctx.redirect(rejectedPromise), {
+				message: "Promise rejected",
+			});
+
+			await assert.rejects(async () => await ctx.notFound(rejectedPromise), {
+				message: "Promise rejected",
+			});
+
+			await assert.rejects(async () => await ctx.error(rejectedPromise), {
+				message: "Promise rejected",
+			});
+		});
+
+		it("should handle method chaining with promises", async () => {
+			const promiseData = Promise.resolve({
+				status: "success",
+				data: "chained",
+			});
+			await ctx.json(promiseData);
+			ctx.responseHeaders.set("x-promise-test", "chained");
+
+			assert.equal(ctx.responseStatusCode, 200);
+			assert.equal(ctx.responseHeaders.get("content-type"), "application/json");
+			assert.equal(ctx.responseBody, '{"status":"success","data":"chained"}');
+			assert.equal(ctx.responseHeaders.get("x-promise-test"), "chained");
+		});
+
+		it("should handle async promise data with computed content", async () => {
+			// Simulate an async operation that takes time
+			const asyncOperation = () =>
+				new Promise((resolve) => {
+					setTimeout(() => resolve("Computed after delay"), 10);
+				});
+
+			await ctx.text(asyncOperation());
+
+			assert.equal(ctx.responseStatusCode, 200);
+			assert.equal(ctx.responseHeaders.get("content-type"), "text/plain");
+			assert.equal(ctx.responseBody, "Computed after delay");
+		});
+
+		it("should handle falsy promise values correctly", async () => {
+			// Test null promise
+			await ctx.text(Promise.resolve(null));
+			assert.equal(ctx.responseBody, "");
+			assert.equal(ctx.responseHeaders.get("content-length"), "0");
+
+			// Reset context
+			ctx = new Context("GET", url, headers);
+
+			// Test empty string promise
+			await ctx.html(Promise.resolve(""));
+			assert.equal(ctx.responseBody, "");
+			assert.equal(ctx.responseHeaders.get("content-type"), "text/html");
+
+			// Reset context
+			ctx = new Context("GET", url, headers);
+
+			// Test undefined promise
+			await ctx.xml(Promise.resolve(undefined));
+			assert.equal(ctx.responseBody, "");
+			assert.equal(ctx.responseHeaders.get("content-type"), "application/xml");
+
+			// Reset context
+			ctx = new Context("GET", url, headers);
+
+			// Test 0 promise
+			await ctx.js(Promise.resolve(0));
+			assert.equal(ctx.responseBody, "");
+			assert.equal(
+				ctx.responseHeaders.get("content-type"),
+				"application/javascript",
+			);
+
+			// Reset context
+			ctx = new Context("GET", url, headers);
+
+			// Test false promise
+			await ctx.notFound(Promise.resolve(false));
+			assert.equal(ctx.responseBody, "");
+			assert.equal(ctx.responseStatusCode, 404);
+		});
+
+		it("should handle complex JSON promise data", async () => {
+			const complexData = Promise.resolve({
+				users: [
+					{ id: 1, name: "Alice", active: true },
+					{ id: 2, name: "Bob", active: false },
+				],
+				metadata: {
+					total: 2,
+					timestamp: "2024-01-01T00:00:00Z",
+				},
+				config: {
+					debug: false,
+					version: "1.0.0",
+				},
+			});
+
+			await ctx.json(complexData);
+
+			assert.equal(ctx.responseStatusCode, 200);
+			assert.equal(ctx.responseHeaders.get("content-type"), "application/json");
+
+			const parsedBody = JSON.parse(ctx.responseBody);
+			assert.equal(parsedBody.users.length, 2);
+			assert.equal(parsedBody.users[0].name, "Alice");
+			assert.equal(parsedBody.metadata.total, 2);
+			assert.equal(parsedBody.config.version, "1.0.0");
 		});
 	});
 
@@ -904,7 +1133,7 @@ describe("Context", () => {
 			assert.strictEqual(firstFormCall, secondFormCall);
 		});
 
-		it("should correctly identify 404 responses with isNotFound()", () => {
+		it("should correctly identify 404 responses with isNotFound()", async () => {
 			// Test the isNotFound() method to cover lines 693-694
 			const ctx = new Context("GET", url, headers);
 
@@ -912,12 +1141,12 @@ describe("Context", () => {
 			assert.equal(ctx.isNotFound(), false);
 
 			// Set to 404 and test
-			ctx.notFound("Resource not found");
+			await ctx.notFound("Resource not found");
 			assert.equal(ctx.isNotFound(), true);
 			assert.equal(ctx.responseStatusCode, 404);
 
 			// Set to different status and test again
-			ctx.text("Found it");
+			await ctx.text("Found it");
 			ctx.responseStatusCode = 200;
 			assert.equal(ctx.isNotFound(), false);
 			assert.equal(ctx.responseStatusCode, 200);

@@ -849,7 +849,7 @@ export class Router {
 			}
 		} else {
 			// no route found - set 404 but don't return early
-			ctx.notFound();
+			await ctx.notFound();
 		}
 
 		if (ctx.responseEnded) return ctx;
@@ -857,7 +857,7 @@ export class Router {
 		// set 500 status if errors occurred, before running after callbacks
 		// so logger middleware sees the correct status code
 		if (ctx.errors.length > 0 && !ctx.responseEnded) {
-			ctx.error();
+			await ctx.error();
 		}
 
 		// run all after hooks regardless of previous errors
@@ -867,7 +867,7 @@ export class Router {
 			ctx.errors.push(error);
 			// Set 500 status if new errors occurred during after callbacks
 			if (!ctx.responseEnded) {
-				ctx.error();
+				await ctx.error();
 			}
 		}
 

@@ -27,7 +27,7 @@ export function createPackageOverviewHandler(packageInstance) {
 	 * Package overview route handler
 	 * @param {import('@raven-js/wings').Context} ctx - Wings request context
 	 */
-	return function handlePackageOverview(ctx) {
+	return async function handlePackageOverview(ctx) {
 		try {
 			// Extract structured data from Package instance
 			const data = extractPackageOverviewData(packageInstance);
@@ -36,11 +36,11 @@ export function createPackageOverviewHandler(packageInstance) {
 			const html = packageOverviewTemplate(/** @type {any} */ (data));
 
 			// Send HTML response with caching
-			ctx.html(html);
+			await ctx.html(html);
 			ctx.responseHeaders.set("Cache-Control", "public, max-age=3600");
 		} catch (error) {
 			// Handle extraction or rendering errors
-			ctx.error(`Failed to generate package overview: ${error.message}`);
+			await ctx.error(`Failed to generate package overview: ${error.message}`);
 		}
 	};
 }

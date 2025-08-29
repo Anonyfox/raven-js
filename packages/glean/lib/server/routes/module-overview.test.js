@@ -100,12 +100,12 @@ describe("createModuleOverviewHandler", () => {
 		};
 	}
 
-	test("renders module overview successfully", () => {
+	test("renders module overview successfully", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createModuleOverviewHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Should return success status
 		assert.strictEqual(ctx.responseStatusCode, 200, "Returns 200 status");
@@ -125,12 +125,12 @@ describe("createModuleOverviewHandler", () => {
 		assert(ctx.responseBody.includes("</html>"), "Contains closing HTML tag");
 	});
 
-	test("includes module information in response", () => {
+	test("includes module information in response", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createModuleOverviewHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		const html = ctx.responseBody;
 
@@ -146,12 +146,12 @@ describe("createModuleOverviewHandler", () => {
 		assert(html.includes("A test function"), "Contains entity descriptions");
 	});
 
-	test("includes package and navigation information", () => {
+	test("includes package and navigation information", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createModuleOverviewHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		const html = ctx.responseBody;
 
@@ -171,12 +171,12 @@ describe("createModuleOverviewHandler", () => {
 		assert(html.includes("🗂️ All Modules"), "Contains module navigation");
 	});
 
-	test("handles missing module name parameter", () => {
+	test("handles missing module name parameter", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createModuleOverviewHandler(mockPackage);
 		const ctx = createTestContext({});
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Should return bad request status
 		assert.strictEqual(ctx.responseStatusCode, 500, "Returns 500 status");
@@ -191,12 +191,12 @@ describe("createModuleOverviewHandler", () => {
 		);
 	});
 
-	test("handles invalid module name parameter types", () => {
+	test("handles invalid module name parameter types", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createModuleOverviewHandler(mockPackage);
 		const ctx = createTestContext({ moduleName: 123 });
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Should return bad request status
 		assert.strictEqual(ctx.responseStatusCode, 500, "Returns 500 status");
@@ -206,7 +206,7 @@ describe("createModuleOverviewHandler", () => {
 		);
 	});
 
-	test("validates module name format for security", () => {
+	test("validates module name format for security", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createModuleOverviewHandler(mockPackage);
 
@@ -215,7 +215,7 @@ describe("createModuleOverviewHandler", () => {
 
 		for (const badName of maliciousNames) {
 			const ctx = createTestContext({ moduleName: badName });
-			handler(ctx);
+			await handler(ctx);
 
 			assert.strictEqual(
 				ctx.responseStatusCode,
@@ -229,12 +229,12 @@ describe("createModuleOverviewHandler", () => {
 		}
 	});
 
-	test("handles module not found error", () => {
+	test("handles module not found error", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createModuleOverviewHandler(mockPackage);
 		const ctx = createTestContext({ moduleName: "nonexistent" });
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Should return not found status (Wings notFound() returns 404)
 		assert.strictEqual(ctx.responseStatusCode, 404, "Returns 404 status");
@@ -253,7 +253,7 @@ describe("createModuleOverviewHandler", () => {
 		);
 	});
 
-	test("handles data extraction errors", () => {
+	test("handles data extraction errors", async () => {
 		// Create a package that will cause extraction to fail
 		const brokenPackage = {
 			name: "broken-package",
@@ -263,7 +263,7 @@ describe("createModuleOverviewHandler", () => {
 		const handler = createModuleOverviewHandler(brokenPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Should return internal server error
 		assert.strictEqual(ctx.responseStatusCode, 500, "Returns 500 status");
@@ -278,7 +278,7 @@ describe("createModuleOverviewHandler", () => {
 		);
 	});
 
-	test("handles complex module names correctly", () => {
+	test("handles complex module names correctly", async () => {
 		const complexModules = [
 			{
 				importPath: "package/deep/nested/module",
@@ -301,19 +301,19 @@ describe("createModuleOverviewHandler", () => {
 		const handler = createModuleOverviewHandler(mockPackage);
 		const ctx = createTestContext({ moduleName: "module" });
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Should successfully render the complex module
 		assert.strictEqual(ctx.responseStatusCode, 200, "Returns 200 status");
 		assert(ctx.responseBody.includes("Deep Module"), "Contains module content");
 	});
 
-	test("handles modules without README", () => {
+	test("handles modules without README", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createModuleOverviewHandler(mockPackage);
 		const ctx = createTestContext({ moduleName: "helpers" });
 
-		handler(ctx);
+		await handler(ctx);
 
 		const html = ctx.responseBody;
 
@@ -324,12 +324,12 @@ describe("createModuleOverviewHandler", () => {
 		assert(html.includes("📭"), "Shows empty state for no entities");
 	});
 
-	test("handles modules with no entities", () => {
+	test("handles modules with no entities", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createModuleOverviewHandler(mockPackage);
 		const ctx = createTestContext({ moduleName: "helpers" });
 
-		handler(ctx);
+		await handler(ctx);
 
 		const html = ctx.responseBody;
 
@@ -339,12 +339,12 @@ describe("createModuleOverviewHandler", () => {
 		assert(!html.includes("🔧 API Reference"), "Does not show API section");
 	});
 
-	test("renders default module correctly", () => {
+	test("renders default module correctly", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createModuleOverviewHandler(mockPackage);
 		const ctx = createTestContext({ moduleName: "awesome-package" });
 
-		handler(ctx);
+		await handler(ctx);
 
 		const html = ctx.responseBody;
 
@@ -358,12 +358,12 @@ describe("createModuleOverviewHandler", () => {
 		assert(html.includes("Main Module"), "Contains default module README");
 	});
 
-	test("sets proper HTTP headers", () => {
+	test("sets proper HTTP headers", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createModuleOverviewHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Check all required headers
 		assert.strictEqual(
@@ -378,14 +378,14 @@ describe("createModuleOverviewHandler", () => {
 		);
 	});
 
-	test("handles edge case module lookup", () => {
+	test("handles edge case module lookup", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createModuleOverviewHandler(mockPackage);
 
 		// Test finding module by partial name (should work with module overview data extractor logic)
 		const ctx = createTestContext({ moduleName: "utils" });
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Should successfully find and render utils module
 		assert.strictEqual(ctx.responseStatusCode, 200, "Returns 200 status");

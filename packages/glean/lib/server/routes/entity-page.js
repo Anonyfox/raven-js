@@ -38,7 +38,9 @@ export function createEntityPageHandler(packageInstance) {
 				typeof moduleName !== "string" ||
 				moduleName.trim() === ""
 			) {
-				return ctx.error("Module name is required and must be a valid string");
+				return await ctx.error(
+					"Module name is required and must be a valid string",
+				);
 			}
 
 			// Validate entityName parameter
@@ -47,7 +49,9 @@ export function createEntityPageHandler(packageInstance) {
 				typeof entityName !== "string" ||
 				entityName.trim() === ""
 			) {
-				return ctx.error("Entity name is required and must be a valid string");
+				return await ctx.error(
+					"Entity name is required and must be a valid string",
+				);
 			}
 
 			// Security validation for moduleName
@@ -58,7 +62,7 @@ export function createEntityPageHandler(packageInstance) {
 				moduleName.includes("\\") ||
 				moduleName.includes("\0")
 			) {
-				return ctx.error(
+				return await ctx.error(
 					"Invalid module name format - cannot contain path traversal characters",
 				);
 			}
@@ -73,14 +77,14 @@ export function createEntityPageHandler(packageInstance) {
 				entityName.includes("<") ||
 				entityName.includes(">")
 			) {
-				return ctx.error(
+				return await ctx.error(
 					"Invalid entity name format - cannot contain dangerous characters",
 				);
 			}
 
 			// Additional length validation to prevent abuse
 			if (moduleName.length > 200 || entityName.length > 200) {
-				return ctx.error(
+				return await ctx.error(
 					"Module and entity names must be under 200 characters",
 				);
 			}
@@ -96,18 +100,20 @@ export function createEntityPageHandler(packageInstance) {
 			const html = entityPageTemplate(/** @type {any} */ (data));
 
 			// Send HTML response with security and caching headers
-			ctx.html(html);
+			await ctx.html(html);
 			ctx.responseHeaders.set("Cache-Control", "public, max-age=3600");
 			ctx.responseHeaders.set("X-Content-Type-Options", "nosniff");
 			ctx.responseHeaders.set("X-Frame-Options", "SAMEORIGIN");
 		} catch (error) {
 			// Handle specific error types with appropriate responses
 			if (error.message?.includes("not found")) {
-				return ctx.notFound(`Entity not found: ${error.message}`);
+				return await ctx.notFound(`Entity not found: ${error.message}`);
 			} else {
 				// Log error for debugging
 				console.error("Entity page generation error:", error);
-				return ctx.error(`Failed to generate entity page: ${error.message}`);
+				return await ctx.error(
+					`Failed to generate entity page: ${error.message}`,
+				);
 			}
 		}
 	};

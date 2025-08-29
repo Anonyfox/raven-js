@@ -11,8 +11,8 @@ describe("DevServer", () => {
 	beforeEach(async () => {
 		// Create router with HTML route
 		const router = new Router();
-		router.get("/", (ctx) => {
-			ctx.html("<html><head></head><body><h1>Hello</h1></body></html>");
+		router.get("/", async (ctx) => {
+			await ctx.html("<html><head></head><body><h1>Hello</h1></body></html>");
 		});
 
 		// Start server on random available ports
@@ -54,8 +54,8 @@ describe("DevServer", () => {
 
 		// Test 4: Non-HTML responses should not be modified
 		const jsonRouter = new Router();
-		jsonRouter.get("/json", (ctx) => {
-			ctx.json({ message: "Hello JSON" });
+		jsonRouter.get("/json", async (ctx) => {
+			await ctx.json({ message: "Hello JSON" });
 		});
 
 		const jsonServer = new DevServer(jsonRouter, { websocketPort: 0 });
@@ -79,8 +79,8 @@ describe("DevServer", () => {
 
 		// Test 5: HTML without proper content-type should not be modified
 		const badHtmlRouter = new Router();
-		badHtmlRouter.get("/bad-html", (ctx) => {
-			ctx.html("<html><body>Hello</body></html>");
+		badHtmlRouter.get("/bad-html", async (ctx) => {
+			await ctx.html("<html><body>Hello</body></html>");
 			ctx.responseHeaders.set("content-type", "text/plain"); // Override to non-HTML
 		});
 
@@ -104,8 +104,8 @@ describe("DevServer", () => {
 
 		// Test 6: Non-string response body should not be modified
 		const nonStringRouter = new Router();
-		nonStringRouter.get("/non-string", (ctx) => {
-			ctx.html(123); // Non-string body
+		nonStringRouter.get("/non-string", async (ctx) => {
+			await ctx.html(123); // Non-string body
 		});
 
 		const nonStringServer = new DevServer(nonStringRouter, {
@@ -126,8 +126,8 @@ describe("DevServer", () => {
 
 		// Test 7: HTML that doesn't start with '<' should not be modified
 		const noTagRouter = new Router();
-		noTagRouter.get("/no-tag", (ctx) => {
-			ctx.html("This is not HTML"); // Doesn't start with '<'
+		noTagRouter.get("/no-tag", async (ctx) => {
+			await ctx.html("This is not HTML"); // Doesn't start with '<'
 		});
 
 		const noTagServer = new DevServer(noTagRouter, { websocketPort: 0 });
@@ -174,8 +174,8 @@ describe("DevServer", () => {
 	test("should properly clean up WebSocket connections", async () => {
 		// Test that WebSocket connections are tracked and cleaned up
 		const router = new Router();
-		router.get("/", (ctx) => {
-			ctx.html("<html><body>Test</body></html>");
+		router.get("/", async (ctx) => {
+			await ctx.html("<html><body>Test</body></html>");
 		});
 
 		const testServer = new DevServer(router, { websocketPort: 0 });
@@ -313,8 +313,8 @@ describe("DevServer", () => {
 
 		// Test 3: DevServer-specific errors (HTML injection)
 		const htmlRouter = new Router();
-		htmlRouter.get("/html", (ctx) => {
-			ctx.html("<html><body>Hello</body></html>");
+		htmlRouter.get("/html", async (ctx) => {
+			await ctx.html("<html><body>Hello</body></html>");
 		});
 
 		const injectionErrorServer = new DevServer(htmlRouter, {
@@ -345,8 +345,8 @@ describe("DevServer", () => {
 	test("should handle WebSocket server close errors", async () => {
 		// Test WebSocket server close error path (line 200)
 		const router = new Router();
-		router.get("/", (ctx) => {
-			ctx.html("<html><body>Test</body></html>");
+		router.get("/", async (ctx) => {
+			await ctx.html("<html><body>Test</body></html>");
 		});
 
 		const errorServer = new DevServer(router, { websocketPort: 0 });

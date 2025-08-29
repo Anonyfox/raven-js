@@ -492,7 +492,7 @@ describe("Middleware Integration", () => {
 		});
 
 		// Set up a small response
-		ctx.json({ message: "hello" });
+		await ctx.json({ message: "hello" });
 		const originalBody = ctx.responseBody;
 
 		await middleware.execute(ctx);
@@ -532,7 +532,7 @@ describe("Middleware Integration", () => {
 		const largeData = {
 			items: new Array(100).fill({ name: "test", value: 123 }),
 		};
-		ctx.json(largeData);
+		await ctx.json(largeData);
 		const originalBody = ctx.responseBody;
 
 		await middleware.execute(ctx);
@@ -576,7 +576,7 @@ describe("Middleware Integration", () => {
 		});
 
 		// Set up response and mark as ended
-		ctx.json({ test: "data" });
+		await ctx.json({ test: "data" });
 		ctx.responseEnded = true;
 		const originalBody = ctx.responseBody;
 
@@ -595,7 +595,7 @@ describe("Middleware Integration", () => {
 		});
 
 		// Set up response with existing encoding
-		ctx.json({ test: "data" });
+		await ctx.json({ test: "data" });
 		ctx.responseHeaders.set("content-encoding", "identity");
 		const originalBody = ctx.responseBody;
 
@@ -633,7 +633,7 @@ describe("Middleware Integration", () => {
 		});
 
 		// Set up a small response that might not compress well
-		ctx.json({ a: 1 }); // Very small JSON
+		await ctx.json({ a: 1 }); // Very small JSON
 		const originalSize = Buffer.byteLength(ctx.responseBody);
 
 		await middleware.execute(ctx);
@@ -670,7 +670,7 @@ describe("Edge Cases and Error Handling", () => {
 			"accept-encoding": "invalid;;;header",
 		});
 
-		ctx.json({ test: "data" });
+		await ctx.json({ test: "data" });
 
 		await middleware.execute(ctx);
 		await ctx.runAfterCallbacks();
@@ -689,7 +689,7 @@ describe("Edge Cases and Error Handling", () => {
 		ctx.errors = [];
 
 		// Set up response
-		ctx.json({ items: new Array(100).fill("test") });
+		await ctx.json({ items: new Array(100).fill("test") });
 
 		await middleware.execute(ctx);
 		await ctx.runAfterCallbacks();

@@ -89,12 +89,12 @@ describe("createModuleDirectoryHandler", () => {
 		assert(typeof handler === "function", "Returns function");
 	});
 
-	test("generates successful HTML response", () => {
+	test("generates successful HTML response", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createModuleDirectoryHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Response status
 		assert.strictEqual(ctx.responseStatusCode, 200, "Sets 200 status code");
@@ -120,7 +120,7 @@ describe("createModuleDirectoryHandler", () => {
 		);
 	});
 
-	test("includes package information in response", () => {
+	test("includes package information in response", async () => {
 		const mockPackage = createMockPackage({
 			name: "awesome-package",
 			description: "An awesome test package",
@@ -128,7 +128,7 @@ describe("createModuleDirectoryHandler", () => {
 		const handler = createModuleDirectoryHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Check package information is in HTML
 		assert(
@@ -145,12 +145,12 @@ describe("createModuleDirectoryHandler", () => {
 		);
 	});
 
-	test("displays module directory information", () => {
+	test("displays module directory information", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createModuleDirectoryHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Check module directory content
 		assert(ctx.responseBody.includes("📦 Modules"), "Contains page title");
@@ -161,7 +161,7 @@ describe("createModuleDirectoryHandler", () => {
 		assert(ctx.responseBody.includes("test-package"), "Contains module name");
 	});
 
-	test("includes module cards with metadata", () => {
+	test("includes module cards with metadata", async () => {
 		const mockPackage = createMockPackage({
 			modules: [
 				{
@@ -217,7 +217,7 @@ describe("createModuleDirectoryHandler", () => {
 		const handler = createModuleDirectoryHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Check module cards
 		assert(ctx.responseBody.includes("test-package"), "Contains main module");
@@ -236,7 +236,7 @@ describe("createModuleDirectoryHandler", () => {
 		assert(ctx.responseBody.includes("mainFunc"), "Shows sample entities");
 	});
 
-	test("displays directory statistics", () => {
+	test("displays directory statistics", async () => {
 		const mockPackage = createMockPackage({
 			modules: [
 				{
@@ -268,14 +268,14 @@ describe("createModuleDirectoryHandler", () => {
 		const handler = createModuleDirectoryHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Check statistics in response
 		assert(ctx.responseBody.includes("1"), "Contains module count");
 		assert(ctx.responseBody.includes("3"), "Contains public entity count");
 	});
 
-	test("handles package without modules", () => {
+	test("handles package without modules", async () => {
 		const mockPackage = createMockPackage({
 			name: "empty-package",
 			description: "An empty package for testing",
@@ -287,7 +287,7 @@ describe("createModuleDirectoryHandler", () => {
 		const handler = createModuleDirectoryHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		assert.strictEqual(ctx.responseStatusCode, 200, "Still returns 200");
 		assert(
@@ -301,12 +301,12 @@ describe("createModuleDirectoryHandler", () => {
 		);
 	});
 
-	test("includes navigation and action buttons", () => {
+	test("includes navigation and action buttons", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createModuleDirectoryHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Module exploration buttons
 		assert(
@@ -329,13 +329,13 @@ describe("createModuleDirectoryHandler", () => {
 		);
 	});
 
-	test("handles data extraction errors gracefully", () => {
+	test("handles data extraction errors gracefully", async () => {
 		// Create an invalid package that will cause extraction to fail
 		const invalidPackage = null;
 		const handler = createModuleDirectoryHandler(invalidPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Should return 500 error
 		assert.strictEqual(ctx.responseStatusCode, 500, "Returns 500 status code");
@@ -350,7 +350,7 @@ describe("createModuleDirectoryHandler", () => {
 		);
 	});
 
-	test("handles template rendering errors gracefully", () => {
+	test("handles template rendering errors gracefully", async () => {
 		// Create package that will pass extraction but potentially fail rendering
 		const mockPackage = createMockPackage();
 		const handler = createModuleDirectoryHandler(mockPackage);
@@ -384,12 +384,12 @@ describe("createModuleDirectoryHandler", () => {
 		);
 	});
 
-	test("sets appropriate cache headers", () => {
+	test("sets appropriate cache headers", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createModuleDirectoryHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		assert.strictEqual(
 			ctx.responseHeaders.get("Cache-Control"),
@@ -398,7 +398,7 @@ describe("createModuleDirectoryHandler", () => {
 		);
 	});
 
-	test("handles edge case package data", () => {
+	test("handles edge case package data", async () => {
 		const mockPackage = createMockPackage({
 			name: "",
 			description: undefined,
@@ -406,7 +406,7 @@ describe("createModuleDirectoryHandler", () => {
 		const handler = createModuleDirectoryHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Should handle gracefully
 		assert.strictEqual(ctx.responseStatusCode, 200, "Handles edge case data");
@@ -416,7 +416,7 @@ describe("createModuleDirectoryHandler", () => {
 		);
 	});
 
-	test("includes entity type distribution", () => {
+	test("includes entity type distribution", async () => {
 		const mockPackage = createMockPackage({
 			modules: [
 				{
@@ -460,7 +460,7 @@ describe("createModuleDirectoryHandler", () => {
 		const handler = createModuleDirectoryHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Check entity type distribution
 		assert(
@@ -471,12 +471,12 @@ describe("createModuleDirectoryHandler", () => {
 		assert(ctx.responseBody.includes("class"), "Shows class type");
 	});
 
-	test("includes proper page title and navigation", () => {
+	test("includes proper page title and navigation", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createModuleDirectoryHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Should include base template structure with modules navigation active
 		assert(
@@ -489,7 +489,7 @@ describe("createModuleDirectoryHandler", () => {
 		);
 	});
 
-	test("handles modules with different entity counts", () => {
+	test("handles modules with different entity counts", async () => {
 		const mockPackage = createMockPackage({
 			modules: [
 				{
@@ -531,7 +531,7 @@ describe("createModuleDirectoryHandler", () => {
 		const handler = createModuleDirectoryHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Check both modules are handled
 		assert(ctx.responseBody.includes("empty"), "Contains empty module");

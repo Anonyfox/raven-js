@@ -47,12 +47,12 @@ describe("createSitemapHandler", () => {
 		};
 	}
 
-	test("generates XML sitemap response", () => {
+	test("generates XML sitemap response", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createSitemapHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Should return 200 status
 		assert.strictEqual(ctx.responseStatusCode, 200, "Returns 200 status");
@@ -73,13 +73,13 @@ describe("createSitemapHandler", () => {
 		assert(ctx.responseBody.includes("<urlset"), "Response contains urlset");
 	});
 
-	test("includes all expected URLs in sitemap", () => {
+	test("includes all expected URLs in sitemap", async () => {
 		const mockPackage = createMockPackage();
 		const baseUrl = "https://docs.example.com";
 		const handler = createSitemapHandler(mockPackage, { baseUrl });
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		const xml = ctx.responseBody;
 
@@ -120,12 +120,12 @@ describe("createSitemapHandler", () => {
 		);
 	});
 
-	test("sets appropriate HTTP headers", () => {
+	test("sets appropriate HTTP headers", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createSitemapHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Should set XML content type
 		assert.strictEqual(
@@ -149,7 +149,7 @@ describe("createSitemapHandler", () => {
 		);
 	});
 
-	test("handles custom base URL option", () => {
+	test("handles custom base URL option", async () => {
 		const mockPackage = createMockPackage();
 		const customBaseUrl = "https://custom.docs.com";
 		const handler = createSitemapHandler(mockPackage, {
@@ -157,7 +157,7 @@ describe("createSitemapHandler", () => {
 		});
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		const xml = ctx.responseBody;
 
@@ -173,12 +173,12 @@ describe("createSitemapHandler", () => {
 		assert(!xml.includes("docs.example.com"), "Does not use default base URL");
 	});
 
-	test("generates valid XML structure", () => {
+	test("generates valid XML structure", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createSitemapHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		const xml = ctx.responseBody;
 
@@ -208,12 +208,12 @@ describe("createSitemapHandler", () => {
 		}
 	});
 
-	test("handles empty package gracefully", () => {
+	test("handles empty package gracefully", async () => {
 		const emptyPackage = { modules: [] };
 		const handler = createSitemapHandler(emptyPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		assert.strictEqual(
 			ctx.responseStatusCode,
@@ -231,7 +231,7 @@ describe("createSitemapHandler", () => {
 		assert.strictEqual(urlMatches.length, 2, "Has base URLs only");
 	});
 
-	test("handles data extraction errors gracefully", () => {
+	test("handles data extraction errors gracefully", async () => {
 		// Create package that will cause an error
 		const faultyPackage = {
 			get modules() {
@@ -242,7 +242,7 @@ describe("createSitemapHandler", () => {
 		const handler = createSitemapHandler(faultyPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		// Should return error response
 		assert.strictEqual(
@@ -261,12 +261,12 @@ describe("createSitemapHandler", () => {
 		);
 	});
 
-	test("includes generation metadata in XML comments", () => {
+	test("includes generation metadata in XML comments", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createSitemapHandler(mockPackage);
 		const ctx = createTestContext();
 
-		handler(ctx);
+		await handler(ctx);
 
 		const xml = ctx.responseBody;
 
@@ -279,7 +279,7 @@ describe("createSitemapHandler", () => {
 		assert(xml.includes("Generated:"), "Includes generation timestamp comment");
 	});
 
-	test("generates fresh timestamps on each request", () => {
+	test("generates fresh timestamps on each request", async () => {
 		const mockPackage = createMockPackage();
 		const handler = createSitemapHandler(mockPackage);
 
