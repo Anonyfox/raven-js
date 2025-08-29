@@ -15,6 +15,16 @@
  */
 
 import { html, md } from "@raven-js/beak";
+import {
+	codeBlock,
+	contentSection,
+	deprecationAlert,
+	entityCard,
+	moduleNavigation,
+	pageHeader,
+	quickActions,
+	tableSection,
+} from "../components/index.js";
 import { baseTemplate } from "./base.js";
 
 /**
@@ -96,110 +106,60 @@ export function entityPageTemplate(data) {
 		return typeColors[type] || "bg-secondary";
 	};
 
+	// Generate breadcrumbs
+	const breadcrumbs = [
+		{ href: "/", text: `📦 ${packageName}` },
+		{ href: "/modules/", text: "Modules" },
+		{ href: `/modules/${moduleName}/`, text: moduleName },
+		{ text: entity.name, active: true },
+	];
+
+	// Generate header badges
+	const badges = [
+		{ text: ent.type, variant: getTypeBadgeClass(ent.type).replace("bg-", "") },
+	];
+	if (ent.isDefault) {
+		badges.push({ text: "default module", variant: "primary" });
+	}
+
+	// Generate metadata description
+	const metadataItems = [];
+	if (hasLocation) {
+		metadataItems.push(`📍 ${ent.location.file}:${ent.location.line}`);
+	}
+	if (docs.since) {
+		metadataItems.push(`📅 Since ${docs.since}`);
+	}
+	if (docs.author.length > 0) {
+		metadataItems.push(`👤 ${docs.author.join(", ")}`);
+	}
+
 	// Generate main content
 	const content = html`
-		<!-- Entity Header -->
-		<div class="row mb-4">
-			<div class="col-12">
-				<nav aria-label="breadcrumb" class="mb-3">
-					<ol class="breadcrumb">
-						<li class="breadcrumb-item">
-							<a href="/" class="text-decoration-none">📦 ${packageName}</a>
-						</li>
-						<li class="breadcrumb-item">
-							<a href="/modules/" class="text-decoration-none">Modules</a>
-						</li>
-						<li class="breadcrumb-item">
-							<a href="/modules/${moduleName}/" class="text-decoration-none">${moduleName}</a>
-						</li>
-						<li class="breadcrumb-item active" aria-current="page">${entity.name}</li>
-					</ol>
-				</nav>
+		${pageHeader({
+			title: ent.name,
+			subtitle: ent.description ? md`${ent.description}` : undefined,
+			breadcrumbs,
+			badges,
+			description:
+				metadataItems.length > 0 ? metadataItems.join(" • ") : undefined,
+		})}
 
-				${
-					isDeprecated
-						? html`
-				<div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
-					<span class="fs-4 me-2">⚠️</span>
-					<div>
-						<h6 class="alert-heading mb-1">Deprecated API</h6>
-						<p class="mb-0">${docs.deprecated.reason}</p>
-						${
-							docs.deprecated.since
-								? html`<small class="text-muted">Since version ${docs.deprecated.since}</small>`
-								: ""
-						}
-					</div>
-				</div>
-				`
-						: ""
-				}
+		${
+			isDeprecated
+				? deprecationAlert({
+						reason: docs.deprecated.reason,
+						since: docs.deprecated.since,
+					})
+				: ""
+		}
 
-				<div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
-					<div class="flex-grow-1">
-						<div class="d-flex align-items-center gap-2 mb-2">
-							<h1 class="display-5 fw-bold text-primary mb-0">${ent.name}</h1>
-							<span class="badge ${getTypeBadgeClass(ent.type)} fs-6">${ent.type}</span>
-							${
-								ent.isDefault
-									? html`<span class="badge bg-primary fs-6">default module</span>`
-									: ""
-							}
-						</div>
-						${
-							ent.description
-								? html`<div class="lead text-muted mb-3">${md`${ent.description}`}</div>`
-								: ""
-						}
-
-						<!-- Import Statement -->
-						<div class="card bg-light border-0 mb-3">
-							<div class="card-body p-3">
-								<div class="d-flex justify-content-between align-items-center">
-									<code class="text-dark">${ent.importStatement}</code>
-									<button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('${ent.importStatement}')" title="Copy import statement">
-										📋 Copy
-									</button>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<!-- Entity Metadata -->
-					<div class="text-end">
-						${
-							hasLocation
-								? html`
-						<div class="text-muted mb-2">
-							<small>
-								📍 ${ent.location.file}:${ent.location.line}
-							</small>
-						</div>
-						`
-								: ""
-						}
-						${
-							docs.since
-								? html`
-						<div class="text-muted mb-2">
-							<small>📅 Since ${docs.since}</small>
-						</div>
-						`
-								: ""
-						}
-						${
-							docs.author.length > 0
-								? html`
-						<div class="text-muted">
-							<small>👤 ${docs.author.join(", ")}</small>
-						</div>
-						`
-								: ""
-						}
-					</div>
-				</div>
-			</div>
-		</div>
+		<!-- Import Statement -->
+		${codeBlock({
+			code: ent.importStatement,
+			language: "javascript",
+			title: "Import Statement",
+		})}
 
 		<div class="row">
 			<!-- Main Documentation -->
@@ -208,253 +168,170 @@ export function entityPageTemplate(data) {
 				<!-- TypeScript Signature -->
 				${
 					hasTypeInfo && docs.typeInfo.signature
-						? html`
-				<div class="card mb-4">
-					<div class="card-header bg-white border-bottom">
-						<h3 class="h5 mb-0">📝 Type Signature</h3>
-					</div>
-					<div class="card-body">
-						<pre class="mb-0"><code class="language-typescript">${docs.typeInfo.signature}</code></pre>
-					</div>
-				</div>
-				`
+						? contentSection({
+								title: "Type Signature",
+								icon: "📝",
+								content: codeBlock({
+									code: docs.typeInfo.signature,
+									language: "typescript",
+									showCopy: false,
+								}),
+							})
 						: ""
 				}
 
 				<!-- Parameters -->
 				${
 					hasParameters
-						? html`
-				<div class="card mb-4">
-					<div class="card-header bg-white border-bottom">
-						<h3 class="h5 mb-0">⚙️ Parameters</h3>
-					</div>
-					<div class="card-body p-0">
-						<div class="table-responsive">
-							<table class="table table-striped mb-0">
-								<thead class="table-light">
-									<tr>
-										<th>Name</th>
-										<th>Type</th>
-										<th>Description</th>
-										<th>Default</th>
-									</tr>
-								</thead>
-								<tbody>
-									${docs.parameters.map(
-										/** @param {any} param */
-										(param) => html`
-									<tr>
-										<td>
-											<code class="text-primary">${param.name}</code>
-											${param.isOptional ? html`<span class="text-muted">?</span>` : ""}
-										</td>
-										<td>
-											${
-												param.type
-													? html`<code class="text-secondary">${param.type}</code>`
-													: html`<span class="text-muted">any</span>`
-											}
-										</td>
-										<td>${param.description ? md`${param.description}` : html`<em class="text-muted">No description</em>`}</td>
-										<td>
-											${
-												param.defaultValue
-													? html`<code class="text-success">${param.defaultValue}</code>`
-													: param.isOptional
-														? html`<span class="text-muted">undefined</span>`
-														: html`<span class="text-muted">required</span>`
-											}
-										</td>
-									</tr>
-									`,
-									)}
-								</tbody>
-							</table>
-						</div>
-					</div>
-				</div>
-				`
+						? contentSection({
+								title: "Parameters",
+								icon: "⚙️",
+								noPadding: true,
+								content: tableSection({
+									headers: ["Name", "Type", "Description", "Default"],
+									rows: docs.parameters.map(
+										/** @param {any} param */ (param) => [
+											html`<code class="text-primary">${param.name}</code>${param.isOptional ? html`<span class="text-muted">?</span>` : ""}`,
+											param.type
+												? html`<code class="text-secondary">${param.type}</code>`
+												: html`<span class="text-muted">any</span>`,
+											param.description
+												? md`${param.description}`
+												: html`<em class="text-muted">No description</em>`,
+											param.defaultValue
+												? html`<code class="text-success">${param.defaultValue}</code>`
+												: param.isOptional
+													? html`<span class="text-muted">undefined</span>`
+													: html`<span class="text-muted">required</span>`,
+										],
+									),
+								}),
+							})
 						: ""
 				}
 
 				<!-- Returns -->
 				${
 					hasReturns
-						? html`
-				<div class="card mb-4">
-					<div class="card-header bg-white border-bottom">
-						<h3 class="h5 mb-0">↩️ Returns</h3>
-					</div>
-					<div class="card-body">
-						<div class="d-flex gap-3">
-							${
-								docs.returns.type
-									? html`
-							<div>
-								<strong>Type:</strong>
-								<code class="text-secondary">${docs.returns.type}</code>
-							</div>
-							`
-									: ""
-							}
-						</div>
+						? contentSection({
+								title: "Returns",
+								icon: "↩️",
+								content: html`
 						${
-							docs.returns.description
-								? html`<div class="mt-2 mb-0">${md`${docs.returns.description}`}</div>`
+							docs.returns.type
+								? html`
+						<div class="mb-2">
+							<strong>Type:</strong>
+							<code class="text-secondary">${docs.returns.type}</code>
+						</div>
+						`
 								: ""
 						}
-					</div>
-				</div>
-				`
+						${
+							docs.returns.description
+								? html`
+						<div class="mb-0">${md`${docs.returns.description}`}</div>
+						`
+								: ""
+						}
+					`,
+							})
 						: ""
 				}
 
 				<!-- Exceptions/Throws -->
 				${
 					docs.throws.length > 0
-						? html`
-				<div class="card mb-4">
-					<div class="card-header bg-white border-bottom">
-						<h3 class="h5 mb-0">🚨 Exceptions</h3>
-					</div>
-					<div class="card-body p-0">
-						<div class="table-responsive">
-							<table class="table table-striped mb-0">
-								<thead class="table-light">
-									<tr>
-										<th>Type</th>
-										<th>Description</th>
-									</tr>
-								</thead>
-								<tbody>
-									${docs.throws.map(
-										/** @param {any} throwsInfo */
-										(throwsInfo) => html`
-									<tr>
-										<td><code class="text-danger">${throwsInfo.type}</code></td>
-										<td>${throwsInfo.description ? md`${throwsInfo.description}` : html`<em class="text-muted">No description</em>`}</td>
-									</tr>
-									`,
-									)}
-								</tbody>
-							</table>
-						</div>
-					</div>
-				</div>
-				`
+						? contentSection({
+								title: "Exceptions",
+								icon: "🚨",
+								noPadding: true,
+								content: tableSection({
+									headers: ["Type", "Description"],
+									rows: docs.throws.map(
+										/** @param {any} throwsInfo */ (throwsInfo) => [
+											html`<code class="text-danger">${throwsInfo.type}</code>`,
+											throwsInfo.description
+												? md`${throwsInfo.description}`
+												: html`<em class="text-muted">No description</em>`,
+										],
+									),
+								}),
+							})
 						: ""
 				}
 
 				<!-- Examples -->
 				${
 					hasExamples
-						? html`
-				<div class="card mb-4">
-					<div class="card-header bg-white border-bottom">
-						<h3 class="h5 mb-0">💡 Examples</h3>
-					</div>
-					<div class="card-body p-0">
+						? contentSection({
+								title: "Examples",
+								icon: "💡",
+								noPadding: true,
+								content: html`
 						${docs.examples.map(
-							/** @param {any} example */
-							(example) => html`
+							/** @param {any} example */ (example) => html`
 						<div class="border-bottom p-4">
-							<h6 class="fw-bold mb-3">${example.title}</h6>
-							<div class="position-relative">
-								<pre class="bg-light border rounded p-3 mb-0"><code class="language-${example.language}">${example.code}</code></pre>
-								<button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
-									onclick="copyToClipboard(\`${example.code.replace(/`/g, "\\`")}\`)" title="Copy example">
-									📋
-								</button>
-							</div>
+							${codeBlock({
+								code: example.code,
+								language: example.language,
+								title: example.title,
+							})}
 						</div>
 						`,
 						)}
-					</div>
-				</div>
-				`
+					`,
+							})
 						: ""
 				}
 
 				<!-- Cross-references -->
 				${
 					ent.crossReferences && ent.crossReferences.length > 0
-						? html`
-				<div class="card mb-4">
-					<div class="card-header bg-white border-bottom">
-						<h3 class="h5 mb-0">🔗 Related Functions</h3>
-					</div>
-					<div class="card-body p-0">
-						<div class="table-responsive">
-							<table class="table table-striped mb-0">
-								<thead class="table-light">
-									<tr>
-										<th>Function</th>
-										<th>Type</th>
-										<th>Context</th>
-									</tr>
-								</thead>
-								<tbody>
-									${ent.crossReferences.map(
-										/** @param {any} ref */
-										(ref) => html`
-									<tr>
-										<td>
-											<a href="/modules/utils/${ref.entityName}/" class="text-decoration-none">
-												<code class="bg-light px-2 py-1 rounded">${ref.entityName}</code>
-											</a>
-										</td>
-										<td>
-											<span class="badge ${ref.type === "see" ? "bg-info" : "bg-secondary"}">${ref.type}</span>
-										</td>
-										<td class="text-muted small">${ref.context}</td>
-									</tr>
-									`,
-									)}
-								</tbody>
-							</table>
-						</div>
-					</div>
-				</div>
-				`
+						? contentSection({
+								title: "Related Functions",
+								icon: "🔗",
+								noPadding: true,
+								content: tableSection({
+									headers: ["Function", "Type", "Context"],
+									rows: ent.crossReferences.map(
+										/** @param {any} ref */ (ref) => [
+											html`<a href="/modules/utils/${ref.entityName}/" class="text-decoration-none">
+								<code class="bg-light px-2 py-1 rounded">${ref.entityName}</code>
+							</a>`,
+											html`<span class="badge ${ref.type === "see" ? "bg-info" : "bg-secondary"}">${ref.type}</span>`,
+											html`<span class="text-muted small">${ref.context}</span>`,
+										],
+									),
+								}),
+							})
 						: ""
 				}
 
 				<!-- Source Code -->
 				${
 					hasSource
-						? html`
-				<div class="card mb-4">
-					<div class="card-header bg-white border-bottom">
-						<h3 class="h5 mb-0">📄 Source Code</h3>
-					</div>
-					<div class="card-body">
-						<div class="position-relative">
-							<pre class="bg-light border rounded p-3 mb-0"><code class="language-javascript">${ent.source}</code></pre>
-							<button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
-								onclick="copyToClipboard(\`${ent.source.replace(/`/g, "\\`")}\`)" title="Copy source">
-								📋
-							</button>
-						</div>
-					</div>
-				</div>
-				`
+						? contentSection({
+								title: "Source Code",
+								icon: "📄",
+								content: codeBlock({
+									code: ent.source,
+									language: "javascript",
+								}),
+							})
 						: ""
 				}
 
 				<!-- See Also -->
 				${
 					docs.see.length > 0
-						? html`
-				<div class="card mb-4">
-					<div class="card-header bg-white border-bottom">
-						<h3 class="h5 mb-0">🔗 See Also</h3>
-					</div>
-					<div class="card-body">
+						? contentSection({
+								title: "See Also",
+								icon: "🔗",
+								content: html`
 						<ul class="list-unstyled mb-0">
 							${docs.see.map(
-								/** @param {any} seeRef */
-								(seeRef) => html`
+								/** @param {any} seeRef */ (seeRef) => html`
 							<li class="mb-2">
 								${
 									seeRef.link
@@ -471,46 +348,34 @@ export function entityPageTemplate(data) {
 							`,
 							)}
 						</ul>
-					</div>
-				</div>
-				`
+					`,
+							})
 						: ""
 				}
 
 				<!-- Related Entities -->
 				${
 					hasRelatedEntities
-						? html`
-				<div class="card">
-					<div class="card-header bg-white border-bottom">
-						<h3 class="h5 mb-0">🔄 Related APIs</h3>
-					</div>
-					<div class="card-body p-0">
+						? contentSection({
+								title: "Related APIs",
+								icon: "🔄",
+								content: html`
 						${
 							relatedEntities.sameModule.length > 0
 								? html`
-						<div class="p-4 border-bottom">
+						<div class="mb-4">
 							<h6 class="fw-bold mb-3">Same Module (${moduleName})</h6>
-							<div class="row g-2">
+							<div class="row g-3">
 								${relatedEntities.sameModule.map(
-									/** @param {any} related */
-									(related) => html`
+									/** @param {any} related */ (related) => html`
 								<div class="col-md-6">
-									<div class="card border">
-										<div class="card-body p-3">
-											<div class="d-flex justify-content-between align-items-start mb-2">
-												<h6 class="card-title mb-0">
-													<a href="${related.link}" class="text-decoration-none">${related.name}</a>
-												</h6>
-												<span class="badge ${getTypeBadgeClass(related.type)}">${related.type}</span>
-											</div>
-																			${
-																				related.description
-																					? html`<div class="card-text text-muted small mb-0">${md`${related.description}`}</div>`
-																					: ""
-																			}
-										</div>
-									</div>
+									${entityCard({
+										name: related.name,
+										type: related.type,
+										description: related.description,
+										link: related.link,
+										showFooter: false,
+									})}
 								</div>
 								`,
 								)}
@@ -523,28 +388,22 @@ export function entityPageTemplate(data) {
 						${
 							relatedEntities.similar.length > 0
 								? html`
-						<div class="p-4">
+						<div class="mb-0">
 							<h6 class="fw-bold mb-3">Similar APIs (${ent.type})</h6>
-							<div class="row g-2">
+							<div class="row g-3">
 								${relatedEntities.similar.map(
-									/** @param {any} similar */
-									(similar) => html`
+									/** @param {any} similar */ (similar) => html`
 								<div class="col-md-6">
-									<div class="card border">
-										<div class="card-body p-3">
-											<div class="d-flex justify-content-between align-items-start mb-2">
-												<h6 class="card-title mb-0">
-													<a href="${similar.link}" class="text-decoration-none">${similar.name}</a>
-												</h6>
-												<span class="badge bg-secondary">${similar.moduleName}</span>
-											</div>
-																			${
-																				similar.description
-																					? html`<div class="card-text text-muted small mb-0">${md`${similar.description}`}</div>`
-																					: ""
-																			}
-										</div>
-									</div>
+									${entityCard({
+										name: similar.name,
+										type: ent.type,
+										description: similar.description,
+										link: similar.link,
+										badges: [
+											{ text: similar.moduleName, variant: "secondary" },
+										],
+										showFooter: false,
+									})}
 								</div>
 								`,
 								)}
@@ -553,9 +412,8 @@ export function entityPageTemplate(data) {
 						`
 								: ""
 						}
-					</div>
-				</div>
-				`
+					`,
+							})
 						: ""
 				}
 			</div>
@@ -565,135 +423,56 @@ export function entityPageTemplate(data) {
 				navigation.allModules.length > 1
 					? html`
 			<div class="col-lg-4">
-				<!-- Module Navigation -->
-				<div class="card mb-4">
-					<div class="card-header bg-white border-bottom">
-						<h5 class="mb-0">🗂️ ${moduleName} APIs</h5>
-					</div>
-					<div class="card-body p-0">
-						<div class="list-group list-group-flush">
-							${navigation.moduleEntities.map(
-								/** @param {any} navEntity */
-								(navEntity) => html`
-							<a href="${navEntity.link}"
-								class="list-group-item list-group-item-action d-flex justify-content-between align-items-center ${navEntity.isCurrent ? "active" : ""}">
-								<div>
-									<div class="fw-medium">${navEntity.name}</div>
-									<div class="small text-muted">${navEntity.type}</div>
-								</div>
-								${navEntity.isCurrent ? html`<span class="badge bg-light text-dark">current</span>` : ""}
-							</a>
-							`,
-							)}
-						</div>
-					</div>
+				<!-- Module APIs Navigation -->
+				<div class="mb-4">
+					${moduleNavigation({
+						modules: navigation.moduleEntities.map(
+							/** @param {any} entity */ (entity) => ({
+								name: entity.name,
+								link: entity.link,
+								entityCount: 1,
+								fullImportPath: entity.type,
+								isCurrent: entity.isCurrent,
+							}),
+						),
+						title: `🗂️ ${moduleName} APIs`,
+					})}
 				</div>
 
-				<!-- All Modules -->
-				<div class="card mb-4">
-					<div class="card-header bg-white border-bottom">
-						<h5 class="mb-0">📦 All Modules</h5>
-					</div>
-					<div class="card-body p-0">
-						<div class="list-group list-group-flush">
-							${navigation.allModules.map(
-								/** @param {any} navModule */
-								(navModule) => html`
-							<a href="${navModule.link}"
-								class="list-group-item list-group-item-action d-flex justify-content-between align-items-center ${navModule.isCurrent ? "active" : ""}">
-								<div>
-									<div class="fw-medium">
-										${navModule.isDefault ? html`<span class="badge bg-primary me-2">default</span>` : ""}
-										${navModule.name}
-									</div>
-									<div class="small text-muted">${navModule.fullImportPath}</div>
-								</div>
-								<div class="text-end">
-									<span class="badge ${navModule.isCurrent ? "bg-light text-dark" : "bg-secondary"}">${navModule.entityCount}</span>
-									<div class="small text-muted">APIs</div>
-								</div>
-							</a>
-							`,
-							)}
-						</div>
-					</div>
+				<!-- All Modules Navigation -->
+				<div class="mb-4">
+					${moduleNavigation({
+						modules: navigation.allModules,
+						title: "📦 All Modules",
+					})}
 				</div>
 
 				<!-- Quick Actions -->
-				<div class="card">
-					<div class="card-header bg-white border-bottom">
-						<h5 class="mb-0">🚀 Quick Actions</h5>
-					</div>
-					<div class="card-body">
-						<div class="d-grid gap-2">
-							<a href="/modules/${moduleName}/" class="btn btn-outline-primary">
-								📄 Module Overview
-							</a>
-							<a href="/api/?search=${encodeURIComponent(ent.name)}" class="btn btn-outline-secondary">
-								🔍 Search APIs
-							</a>
-							<a href="/modules/" class="btn btn-outline-info">
-								📦 Browse Modules
-							</a>
-							<a href="/" class="btn btn-outline-dark">
-								🏠 Package Home
-							</a>
-						</div>
-					</div>
-				</div>
+				${quickActions({
+					actions: [
+						{
+							href: `/modules/${moduleName}/`,
+							text: "📄 Module Overview",
+							variant: "outline-primary",
+						},
+						{
+							href: `/api/?search=${encodeURIComponent(ent.name)}`,
+							text: "🔍 Search APIs",
+							variant: "outline-secondary",
+						},
+						{
+							href: "/modules/",
+							text: "📦 Browse Modules",
+							variant: "outline-info",
+						},
+						{ href: "/", text: "🏠 Package Home", variant: "outline-dark" },
+					],
+				})}
 			</div>
 			`
 					: ""
 			}
 		</div>
-
-		<!-- Copy to Clipboard JavaScript -->
-		<script>
-			function copyToClipboard(text) {
-				if (navigator.clipboard && window.isSecureContext) {
-					navigator.clipboard.writeText(text).then(() => {
-						showCopyFeedback();
-					}).catch(() => {
-						fallbackCopyTextToClipboard(text);
-					});
-				} else {
-					fallbackCopyTextToClipboard(text);
-				}
-			}
-
-			function fallbackCopyTextToClipboard(text) {
-				const textArea = document.createElement("textarea");
-				textArea.value = text;
-				textArea.style.top = "0";
-				textArea.style.left = "0";
-				textArea.style.position = "fixed";
-				document.body.appendChild(textArea);
-				textArea.focus();
-				textArea.select();
-				try {
-					document.execCommand('copy');
-					showCopyFeedback();
-				} catch (err) {
-					console.error('Fallback: Could not copy text');
-				}
-				document.body.removeChild(textArea);
-			}
-
-			function showCopyFeedback() {
-				// Create temporary feedback element
-				const feedback = document.createElement('div');
-				feedback.textContent = 'Copied!';
-				feedback.className = 'position-fixed top-50 start-50 translate-middle bg-success text-white px-3 py-2 rounded';
-				feedback.style.zIndex = '9999';
-				document.body.appendChild(feedback);
-
-				setTimeout(() => {
-					if (feedback.parentNode) {
-						feedback.parentNode.removeChild(feedback);
-					}
-				}, 2000);
-			}
-		</script>
 	`;
 
 	// Return complete HTML page using base template

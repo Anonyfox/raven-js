@@ -360,7 +360,7 @@ describe("createModuleOverviewHandler", () => {
 		assert.strictEqual(ctx.responseStatusCode, 200, "Returns 200 status");
 		assert(html.includes("awesome-package"), "Contains module name");
 		assert(
-			html.includes('badge bg-primary me-3">default'),
+			html.includes('badge bg-primary fs-6">default'),
 			"Shows default badge",
 		);
 		assert(html.includes("Main Module"), "Contains default module README");

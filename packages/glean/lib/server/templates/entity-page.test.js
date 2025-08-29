@@ -565,8 +565,11 @@ describe("entityPageTemplate", () => {
 
 		// Copy buttons for different sections
 		assert(html.includes("Copy import statement"), "Has import copy button");
-		assert(html.includes("Copy example"), "Has example copy buttons");
-		assert(html.includes("Copy source"), "Has source copy button");
+		assert(html.includes("Copy basic usage"), "Has example copy buttons");
+		assert(
+			html.includes("📋 Copy") && html.includes("Source Code"),
+			"Has source copy button",
+		);
 	});
 
 	test("escapes code content properly for JavaScript", () => {

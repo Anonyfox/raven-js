@@ -556,7 +556,7 @@ describe("moduleDirectoryTemplate", () => {
 
 		// Should use responsive grid classes
 		assert(
-			html.includes('class="col-md-6 col-lg-4 col-xl-3"'),
+			html.includes('class="col-md-6 col-lg-3 col-xl-3"'),
 			"Should use responsive grid classes",
 		);
 		assert(

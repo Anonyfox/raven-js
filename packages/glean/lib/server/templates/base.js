@@ -83,156 +83,126 @@ export function baseTemplate({
 	<!-- Bootstrap 5 CSS -->
 	<link href="/bootstrap.min.css" rel="stylesheet">
 
-	<!-- Custom Documentation Styles -->
-	<style>
-		:root {
-			--glean-primary: #6366f1;
-			--glean-secondary: #64748b;
-			--glean-accent: #f59e0b;
-			--glean-surface: #f8fafc;
-			--glean-border: #e2e8f0;
-		}
-
-		body {
-			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-			line-height: 1.6;
-			color: #334155;
-		}
-
-		.navbar-brand {
-			font-weight: 600;
-			color: var(--glean-primary) !important;
-		}
-
-		.sidebar {
-			background-color: var(--glean-surface);
-			border-right: 1px solid var(--glean-border);
-			min-height: calc(100vh - 56px);
-		}
-
-		.content-area {
-			min-height: calc(100vh - 56px);
-			padding: 2rem;
-		}
-
-		.nav-link {
-			color: var(--glean-secondary);
-			transition: color 0.2s ease;
-		}
-
-		.nav-link:hover, .nav-link.active {
-			color: var(--glean-primary);
-		}
-
-		.code-block {
-			background-color: #f1f5f9;
-			border: 1px solid var(--glean-border);
-			border-radius: 0.5rem;
-			padding: 1rem;
-			font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-			font-size: 0.875rem;
-		}
-
-		.breadcrumb {
-			background-color: transparent;
-			padding: 0;
-			margin-bottom: 1.5rem;
-		}
-
-		.breadcrumb-item + .breadcrumb-item::before {
-			content: "›";
-			color: var(--glean-secondary);
-		}
-
-		.search-highlight {
-			background-color: rgba(245, 158, 11, 0.2);
-			padding: 0.125rem 0.25rem;
-			border-radius: 0.25rem;
-		}
-
-		/* Module Directory Card Improvements */
-		.card {
-			transition: transform 0.2s ease, box-shadow 0.2s ease;
-		}
-
-		.card:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-		}
-
-		/* Improve text overflow handling */
-		.text-truncate {
-			word-wrap: break-word;
-			overflow-wrap: break-word;
-		}
-
-		/* Better markdown content handling */
-		.card-body .text-muted div {
-			line-height: 1.4;
-		}
-
-		/* Improve entity badges */
-		.badge {
-			font-size: 0.75rem;
-			font-weight: 500;
-		}
-
-		/* Better responsive grid */
-		@media (max-width: 1400px) {
-			.col-xl-3 {
-				margin-bottom: 1rem;
+			<!-- Custom documentation enhancements -->
+		<style>
+			/* CSS variables for theming */
+			:root {
+				--glean-primary: #0d6efd;
+				--glean-secondary: #6c757d;
+				--glean-background: #ffffff;
+				--glean-surface: #f8f9fa;
 			}
-		}
 
-		@media (max-width: 992px) {
-			.col-lg-4 {
-				margin-bottom: 1rem;
+			/* Copy functionality styling */
+			.code-copy-btn {
+				position: absolute;
+				top: 0.5rem;
+				right: 0.5rem;
+				opacity: 0.7;
+				transition: opacity 0.2s ease;
 			}
-		}
 
-		@media (max-width: 768px) {
-			.content-area {
+			.code-copy-btn:hover {
+				opacity: 1;
+			}
+
+			/* Search highlighting */
+			.search-highlight {
+				background-color: rgba(255, 193, 7, 0.2);
+				padding: 0.125rem 0.25rem;
+				border-radius: 0.25rem;
+			}
+
+			/* Enhanced styling for documentation */
+			.navbar-brand {
+				font-weight: 700;
+				color: var(--glean-primary) !important;
+			}
+
+			.code-block {
+				background-color: var(--glean-surface);
+				border: 1px solid #dee2e6;
+				border-radius: 0.375rem;
 				padding: 1rem;
+				overflow-x: auto;
 			}
 
-			.sidebar {
-				min-height: auto;
-			}
-
-			.card-body {
-				padding: 1rem;
-			}
-
-			.col-md-6 {
+			/* README content styling */
+			.readme-content h1, .readme-content h2, .readme-content h3,
+			.readme-content h4, .readme-content h5, .readme-content h6 {
+				margin-top: 1.5rem;
 				margin-bottom: 1rem;
 			}
-		}
 
-		/* Ensure grid items have proper spacing */
-		.row.g-4 > [class*="col-"] {
-			margin-bottom: 1.5rem;
-		}
+			.readme-content h1:first-child,
+			.readme-content h2:first-child,
+			.readme-content h3:first-child {
+				margin-top: 0;
+			}
 
-		/* Improve card sizing */
-		.card {
-			height: 100%;
-			display: flex;
-			flex-direction: column;
-		}
+			.readme-content p {
+				margin-bottom: 1rem;
+			}
 
-		.card-body {
-			flex: 1;
-			display: flex;
-			flex-direction: column;
-		}
-	</style>
+			.readme-content pre {
+				background-color: #f8f9fa;
+				border: 1px solid #e9ecef;
+				border-radius: 0.375rem;
+				padding: 1rem;
+				overflow-x: auto;
+			}
+
+			.readme-content code {
+				background-color: #f8f9fa;
+				color: #e83e8c;
+				padding: 0.125rem 0.25rem;
+				border-radius: 0.25rem;
+				font-size: 0.875em;
+			}
+
+			.readme-content pre code {
+				background-color: transparent;
+				color: inherit;
+				padding: 0;
+			}
+
+			.readme-content table {
+				width: 100%;
+				margin-bottom: 1rem;
+				border-collapse: collapse;
+			}
+
+			.readme-content th,
+			.readme-content td {
+				padding: 0.5rem;
+				border: 1px solid #dee2e6;
+			}
+
+			.readme-content th {
+				background-color: #f8f9fa;
+				font-weight: 600;
+			}
+
+			/* Mobile responsive adjustments */
+			@media (max-width: 768px) {
+				.container-fluid {
+					padding-left: 0.75rem;
+					padding-right: 0.75rem;
+				}
+
+				.sidebar {
+					border-end: none !important;
+					border-bottom: 1px solid #dee2e6;
+				}
+			}
+		</style>
 </head>
 <body>
 	<!-- Main Navigation -->
 	<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
 		<div class="container-fluid">
-			<a class="navbar-brand" href="/">
-				<strong>${packageName}</strong> Documentation
+			<a class="navbar-brand fw-bold text-primary" href="/">
+				${packageName} <small class="text-muted">Documentation</small>
 			</a>
 
 			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -270,22 +240,22 @@ export function baseTemplate({
 	<!-- Main Content Area -->
 	<div class="container-fluid">
 		<div class="row">
-			<!-- Sidebar Navigation (if provided) -->
-			${
-				navigation.sidebar
-					? html`
-			<div class="col-md-3 col-lg-2">
-				<div class="sidebar p-3">
-					${navigation.sidebar}
-				</div>
-			</div>
-			`
-					: ""
-			}
+								<!-- Sidebar Navigation (if provided) -->
+					${
+						navigation.sidebar
+							? html`
+					<div class="col-md-3 col-lg-2 bg-light border-end sidebar">
+						<div class="p-3" style="min-height: calc(100vh - 56px);">
+							${navigation.sidebar}
+						</div>
+					</div>
+					`
+							: ""
+					}
 
 			<!-- Main Content -->
 			<div class="${navigation.sidebar ? "col-md-9 col-lg-10" : "col-12"}">
-				<main class="content-area">
+				<main class="p-4" style="min-height: calc(100vh - 56px);">
 					${content}
 				</main>
 			</div>
@@ -328,17 +298,20 @@ export function baseTemplate({
 		});
 
 		// Copy code block functionality
-		document.querySelectorAll('.code-block').forEach(block => {
-			const copyBtn = document.createElement('button');
-			copyBtn.className = 'btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2';
-			copyBtn.textContent = 'Copy';
-			copyBtn.onclick = () => {
-				navigator.clipboard.writeText(block.textContent);
-				copyBtn.textContent = 'Copied!';
-				setTimeout(() => copyBtn.textContent = 'Copy', 2000);
-			};
-			block.style.position = 'relative';
-			block.appendChild(copyBtn);
+		document.querySelectorAll('pre').forEach(block => {
+			if (block.querySelector('code')) {
+				const copyBtn = document.createElement('button');
+				copyBtn.className = 'btn btn-sm btn-outline-secondary code-copy-btn';
+				copyBtn.textContent = '📋';
+				copyBtn.title = 'Copy code';
+				copyBtn.onclick = () => {
+					navigator.clipboard.writeText(block.textContent);
+					copyBtn.textContent = '✓';
+					setTimeout(() => copyBtn.textContent = '📋', 2000);
+				};
+				block.style.position = 'relative';
+				block.appendChild(copyBtn);
+			}
 		});
 
 		// Search highlighting (basic implementation)
@@ -361,6 +334,52 @@ export function baseTemplate({
 					node.parentNode.replaceChild(wrapper, node);
 				}
 			}
+		}
+
+		// Copy to clipboard functionality
+		function copyToClipboard(text) {
+			if (navigator.clipboard && window.isSecureContext) {
+				navigator.clipboard.writeText(text).then(() => {
+					showCopyFeedback();
+				}).catch(() => {
+					fallbackCopyTextToClipboard(text);
+				});
+			} else {
+				fallbackCopyTextToClipboard(text);
+			}
+		}
+
+		function fallbackCopyTextToClipboard(text) {
+			const textArea = document.createElement("textarea");
+			textArea.value = text;
+			textArea.style.top = "0";
+			textArea.style.left = "0";
+			textArea.style.position = "fixed";
+			document.body.appendChild(textArea);
+			textArea.focus();
+			textArea.select();
+			try {
+				document.execCommand('copy');
+				showCopyFeedback();
+			} catch (err) {
+				console.error('Fallback: Could not copy text');
+			}
+			document.body.removeChild(textArea);
+		}
+
+		function showCopyFeedback() {
+			// Create temporary feedback element
+			const feedback = document.createElement('div');
+			feedback.textContent = 'Copied!';
+			feedback.className = 'position-fixed top-50 start-50 translate-middle bg-success text-white px-3 py-2 rounded';
+			feedback.style.zIndex = '9999';
+			document.body.appendChild(feedback);
+
+			setTimeout(() => {
+				if (feedback.parentNode) {
+					feedback.parentNode.removeChild(feedback);
+				}
+			}, 2000);
 		}
 	</script>
 </body>

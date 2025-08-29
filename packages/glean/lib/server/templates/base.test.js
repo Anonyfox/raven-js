@@ -189,10 +189,7 @@ describe("baseTemplate", () => {
 			navigation: { sidebar: "<ul><li>Sidebar Item</li></ul>" },
 		});
 
-		assert(
-			htmlWithSidebar.includes('<div class="sidebar'),
-			"Contains sidebar div",
-		);
+		assert(htmlWithSidebar.includes('sidebar">'), "Contains sidebar div");
 		assert(
 			htmlWithSidebar.includes("<li>Sidebar Item</li>"),
 			"Contains sidebar content",

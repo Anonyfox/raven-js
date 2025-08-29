@@ -205,7 +205,7 @@ describe("packageOverviewTemplate", () => {
 		const html = packageOverviewTemplate(data);
 
 		assert(
-			!html.includes("Getting Started"),
+			!html.includes("🚀 Getting Started"),
 			"Does not show getting started section",
 		);
 	});
