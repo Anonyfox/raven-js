@@ -13,7 +13,7 @@
  * Surgical design eliminating custom CSS through semantic Bootstrap patterns.
  */
 
-import { html, md } from "@raven-js/beak";
+import { html, md, safeHtml } from "@raven-js/beak";
 
 /**
  * Generate entity card for grid display
@@ -160,7 +160,7 @@ export function moduleCard({
 						? html`
 				<div class="mb-3">
 					<div class="text-muted mb-0" style="max-height: 3rem; overflow: hidden;">
-						${description}
+						${safeHtml`${description}`}
 					</div>
 				</div>
 				`
@@ -173,7 +173,7 @@ export function moduleCard({
 				<div class="mb-3">
 					<div class="small text-muted bg-light p-2 rounded">
 						<div style="max-height: 4rem; overflow: hidden;">
-							${readmePreview}
+							${safeHtml`${readmePreview}`}
 						</div>
 						${readmePreview.length >= 200 ? html`<small class="text-muted">...</small>` : ""}
 					</div>
