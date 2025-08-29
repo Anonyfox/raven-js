@@ -2,7 +2,7 @@
 
 [![Website](https://img.shields.io/badge/ravenjs.dev-000000?style=flat&logo=firefox&logoColor=white)](https://ravenjs.dev)
 
-**Apex-performance HTML template engine** - tagged templates at 0.337μs per operation.
+**Runtime template compilation engine** - WeakMap-cached function generation at 0.337μs per operation.
 
 ## Install
 
@@ -29,21 +29,22 @@ const escaped = escapeHtml('<script>alert("xss")</script>');
 
 ### `html(strings, ...values)`
 
-Tagged template for **trusted content only**. Zero escaping overhead.
+Tagged template compiles to specialized functions per unique template signature. Automatic isomorphic event binding via global function exposure.
 
 ```js
 const navigation = html`
-  <nav class="${isActive ? "active" : "inactive"}">
+  <nav class="${isActive ? "active" : "inactive"}" onclick=${handleClick}>
     ${menuItems.map((item) => html`<a href="${item.href}">${item.label}</a>`)}
   </nav>
 `;
 ```
 
+**Performance**: Zero escaping overhead, variadic/array-indexed specialization for V8 optimization.
 **⚠️ Security**: No escaping applied. Use only with sanitized data.
 
 ### `safeHtml(strings, ...values)`
 
-Tagged template for **untrusted content**. Automatic XSS protection.
+WeakSet-protected processing with character-level escaping and protocol neutralization.
 
 ```js
 const comment = safeHtml`
@@ -54,24 +55,19 @@ const comment = safeHtml`
 `;
 ```
 
-**Security Features:**
+**Security**: HTML entity escaping, blocks `javascript:`/`vbscript:`/`data:` protocols, neutralizes event handlers, prevents circular reference crashes.
 
-- HTML entity escaping (`<`, `>`, `&`, `"`, `'`)
-- Protocol blocking (`javascript:`, `vbscript:`, `data:`)
-- Event handler neutralization (`onclick`, `onload`, etc.)
-- Circular reference protection (prevents crashes)
-
-**Performance**: ~3x slower than `html()` due to escaping.
+**Performance**: ~3x slower than `html()` due to escaping overhead.
 
 ### `escapeHtml(str)`
 
-Character-level HTML escaping with XSS protection.
+Hybrid escaping with zero-cost fast path - regex probe first, character-level processing only when needed.
 
 ```js
 const safe = escapeHtml("User input: <script>alert()</script>");
 // → "User input: &lt;script&gt;alert()&lt;/script&gt;"
 
-// Blocks dangerous patterns
+// Protocol/event neutralization
 escapeHtml("javascript:alert()"); // → "blocked:alert()"
 escapeHtml('onclick="evil()"'); // → "blocked-click=&quot;evil()&quot;"
 ```
@@ -104,18 +100,22 @@ Measured performance on modern V8:
 
 ## Architecture
 
-- **Monomorphic paths**: Optimized for V8 type speculation
-- **Switch-based escaping**: Branch prediction friendly
-- **Minimal allocations**: String concatenation via `+=`
-- **Circular detection**: WeakSet prevents infinite loops
+- **WeakMap template caching**: Unique templates compile once to specialized functions
+- **Monomorphic value processing**: V8-optimized type paths with fast/slow specialization
+- **String concatenation via `+=`**: Zero-allocation approach for V8 optimization
+- **Hoisted regex constants**: Prevent per-call allocation overhead
 
 ## Integration
 
-**Component patterns:**
+**Isomorphic components with automatic event binding:**
 
 ```js
 const PostCard = (post) => html`
-  <article class="post ${post.featured ? "featured" : ""}" data-id="${post.id}">
+  <article
+    class="post ${post.featured ? "featured" : ""}"
+    data-id="${post.id}"
+    onclick=${() => selectPost(post.id)}
+  >
     <h2>${post.title}</h2>
     <div class="content">${safeHtml`${post.userContent}`}</div>
     <footer>

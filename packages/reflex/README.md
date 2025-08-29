@@ -35,16 +35,15 @@ effect(() => {
 count.set(5); // Logs: "Count: 5, Doubled: 10"
 ```
 
-### Revolutionary Component-Scoped SSR
+### Component-Scoped SSR
 
-Reflex introduces **inline component-scoped SSR** - a breakthrough that makes SSR completely **layout-independent** and **component-isolated**.
+Inline component-scoped SSR with per-component data injection. Each `ssr()` call gets unique cache isolation and works in any HTML structure.
 
 ```javascript
 import { ssr } from "@raven-js/reflex/ssr";
 
-// 🎯 Each component is self-contained with its own SSR data
 const UserWidget = ssr(async () => {
-  const response = await fetch("/api/user");
+  const response = await fetch("/api/user"); // relative URLs work via RAVENJS_ORIGIN
   const user = await response.json();
   return `<span>Hello ${user.name}!</span>`;
 });
@@ -55,25 +54,25 @@ const WeatherWidget = ssr(async () => {
   return `<div>${weather.temp}°C</div>`;
 });
 
-// 🚀 Works anywhere in your HTML - header, footer, modal, anywhere!
+// Works anywhere in HTML structure - header, footer, modal, nested components
 const layout = `
-  <header>${await UserWidget()}</header>    <!-- Independent SSR data -->
+  <header>${await UserWidget()}</header>
   <main>Content here</main>
-  <footer>${await WeatherWidget()}</footer> <!-- Independent SSR data -->
+  <footer>${await WeatherWidget()}</footer>
 `;
 
 // Server output:
 // <span>Hello Alice!</span><script>window.__SSR_DATA__abc123 = {...}</script>
 // <div>22°C</div><script>window.__SSR_DATA__def456 = {...}</script>
 
-// ✨ Client hydrates perfectly - zero duplicate requests, zero conflicts!
+// Client hydrates using cached data, then restores normal fetch behavior
 ```
 
-**Key Innovation:**
+**Architectural Difference:**
 
-- **Traditional SSR**: Global state at HTML structure points (`</head>`, `</body>`)
+- **Traditional SSR**: Global state injection at HTML structure points (`</head>`, `</body>`)
 - **Reflex SSR**: Component-scoped data injected inline with each component
-- **Result**: True component isolation, works in any layout, zero configuration
+- **Result**: Component isolation, layout independence, automatic cache management
 
 ### DOM Utilities
 
@@ -84,31 +83,40 @@ import { mount } from "@raven-js/reflex/dom";
 mount(() => `<h1>Hello ${signal("World")()}</h1>`, "#app");
 ```
 
-## Features
+## Architecture
 
-- **Revolutionary SSR** - Component-scoped inline data injection, layout-independent
-- **Universal Signals** - Work identically everywhere
-- **Diamond Problem Solved** - Automatic scheduling eliminates glitches
-- **Perfect Hydration** - Zero flicker, zero duplicate requests, zero conflicts
-- **True Component Isolation** - Each ssr() call has unique ID and cache
-- **Zero Dependencies** - Pure JavaScript only
-- **Framework Agnostic** - Integrates with any server/router
-- **Performance Optimized** - Paint-aligned updates, efficient DOM operations
+### Signal Scheduler
 
-### 🔮 Automagic Features
+Computed-first microtask execution solves the **diamond problem** - when multiple signals feed into a computed value, only one update fires instead of glitched intermediate states. Computeds propagate until stable, then effects execute.
 
-- **Component-Scoped SSR** - Automatic unique ID generation, inline injection, zero configuration
-- **Layout Independence** - SSR components work in any HTML structure, any nesting level
-- **Smart Cache Management** - Per-component cache isolation, automatic cleanup after consumption
-- **SSR Timeout Protection** - Graceful degradation with individual promise timeouts and exponential backoff
-- **Browser API Shims** - Automatic localStorage, window, navigator shims prevent SSR crashes
-- **Memory Leak Prevention** - Deterministic cleanup prevents hanging processes
-- **DOM Optimizations** - Target reuse, scroll preservation, coalesced updates, safe HTML replacement
-- **XSS Protection** - Automatic escaping and size caps for SSR data injection
+**Why this matters**: "Good enough" reactive systems exhibit glitches where intermediate states leak to effects. Great reactive systems guarantee consistent view of data at effect execution time.
+
+### Template Context System
+
+Render slots preserve component instances across renders, preventing object churn. Deferred effects execute after template completion rather than during rendering, enabling proper initialization order.
+
+### Multi-pass SSR
+
+Server runs multiple passes until output stabilizes (`html === prevHtml && promises.size === 0`). Uses exponential backoff between promise settlement attempts, individual timeouts per promise.
+
+### Fetch Integration in SSR
+
+`fetch()` calls work within `effect()` callbacks using relative URLs via `RAVENJS_ORIGIN` environment variable. Server proxies `globalThis.fetch`, caches GET responses per component ID. Client finds cached entries across component-scoped SSR blobs, consumes them, then restores original fetch behavior.
+
+### Hydration Intelligence
+
+`mount()` tracks write version baseline - skips initial DOM replacement when SSR content exists and no reactive writes occurred yet. Prevents downgrade from server-rendered to empty client state.
+
+### Performance Implementation
+
+- WeakMap template caching eliminates compilation overhead
+- Monomorphic signal reads optimize V8 type speculation
+- rAF + microtask scheduling coordination for paint alignment
+- WeakRef DOM tracking for automatic cleanup
 
 ## Wings Integration
 
-Reflex integrates seamlessly with [@raven-js/wings](https://github.com/Anonyfox/ravenjs/tree/main/packages/wings) for optimal fullstack reactivity:
+Reflex integrates with [@raven-js/wings](https://github.com/Anonyfox/ravenjs/tree/main/packages/wings) for fullstack reactivity:
 
 ```javascript
 import { Router } from "@raven-js/wings";
@@ -167,40 +175,40 @@ router.get(
 router.listen(3000);
 ```
 
-**Key Benefits:**
+**Integration Benefits:**
 
-- **Zero Configuration** - Wings + Reflex work together automatically
-- **Component-Scoped SSR** - Each component's data injected inline, complete isolation
-- **Layout Independent** - SSR components work anywhere in HTML structure
-- **Perfect Hydration** - Client uses exact server responses, zero duplicate requests
-- **Reactive Updates** - Signal changes update DOM efficiently
-- **Beak Integration** - Clean HTML templating with reactive interpolation
+- Wings automatically sets `RAVENJS_ORIGIN` for URL resolution
+- Component-scoped SSR data injection with cache isolation
+- SSR components work in any HTML structure
+- Client hydration uses server response cache, eliminates duplicate requests
+- Signal changes trigger efficient DOM updates
+- Beak template integration for HTML generation
 
 ### Origin Resolution for SSR
 
 Reflex automatically resolves relative URLs during SSR using `RAVENJS_ORIGIN` environment variable:
 
 ```javascript
-// In your SSR components - use relative URLs:
+// SSR components use relative URLs:
 const response = await fetch("/api/data");
-// ✅ Works perfectly! Wings auto-sets RAVENJS_ORIGIN
+// Wings automatically sets RAVENJS_ORIGIN
 
 // Reflex resolves to: http://localhost:3000/api/data (development)
 //                or: https://your-domain.com/api/data (production)
 ```
 
-**How it works:**
+**Implementation:**
 
-1. **Wings sets origin** - Automatically based on server configuration
-2. **Reflex uses origin** - For resolving relative URLs in `fetch()` calls
-3. **Zero config needed** - Works out of the box with Wings integration
+1. Wings sets `RAVENJS_ORIGIN` based on server configuration
+2. Reflex resolves relative URLs in `fetch()` calls using this origin
+3. No configuration required with Wings integration
 
 **Error handling:**
 
 ```javascript
 // If RAVENJS_ORIGIN not set (non-Wings usage):
 const response = await fetch("/api/data");
-// ❌ Throws: "RAVENJS_ORIGIN environment variable must be set for SSR"
+// Throws: "RAVENJS_ORIGIN environment variable must be set for SSR"
 ```
 
 **Manual override** (containers, reverse proxies):
