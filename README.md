@@ -28,14 +28,14 @@ Inspired by apex predators who survive through intelligence, not dependencies:
 
 - 🦜 **[Beak](packages/beak/README.md)** - Templates (4.2KB vs Pug's 201KB) • ✅ Production Ready
 - 🦅 **[Wings](packages/wings/README.md)** - Routing (Server + CLI) • ✅ Production Ready
-- ⚡ **[Reflex](packages/reflex/README.md)** - Reactivity (Universal SSR) • 🚧 In Development
+- ⚡ **[Reflex](packages/reflex/README.md)** - Reactivity (Universal SSR) • ✅ Production Ready
 
 ### Raven Actions (Tools)
 
 - 🥚 **Hatch** - Bootstrap new apps • 📋 Planned
 - 🐣 **Fledge** - Build & bundle • 📋 Planned
 - 🦅 **Soar** - Deploy anywhere • 📋 Planned
-- 🔍 **[Glean](packages/glean/README.md)** - JSDoc validation & doc generation • 🚧 In Development
+- 🔍 **[Glean](packages/glean/README.md)** - JSDoc tools & MCP • 🚧 In Development
 
 ## Why Ravens Win
 
