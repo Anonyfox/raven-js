@@ -143,13 +143,26 @@ describe("Shell/Bash Syntax Highlighter", () => {
 		});
 
 		it("should highlight braced variable expansions", () => {
-			const shell = "echo ${HOME}/bin ${USER:-default} ${#PATH}";
+			const shell =
+				"echo " +
+				"$" +
+				"{HOME}/bin " +
+				"$" +
+				"{USER:-default} " +
+				"$" +
+				"{#PATH}";
 			const result = highlightShell(shell);
-			assert.ok(result.includes('<span class="text-warning">${HOME}</span>'));
 			assert.ok(
-				result.includes('<span class="text-warning">${USER:-default}</span>'),
+				result.includes('<span class="text-warning">' + "$" + "{HOME}</span>"),
 			);
-			assert.ok(result.includes('<span class="text-warning">${#PATH}</span>'));
+			assert.ok(
+				result.includes(
+					'<span class="text-warning">' + "$" + "{USER:-default}</span>",
+				),
+			);
+			assert.ok(
+				result.includes('<span class="text-warning">' + "$" + "{#PATH}</span>"),
+			);
 		});
 
 		it("should highlight command substitution", () => {
@@ -458,12 +471,19 @@ describe("Shell/Bash Syntax Highlighter", () => {
 		it("should handle array operations and parameter expansion", () => {
 			const shell =
 				"files=(*.txt *.log)\n" +
-				'echo "Found ${' +
+				'echo "Found ' +
+				"${" +
 				'#files[@]} files"\n' +
 				"\n" +
-				'for file in "${files[@]}"; do\n' +
-				'	basename="${file%.*}"\n' +
-				'	extension="${file##*.}"\n' +
+				'for file in "' +
+				"$" +
+				'{files[@]}"; do\n' +
+				'	basename="' +
+				"$" +
+				'{file%.*}"\n' +
+				'	extension="' +
+				"$" +
+				'{file##*.}"\n' +
 				'	echo "File: $basename, Ext: $extension"\n' +
 				"done";
 			const result = highlightShell(shell);
@@ -473,11 +493,15 @@ describe("Shell/Bash Syntax Highlighter", () => {
 			assert.ok(result.includes('<span class="text-primary">do</span>'));
 			assert.ok(result.includes('<span class="text-primary">done</span>'));
 			assert.ok(
-				result.includes('<span class="text-warning">${' + "#files[@]}</span>"),
+				result.includes(
+					'<span class="text-warning">' + "$" + "{" + "#files[@]}</span>",
+				),
 			);
 			// Variable inside double quotes should be highlighted as variable, not as single token
 			assert.ok(
-				result.includes('<span class="text-warning">${files[@]}</span>'),
+				result.includes(
+					'<span class="text-warning">' + "$" + "{files[@]}</span>",
+				),
 			);
 		});
 	});
@@ -549,11 +573,18 @@ EOF`;
 		});
 
 		it("should handle mixed variable expansion styles", () => {
-			const shell = "echo $HOME ${USER} $(whoami) `id -u` $0 $$ $?";
+			const shell =
+				"echo $HOME " + "$" + "{USER} " + "$" + "(whoami) `id -u` $0 $$ $?";
 			const result = highlightShell(shell);
 			assert.ok(result.includes('<span class="text-warning">$HOME</span>'));
-			assert.ok(result.includes('<span class="text-warning">${USER}</span>'));
-			assert.ok(result.includes('<span class="text-warning">$(whoami)</span>'));
+			assert.ok(
+				result.includes('<span class="text-warning">' + "$" + "{USER}</span>"),
+			);
+			assert.ok(
+				result.includes(
+					'<span class="text-warning">' + "$" + "(whoami)</span>",
+				),
+			);
 			assert.ok(result.includes('<span class="text-success">`id -u`</span>'));
 			assert.ok(result.includes('<span class="text-warning">$0</span>'));
 			assert.ok(result.includes('<span class="text-warning">$$</span>'));
