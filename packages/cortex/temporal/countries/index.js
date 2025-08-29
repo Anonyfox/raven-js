@@ -33,7 +33,11 @@
  */
 
 export { AT } from "./AT.js";
+// Oceania
+export { AU } from "./AU.js";
 export { BE } from "./BE.js";
+// North America
+export { CA } from "./CA.js";
 export { CH } from "./CH.js";
 // Asian Countries
 export { CN } from "./CN.js";
@@ -56,9 +60,11 @@ export { IT } from "./IT.js";
 export { JP } from "./JP.js";
 export { KR } from "./KR.js";
 export { LU } from "./LU.js";
+export { MX } from "./MX.js";
 export { MY } from "./MY.js";
 export { NL } from "./NL.js";
 export { NO } from "./NO.js";
+export { NZ } from "./NZ.js";
 export { PH } from "./PH.js";
 // Eastern Europe
 export { PL } from "./PL.js";
@@ -66,6 +72,7 @@ export { PT } from "./PT.js";
 export { SE } from "./SE.js";
 export { SG } from "./SG.js";
 export { TH } from "./TH.js";
+export { US } from "./US.js";
 export { VN } from "./VN.js";
 
 // Future country exports will be added here:
