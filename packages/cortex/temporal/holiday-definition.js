@@ -7,13 +7,15 @@
  */
 
 /**
- * @file Holiday class definition for institutional memory preservation
+ * @file Holiday definition class for institutional memory preservation.
  *
- * Encapsulates bureaucratic holiday patterns that survive across political changes.
- * Supports multiple calculation types with validation and date generation.
- *
- * The murder's memory palace: each holiday preserved as a computational artifact.
+ * Internal class that encapsulates bureaucratic holiday patterns that survive
+ * across political changes. Supports multiple calculation types with validation
+ * and date generation. The murder's memory palace: each holiday preserved as
+ * a computational artifact.
  */
+
+import { Holiday } from "./holiday.js";
 
 /**
  * @typedef {Object} CalculatedHoliday
@@ -204,7 +206,7 @@ export class HolidayDefinition {
 	}
 
 	/**
-	 * Get a string representation of this holiday.
+	 * Get a string representation of this holiday definition.
 	 *
 	 * @returns {string} Holiday description
 	 */
@@ -248,98 +250,5 @@ export class HolidayDefinition {
 		} catch (_error) {
 			return false;
 		}
-	}
-}
-
-/**
- * Simple Holiday class representing a calculated holiday result.
- *
- * Clean data class for API consumers - contains only the essential information
- * about a calculated holiday without exposing internal calculation logic.
- *
- * DESIGN PRINCIPLES:
- * - **Simple**: Just data, no complex logic
- * - **Immutable**: Cannot be modified after creation
- * - **Clean API**: Only exposes what consumers need
- *
- * @example
- * const holiday = new Holiday(
- *   'Neujahr',
- *   new Date('2024-01-01'),
- *   true,
- *   'national',
- *   'fixed'
- * );
- * console.log(holiday.name); // 'Neujahr'
- * console.log(holiday.isWorkFree); // true
- */
-export class Holiday {
-	/**
-	 * Create a new holiday result.
-	 *
-	 * @param {string} name - Holiday name
-	 * @param {Date} date - Holiday date
-	 * @param {boolean} workFree - Whether this is a work-free holiday
-	 * @param {'national' | 'regional'} scope - Holiday scope
-	 * @param {'fixed' | 'easter_relative' | 'calculated'} type - Calculation type
-	 */
-	constructor(name, date, workFree, scope, type) {
-		this.name = name;
-		this.date = date;
-		this.workFree = workFree;
-		this.scope = scope;
-		this.type = type;
-
-		// Freeze to make immutable
-		Object.freeze(this);
-	}
-
-	/**
-	 * Get string representation of this holiday.
-	 *
-	 * @returns {string} Holiday description
-	 */
-	toString() {
-		const dateStr = this.date.toISOString().split("T")[0];
-		const scopeStr = this.scope === "national" ? "National" : "Regional";
-		const workStr = this.workFree ? "Work-free" : "Observance";
-		return `${this.name} (${dateStr}) - ${scopeStr} ${workStr}`;
-	}
-
-	/**
-	 * Check if this holiday falls on a specific date.
-	 *
-	 * @param {Date} date - Date to check against
-	 * @returns {boolean} True if holiday falls on the given date
-	 */
-	isOnDate(date) {
-		return this.date.getTime() === date.getTime();
-	}
-
-	/**
-	 * Check if this holiday is work-free.
-	 *
-	 * @returns {boolean} True if this is a work-free holiday
-	 */
-	get isWorkFree() {
-		return this.workFree;
-	}
-
-	/**
-	 * Check if this holiday is national scope.
-	 *
-	 * @returns {boolean} True if this is a national holiday
-	 */
-	get isNational() {
-		return this.scope === "national";
-	}
-
-	/**
-	 * Check if this holiday is regional scope.
-	 *
-	 * @returns {boolean} True if this is a regional holiday
-	 */
-	get isRegional() {
-		return this.scope === "regional";
 	}
 }

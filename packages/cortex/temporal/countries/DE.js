@@ -21,7 +21,7 @@
  * Ravens remember: bureaucratic patterns that outlive governments.
  */
 
-import { HolidayDefinition } from "./holiday.js";
+import { HolidayDefinition } from "../holiday-definition.js";
 
 /**
  * Calculate Buß- und Bettag (Day of Prayer and Repentance).
@@ -404,7 +404,7 @@ export const REGIONAL_HOLIDAYS = {
  * Complete German holiday system.
  * Institutional memory: federal structure with regional variations.
  */
-export const GERMAN_HOLIDAYS = {
+export const DE = {
 	national: NATIONAL_HOLIDAYS,
 	regional: REGIONAL_HOLIDAYS,
 };

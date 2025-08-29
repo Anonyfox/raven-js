@@ -53,6 +53,7 @@
   },
   "workspaces": [
     "packages/beak",
+    "packages/cortex",
     "packages/glean",
     "packages/nest",
     "packages/reflex",

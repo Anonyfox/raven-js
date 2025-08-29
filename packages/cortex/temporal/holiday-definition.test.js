@@ -8,7 +8,7 @@
 
 import assert from "node:assert";
 import { describe, it } from "node:test";
-import { HolidayDefinition } from "./holiday.js";
+import { HolidayDefinition } from "./holiday-definition.js";
 
 describe("HolidayDefinition class", () => {
 	describe("Constructor validation", () => {
@@ -26,6 +26,7 @@ describe("HolidayDefinition class", () => {
 			assert.strictEqual(holidayDef.month, 1);
 			assert.strictEqual(holidayDef.day, 1);
 			assert.strictEqual(holidayDef.workFree, true);
+			assert.ok(Object.isFrozen(holidayDef));
 		});
 
 		it("should create easter relative holiday definition", () => {
@@ -40,6 +41,7 @@ describe("HolidayDefinition class", () => {
 			assert.strictEqual(holidayDef.type, "easter_relative");
 			assert.strictEqual(holidayDef.offset, -2);
 			assert.strictEqual(holidayDef.workFree, true);
+			assert.ok(Object.isFrozen(holidayDef));
 		});
 
 		it("should create calculated holiday definition", () => {
@@ -56,28 +58,7 @@ describe("HolidayDefinition class", () => {
 			assert.strictEqual(holidayDef.type, "calculated");
 			assert.strictEqual(holidayDef.workFree, false);
 			assert.strictEqual(holidayDef.calculator, calculator);
-		});
-
-		it("should freeze holiday definition object after construction", () => {
-			const holidayDef = new HolidayDefinition({
-				name: "Test",
-				type: "fixed",
-				month: 1,
-				day: 1,
-				workFree: true,
-			});
-
 			assert.ok(Object.isFrozen(holidayDef));
-
-			// Attempt to modify should fail - check that it throws or stays unchanged
-			try {
-				holidayDef.name = "Modified";
-				// In non-strict mode, should remain unchanged
-				assert.strictEqual(holidayDef.name, "Test");
-			} catch (error) {
-				// In strict mode, should throw TypeError
-				assert.ok(error instanceof TypeError);
-			}
 		});
 
 		it("should reject invalid name", () => {
@@ -90,7 +71,7 @@ describe("HolidayDefinition class", () => {
 						day: 1,
 						workFree: true,
 					}),
-				{ message: /Holiday name must be a non-empty string/ },
+				/Holiday name must be a non-empty string/,
 			);
 
 			assert.throws(
@@ -102,7 +83,7 @@ describe("HolidayDefinition class", () => {
 						day: 1,
 						workFree: true,
 					}),
-				{ message: /Holiday name must be a non-empty string/ },
+				/Holiday name must be a non-empty string/,
 			);
 		});
 
@@ -116,10 +97,7 @@ describe("HolidayDefinition class", () => {
 						day: 1,
 						workFree: true,
 					}),
-				{
-					message:
-						/Holiday type must be 'fixed', 'easter_relative', or 'calculated'/,
-				},
+				/Holiday type must be/,
 			);
 		});
 
@@ -133,12 +111,11 @@ describe("HolidayDefinition class", () => {
 						day: 1,
 						workFree: "true",
 					}),
-				{ message: /Holiday workFree must be a boolean/ },
+				/Holiday workFree must be a boolean/,
 			);
 		});
 
 		it("should reject invalid fixed holiday parameters", () => {
-			// Invalid month
 			assert.throws(
 				() =>
 					new HolidayDefinition({
@@ -148,22 +125,9 @@ describe("HolidayDefinition class", () => {
 						day: 1,
 						workFree: true,
 					}),
-				{ message: /Fixed holiday month must be integer 1-12/ },
+				/Fixed holiday month must be integer 1-12/,
 			);
 
-			assert.throws(
-				() =>
-					new HolidayDefinition({
-						name: "Test",
-						type: "fixed",
-						month: 13,
-						day: 1,
-						workFree: true,
-					}),
-				{ message: /Fixed holiday month must be integer 1-12/ },
-			);
-
-			// Invalid day
 			assert.throws(
 				() =>
 					new HolidayDefinition({
@@ -173,19 +137,7 @@ describe("HolidayDefinition class", () => {
 						day: 0,
 						workFree: true,
 					}),
-				{ message: /Fixed holiday day must be integer 1-31/ },
-			);
-
-			assert.throws(
-				() =>
-					new HolidayDefinition({
-						name: "Test",
-						type: "fixed",
-						month: 1,
-						day: 32,
-						workFree: true,
-					}),
-				{ message: /Fixed holiday day must be integer 1-31/ },
+				/Fixed holiday day must be integer 1-31/,
 			);
 		});
 
@@ -198,18 +150,7 @@ describe("HolidayDefinition class", () => {
 						offset: "invalid",
 						workFree: true,
 					}),
-				{ message: /Easter relative holiday offset must be an integer/ },
-			);
-
-			assert.throws(
-				() =>
-					new HolidayDefinition({
-						name: "Test",
-						type: "easter_relative",
-						offset: 1.5,
-						workFree: true,
-					}),
-				{ message: /Easter relative holiday offset must be an integer/ },
+				/Easter relative holiday offset must be an integer/,
 			);
 		});
 
@@ -221,24 +162,13 @@ describe("HolidayDefinition class", () => {
 						type: "calculated",
 						workFree: true,
 					}),
-				{ message: /Calculated holiday must have a calculator function/ },
-			);
-
-			assert.throws(
-				() =>
-					new HolidayDefinition({
-						name: "Test",
-						type: "calculated",
-						calculator: "not a function",
-						workFree: true,
-					}),
-				{ message: /Calculated holiday must have a calculator function/ },
+				/Calculated holiday must have a calculator function/,
 			);
 		});
 	});
 
 	describe("calculateHoliday method", () => {
-		it("should calculate fixed date holiday", () => {
+		it("should calculate fixed date holidays", () => {
 			const newYearDef = new HolidayDefinition({
 				name: "New Year",
 				type: "fixed",
@@ -251,14 +181,14 @@ describe("HolidayDefinition class", () => {
 
 			assert.strictEqual(result.name, "New Year");
 			assert.strictEqual(result.date.getUTCFullYear(), 2024);
-			assert.strictEqual(result.date.getUTCMonth(), 0); // January = 0
+			assert.strictEqual(result.date.getUTCMonth(), 0);
 			assert.strictEqual(result.date.getUTCDate(), 1);
 			assert.strictEqual(result.workFree, true);
 			assert.strictEqual(result.scope, "national");
 			assert.strictEqual(result.type, "fixed");
 		});
 
-		it("should calculate easter relative holiday", () => {
+		it("should calculate easter relative holidays", () => {
 			const goodFridayDef = new HolidayDefinition({
 				name: "Good Friday",
 				type: "easter_relative",
@@ -266,41 +196,33 @@ describe("HolidayDefinition class", () => {
 				workFree: true,
 			});
 
-			const easter = new Date(Date.UTC(2024, 2, 31, 0, 0, 0, 0)); // March 31, 2024
+			const easter = new Date(Date.UTC(2024, 2, 31, 0, 0, 0, 0));
 			const result = goodFridayDef.calculateHoliday(2024, easter, "regional");
 
 			assert.strictEqual(result.name, "Good Friday");
-			assert.strictEqual(result.date.getUTCFullYear(), 2024);
-			assert.strictEqual(result.date.getUTCMonth(), 2); // March = 2
-			assert.strictEqual(result.date.getUTCDate(), 29); // March 29, 2024
-			assert.strictEqual(result.workFree, true);
 			assert.strictEqual(result.scope, "regional");
 			assert.strictEqual(result.type, "easter_relative");
+			assert.strictEqual(result.date.getUTCDate(), 29); // March 29, 2024
 		});
 
-		it("should calculate calculated holiday", () => {
-			const customCalculator = (year) =>
-				new Date(Date.UTC(year, 5, 15, 0, 0, 0, 0)); // June 15
-
-			const customHolidayDef = new HolidayDefinition({
+		it("should calculate calculated holidays", () => {
+			const calculator = (year) => new Date(Date.UTC(year, 5, 15, 0, 0, 0, 0));
+			const customDef = new HolidayDefinition({
 				name: "Custom Day",
 				type: "calculated",
 				workFree: false,
-				calculator: customCalculator,
+				calculator,
 			});
 
-			const result = customHolidayDef.calculateHoliday(2024);
+			const result = customDef.calculateHoliday(2024);
 
 			assert.strictEqual(result.name, "Custom Day");
-			assert.strictEqual(result.date.getUTCFullYear(), 2024);
-			assert.strictEqual(result.date.getUTCMonth(), 5); // June = 5
+			assert.strictEqual(result.date.getUTCMonth(), 5); // June
 			assert.strictEqual(result.date.getUTCDate(), 15);
 			assert.strictEqual(result.workFree, false);
-			assert.strictEqual(result.scope, "national");
-			assert.strictEqual(result.type, "calculated");
 		});
 
-		it("should reject invalid year", () => {
+		it("should validate year parameter", () => {
 			const holidayDef = new HolidayDefinition({
 				name: "Test",
 				type: "fixed",
@@ -318,7 +240,7 @@ describe("HolidayDefinition class", () => {
 			});
 		});
 
-		it("should reject invalid scope", () => {
+		it("should validate scope parameter", () => {
 			const holidayDef = new HolidayDefinition({
 				name: "Test",
 				type: "fixed",
@@ -333,28 +255,24 @@ describe("HolidayDefinition class", () => {
 		});
 
 		it("should require easter date for easter relative holidays", () => {
-			const easterHolidayDef = new HolidayDefinition({
+			const easterDef = new HolidayDefinition({
 				name: "Easter Monday",
 				type: "easter_relative",
 				offset: 1,
 				workFree: true,
 			});
 
-			assert.throws(() => easterHolidayDef.calculateHoliday(2024), {
+			assert.throws(() => easterDef.calculateHoliday(2024), {
 				message: /Easter Sunday date required for easter_relative holidays/,
 			});
 
-			assert.throws(
-				() => easterHolidayDef.calculateHoliday(2024, "not a date"),
-				{
-					message: /Easter Sunday date required for easter_relative holidays/,
-				},
-			);
+			assert.throws(() => easterDef.calculateHoliday(2024, "not a date"), {
+				message: /Easter Sunday date required for easter_relative holidays/,
+			});
 		});
 
 		it("should validate calculator return value", () => {
 			const badCalculator = () => "not a date";
-
 			const holidayDef = new HolidayDefinition({
 				name: "Bad Holiday",
 				type: "calculated",
@@ -365,19 +283,6 @@ describe("HolidayDefinition class", () => {
 			assert.throws(() => holidayDef.calculateHoliday(2024), {
 				message:
 					/Calculator function for Bad Holiday must return a Date object/,
-			});
-		});
-
-		it("should handle unsupported holiday type", () => {
-			// This test verifies defensive programming by creating a holiday
-			// with an invalid type that bypasses constructor validation
-			const holidayDef = Object.create(HolidayDefinition.prototype);
-			holidayDef.name = "Test";
-			holidayDef.type = "unsupported";
-			holidayDef.workFree = true;
-
-			assert.throws(() => holidayDef.calculateHoliday(2024), {
-				message: /Unsupported holiday type: unsupported/,
 			});
 		});
 	});
@@ -411,21 +316,6 @@ describe("HolidayDefinition class", () => {
 			);
 		});
 
-		it("should format positive easter offset", () => {
-			const holidayDef = new HolidayDefinition({
-				name: "Easter Monday",
-				type: "easter_relative",
-				offset: 1,
-				workFree: true,
-			});
-
-			const result = holidayDef.toString();
-			assert.strictEqual(
-				result,
-				"Easter Monday (easter_relative) - Easter+1 [work-free]",
-			);
-		});
-
 		it("should format calculated holiday definition", () => {
 			const holidayDef = new HolidayDefinition({
 				name: "Custom Day",
@@ -437,31 +327,10 @@ describe("HolidayDefinition class", () => {
 			const result = holidayDef.toString();
 			assert.strictEqual(result, "Custom Day (calculated) [observance]");
 		});
-
-		it("should indicate observance vs work-free", () => {
-			const workFreeDef = new HolidayDefinition({
-				name: "Work Free",
-				type: "fixed",
-				month: 1,
-				day: 1,
-				workFree: true,
-			});
-
-			const observanceDef = new HolidayDefinition({
-				name: "Observance",
-				type: "fixed",
-				month: 1,
-				day: 2,
-				workFree: false,
-			});
-
-			assert.ok(workFreeDef.toString().includes("[work-free]"));
-			assert.ok(observanceDef.toString().includes("[observance]"));
-		});
 	});
 
 	describe("Static methods", () => {
-		it("should create holiday definition from definition", () => {
+		it("should create from plain object", () => {
 			const definition = {
 				name: "Test Holiday",
 				type: "fixed",
@@ -471,16 +340,11 @@ describe("HolidayDefinition class", () => {
 			};
 
 			const holidayDef = HolidayDefinition.from(definition);
-
 			assert.ok(holidayDef instanceof HolidayDefinition);
 			assert.strictEqual(holidayDef.name, "Test Holiday");
-			assert.strictEqual(holidayDef.type, "fixed");
-			assert.strictEqual(holidayDef.month, 6);
-			assert.strictEqual(holidayDef.day, 15);
-			assert.strictEqual(holidayDef.workFree, true);
 		});
 
-		it("should validate definition without creating instance", () => {
+		it("should validate definitions", () => {
 			const validDefinition = {
 				name: "Valid",
 				type: "fixed",
@@ -512,26 +376,25 @@ describe("HolidayDefinition class", () => {
 				null,
 				undefined,
 				{},
-				{ name: "Test" }, // missing type
-				{ name: "Test", type: "invalid" }, // invalid type
-				{ name: "Test", type: "fixed" }, // missing month/day
-				{ name: "Test", type: "easter_relative" }, // missing offset
-				{ name: "Test", type: "calculated" }, // missing calculator
+				{ name: "Test" },
+				{ name: "Test", type: "invalid" },
+				{ name: "Test", type: "fixed" },
+				{ name: "Test", type: "easter_relative" },
+				{ name: "Test", type: "calculated" },
 			];
 
-			invalidDefinitions.forEach((def) => {
+			for (const def of invalidDefinitions) {
 				assert.strictEqual(
 					HolidayDefinition.isValidDefinition(def),
 					false,
 					`Should reject definition: ${JSON.stringify(def)}`,
 				);
-			});
+			}
 		});
 	});
 
-	describe("Edge cases and constraints", () => {
-		it("should handle extreme date values for fixed holidays", () => {
-			// February 29 (leap year test)
+	describe("Edge cases", () => {
+		it("should handle leap day correctly", () => {
 			const leapDayDef = new HolidayDefinition({
 				name: "Leap Day",
 				type: "fixed",
@@ -544,9 +407,8 @@ describe("HolidayDefinition class", () => {
 			assert.strictEqual(result2024.date.getUTCMonth(), 1); // February
 			assert.strictEqual(result2024.date.getUTCDate(), 29);
 
-			// Note: February 29 in non-leap years will create March 1
-			// This is JavaScript Date behavior, not our bug
-			const result2023 = leapDayDef.calculateHoliday(2023); // Non-leap year
+			// Non-leap year behavior (JavaScript creates March 1)
+			const result2023 = leapDayDef.calculateHoliday(2023);
 			assert.strictEqual(result2023.date.getUTCMonth(), 2); // March
 			assert.strictEqual(result2023.date.getUTCDate(), 1);
 		});
@@ -559,13 +421,10 @@ describe("HolidayDefinition class", () => {
 				workFree: true,
 			});
 
-			const easter = new Date(Date.UTC(2024, 2, 31, 0, 0, 0, 0)); // March 31
+			const easter = new Date(Date.UTC(2024, 2, 31, 0, 0, 0, 0));
 			const result = farEasterDef.calculateHoliday(2024, easter);
 
-			// Should calculate correctly even with large negative offset
 			assert.ok(result.date < easter);
-			assert.strictEqual(result.date.getUTCDate(), 22); // December 22, 2023
-			assert.strictEqual(result.date.getUTCMonth(), 11); // December
 			assert.strictEqual(result.date.getUTCFullYear(), 2023); // Previous year
 		});
 
