@@ -98,7 +98,6 @@ describe("ssr", () => {
 						json: { cached: "data" },
 					},
 				},
-				__base: "http://localhost/",
 			},
 			location: { href: "http://localhost/" },
 			document: { createElement: () => ({}) },

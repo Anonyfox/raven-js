@@ -52,7 +52,6 @@ router.get("/api/todos/examples", async (ctx) => {
 		}
 	}
 
-	await new Promise((resolve) => setTimeout(resolve, 1000));
 	ctx.json(selected);
 });
 

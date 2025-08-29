@@ -238,55 +238,18 @@ export function ssr(fn, options = {}) {
 			globalThis.window &&
 			Object.keys(globalThis.window).some((k) => k.startsWith("__SSR_DATA__"))
 		) {
-			// Before setting fetch override
-			const w = /** @type {any} */ (globalThis.window);
-			for (const k of Object.keys(w)) {
-				if (!k.startsWith("__SSR_DATA__")) continue;
-				const bag = w[k];
-				if (bag && typeof bag.__base === "string") {
-					/** @type {any} */ (globalThis).__REFLEX_BASE_URL__ = bag.__base;
-					break; // first one is enough
-				}
-			}
-
 			const orig = globalThis.fetch;
 
 			// find a cached entry across any component-scoped SSR blob
 			/** @param {string} cacheKey */
 			function findCached(cacheKey) {
-				const w = /** @type {any} */ (window);
-
-				// 1) exact match
+				const w = /** @type {any} */ (globalThis.window);
 				for (const k of Object.keys(w)) {
 					if (!k.startsWith("__SSR_DATA__")) continue;
 					const bag = w[k];
 					const entry = bag?.fetch?.[cacheKey];
-					if (entry) return { bag, key: k, entry, matchedKey: cacheKey };
+					if (entry) return { bag, key: k, entry };
 				}
-
-				// 2) fallback: match by method + pathname + search, ignoring origin
-				const want = JSON.parse(cacheKey);
-				try {
-					const wantURL = new URL(want.url);
-					const wantSig = `${want.method} ${wantURL.pathname}${wantURL.search}`;
-					for (const k of Object.keys(w)) {
-						if (!k.startsWith("__SSR_DATA__")) continue;
-						const bag = w[k];
-						const fetchMap = bag?.fetch;
-						if (!fetchMap) continue;
-						for (const fk of Object.keys(fetchMap)) {
-							try {
-								const parsed = JSON.parse(fk);
-								const u = new URL(parsed.url);
-								const sig = `${parsed.method} ${u.pathname}${u.search}`;
-								if (sig === wantSig) {
-									return { bag, key: k, entry: fetchMap[fk], matchedKey: fk };
-								}
-							} catch {}
-						}
-					}
-				} catch {}
-
 				return null;
 			}
 
@@ -296,9 +259,9 @@ export function ssr(fn, options = {}) {
 
 				if (hit) {
 					// consume this entry
-					delete hit.bag.fetch[hit.matchedKey];
+					delete hit.bag.fetch[key];
 					if (Object.keys(hit.bag.fetch).length === 0) {
-						delete (/** @type {any} */ (window)[hit.key]);
+						delete (/** @type {any} */ (globalThis.window)[hit.key]);
 					}
 
 					// normalize absolute URL for the Response-like object
@@ -338,20 +301,6 @@ export function ssr(fn, options = {}) {
 					);
 				}
 
-				// Optional: tiny dev guard
-				if (
-					/** @type {any} */ (globalThis).__REFLEX_DEBUG__ &&
-					Object.keys(w).some((k) => k.startsWith("__SSR_DATA__"))
-				) {
-					// eslint-disable-next-line no-console
-					console.warn(
-						"[Reflex] Hydration cache miss for",
-						key,
-						"base:",
-						getBaseURL(),
-					);
-				}
-
 				const absolute = new URL(String(url), getBaseURL()).toString();
 				return orig(absolute, opts);
 			};
@@ -386,8 +335,7 @@ export function ssr(fn, options = {}) {
 			const ctx = {
 				promises: new Set(),
 				fetchCache: new Map(),
-				ssrData:
-					/** @type {{fetch:Record<string,any>, __base?:string}|null} */ (null),
+				ssrData: /** @type {{fetch:Record<string,any>}|null} */ (null),
 				track(/** @type {Promise<any>} */ p) {
 					if (p && typeof p.then === "function") {
 						this.promises.add(p);
@@ -458,7 +406,7 @@ export function ssr(fn, options = {}) {
 					}
 
 					if (method === "GET") {
-						if (!ctx.ssrData) ctx.ssrData = { fetch: {}, __base: derived };
+						if (!ctx.ssrData) ctx.ssrData = { fetch: {} };
 						ctx.ssrData.fetch[key] = data;
 					}
 					return proxy;
