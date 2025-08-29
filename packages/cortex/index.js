@@ -70,8 +70,10 @@ export { LinearRegression, Model, NeuralNetwork } from "./learning/index.js";
 // Export structural primitives
 export { Matrix, Schema } from "./structures/index.js";
 
-// Export temporal functions
+// Export temporal functions and classes
 export {
 	calculateEasterSunday,
 	calculateHolidaysOfYear,
+	Holiday,
+	NaiveDateTime,
 } from "./temporal/index.js";
