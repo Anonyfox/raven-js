@@ -12,7 +12,7 @@
     "md/**/*.js",
     "sql/**/*.js",
     "seo/**/*.js",
-    "bootstrap/**/*.js",
+    "highlight/**/*.js",
     "compile/**/*.js",
     "!**/*.test.js",
     "types.*.d.ts",
@@ -50,6 +50,10 @@
     },
     "./compile": {
       "import": "./compile/index.js"
+    },
+    "./highlight": {
+      "import": "./highlight/index.js",
+      "types": "./types.highlight.d.ts"
     }
   },
   "scripts": {

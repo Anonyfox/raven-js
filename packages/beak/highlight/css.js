@@ -50,13 +50,13 @@ const TOKEN_TYPES = {
 	IMPORTANT: "text-danger",
 	FUNCTION: "text-info",
 	PUNCTUATION: "text-secondary",
-	WHITESPACE: null, // No highlighting
+	WHITESPACE: /** @type {null} */ (null), // No highlighting
 };
 
 /**
  * Tokenize CSS source code into semantic tokens
  * @param {string} sourceText - Raw CSS source code
- * @returns {Array} Array of {type, value, className} tokens
+ * @returns {Array<{type: string, value: string, className: string|null}>} Array of {type, value, className} tokens
  */
 const tokenizeCSS = (sourceText) => {
 	const tokens = [];

@@ -49,7 +49,7 @@ const TOKEN_TYPES = {
 	NUMBER: "text-warning",
 	OPERATOR: "text-secondary",
 	PUNCTUATION: "text-secondary",
-	WHITESPACE: null, // No highlighting
+	WHITESPACE: /** @type {null} */ (null), // No highlighting
 };
 
 /**
@@ -248,7 +248,7 @@ const isVariableChar = (char) => /[a-zA-Z0-9_]/.test(char);
 /**
  * Tokenize Shell/Bash source code into semantic tokens
  * @param {string} sourceText - Raw Shell/Bash source code
- * @returns {Array} Array of {type, value, className} tokens
+ * @returns {Array<{type: string, value: string, className: string|null}>} Array of {type, value, className} tokens
  */
 const tokenizeShell = (sourceText) => {
 	const tokens = [];

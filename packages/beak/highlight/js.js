@@ -52,7 +52,7 @@ const TOKEN_TYPES = {
 	OPERATOR: "text-secondary",
 	PUNCTUATION: "text-secondary",
 	IDENTIFIER: "text-body",
-	WHITESPACE: null, // No highlighting
+	WHITESPACE: /** @type {null} */ (null), // No highlighting
 };
 
 /**
@@ -173,7 +173,7 @@ const isIdentifierPart = (char) => /[a-zA-Z0-9_$]/.test(char);
 
 /**
  * Check if we're in a context where `/` likely starts a regex
- * @param {Array} tokens - Previous tokens
+ * @param {Array<{type: string, value: string, className: string|null}>} tokens - Previous tokens
  * @returns {boolean} True if regex context
  */
 const isRegexContext = (tokens) => {
@@ -229,7 +229,7 @@ const isRegexContext = (tokens) => {
 /**
  * Tokenize JavaScript source code into semantic tokens
  * @param {string} sourceText - Raw JavaScript source code
- * @returns {Array} Array of {type, value, className} tokens
+ * @returns {Array<{type: string, value: string, className: string|null}>} Array of {type, value, className} tokens
  */
 const tokenizeJS = (sourceText) => {
 	const tokens = [];

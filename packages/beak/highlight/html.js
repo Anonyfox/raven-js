@@ -48,8 +48,8 @@ const TOKEN_TYPES = {
 	ATTRIBUTE_VALUE: "text-success",
 	ENTITY: "text-warning",
 	TAG_PUNCTUATION: "text-secondary",
-	TEXT_CONTENT: null, // No highlighting for regular text
-	WHITESPACE: null, // No highlighting
+	TEXT_CONTENT: /** @type {null} */ (null), // No highlighting for regular text
+	WHITESPACE: /** @type {null} */ (null), // No highlighting
 };
 
 /**
@@ -69,7 +69,7 @@ const isNameChar = (char) => /[a-zA-Z0-9_:.-]/.test(char);
 /**
  * Tokenize HTML source code into semantic tokens
  * @param {string} sourceText - Raw HTML source code
- * @returns {Array} Array of {type, value, className} tokens
+ * @returns {Array<{type: string, value: string, className: string|null}>} Array of {type, value, className} tokens
  */
 const tokenizeHTML = (sourceText) => {
 	const tokens = [];
