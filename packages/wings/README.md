@@ -131,6 +131,35 @@ const server = isDev ? new DevServer(router) : new ClusteredServer(router);
 await server.listen(3000);
 ```
 
+### RAVENJS_ORIGIN Auto-Detection
+
+Wings automatically sets `RAVENJS_ORIGIN` environment variable for SSR components. This enables relative URLs to resolve correctly during server-side rendering.
+
+```javascript
+// Wings automatically sets based on server configuration:
+// RAVENJS_ORIGIN = "http://localhost:3000"   (development)
+// RAVENJS_ORIGIN = "https://your-domain.com" (production)
+
+// Your SSR components can use relative URLs:
+const response = await fetch("/api/data"); // Works in SSR!
+```
+
+**Manual Override (containers, reverse proxies):**
+
+```javascript
+// Set before server starts - Wings respects explicit values
+process.env.RAVENJS_ORIGIN = "https://api.example.com";
+await server.listen(3000);
+// Wings will NOT override your explicit setting
+```
+
+**Common use cases:**
+
+- **Containers:** `RAVENJS_ORIGIN=https://your-domain.com`
+- **Reverse proxies:** `RAVENJS_ORIGIN=https://api.internal:8080`
+- **Development:** Auto-detected as `http://localhost:3000`
+- **Testing:** Set explicit value for consistent test URLs
+
 ## Migration from Express
 
 ```javascript

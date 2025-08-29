@@ -176,6 +176,41 @@ router.listen(3000);
 - **Reactive Updates** - Signal changes update DOM efficiently
 - **Beak Integration** - Clean HTML templating with reactive interpolation
 
+### Origin Resolution for SSR
+
+Reflex automatically resolves relative URLs during SSR using `RAVENJS_ORIGIN` environment variable:
+
+```javascript
+// In your SSR components - use relative URLs:
+const response = await fetch("/api/data");
+// ✅ Works perfectly! Wings auto-sets RAVENJS_ORIGIN
+
+// Reflex resolves to: http://localhost:3000/api/data (development)
+//                or: https://your-domain.com/api/data (production)
+```
+
+**How it works:**
+
+1. **Wings sets origin** - Automatically based on server configuration
+2. **Reflex uses origin** - For resolving relative URLs in `fetch()` calls
+3. **Zero config needed** - Works out of the box with Wings integration
+
+**Error handling:**
+
+```javascript
+// If RAVENJS_ORIGIN not set (non-Wings usage):
+const response = await fetch("/api/data");
+// ❌ Throws: "RAVENJS_ORIGIN environment variable must be set for SSR"
+```
+
+**Manual override** (containers, reverse proxies):
+
+```bash
+# Set before starting Wings server
+export RAVENJS_ORIGIN=https://api.example.com
+node server.js
+```
+
 ## Requirements
 
 - **Node.js:** 22.5+

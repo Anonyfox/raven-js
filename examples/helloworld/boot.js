@@ -31,14 +31,6 @@ async function setupDevelopment() {
 	router.useEarly(new Logger());
 
 	const server = new DevServer(router);
-
-	console.log(`🚀 Hello World server running at http://localhost:${port}`);
-	console.log(`📝 Edit examples/helloworld/src/index.js to see changes live`);
-	console.log(
-		`📊 Request logging enabled with performance indicators (⚡🚀🐌)`,
-	);
-	console.log(`🔧 Environment: Development`);
-
 	return server;
 }
 
@@ -60,18 +52,31 @@ async function setupProduction() {
 		sslPrivateKey: privateKey,
 	});
 
-	// Only log from the main process to avoid duplicate messages
-	if (server.isMainProcess) {
-		console.log(`🚀 Hello World server running at https://localhost:${port}`);
-		console.log(`🔒 HTTPS enabled with auto-generated certificate`);
-		console.log(`📊 Structured JSON logging enabled for compliance`);
-		console.log(`🔧 Environment: Production`);
-	}
-
 	return server;
 }
 
 const server = isProduction()
 	? await setupProduction()
 	: await setupDevelopment();
-server.listen(port).catch(console.error);
+
+await server.listen(port);
+
+// Log server info using actual RAVENJS_ORIGIN set by Wings
+const origin = process.env.RAVENJS_ORIGIN || `http://localhost:${port}`;
+
+if (isProduction()) {
+	// Only log from the main process to avoid duplicate messages
+	if (server.isMainProcess) {
+		console.log(`🚀 Hello World server running at ${origin}`);
+		console.log(`🔒 HTTPS enabled with auto-generated certificate`);
+		console.log(`📊 Structured JSON logging enabled for compliance`);
+		console.log(`🔧 Environment: Production`);
+	}
+} else {
+	console.log(`🚀 Hello World server running at ${origin}`);
+	console.log(`📝 Edit examples/helloworld/src/index.js to see changes live`);
+	console.log(
+		`📊 Request logging enabled with performance indicators (⚡🚀🐌)`,
+	);
+	console.log(`🔧 Environment: Development`);
+}

@@ -17,6 +17,14 @@ import { createEntityPageHandler } from "./entity-page.js";
 
 describe("createEntityPageHandler", () => {
 	/**
+	 * Get test origin from RAVENJS_ORIGIN or test default
+	 * @returns {string} Test origin URL
+	 */
+	function getTestOrigin() {
+		return process.env.RAVENJS_ORIGIN || "http://localhost:3000";
+	}
+
+	/**
 	 * Create mock Wings context
 	 * @param {Object} options - Context options
 	 * @returns {Object} Mock context
@@ -24,7 +32,7 @@ describe("createEntityPageHandler", () => {
 	function createTestContext(
 		pathParams = { moduleName: "utils", entityName: "testFunction" },
 	) {
-		const url = new URL("http://localhost:3000/modules/utils/testFunction/");
+		const url = new URL(`${getTestOrigin()}/modules/utils/testFunction/`);
 		const headers = new Headers();
 		const ctx = new Context("GET", url, headers);
 		ctx.pathParams = pathParams;

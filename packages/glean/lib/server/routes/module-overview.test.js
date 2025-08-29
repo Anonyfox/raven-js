@@ -17,12 +17,20 @@ import { createModuleOverviewHandler } from "./module-overview.js";
 
 describe("createModuleOverviewHandler", () => {
 	/**
+	 * Get test origin from RAVENJS_ORIGIN or test default
+	 * @returns {string} Test origin URL
+	 */
+	function getTestOrigin() {
+		return process.env.RAVENJS_ORIGIN || "http://localhost:3000";
+	}
+
+	/**
 	 * Create mock context for testing
 	 * @param {Object} overrides - Override default context values
 	 * @returns {Object} Mock Wings context
 	 */
 	function createTestContext(pathParams = { moduleName: "utils" }) {
-		const url = new URL("http://localhost:3000/modules/utils/");
+		const url = new URL(`${getTestOrigin()}/modules/utils/`);
 		const headers = new Headers();
 		const ctx = new Context("GET", url, headers);
 		ctx.pathParams = pathParams;

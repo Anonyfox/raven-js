@@ -30,18 +30,27 @@ const mockResponse = (data) => ({
 const mockFetch = (data) => () => Promise.resolve(mockResponse(data));
 
 describe("ssr", () => {
-	let origWindow, origFetch, origLocalStorage, origNavigator;
+	let origWindow, origFetch, origLocalStorage, origNavigator, origRavenOrigin;
 
 	beforeEach(() => {
 		origWindow = globalThis.window;
 		origFetch = globalThis.fetch;
 		origLocalStorage = globalThis.localStorage;
 		origNavigator = globalThis.navigator;
+		origRavenOrigin = process.env.RAVENJS_ORIGIN;
+
+		// Set RAVENJS_ORIGIN for SSR tests
+		process.env.RAVENJS_ORIGIN = "http://localhost:3000";
 	});
 
 	afterEach(() => {
 		globalThis.window = origWindow;
 		globalThis.fetch = origFetch;
+		if (origRavenOrigin !== undefined) {
+			process.env.RAVENJS_ORIGIN = origRavenOrigin;
+		} else {
+			delete process.env.RAVENJS_ORIGIN;
+		}
 		try {
 			if (origLocalStorage) globalThis.localStorage = origLocalStorage;
 			else delete globalThis.localStorage;
@@ -84,26 +93,32 @@ describe("ssr", () => {
 	});
 
 	it("client-side hydration with component-scoped cache", async () => {
-		const cacheKey = createCacheKey("/api/test", {});
-
-		// Mock client environment with SSR data
+		// Mock client environment first
 		globalThis.window = {
-			__SSR_DATA__abc123: {
-				fetch: {
-					[cacheKey]: {
-						ok: true,
-						status: 200,
-						statusText: "OK",
-						headers: [["content-type", "application/json"]],
-						json: { cached: "data" },
-					},
-				},
+			location: {
+				href: "http://localhost:3000/",
+				origin: "http://localhost:3000",
 			},
-			location: { href: "http://localhost/" },
 			document: { createElement: () => ({}) },
 			navigator: { userAgent: "Mozilla/5.0" },
 		};
 		globalThis.location = globalThis.window.location;
+
+		// Create cache key in client context
+		const cacheKey = createCacheKey("/api/test", {});
+
+		// Add SSR data to window
+		globalThis.window.__SSR_DATA__abc123 = {
+			fetch: {
+				[cacheKey]: {
+					ok: true,
+					status: 200,
+					statusText: "OK",
+					headers: [["content-type", "application/json"]],
+					json: { cached: "data" },
+				},
+			},
+		};
 
 		globalThis.fetch = () => Promise.reject(new Error("Should use cache"));
 
@@ -122,7 +137,7 @@ describe("ssr", () => {
 
 	it("cache key creation", () => {
 		const key1 = createCacheKey("/api/test", {});
-		const key2 = createCacheKey("http://localhost/api/test", {});
+		const key2 = createCacheKey("http://localhost:3000/api/test", {});
 
 		assert.strictEqual(key1, key2); // Should normalize to same URL
 

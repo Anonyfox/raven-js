@@ -33,6 +33,19 @@ export class ClusteredServer extends NodeHttp {
 	#messageListener = null;
 	/** @type {function(*, *, *): void | null} */
 	#exitListener = null;
+	/** @type {import('../server-options.js').ServerOptions} */
+	#options;
+
+	/**
+	 * Create clustered server instance.
+	 *
+	 * @param {import('../../core/index.js').Router} router - Wings router to handle requests
+	 * @param {import('../server-options.js').ServerOptions} [options] - Server options
+	 */
+	constructor(router, options = {}) {
+		super(router, options);
+		this.#options = { ...options };
+	}
 	/**
 	 * Check if current process is the cluster primary (main process).
 	 * @returns {boolean} True if this is the primary process
@@ -50,6 +63,7 @@ export class ClusteredServer extends NodeHttp {
 	}
 	/**
 	 * Start clustered server with automatic worker management.
+	 * Automatically sets RAVENJS_ORIGIN environment variable for SSR components.
 	 *
 	 * @param {number} port - Port to listen on
 	 * @param {string} [host="0.0.0.0"] - Host to bind to
@@ -60,6 +74,18 @@ export class ClusteredServer extends NodeHttp {
 			// Prevent double-listening
 			if (this.#isListening) return;
 			this.#isListening = true;
+
+			// Auto-set RAVENJS_ORIGIN for SSR components before forking workers
+			if (!process.env.RAVENJS_ORIGIN) {
+				// Detect SSL mode (same logic as parent NodeHttp class)
+				const isSSL = Boolean(
+					this.#options?.sslCertificate && this.#options?.sslPrivateKey,
+				);
+				const protocol = isSSL ? "https" : "http";
+				const standardPorts = { http: 80, https: 443 };
+				const portSuffix = port === standardPorts[protocol] ? "" : `:${port}`;
+				process.env.RAVENJS_ORIGIN = `${protocol}://${host}${portSuffix}`;
+			}
 
 			// Clean up any existing listeners
 			this.#removeListeners();

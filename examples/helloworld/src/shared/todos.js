@@ -26,8 +26,8 @@ export const Todos = ssr(async () => {
 	// Fetch initial examples from API - reactive side effect
 	effect(async () => {
 		try {
-			// Platform-native URL resolution - no hardcoded domains
-			const response = await fetch("http://localhost:3000/api/todos/examples");
+			// Relative URL - RAVENJS_ORIGIN handles origin resolution automatically
+			const response = await fetch("/api/todos/examples");
 			if (response.ok) {
 				const examples = await response.json();
 				// Update signal - automatic UI update via reactivity

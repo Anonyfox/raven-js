@@ -23,17 +23,28 @@ const contextStack =
 /* ---------------- base URL + cache key ---------------- */
 
 /**
- * Resolve the per-request base URL (SSR) or location.href (client).
+ * Resolve the origin for absolute URL resolution.
+ * Uses RAVENJS_ORIGIN environment variable set by Wings server.
  * @returns {string}
+ * @throws {Error} When RAVENJS_ORIGIN is not set (server) or location unavailable (client)
  */
 function getBaseURL() {
-	const explicit = /** @type {any} */ (globalThis).__REFLEX_BASE_URL__;
-	if (explicit) return explicit;
+	// Server: RAVENJS_ORIGIN is the single source of truth
+	if (typeof globalThis.window === "undefined") {
+		if (!process.env.RAVENJS_ORIGIN) {
+			throw new Error(
+				"RAVENJS_ORIGIN environment variable must be set for SSR. Wings server sets this automatically.",
+			);
+		}
+		return process.env.RAVENJS_ORIGIN;
+	}
 
-	const loc = globalThis.location?.href;
-	if (loc?.includes("://")) return loc;
+	// Client: browser location
+	if (globalThis.location?.href) {
+		return globalThis.location.origin;
+	}
 
-	return "http://localhost/";
+	throw new Error("Unable to determine origin: no location available");
 }
 
 /**
@@ -74,47 +85,6 @@ export function createCacheKey(url, opts = {}) {
 }
 
 /* ---------------- helpers ---------------- */
-
-/**
- * @param {unknown} headersLike
- * @returns {Record<string,string>|null}
- */
-function normalizeHeaders(headersLike) {
-	const h = /** @type {any} */ (headersLike);
-	if (!h) return null;
-	if (h.get && typeof h.get === "function") {
-		/** @type {Record<string,string>} */ const obj = {};
-		for (const [k, v] of h.entries()) obj[k.toLowerCase()] = v;
-		return obj;
-	}
-	/** @type {Record<string,string>} */ const obj = {};
-	for (const [k, v] of Object.entries(h)) obj[k.toLowerCase()] = String(v);
-	return obj;
-}
-
-/**
- * Try to derive origin from request/adapter headers.
- * @param {Array<any>} args
- * @returns {string|null}
- */
-function deriveBaseURLFromArgs(args) {
-	for (const a of args) {
-		const raw = a?.headers || a?.req?.headers || a?.request?.headers;
-		const h = normalizeHeaders(raw);
-		if (!h) continue;
-		const proto =
-			h["x-forwarded-proto"] ||
-			h["x-forwarded-scheme"] ||
-			(h.forwarded?.includes("proto=https") ? "https" : "") ||
-			"http";
-		const host = h["x-forwarded-host"] || h.host;
-		const port = h["x-forwarded-port"];
-		if (!host) continue;
-		const needsPort = port && !host.includes(":") && !/^(80|443)$/.test(port);
-		return `${proto}://${host}${needsPort ? `:${port}` : ""}/`;
-	}
-	return null;
-}
 
 /**
  * Escape JSON for safe inline script embedding.
@@ -324,14 +294,6 @@ export function ssr(fn, options = {}) {
 
 		// Server root: do a settle loop
 		if (isServer && isRoot) {
-			// derive per-request origin and expose to key resolver
-			const derived =
-				deriveBaseURLFromArgs(args) ||
-				process?.env?.SSR_ORIGIN ||
-				"http://localhost/";
-			const prevBase = /** @type {any} */ (globalThis).__REFLEX_BASE_URL__;
-			/** @type {any} */ (globalThis).__REFLEX_BASE_URL__ = derived;
-
 			const ctx = {
 				promises: new Set(),
 				fetchCache: new Map(),
@@ -461,7 +423,6 @@ export function ssr(fn, options = {}) {
 			} finally {
 				globalThis.fetch = orig;
 				contextStack.pop();
-				/** @type {any} */ (globalThis).__REFLEX_BASE_URL__ = prevBase;
 			}
 
 			if (typeof html === "string" && ctx.ssrData) {

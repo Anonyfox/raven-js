@@ -162,6 +162,7 @@ export class NodeHttp {
 
 	/**
 	 * Start server listening on port.
+	 * Automatically sets RAVENJS_ORIGIN environment variable for SSR components.
 	 *
 	 * @param {number} port - Port to listen on (0 for auto-assign)
 	 * @param {string} [host] - Host to bind to (default: 'localhost')
@@ -172,6 +173,19 @@ export class NodeHttp {
 	async listen(port, host = "localhost", callback = () => {}) {
 		return new Promise((resolve) => {
 			this.#server.listen(port, host, () => {
+				// Auto-set RAVENJS_ORIGIN for SSR components
+				const protocol = this.#isSSL ? "https" : "http";
+				const address = this.#server.address();
+				const actualPort =
+					typeof address === "object" && address?.port ? address.port : port;
+				const standardPorts = { http: 80, https: 443 };
+				const portSuffix =
+					actualPort === standardPorts[protocol] ? "" : `:${actualPort}`;
+
+				if (!process.env.RAVENJS_ORIGIN) {
+					process.env.RAVENJS_ORIGIN = `${protocol}://${host}${portSuffix}`;
+				}
+
 				callback();
 				resolve();
 			});

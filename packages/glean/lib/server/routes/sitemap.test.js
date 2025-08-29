@@ -17,11 +17,19 @@ import { createSitemapHandler } from "./sitemap.js";
 
 describe("createSitemapHandler", () => {
 	/**
+	 * Get test origin from RAVENJS_ORIGIN or test default
+	 * @returns {string} Test origin URL
+	 */
+	function getTestOrigin() {
+		return process.env.RAVENJS_ORIGIN || "http://localhost:3000";
+	}
+
+	/**
 	 * Create real Wings context for testing
 	 * @returns {Context} Real Wings context
 	 */
 	function createTestContext() {
-		const url = new URL("http://localhost:3000/sitemap.xml");
+		const url = new URL(`${getTestOrigin()}/sitemap.xml`);
 		const headers = new Headers();
 		return new Context("GET", url, headers);
 	}

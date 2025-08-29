@@ -17,11 +17,19 @@ import { createPackageOverviewHandler } from "./package-overview.js";
 
 describe("createPackageOverviewHandler", () => {
 	/**
+	 * Get test origin from RAVENJS_ORIGIN or test default
+	 * @returns {string} Test origin URL
+	 */
+	function getTestOrigin() {
+		return process.env.RAVENJS_ORIGIN || "http://localhost:3000";
+	}
+
+	/**
 	 * Create real Wings context for testing
 	 * @returns {Context} Real Wings context
 	 */
 	function createTestContext() {
-		const url = new URL("http://localhost:3000/");
+		const url = new URL(`${getTestOrigin()}/`);
 		const headers = new Headers();
 		return new Context("GET", url, headers);
 	}

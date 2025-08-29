@@ -17,11 +17,19 @@ import { createModuleDirectoryHandler } from "./module-directory.js";
 
 describe("createModuleDirectoryHandler", () => {
 	/**
+	 * Get test origin from RAVENJS_ORIGIN or test default
+	 * @returns {string} Test origin URL
+	 */
+	function getTestOrigin() {
+		return process.env.RAVENJS_ORIGIN || "http://localhost:3000";
+	}
+
+	/**
 	 * Create mock Wings context
 	 * @returns {Object} Mock context object
 	 */
 	function createTestContext() {
-		const url = new URL("http://localhost:3000/modules/");
+		const url = new URL(`${getTestOrigin()}/modules/`);
 		const headers = new Headers();
 		return new Context("GET", url, headers);
 	}
