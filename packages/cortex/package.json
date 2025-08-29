@@ -7,7 +7,7 @@
     "*.js",
     "*.d.ts",
     "learning/**/*.js",
-    "primitives/**/*.js",
+    "structures/**/*.js",
     "index.js",
     "types.*.d.ts",
     "!**/*.test.js",
@@ -23,9 +23,9 @@
       "import": "./learning/index.js",
       "types": "./types.learning.d.ts"
     },
-    "./primitives": {
-      "import": "./primitives/index.js",
-      "types": "./types.primitives.d.ts"
+    "./structures": {
+      "import": "./structures/index.js",
+      "types": "./types.structures.d.ts"
     }
   },
   "scripts": {

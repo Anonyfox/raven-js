@@ -62,4 +62,4 @@ export function hello(name) {
 export { LinearRegression, Model, NeuralNetwork } from "./learning/index.js";
 
 // Export neural primitives
-export { Matrix } from "./primitives/index.js";
+export { Matrix } from "./structures/index.js";

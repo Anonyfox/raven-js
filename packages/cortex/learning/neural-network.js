@@ -15,7 +15,7 @@
  * Fully serializable and isomorphic across all JavaScript environments.
  */
 
-import { Matrix } from "../primitives/matrix.js";
+import { Matrix } from "../structures/matrix.js";
 import { Model } from "./model.js";
 
 /**
