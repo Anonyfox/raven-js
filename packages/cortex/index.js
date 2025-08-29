@@ -10,29 +10,26 @@
  * @file Zero-dependency machine learning, AI, and data processing library for modern JavaScript
  *
  * The raven's neural nexus: intelligence distillation through platform-native algorithms.
- * Structured LLM output parsing, statistical analysis, vector calculations, and data transformations
+ * Machine learning, data structures, temporal computation, and cognitive processing
  * using pure JavaScript primitives and Node.js built-ins.
  *
  * **Intelligence over dependencies.** Zero external attack vectors, maximum adaptability.
- * **Platform mastery.** Native Math APIs, TextEncoder/TextDecoder, crypto primitives.
- * **Cognitive processing.** Pattern recognition, memory palace construction, neural interfaces.
+ * **Platform mastery.** Native Math APIs, precise temporal algorithms, structural validation.
+ * **Cognitive processing.** Pattern recognition, memory palace construction, chronological computation.
  *
  * @example
- * // Basic hello world functionality
- * import { hello } from "@raven-js/cortex";
+ * // Neural computation and data structures
+ * import { Matrix, Schema, NeuralNetwork } from "@raven-js/cortex";
  *
- * const greeting = hello("World");
- * console.log(greeting); // "Hello, World! The raven's mind awakens."
+ * const matrix = Matrix.random(3, 3);
+ * const network = new NeuralNetwork([2, 4, 1]);
  *
  * @example
- * // Future AI processing capabilities
- * import { parseStructuredOutput, calculateVectors } from "@raven-js/cortex";
+ * // Temporal computation with surgical precision
+ * import { calculateEasterSunday } from "@raven-js/cortex";
  *
- * // Parse LLM JSON responses with validation
- * const result = parseStructuredOutput(llmResponse, schema);
- *
- * // Calculate similarity between data points
- * const similarity = calculateVectors(vectorA, vectorB);
+ * const easter2024 = calculateEasterSunday(2024);
+ * console.log(easter2024); // 2024-03-31 (March 31, 2024)
  */
 
 /**
@@ -61,5 +58,8 @@ export function hello(name) {
 // Export learning algorithms
 export { LinearRegression, Model, NeuralNetwork } from "./learning/index.js";
 
-// Export neural primitives
-export { Matrix } from "./structures/index.js";
+// Export structural primitives
+export { Matrix, Schema } from "./structures/index.js";
+
+// Export temporal functions
+export { calculateEasterSunday } from "./temporal/index.js";

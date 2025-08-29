@@ -26,6 +26,10 @@
     "./structures": {
       "import": "./structures/index.js",
       "types": "./types.structures.d.ts"
+    },
+    "./temporal": {
+      "import": "./temporal/index.js",
+      "types": "./types.temporal.d.ts"
     }
   },
   "scripts": {
