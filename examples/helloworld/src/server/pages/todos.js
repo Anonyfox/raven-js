@@ -2,7 +2,10 @@ import { html, style } from "@raven-js/beak";
 import { Todos } from "../../shared/todos.js";
 
 // Minimal todos battleground - pure framework competence test
-export const TodosPage = () => html`
+export const TodosPage = () => {
+	console.log(process.env.PUBLIC_ORIGIN);
+
+	return html`
   <!DOCTYPE html>
   <html lang="en">
   <head>
@@ -21,6 +24,7 @@ export const TodosPage = () => html`
   </body>
   </html>
 `;
+};
 
 const styles = style`
 * {

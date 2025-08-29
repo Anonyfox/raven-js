@@ -179,7 +179,7 @@ import { Todos } from "../shared/todos.js";
 // Initialize the battleground
 document.addEventListener("DOMContentLoaded", () => {
 	// Mount reactive components
-	mount(Todos, "#todos-app");
+	mount(Todos, "#todos-app", { replace: true });
 
 	// Load initial examples using effect for clean reactive side effect
 	// effect(() => {

@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@raven-js/beak": "file:../../packages/beak",
-    "@raven-js/reflex": "^0.4.9",
+    "@raven-js/reflex": "file:../../packages/reflex",
     "@raven-js/wings": "file:../../packages/wings"
   },
   "keywords": [

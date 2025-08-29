@@ -17,7 +17,7 @@ router.get("/todos", (ctx) => {
 	ctx.html(TodosPage());
 });
 
-router.get("/api/todos/examples", (ctx) => {
+router.get("/api/todos/examples", async (ctx) => {
 	const examples = [
 		"Buy milk and eggs from the grocery store",
 		"Call mom about weekend plans",
@@ -52,6 +52,7 @@ router.get("/api/todos/examples", (ctx) => {
 		}
 	}
 
+	await new Promise((resolve) => setTimeout(resolve, 1000));
 	ctx.json(selected);
 });
 

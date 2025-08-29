@@ -25,18 +25,50 @@ let isRenderingTemplate = false; // tracks when inside template execution
 /** @type {Array<function(): void>} */
 let deferredEffects = []; // effects deferred until template completes
 
+// ---- per-render component scope (transparent state preservation) -----------
+
+/** @type {{slots: any[], cursor: number}|null} */
+let currentRenderScope = null; // per-render component scope
+
+/**
+ * Use a render slot for transparent state preservation across re-renders.
+ * If inside template rendering with a scope, reuses existing instances.
+ * Otherwise creates new instances normally.
+ * @template T
+ * @param {function(): T} factory - Factory function to create the instance
+ * @returns {T} Either cached instance or new instance
+ */
+function useRenderSlot(factory) {
+	if (isRenderingTemplate && currentRenderScope) {
+		const i = currentRenderScope.cursor++;
+		if (i in currentRenderScope.slots) return currentRenderScope.slots[i];
+		const v = factory();
+		currentRenderScope.slots[i] = v;
+		return v;
+	}
+	return factory();
+}
+
 /**
  * Execute function within template rendering context.
  * Effects created during template rendering are deferred until completion.
  * @template T
  * @param {function(): T} fn - Function to execute in template context
+ * @param {{slots: any[], cursor: number}} [scope] - Optional render scope for state preservation
  * @returns {T} Result of function execution
  */
-export function withTemplateContext(fn) {
+export function withTemplateContext(fn, scope) {
 	const wasRendering = isRenderingTemplate;
 	isRenderingTemplate = true;
 	const savedEffects = wasRendering ? deferredEffects : [];
 	if (!wasRendering) deferredEffects = [];
+
+	// Push render scope for this pass
+	const prevScope = currentRenderScope;
+	if (scope) {
+		currentRenderScope = scope;
+		currentRenderScope.cursor = 0; // reset read head each render
+	}
 
 	try {
 		const result = fn();
@@ -58,6 +90,8 @@ export function withTemplateContext(fn) {
 	} finally {
 		isRenderingTemplate = wasRendering;
 		if (!wasRendering) deferredEffects = savedEffects;
+		// Pop render scope
+		currentRenderScope = prevScope;
 	}
 }
 
@@ -177,66 +211,68 @@ if (typeof globalThis.EventTarget !== "undefined") {
  * @returns {{(): T, peek(): T, set(value: T): Promise<void>, update(fn: function(T): T): Promise<void>, subscribe(fn: function(T): void): function(): void, _unsubscribe(fn: any): void}}
  */
 export function signal(initial) {
-	let value = initial;
-	const subscribers = new Set();
+	return useRenderSlot(() => {
+		let value = initial;
+		const subscribers = new Set();
 
-	const read = () => {
-		// Track dependency if there's a listener
-		if (listener) {
-			subscribers.add(listener);
-			// For effects, track the dependency bidirectionally
-			/** @type {any} */
-			const listenerAny = listener;
-			if (listenerAny._isEffect && listenerAny._addDependency) {
-				listenerAny._addDependency(read);
-			} else if (listenerAny._isComputed && listenerAny._trackDependency) {
-				listenerAny._trackDependency(read);
-			}
-		}
-		return value;
-	};
-
-	read.peek = () => value;
-
-	read.subscribe = (/** @type {any} */ fn) => {
-		subscribers.add(fn);
-		return () => subscribers.delete(fn);
-	};
-
-	read._unsubscribe = (/** @type {any} */ fn) => {
-		subscribers.delete(fn);
-	};
-
-	read.set = async (/** @type {any} */ next) => {
-		if (Object.is(value, next)) return;
-		value = next;
-
-		// Schedule all reactive subscribers
-		for (const subscriber of subscribers) {
-			if (subscriber._isComputed) {
-				subscriber._invalidate();
-				pendingComputeds.add(subscriber._update);
-			} else if (subscriber._isEffect) {
-				pendingEffects.add(subscriber);
-			} else if (typeof subscriber === "function") {
-				// Direct subscriber - call immediately
-				try {
-					subscriber(value);
-				} catch (e) {
-					onError(e, "subscriber");
+		const read = () => {
+			// Track dependency if there's a listener
+			if (listener) {
+				subscribers.add(listener);
+				// For effects, track the dependency bidirectionally
+				/** @type {any} */
+				const listenerAny = listener;
+				if (listenerAny._isEffect && listenerAny._addDependency) {
+					listenerAny._addDependency(read);
+				} else if (listenerAny._isComputed && listenerAny._trackDependency) {
+					listenerAny._trackDependency(read);
 				}
 			}
-		}
+			return value;
+		};
 
-		scheduleFlush();
-		return afterFlushPromise();
-	};
+		read.peek = () => value;
 
-	read.update = async (/** @type {any} */ fn) => {
-		return await read.set(fn(value));
-	};
+		read.subscribe = (/** @type {any} */ fn) => {
+			subscribers.add(fn);
+			return () => subscribers.delete(fn);
+		};
 
-	return read;
+		read._unsubscribe = (/** @type {any} */ fn) => {
+			subscribers.delete(fn);
+		};
+
+		read.set = async (/** @type {any} */ next) => {
+			if (Object.is(value, next)) return;
+			value = next;
+
+			// Schedule all reactive subscribers
+			for (const subscriber of subscribers) {
+				if (subscriber._isComputed) {
+					subscriber._invalidate();
+					pendingComputeds.add(subscriber._update);
+				} else if (subscriber._isEffect) {
+					pendingEffects.add(subscriber);
+				} else if (typeof subscriber === "function") {
+					// Direct subscriber - call immediately
+					try {
+						subscriber(value);
+					} catch (e) {
+						onError(e, "subscriber");
+					}
+				}
+			}
+
+			scheduleFlush();
+			return afterFlushPromise();
+		};
+
+		read.update = async (/** @type {any} */ fn) => {
+			return await read.set(fn(value));
+		};
+
+		return read;
+	});
 }
 
 // ---- computed ---------------------------------------------------------------
@@ -247,85 +283,87 @@ export function signal(initial) {
  * @returns {{(): T, peek(): T, _unsubscribe(fn: any): void}}
  */
 export function computed(fn) {
-	/** @type {any} */
-	let value;
-	let isValid = false;
-	let computing = false;
-	const dependencies = new Set();
-	const dependents = new Set();
+	return useRenderSlot(() => {
+		/** @type {any} */
+		let value;
+		let isValid = false;
+		let computing = false;
+		const dependencies = new Set();
+		const dependents = new Set();
 
-	function cleanup() {
-		for (const dep of dependencies) {
-			dep._unsubscribe(computedInstance);
+		function cleanup() {
+			for (const dep of dependencies) {
+				dep._unsubscribe(computedInstance);
+			}
+			dependencies.clear();
 		}
-		dependencies.clear();
-	}
 
-	function recompute() {
-		if (computing) throw new Error("Circular dependency in computed");
-		computing = true;
+		function recompute() {
+			if (computing) throw new Error("Circular dependency in computed");
+			computing = true;
 
-		const prevListener = listener;
-		cleanup(); // Remove old dependencies
-		listener = computedInstance;
+			const prevListener = listener;
+			cleanup(); // Remove old dependencies
+			listener = computedInstance;
 
-		try {
-			const newValue = fn();
-			const changed = !Object.is(value, newValue);
-			value = newValue;
-			isValid = true;
+			try {
+				const newValue = fn();
+				const changed = !Object.is(value, newValue);
+				value = newValue;
+				isValid = true;
 
-			// Schedule dependents if value changed
-			if (changed) {
-				for (const dependent of dependents) {
-					if (dependent._isComputed) {
-						dependent._invalidate();
-						pendingComputeds.add(dependent._update);
-					} else if (dependent._isEffect) {
-						pendingEffects.add(dependent);
+				// Schedule dependents if value changed
+				if (changed) {
+					for (const dependent of dependents) {
+						if (dependent._isComputed) {
+							dependent._invalidate();
+							pendingComputeds.add(dependent._update);
+						} else if (dependent._isEffect) {
+							pendingEffects.add(dependent);
+						}
 					}
 				}
+
+				return changed;
+			} finally {
+				listener = prevListener;
+				computing = false;
+			}
+		}
+
+		const computedInstance = () => {
+			// Track this computed as a dependency if there's a listener
+			if (listener) {
+				dependents.add(listener);
 			}
 
-			return changed;
-		} finally {
-			listener = prevListener;
-			computing = false;
-		}
-	}
+			if (!isValid) {
+				recompute();
+			}
+			return value;
+		};
 
-	const computedInstance = () => {
-		// Track this computed as a dependency if there's a listener
-		if (listener) {
-			dependents.add(listener);
-		}
+		computedInstance._isComputed = true;
+		computedInstance._invalidate = () => {
+			isValid = false;
+		};
+		computedInstance._update = recompute;
+		computedInstance._trackDependency = (/** @type {any} */ dep) => {
+			dependencies.add(dep);
+		};
+		computedInstance.peek = () => value;
+		computedInstance._unsubscribe = (/** @type {any} */ fn) => {
+			dependents.delete(fn);
+			if (dependents.size === 0) {
+				cleanup(); // Cleanup when no dependents
+			}
+		};
 
-		if (!isValid) {
-			recompute();
-		}
-		return value;
-	};
+		// Initial computation
+		recompute();
 
-	computedInstance._isComputed = true;
-	computedInstance._invalidate = () => {
-		isValid = false;
-	};
-	computedInstance._update = recompute;
-	computedInstance._trackDependency = (/** @type {any} */ dep) => {
-		dependencies.add(dep);
-	};
-	computedInstance.peek = () => value;
-	computedInstance._unsubscribe = (/** @type {any} */ fn) => {
-		dependents.delete(fn);
-		if (dependents.size === 0) {
-			cleanup(); // Cleanup when no dependents
-		}
-	};
-
-	// Initial computation
-	recompute();
-
-	return computedInstance;
+		return computedInstance;
+	});
 }
 
 // ---- effect -----------------------------------------------------------------
@@ -335,92 +373,94 @@ export function computed(fn) {
  * @returns {function(): void}
  */
 export function effect(fn) {
-	let disposed = false;
-	const dependencies = new Set();
-	const cleanups = new Set();
+	return useRenderSlot(() => {
+		let disposed = false;
+		const dependencies = new Set();
+		const cleanups = new Set();
 
-	function cleanup() {
-		for (const dep of dependencies) {
-			dep._unsubscribe(effectInstance);
-		}
-		dependencies.clear();
-	}
-
-	function run() {
-		if (disposed) return;
-
-		const prevListener = listener;
-		const prevActive = activeEffect;
-
-		// Clear old dependencies before running
-		const oldDeps = new Set(dependencies);
-		for (const dep of oldDeps) {
-			dep._unsubscribe(effectInstance);
-		}
-		dependencies.clear();
-
-		listener = effectInstance;
-		activeEffect = effectInstance;
-		/** @type {any} */ (effectInstance)._cleanups = cleanups;
-
-		try {
-			const result = fn();
-			const ctx = contextStack[contextStack.length - 1];
-			if (result && typeof result.then === "function" && ctx) {
-				ctx.track(result);
+		function cleanup() {
+			for (const dep of dependencies) {
+				dep._unsubscribe(effectInstance);
 			}
-			return result;
-		} finally {
-			listener = prevListener;
-			activeEffect = prevActive;
+			dependencies.clear();
 		}
-	}
 
-	const effectInstance = /** @type {any} */ (run);
-	effectInstance._isEffect = true;
-	effectInstance._cleanups = cleanups;
-	effectInstance._addDependency = (/** @type {any} */ dep) => {
-		dependencies.add(dep);
-	};
+		function run() {
+			if (disposed) return;
 
-	// Initial run - defer if inside template rendering to prevent infinite loops
-	if (isRenderingTemplate) {
-		// Defer execution until template render completes
-		deferredEffects.push(() => {
+			const prevListener = listener;
+			const prevActive = activeEffect;
+
+			// Clear old dependencies before running
+			const oldDeps = new Set(dependencies);
+			for (const dep of oldDeps) {
+				dep._unsubscribe(effectInstance);
+			}
+			dependencies.clear();
+
+			listener = effectInstance;
+			activeEffect = effectInstance;
+			/** @type {any} */ (effectInstance)._cleanups = cleanups;
+
+			try {
+				const result = fn();
+				const ctx = contextStack[contextStack.length - 1];
+				if (result && typeof result.then === "function" && ctx) {
+					ctx.track(result);
+				}
+				return result;
+			} finally {
+				listener = prevListener;
+				activeEffect = prevActive;
+			}
+		}
+
+		const effectInstance = /** @type {any} */ (run);
+		effectInstance._isEffect = true;
+		effectInstance._cleanups = cleanups;
+		effectInstance._addDependency = (/** @type {any} */ dep) => {
+			dependencies.add(dep);
+		};
+
+		// Initial run - defer if inside template rendering to prevent infinite loops
+		if (isRenderingTemplate) {
+			// Defer execution until template render completes
+			deferredEffects.push(() => {
+				try {
+					run();
+				} catch (e) {
+					onError(e, "effect");
+				}
+			});
+		} else {
+			// Run immediately as normal
 			try {
 				run();
 			} catch (e) {
 				onError(e, "effect");
 			}
-		});
-	} else {
-		// Run immediately as normal
-		try {
-			run();
-		} catch (e) {
-			onError(e, "effect");
 		}
-	}
 
-	return () => {
-		disposed = true;
+		return () => {
+			disposed = true;
 
-		// Unsubscribe from all dependencies (signals and computeds)
-		for (const dep of dependencies) {
-			dep._unsubscribe(effectInstance);
-		}
-		dependencies.clear();
-
-		cleanup();
-		for (const cleanupFn of cleanups) {
-			try {
-				cleanupFn();
-			} catch (e) {
-				onError(e, "cleanup");
+			// Unsubscribe from all dependencies (signals and computeds)
+			for (const dep of dependencies) {
+				dep._unsubscribe(effectInstance);
 			}
-		}
-		cleanups.clear();
-	};
+			dependencies.clear();
+
+			cleanup();
+			for (const cleanupFn of cleanups) {
+				try {
+					cleanupFn();
+				} catch (e) {
+					onError(e, "cleanup");
+				}
+			}
+			cleanups.clear();
+		};
+	});
 }
 
 // ---- untrack ----------------------------------------------------------------

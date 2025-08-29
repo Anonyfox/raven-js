@@ -471,24 +471,35 @@ function resolveTarget(target) {
  * Create a reactive mount instance with transparent performance optimizations.
  * @param {function(): string} templateFn
  * @param {any} target
+ * @param {Object} [options={}] - Mount options
+ * @param {boolean} [options.replace=false] - If true, replace target content instead of preserving
  */
-function createReactiveMount(templateFn, target) {
+function createReactiveMount(templateFn, target, options = {}) {
 	// Reuse target as mount element if it's empty, otherwise create wrapper
 	let element;
 	let isTargetReused = false;
 
-	// Check if target is empty (no children)
+	// Check if target is empty (no children) or if replace is forced
 	const isEmpty = !target.children || target.children.length === 0;
+	const shouldReplace = options.replace || isEmpty;
 
-	if (isEmpty) {
-		// Target is empty: use it directly (no extra wrapper)
+	if (shouldReplace) {
+		// Target is empty or replace forced: use it directly (no extra wrapper)
 		element = target;
 		isTargetReused = true;
+
+		// Clear existing content if replace is forced
+		if (options.replace && !isEmpty) {
+			if (target.innerHTML !== undefined) {
+				target.innerHTML = "";
+			}
+		}
+
 		if (ENV.isBrowser) {
 			domAdapter.applyPerformanceOptimizations(element);
 		}
 	} else {
-		// Target has children: create wrapper to avoid conflicts
+		// Target has children and preserve mode: create wrapper to avoid conflicts
 		element = domAdapter.createElement("div");
 		isTargetReused = false;
 	}
@@ -506,6 +517,10 @@ function createReactiveMount(templateFn, target) {
 		isTargetReused,
 		/** @type {boolean} */
 		isDisposed: false,
+
+		// Stable render scope per mount for transparent state preservation
+		/** @type {{slots: any[], cursor: number}} */
+		_renderScope: { slots: [], cursor: 0 },
 
 		// Internal cleanup method (automatic via DOM removal detection)
 		cleanup() {
@@ -537,7 +552,7 @@ function createReactiveMount(templateFn, target) {
 	mountInstance.disposeEffect = effect(() => {
 		if (mountInstance.isDisposed) return;
 
-		const html = withTemplateContext(templateFn);
+		const html = withTemplateContext(templateFn, mountInstance._renderScope);
 
 		// Skip if HTML hasn't changed (identity check)
 		if (!isFirstRender && html === lastHtml) {
@@ -598,9 +613,11 @@ function createReactiveMount(templateFn, target) {
  *
  * @param {function(): string} templateFn - Function returning HTML string
  * @param {string|Element|any} target - CSS selector or DOM element
+ * @param {Object} [options={}] - Mount options
+ * @param {boolean} [options.replace=false] - If true, replace target content instead of preserving
  * @returns {Object} Mount instance with unmount() method
  */
-export const mount = (templateFn, target) => {
+export const mount = (templateFn, target, options = {}) => {
 	if (typeof templateFn !== "function") {
 		throw new Error("mount() requires a template function as first argument");
 	}
@@ -610,5 +627,5 @@ export const mount = (templateFn, target) => {
 	}
 
 	const resolvedTarget = resolveTarget(target);
-	return createReactiveMount(templateFn, resolvedTarget);
+	return createReactiveMount(templateFn, resolvedTarget, options);
 };

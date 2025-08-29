@@ -37,7 +37,7 @@ count.set(5); // DOM shows "Count: 5"
 
 ## API
 
-### mount(templateFn, target)
+### mount(templateFn, target, options)
 
 Mount reactive template to DOM element. Signal reads inside `templateFn` automatically trigger DOM updates.
 
@@ -45,6 +45,8 @@ Mount reactive template to DOM element. Signal reads inside `templateFn` automat
 
 - `templateFn: () => string` - Function returning HTML string
 - `target: string | Element` - CSS selector or DOM element
+- `options: Object` - Optional mount configuration
+  - `replace: boolean` - If true, replace target content instead of preserving (default: false)
 
 **Returns:** Mount instance with optional `unmount()` method
 
@@ -56,6 +58,9 @@ const app = mount(App, "#app");
 
 // DOM element
 const app = mount(App, document.querySelector("#app"));
+
+// Replace existing content instead of preserving
+const app = mount(App, "#app", { replace: true });
 
 // Optional manual cleanup (automatic when element removed)
 app.unmount();

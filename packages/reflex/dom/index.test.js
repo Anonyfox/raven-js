@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { describe, it } from "node:test";
-import { effect, signal } from "../index.js";
+import { computed, effect, signal } from "../index.js";
 import * as dom from "./index.js";
 
 describe("dom/index.js", () => {
@@ -329,6 +329,96 @@ describe("dom/index.js", () => {
 			} finally {
 				globalThis.fetch = originalFetch;
 			}
+		});
+
+		it("should preserve component state across re-renders transparently", async () => {
+			let renderCount = 0;
+			let stateValue = null;
+
+			// Component that creates signals inside function body (previously problematic pattern)
+			const StatefulComponent = () => {
+				renderCount++;
+
+				// These would normally create new signals on every render, losing state
+				const count = signal(0);
+				const doubledCount = computed(() => count() * 2);
+
+				// Store reference to verify state persistence
+				if (renderCount === 1) {
+					stateValue = { count, doubledCount };
+				}
+
+				return `<div>Count: ${count()}, Doubled: ${doubledCount()}</div>`;
+			};
+
+			const target = {
+				children: [],
+				innerHTML: "",
+				appendChild(child) {
+					this.children.push(child);
+				},
+			};
+
+			const mounted = dom.mount(StatefulComponent, target);
+
+			// Should show initial state
+			assert.ok(mounted.element.innerHTML.includes("Count: 0, Doubled: 0"));
+
+			// Update the signal and trigger re-render
+			stateValue.count.set(5);
+			await new Promise((resolve) => setTimeout(resolve, 10));
+
+			// Should preserve state and show updated values
+			assert.ok(mounted.element.innerHTML.includes("Count: 5, Doubled: 10"));
+			assert.strictEqual(renderCount, 2, "Should have rendered twice");
+
+			// Update again to verify continued state preservation
+			stateValue.count.set(10);
+			await new Promise((resolve) => setTimeout(resolve, 10));
+
+			assert.ok(mounted.element.innerHTML.includes("Count: 10, Doubled: 20"));
+			assert.strictEqual(renderCount, 3, "Should have rendered three times");
+
+			mounted.unmount();
+		});
+
+		it("should replace existing content when replace option is true", () => {
+			const templateFn = () => "<p>New content</p>";
+			const existingChild = { tagName: "span", textContent: "Old content" };
+			const target = {
+				children: [existingChild], // Target already has children
+				innerHTML: "<span>Old content</span>",
+				appendChild(child) {
+					this.children.push(child);
+				},
+			};
+
+			const mounted = dom.mount(templateFn, target, { replace: true });
+
+			// Target should be reused (isTargetReused = true) even though it had children
+			assert.strictEqual(mounted.isTargetReused, true);
+			assert.strictEqual(mounted.element, target);
+
+			// Content should be replaced, not preserved
+			assert.strictEqual(target.innerHTML, "<p>New content</p>");
+		});
+
+		it("should preserve existing content when replace option is false (default)", () => {
+			const templateFn = () => "<p>New content</p>";
+			const existingChild = { tagName: "span" };
+			const target = {
+				children: [existingChild], // Target already has children
+				appendChild(child) {
+					this.children.push(child);
+				},
+			};
+
+			const mounted = dom.mount(templateFn, target); // No replace option
+
+			// Wrapper should be created (isTargetReused = false)
+			assert.strictEqual(mounted.isTargetReused, false);
+			assert.notStrictEqual(mounted.element, target);
+			assert.strictEqual(target.children.length, 2); // Existing + wrapper
 		});
 	});
 });
