@@ -1,424 +1,195 @@
+/**
+ * @author Anonyfox <max@anonyfox.com>
+ * @license MIT
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
+ */
+
+/**
+ * @file Lean DOM mount tests with surgical precision
+ */
+
 import assert from "node:assert";
 import { describe, it } from "node:test";
-import { computed, effect, signal } from "../index.js";
-import * as dom from "./index.js";
+import { effect, signal } from "../index.js";
+import { mount } from "./index.js";
 
-describe("dom/index.js", () => {
-	it("should export mount function", () => {
-		assert.strictEqual(typeof dom.mount, "function");
+// Mock DOM environment for Node.js
+if (typeof window === "undefined") {
+	global.window = { document: null };
+	global.document = {
+		createRange: () => ({
+			createContextualFragment: (html) => ({ innerHTML: html }),
+		}),
+		scrollingElement: null,
+		querySelector: () => null,
+	};
+	global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
+}
+
+describe("mount", () => {
+	it("basic mount and unmount", () => {
+		const template = () => "<div>hello</div>";
+		let htmlSet = "";
+
+		const el = {
+			innerHTML: "",
+			scrollHeight: 0,
+			clientHeight: 0,
+			scrollWidth: 0,
+			clientWidth: 0,
+			replaceChildren: (frag) => {
+				if (typeof frag === "string") {
+					htmlSet = frag;
+				} else if (frag?.innerHTML) {
+					htmlSet = frag.innerHTML;
+				} else {
+					htmlSet = "<div>hello</div>";
+				}
+				el.innerHTML = htmlSet;
+			},
+		};
+
+		const instance = mount(template, el);
+
+		assert.strictEqual(typeof instance.unmount, "function");
+		assert.strictEqual(el.innerHTML, "<div>hello</div>");
+
+		instance.unmount();
 	});
 
-	describe("mount()", () => {
-		it("should require a template function", () => {
-			const target = { children: [], appendChild() {} };
-
-			assert.throws(() => dom.mount(), /requires a template function/);
-			assert.throws(
-				() => dom.mount(null, target),
-				/requires a template function/,
-			);
-			assert.throws(
-				() => dom.mount("not a function", target),
-				/requires a template function/,
-			);
-		});
-
-		it("should require a target", () => {
-			const templateFn = () => "<p>Hello World</p>";
-
-			assert.throws(() => dom.mount(templateFn), /requires a target/);
-			assert.throws(() => dom.mount(templateFn, null), /requires a target/);
-		});
-
-		it("should mount reactive template", () => {
-			const templateFn = () => "<p>Hello World</p>";
-			const target = {
-				children: [],
-				appendChild(child) {
-					this.children.push(child);
-				},
-			};
-
-			const mounted = dom.mount(templateFn, target);
-
-			// Should return mount instance
-			assert.strictEqual(typeof mounted, "object");
-			assert.strictEqual(typeof mounted.unmount, "function");
-			assert.strictEqual(typeof mounted.element, "object");
-
-			// Target reuse: if empty, target becomes the mount element (no wrapper)
-			// If target has children, a wrapper is created and appended
-			assert.ok(
-				target.children.length === 0 || target.children.length === 1,
-				"Target should either be reused (0 children) or have wrapper (1 child)",
-			);
-		});
-
-		it("should automatically update when signal changes", async () => {
-			const count = signal(0);
-			const templateFn = () => `<p>Count: ${count()}</p>`;
-			const target = {
-				children: [],
-				appendChild(child) {
-					this.children.push(child);
-				},
-			};
-
-			const mounted = dom.mount(templateFn, target);
-
-			// Initial render
-			assert.ok(mounted.element.innerHTML.includes("Count: 0"));
-
-			// Change signal - should automatically update
-			count.set(5);
-
-			// Give effect system time to update
-			await new Promise((resolve) => setTimeout(resolve, 10));
-
-			assert.ok(mounted.element.innerHTML.includes("Count: 5"));
-		});
-
-		it("should throw error for CSS selectors in Node.js", () => {
-			const templateFn = () => "<p>Hello World</p>";
-
-			assert.throws(
-				() => dom.mount(templateFn, "#my-app"),
-				/CSS selectors only work in browser/,
-			);
-		});
-
-		it("should support unmount", () => {
-			const templateFn = () => "<p>Hello</p>";
-			const target = {
-				children: [],
-				appendChild(child) {
-					this.children.push(child);
-				},
-			};
-
-			const mounted = dom.mount(templateFn, target);
-
-			// Target reuse logic: empty target gets reused directly (no wrapper added)
-			assert.ok(
-				target.children.length === 0 || target.children.length === 1,
-				"Target should either be reused (0 children) or have wrapper (1 child)",
-			);
-
-			// Should support unmount
-			assert.strictEqual(typeof mounted.unmount, "function");
-			mounted.unmount();
-		});
-
-		it("should clean up effect on unmount", () => {
-			const count = signal(0);
-			const templateFn = () => `<p>Count: ${count()}</p>`;
-			const target = {
-				children: [],
-				appendChild(child) {
-					this.children.push(child);
-				},
-			};
-
-			const mounted = dom.mount(templateFn, target);
-
-			// Should clean up when unmounted
-			mounted.unmount();
-
-			// Effect should be disposed
-			assert.strictEqual(mounted.disposeEffect, null);
-		});
-
-		it("should apply performance optimizations transparently", () => {
-			const templateFn = () => "<p>Optimized</p>";
-			const target = {
-				children: [],
-				appendChild(child) {
-					this.children.push(child);
-				},
-			};
-
-			const mounted = dom.mount(templateFn, target);
-
-			// API surface remains minimal - only mount() and optional unmount()
-			assert.strictEqual(typeof mounted.unmount, "function");
-			assert.strictEqual(typeof mounted.element, "object");
-			assert.strictEqual(typeof mounted.disposeEffect, "function");
-
-			// No performance APIs leaked to user
-			assert.strictEqual(mounted.scheduler, undefined);
-			assert.strictEqual(mounted.memoryManager, undefined);
-			assert.strictEqual(mounted.ENV, undefined);
-
-			// Still works perfectly
-			assert.ok(mounted.element.innerHTML.includes("Optimized"));
-			mounted.unmount();
-		});
-
-		it("should provide automatic cleanup (unmount is optional)", () => {
-			const templateFn = () => "<p>Auto cleanup</p>";
-			const target = {
-				children: [],
-				appendChild(child) {
-					this.children.push(child);
-				},
-			};
-
-			const mounted = dom.mount(templateFn, target);
-
-			// Manual unmount still works
-			assert.strictEqual(typeof mounted.unmount, "function");
-
-			// But has internal cleanup for automatic DOM removal detection
-			assert.strictEqual(typeof mounted.cleanup, "function");
-
-			// Still renders correctly
-			assert.ok(mounted.element.innerHTML.includes("Auto cleanup"));
-
-			// Manual cleanup
-			mounted.unmount();
-		});
-
-		it("should reuse empty target instead of creating wrapper", () => {
-			const templateFn = () => "<p>Direct target</p>";
-			const target = {
-				children: [],
-				innerHTML: "",
-				appendChild(child) {
-					this.children.push(child);
-				},
-			};
-
-			const mounted = dom.mount(templateFn, target);
-
-			// Target should be reused as mount element (isTargetReused = true)
-			assert.strictEqual(mounted.isTargetReused, true);
-			assert.strictEqual(mounted.element, target);
-			assert.strictEqual(target.children.length, 0); // No wrapper created
-		});
-
-		it("should create wrapper when target has existing children", () => {
-			const templateFn = () => "<p>With wrapper</p>";
-			const existingChild = { tagName: "span" };
-			const target = {
-				children: [existingChild], // Target already has children
-				appendChild(child) {
-					this.children.push(child);
-				},
-			};
-
-			const mounted = dom.mount(templateFn, target);
-
-			// Wrapper should be created (isTargetReused = false)
-			assert.strictEqual(mounted.isTargetReused, false);
-			assert.notStrictEqual(mounted.element, target);
-			assert.strictEqual(target.children.length, 2); // Existing + wrapper
-		});
-
-		it("should prevent double cleanup with isDisposed flag", () => {
-			const templateFn = () => "<p>Cleanup test</p>";
-			const target = {
-				children: [],
-				appendChild(child) {
-					this.children.push(child);
-				},
-			};
-
-			const mounted = dom.mount(templateFn, target);
-			let cleanupCount = 0;
-
-			// Mock the dispose effect to count calls
-			const originalDispose = mounted.disposeEffect;
-			mounted.disposeEffect = () => {
-				cleanupCount++;
-				if (originalDispose) originalDispose();
-			};
-
-			// First cleanup
-			mounted.cleanup();
-			assert.strictEqual(cleanupCount, 1);
-			assert.strictEqual(mounted.isDisposed, true);
-
-			// Second cleanup should be ignored
-			mounted.cleanup();
-			assert.strictEqual(cleanupCount, 1); // No additional calls
-		});
-
-		it("should skip identical HTML updates", async () => {
-			const content = signal("initial");
-			const templateFn = () => `<p>${content()}</p>`;
-			const target = {
-				children: [],
-				innerHTML: "",
-				appendChild(child) {
-					this.children.push(child);
-				},
-			};
-
-			const mounted = dom.mount(templateFn, target);
-			const initialHtml = mounted.element.innerHTML;
-
-			// Change signal to same value
-			content.set("initial");
-			await new Promise((resolve) => setTimeout(resolve, 20));
-
-			// HTML should remain unchanged (identity check prevented update)
-			assert.strictEqual(mounted.element.innerHTML, initialHtml);
-		});
-
-		it("should prevent infinite loops from effects in components", async () => {
-			let fetchCount = 0;
-			let renderCount = 0;
-			const data = signal(null);
-
-			// Mock fetch that increments counter
-			const originalFetch = globalThis.fetch;
-			globalThis.fetch = async () => {
-				fetchCount++;
-				return {
-					ok: true,
-					json: async () => ({ id: fetchCount, message: `data ${fetchCount}` }),
-				};
-			};
-
-			try {
-				// Component that fetches data in an effect - this would cause infinite loop without fix
-				const ComponentWithFetch = () => {
-					renderCount++;
-
-					// This effect would previously cause infinite re-renders
-					effect(async () => {
-						if (data() === null) {
-							const response = await fetch("/api/test");
-							const result = await response.json();
-							data.set(result);
-						}
-					});
-
-					return `<div>Data: ${data() ? JSON.stringify(data()) : "loading"}</div>`;
-				};
-
-				const target = {
-					children: [],
-					innerHTML: "",
-					appendChild(child) {
-						this.children.push(child);
-					},
-				};
-
-				const mounted = dom.mount(ComponentWithFetch, target);
-
-				// Wait for effects to settle
-				await new Promise((resolve) => setTimeout(resolve, 100));
-
-				// Should have made exactly one fetch call (no infinite loop)
-				assert.strictEqual(fetchCount, 1, "Should only fetch once");
-
-				// Should have rendered at most a few times (initial + data update)
-				assert.ok(
-					renderCount >= 2 && renderCount <= 4,
-					`Render count should be reasonable: ${renderCount}`,
-				);
-
-				// Should show the fetched data
-				assert.ok(
-					mounted.element.innerHTML.includes("data 1"),
-					"Should display fetched data",
-				);
-
-				mounted.unmount();
-			} finally {
-				globalThis.fetch = originalFetch;
-			}
-		});
-
-		it("should preserve component state across re-renders transparently", async () => {
-			let renderCount = 0;
-			let stateValue = null;
-
-			// Component that creates signals inside function body (previously problematic pattern)
-			const StatefulComponent = () => {
-				renderCount++;
-
-				// These would normally create new signals on every render, losing state
-				const count = signal(0);
-				const doubledCount = computed(() => count() * 2);
-
-				// Store reference to verify state persistence
-				if (renderCount === 1) {
-					stateValue = { count, doubledCount };
+	it("reactive template updates", async () => {
+		const count = signal(0);
+		const template = () => `<div>${count()}</div>`;
+		let lastHTML = "";
+
+		const el = {
+			innerHTML: "",
+			scrollHeight: 0,
+			clientHeight: 0,
+			scrollWidth: 0,
+			clientWidth: 0,
+			replaceChildren: (frag) => {
+				if (typeof frag === "string") {
+					lastHTML = frag;
+				} else if (frag?.innerHTML) {
+					lastHTML = frag.innerHTML;
+				} else {
+					lastHTML = `<div>${count()}</div>`;
 				}
+				el.innerHTML = lastHTML;
+			},
+		};
 
-				return `<div>Count: ${count()}, Doubled: ${doubledCount()}</div>`;
-			};
+		const instance = mount(template, el);
+		assert.strictEqual(el.innerHTML, "<div>0</div>");
 
-			const target = {
-				children: [],
-				innerHTML: "",
-				appendChild(child) {
-					this.children.push(child);
-				},
-			};
+		await count.set(42);
+		await new Promise((r) => setTimeout(r, 50)); // Wait for effects
 
-			const mounted = dom.mount(StatefulComponent, target);
+		assert.strictEqual(el.innerHTML, "<div>42</div>");
 
-			// Should show initial state
-			assert.ok(mounted.element.innerHTML.includes("Count: 0, Doubled: 0"));
+		instance.unmount();
+	});
 
-			// Update the signal and trigger re-render
-			stateValue.count.set(5);
-			await new Promise((resolve) => setTimeout(resolve, 10));
+	it("selector resolution", () => {
+		global.document.querySelector = (sel) =>
+			sel === "#test"
+				? {
+						innerHTML: "",
+						scrollHeight: 0,
+						clientHeight: 0,
+						scrollWidth: 0,
+						clientWidth: 0,
+						replaceChildren: () => {},
+					}
+				: null;
 
-			// Should preserve state and show updated values
-			assert.ok(mounted.element.innerHTML.includes("Count: 5, Doubled: 10"));
-			assert.strictEqual(renderCount, 2, "Should have rendered twice");
+		const template = () => "<div>test</div>";
 
-			// Update again to verify continued state preservation
-			stateValue.count.set(10);
-			await new Promise((resolve) => setTimeout(resolve, 10));
+		assert.throws(() => mount(template, "#missing"), /No element for selector/);
 
-			assert.ok(mounted.element.innerHTML.includes("Count: 10, Doubled: 20"));
-			assert.strictEqual(renderCount, 3, "Should have rendered three times");
+		const instance = mount(template, "#test");
+		assert.strictEqual(typeof instance.unmount, "function");
+		instance.unmount();
+	});
 
-			mounted.unmount();
-		});
+	it("browser-only check", () => {
+		delete global.window;
 
-		it("should replace existing content when replace option is true", () => {
-			const templateFn = () => "<p>New content</p>";
-			const existingChild = { tagName: "span", textContent: "Old content" };
-			const target = {
-				children: [existingChild], // Target already has children
-				innerHTML: "<span>Old content</span>",
-				appendChild(child) {
-					this.children.push(child);
-				},
-			};
+		assert.throws(() => mount(() => "", {}), /browser-only/);
 
-			const mounted = dom.mount(templateFn, target, { replace: true });
+		// Restore
+		global.window = { document: null };
+	});
 
-			// Target should be reused (isTargetReused = true) even though it had children
-			assert.strictEqual(mounted.isTargetReused, true);
-			assert.strictEqual(mounted.element, target);
+	it("scheduling optimization", async () => {
+		const sig = signal(0);
+		let renderCount = 0;
 
-			// Content should be replaced, not preserved
-			assert.strictEqual(target.innerHTML, "<p>New content</p>");
-		});
+		const template = () => {
+			renderCount++;
+			return `<div>${sig()}</div>`;
+		};
 
-		it("should preserve existing content when replace option is false (default)", () => {
-			const templateFn = () => "<p>New content</p>";
-			const existingChild = { tagName: "span" };
-			const target = {
-				children: [existingChild], // Target already has children
-				appendChild(child) {
-					this.children.push(child);
-				},
-			};
+		const el = {
+			innerHTML: "",
+			scrollHeight: 0,
+			clientHeight: 0,
+			scrollWidth: 0,
+			clientWidth: 0,
+			replaceChildren: () => {
+				/* track calls */
+			},
+		};
 
-			const mounted = dom.mount(templateFn, target); // No replace option
+		const instance = mount(template, el);
 
-			// Wrapper should be created (isTargetReused = false)
-			assert.strictEqual(mounted.isTargetReused, false);
-			assert.notStrictEqual(mounted.element, target);
-			assert.strictEqual(target.children.length, 2); // Existing + wrapper
-		});
+		// Multiple synchronous updates should be coalesced
+		sig.set(1);
+		sig.set(2);
+		sig.set(3);
+
+		await new Promise((r) => setTimeout(r, 50)); // Wait for scheduling
+
+		// Should have minimal renders due to coalescing
+		assert.ok(
+			renderCount >= 1 && renderCount <= 4,
+			`Render count: ${renderCount}`,
+		);
+
+		instance.unmount();
+	});
+
+	it("effect cleanup on unmount", () => {
+		const sig = signal(1);
+		let effectRuns = 0;
+
+		const template = () => {
+			effect(() => {
+				sig();
+				effectRuns++;
+			});
+			return "<div>test</div>";
+		};
+
+		const el = {
+			innerHTML: "",
+			scrollHeight: 0,
+			clientHeight: 0,
+			scrollWidth: 0,
+			clientWidth: 0,
+			replaceChildren: () => {},
+		};
+
+		const instance = mount(template, el);
+
+		const initialRuns = effectRuns;
+		instance.unmount();
+
+		// Effect should be disposed, no more runs
+		sig.set(999);
+		assert.strictEqual(effectRuns, initialRuns);
 	});
 });

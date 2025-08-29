@@ -2,8 +2,10 @@ import { html, style } from "@raven-js/beak";
 import { Todos } from "../../shared/todos.js";
 
 // Minimal todos battleground - pure framework competence test
-export const TodosPage = () => {
+export const TodosPage = async () => {
 	console.log(process.env.PUBLIC_ORIGIN);
+
+	const todos = await Todos();
 
 	return html`
   <!DOCTYPE html>
@@ -16,7 +18,7 @@ export const TodosPage = () => {
   </head>
   <body>
     <div id="todos-app">
-      ${Todos()}
+      ${todos}
     </div>
 
     <!-- Load the todos app using reflex -->

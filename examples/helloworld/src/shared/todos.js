@@ -1,7 +1,8 @@
 import { html } from "@raven-js/beak/html";
 import { computed, effect, signal } from "@raven-js/reflex";
+import { ssr } from "@raven-js/reflex/ssr";
 
-export const Todos = () => {
+export const Todos = ssr(async () => {
 	const todos = signal([]);
 	const totalCount = computed(() => todos().length);
 	const activeCount = computed(
@@ -107,4 +108,4 @@ export const Todos = () => {
       <a href="/" class="back-link">← Back to Home</a>
     </div>
 	`;
-};
+});

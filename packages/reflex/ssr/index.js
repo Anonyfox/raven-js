@@ -6,514 +6,317 @@
  * @see {@link https://anonyfox.com}
  */
 
-/**
- * @file Universal reactive wrapper for SSR and hydration
- *
- * The reactive() wrapper for fullstack applications with automatic SSR,
- * fetch interception, and seamless client hydration.
- */
+import {
+	__getWriteVersion,
+	afterFlush,
+	withTemplateContext,
+} from "../index.js";
 
-import { contextStack } from "../index.js";
+// Get the same global singleton used by the core.
+const __g = /** @type {any} */ (globalThis);
+if (!__g.__REFLEX_CONTEXT_STACK__) __g.__REFLEX_CONTEXT_STACK__ = [];
+const contextStack =
+	/** @type {Array<{promises:Set<Promise<any>>, track(p:Promise<any>):void}>} */ (
+		__g.__REFLEX_CONTEXT_STACK__
+	);
+
+/* ---------------- base URL + cache key ---------------- */
 
 /**
- * Generates a unique component ID for each ssr() call.
- * Uses crypto.randomUUID() when available, falls back to timestamp + random.
- *
- * @returns {string} Unique component identifier
+ * Resolve the per-request base URL (SSR) or location.href (client).
+ * @returns {string}
  */
-function generateComponentId() {
-	if (typeof crypto !== "undefined" && crypto.randomUUID) {
-		// Use Web Crypto API when available (Node 16.7+, modern browsers)
-		return crypto.randomUUID().replace(/-/g, "").slice(0, 8);
-	} else {
-		// Fallback for older environments
-		return (
-			Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
-		).slice(-8);
-	}
+function getBaseURL() {
+	const explicit = /** @type {any} */ (globalThis).__REFLEX_BASE_URL__;
+	if (explicit) return explicit;
+
+	const loc = globalThis.location?.href;
+	if (loc?.includes("://")) return loc;
+
+	return "http://localhost/";
 }
 
 /**
- * Creates a canonical cache key for fetch requests.
- * Ensures server and client use identical keys for proper hydration matching.
- *
- * @param {string|URL|Request} url - Request URL (may be relative) or Request object
- * @param {RequestInit} [opts={}] - Fetch options
- * @returns {string} Canonical cache key
+ * Canonical cache key so server and client match.
+ * @param {string|URL|Request} url
+ * @param {RequestInit} [opts]
+ * @returns {string}
  */
-function createCacheKey(url, opts = {}) {
-	// Convert URL object or Request to string if needed
+export function createCacheKey(url, opts = {}) {
 	let urlString;
-	if (url instanceof URL) {
-		urlString = url.toString();
-	} else if (typeof url === "object" && url.url) {
-		// Handle Request objects
-		urlString = url.url;
-	} else {
-		urlString = String(url);
-	}
-	// Normalize base URL consistently
-	let baseUrl = globalThis.location?.href || "http://localhost/";
+	if (url instanceof URL) urlString = url.toString();
+	else if (typeof url === "object" && /** @type {any} */ (url).url)
+		urlString = /** @type {any} */ (url).url;
+	else urlString = String(url);
 
-	// Ensure baseUrl is a valid absolute URL
-	if (baseUrl === "/" || !baseUrl.includes("://")) {
-		baseUrl = "http://localhost/";
-	}
-
-	const absoluteUrl = new URL(urlString, baseUrl).toString();
-
-	// Extract and normalize options
+	const absolute = new URL(urlString, getBaseURL()).toString();
 	const method = (opts.method || "GET").toUpperCase();
 
-	// Normalize headers to lowercase keys
-	/** @type {Record<string, string>} */
+	/** @type {Record<string,string>} */
 	const headers = {};
 	if (opts.headers) {
 		if (opts.headers instanceof Headers) {
-			for (const [key, value] of opts.headers.entries()) {
-				headers[key.toLowerCase()] = value;
-			}
-		} else if (typeof opts.headers === "object") {
-			for (const [key, value] of Object.entries(opts.headers)) {
-				headers[key.toLowerCase()] = String(value);
-			}
+			for (const [k, v] of opts.headers.entries()) headers[k.toLowerCase()] = v;
+		} else {
+			for (const [k, v] of Object.entries(opts.headers))
+				headers[k.toLowerCase()] = String(v);
 		}
 	}
 
-	// Create body hash for non-GET requests
 	let bodyHash = null;
 	if (opts.body && method !== "GET") {
-		// Simple hash for body content
 		bodyHash =
 			typeof opts.body === "string"
 				? `${opts.body.length}:${opts.body.slice(0, 100)}`
 				: "[object]";
 	}
+	return JSON.stringify({ url: absolute, method, headers, bodyHash });
+}
 
-	return JSON.stringify({
-		url: absoluteUrl,
-		method,
-		headers,
-		bodyHash,
-	});
+/* ---------------- helpers ---------------- */
+
+/**
+ * @param {unknown} headersLike
+ * @returns {Record<string,string>|null}
+ */
+function normalizeHeaders(headersLike) {
+	const h = /** @type {any} */ (headersLike);
+	if (!h) return null;
+	if (h.get && typeof h.get === "function") {
+		/** @type {Record<string,string>} */ const obj = {};
+		for (const [k, v] of h.entries()) obj[k.toLowerCase()] = v;
+		return obj;
+	}
+	/** @type {Record<string,string>} */ const obj = {};
+	for (const [k, v] of Object.entries(h)) obj[k.toLowerCase()] = String(v);
+	return obj;
 }
 
 /**
- * Environment detection utilities.
- * Determines the current runtime context for reactive behavior.
+ * Try to derive origin from request/adapter headers.
+ * @param {Array<any>} args
+ * @returns {string|null}
  */
-const env = {
-	/**
-	 * Check if running in a server environment.
-	 * @returns {boolean} True if server environment
-	 */
-	isServer: () => {
-		// In Node.js tests, check if window was artificially created (has limited properties)
-		if (typeof window !== "undefined" && typeof process !== "undefined") {
-			// If window exists but lacks real browser APIs, we're in server with shims
-			return (
-				!window.document?.createElement ||
-				window.navigator?.userAgent === "Node.js"
-			);
-		}
-		// Standard server detection
-		return typeof window === "undefined";
-	},
-
-	/**
-	 * Check if running in a browser environment.
-	 * @returns {boolean} True if browser environment
-	 */
-	isClient: () => {
-		// Real browser: has window and no process, or has rich browser APIs
-		return (
-			typeof window !== "undefined" &&
-			(typeof process === "undefined" ||
-				(window.document?.createElement &&
-					window.navigator?.userAgent !== "Node.js"))
-		);
-	},
-
-	/**
-	 * Check if client is in hydration mode (SSR data available).
-	 * @returns {boolean} True if hydrating from SSR
-	 */
-	isHydrating: () => {
-		if (typeof window === "undefined") return false;
-		// Check for any component-scoped SSR data
-		const win = /** @type {any} */ (window);
-		return Object.keys(win).some((key) => key.startsWith("__SSR_DATA__"));
-	},
-
-	/**
-	 * Check if this is the root reactive call (no parent context).
-	 * @returns {boolean} True if root level call
-	 */
-	isRoot: () => contextStack.length === 0,
-
-	/**
-	 * Installs safe browser API shims during SSR to prevent crashes.
-	 * These shims provide sensible defaults for browser-only APIs.
-	 */
-	installBrowserAPIShims: () => {
-		if (env.isServer()) {
-			// localStorage/sessionStorage shims
-			if (typeof globalThis.localStorage === "undefined") {
-				/** @type {any} */ (globalThis).localStorage = {
-					getItem: (/** @type {any} */ _key) => /** @type {any} */ (null),
-					setItem: (/** @type {any} */ _key, /** @type {any} */ _value) => {},
-					removeItem: (/** @type {any} */ _key) => {},
-					clear: () => {},
-					key: (/** @type {any} */ _index) => /** @type {any} */ (null),
-					get length() {
-						return 0;
-					},
-				};
-			}
-
-			if (typeof globalThis.sessionStorage === "undefined") {
-				/** @type {any} */ (globalThis).sessionStorage = {
-					getItem: (/** @type {any} */ _key) => /** @type {any} */ (null),
-					setItem: (/** @type {any} */ _key, /** @type {any} */ _value) => {},
-					removeItem: (/** @type {any} */ _key) => {},
-					clear: () => {},
-					key: (/** @type {any} */ _index) => /** @type {any} */ (null),
-					get length() {
-						return 0;
-					},
-				};
-			}
-
-			// window object shim
-			if (typeof globalThis.window === "undefined") {
-				/** @type {any} */ (globalThis).window = {
-					location: {
-						href: "http://localhost/",
-						hostname: "localhost",
-						pathname: "/",
-						search: "",
-						hash: "",
-						protocol: "http:",
-						port: "",
-						host: "localhost",
-					},
-					navigator: {
-						userAgent: "Node.js",
-						onLine: true,
-						language: "en-US",
-						languages: ["en-US"],
-					},
-					document: {
-						title: "",
-						cookie: "",
-						documentElement: {
-							scrollTop: 0,
-							scrollLeft: 0,
-							clientWidth: 1024,
-							clientHeight: 768,
-						},
-						body: {
-							scrollTop: 0,
-							scrollLeft: 0,
-							clientWidth: 1024,
-							clientHeight: 768,
-						},
-						createElement: () => ({
-							innerHTML: "",
-							textContent: "",
-							style: {},
-							setAttribute: (
-								/** @type {any} */ _name,
-								/** @type {any} */ _value,
-							) => {},
-							getAttribute: (/** @type {any} */ _name) =>
-								/** @type {any} */ (null),
-							appendChild: (/** @type {any} */ _child) => {},
-							removeChild: (/** @type {any} */ _child) => {},
-							addEventListener: (
-								/** @type {any} */ _type,
-								/** @type {any} */ _listener,
-							) => {},
-							removeEventListener: (
-								/** @type {any} */ _type,
-								/** @type {any} */ _listener,
-							) => {},
-						}),
-						getElementById: (/** @type {any} */ _id) =>
-							/** @type {any} */ (null),
-						querySelector: (/** @type {any} */ _selector) =>
-							/** @type {any} */ (null),
-						querySelectorAll: (/** @type {any} */ _selector) =>
-							/** @type {any[]} */ ([]),
-					},
-					innerWidth: 1024,
-					innerHeight: 768,
-					screen: {
-						width: 1920,
-						height: 1080,
-						availWidth: 1920,
-						availHeight: 1080,
-					},
-					addEventListener: () => {},
-					removeEventListener: () => {},
-					getComputedStyle: () => ({}),
-					requestAnimationFrame: (/** @type {any} */ fn) => setTimeout(fn, 16),
-					cancelAnimationFrame: (/** @type {any} */ id) => clearTimeout(id),
-				};
-			}
-
-			// document shim (if window exists but document doesn't)
-			if (typeof globalThis.document === "undefined" && globalThis.window) {
-				/** @type {any} */ (globalThis).document = /** @type {any} */ (
-					globalThis.window
-				).document;
-			}
-
-			// navigator shim
-			if (typeof globalThis.navigator === "undefined") {
-				/** @type {any} */ (globalThis).navigator = {
-					userAgent: "Node.js",
-					onLine: true,
-					language: "en-US",
-					languages: ["en-US"],
-					platform: "node",
-					cookieEnabled: false,
-				};
-			}
-
-			// location shim
-			if (typeof globalThis.location === "undefined") {
-				/** @type {any} */ (globalThis).location = {
-					href: "http://localhost/",
-					hostname: "localhost",
-					pathname: "/",
-					search: "",
-					hash: "",
-					protocol: "http:",
-					port: "",
-					host: "localhost",
-				};
-			}
-
-			// history shim
-			if (typeof globalThis.history === "undefined") {
-				/** @type {any} */ (globalThis).history = {
-					length: 1,
-					state: null,
-					pushState: () => {},
-					replaceState: () => {},
-					back: () => {},
-					forward: () => {},
-					go: () => {},
-				};
-			}
-
-			// alert/confirm/prompt shims
-			if (typeof globalThis.alert === "undefined") {
-				/** @type {any} */ (globalThis).alert = (
-					/** @type {any} */ message,
-				) => {
-					console.log("ALERT:", message);
-				};
-			}
-
-			if (typeof globalThis.confirm === "undefined") {
-				/** @type {any} */ (globalThis).confirm = (
-					/** @type {any} */ _message,
-				) => true;
-			}
-
-			if (typeof globalThis.prompt === "undefined") {
-				/** @type {any} */ (globalThis).prompt = (
-					/** @type {any} */ _message,
-				) => /** @type {any} */ (null);
-			}
-		}
-	},
-};
+function deriveBaseURLFromArgs(args) {
+	for (const a of args) {
+		const raw = a?.headers || a?.req?.headers || a?.request?.headers;
+		const h = normalizeHeaders(raw);
+		if (!h) continue;
+		const proto =
+			h["x-forwarded-proto"] ||
+			h["x-forwarded-scheme"] ||
+			(h.forwarded?.includes("proto=https") ? "https" : "") ||
+			"http";
+		const host = h["x-forwarded-host"] || h.host;
+		const port = h["x-forwarded-port"];
+		if (!host) continue;
+		const needsPort = port && !host.includes(":") && !/^(80|443)$/.test(port);
+		return `${proto}://${host}${needsPort ? `:${port}` : ""}/`;
+	}
+	return null;
+}
 
 /**
- * Universal SSR wrapper with **component-scoped inline data injection**.
- *
- * Revolutionizes SSR by embedding fetch cache directly with component output, making SSR
- * completely **layout-independent** and **component-scoped**. No more global state, no more
- * dependency on HTML structure - each component is self-contained with its own SSR data.
- *
- * ## 🎯 **Key Innovation: Inline Component-Scoped Injection**
- *
- * **Traditional SSR**: `<html><body><component/></body><script>window.__SSR_DATA__ = {...}</script></html>`
- * **Reflex SSR**: `<component-content/><script>window.__SSR_DATA__abc123 = {...}</script>`
- *
- * Each ssr() call generates a unique component ID and injects its SSR data immediately after
- * the component's rendered content - no matter where the component appears in the DOM tree.
- *
- * ## 🚀 **Server Behavior**
- * - Automatically intercepts fetch calls and caches responses
- * - Generates unique component ID via crypto.randomUUID()
- * - Injects component-scoped SSR data inline: `<script>window.__SSR_DATA__${componentId} = {...}</script>`
- * - Tracks async operations for completion with timeout protection
- * - Installs browser API shims to prevent crashes
- *
- * ## ⚡ **Client Behavior**
- * - Detects component-scoped SSR data via `window.__SSR_DATA__${componentId}`
- * - Intercepts matching fetch calls to use cached responses instantly
- * - Per-entry consumption: deletes cache entries after use
- * - Auto-cleanup: removes component's SSR data when fully consumed
- * - Restores original fetch after first microtask for fresh requests
- *
- * ## ✨ **Benefits**
- * - **Layout Independent**: Works in any HTML structure - header, footer, nested, anywhere
- * - **Component Scoped**: Each ssr() call isolated with unique data - no global conflicts
- * - **Zero Configuration**: Drop in any component, works automatically
- * - **Perfect Hydration**: Client uses exact server responses, zero duplicate requests
- * - **Optimal Performance**: Eliminates server round-trips during hydration
+ * Escape JSON for safe inline script embedding.
+ * @param {any} data
+ * @returns {string}
+ */
+function escapeJson(data) {
+	return JSON.stringify(data)
+		.replace(/</g, "\\u003c")
+		.replace(/>/g, "\\u003e")
+		.replace(/\u2028/g, "\\u2028")
+		.replace(/\u2029/g, "\\u2029");
+}
+
+/**
+ * Inline component-scoped SSR data right after component HTML.
+ * @param {string} html
+ * @param {{fetch:Record<string, any>}} ssrData
+ * @param {string} cid
+ * @returns {string}
+ */
+function injectSSRData(html, ssrData, cid) {
+	if (!ssrData || Object.keys(ssrData).length === 0) return html;
+	const json = escapeJson(ssrData);
+	if (json.length > 512 * 1024) return html; // cap at 512KB
+
+	const nonce = /** @type {any} */ (globalThis).__REFLEX_CSP_NONCE__;
+	const nonceAttr = nonce ? ` nonce="${nonce}"` : "";
+	return `${html}<script${nonceAttr}>window.__SSR_DATA__${cid}=${json};</script>`;
+}
+
+/**
+ * Wait for all tracked promises to settle with timeouts.
+ * @param {{promises:Set<Promise<any>>}} ctx
+ * @param {number} timeoutTotal
+ * @param {number} maxAttempts
+ */
+async function settleAllPromises(ctx, timeoutTotal, maxAttempts) {
+	const start = Date.now();
+	let attempts = 0;
+
+	while (ctx.promises.size > 0 && attempts < maxAttempts) {
+		const elapsed = Date.now() - start;
+		if (elapsed > timeoutTotal) {
+			// eslint-disable-next-line no-console
+			console.warn(
+				`SSR timeout: ${ctx.promises.size} pending after ${timeoutTotal}ms`,
+			);
+			break;
+		}
+		const batch = Array.from(ctx.promises);
+		await Promise.allSettled(
+			batch.map((p) => {
+				// soft per-promise timeout (max 5s or remaining time)
+				const per = Math.min(5000, timeoutTotal - elapsed);
+				return Promise.race([
+					p,
+					new Promise((_, rej) =>
+						setTimeout(() => rej(new Error("promise timeout")), per),
+					),
+				]).catch(() => {});
+			}),
+		);
+		attempts++;
+		if (ctx.promises.size > 0) {
+			await new Promise((r) => setTimeout(r, Math.min(100, 1 << attempts))); // backoff
+		}
+	}
+}
+
+/* ---------------- ssr(fn) ---------------- */
+
+/**
+ * Wrap a function for SSR + component-scoped hydration.
+ * Works seamlessly with `effect(async () => fetch(...))`.
  *
  * @template T
- * @param {function(...any[]): T|Promise<T>} fn - Handler function to wrap with SSR
- * @param {Object} [options={}] - Configuration options
- * @param {number} [options.timeout=10000] - Maximum time to wait for async operations (ms)
- * @param {number} [options.maxSettleAttempts=100] - Maximum attempts to settle all async operations
- * @param {string} [options._testComponentId] - Component ID for testing (internal use only)
- * @returns {function(...any[]): Promise<T>} Wrapped function that handles SSR/hydration
- *
- * @example
- * ```javascript
- * // 🎯 Layout-Independent Components: Works anywhere in DOM tree!
- * import { ssr, signal } from "@raven-js/reflex";
- *
- * // Header component - can be used in <head>, <header>, anywhere
- * const HeaderWidget = ssr(async () => {
- *   const response = await fetch("/api/user-stats");
- *   const stats = await response.json();
- *   return `<span>Welcome ${stats.username}! (${stats.notifications} new)</span>`;
- * });
- *
- * // Sidebar component - works in sidebar, footer, modal, etc.
- * const WeatherWidget = ssr(async () => {
- *   const response = await fetch("/api/weather");
- *   const weather = await response.json();
- *   return `<div class="weather">${weather.temp}°C - ${weather.condition}</div>`;
- * });
- *
- * // Each component gets its own SSR data, no conflicts!
- * // Server output:
- * // <span>Welcome Alice! (3 new)</span><script>window.__SSR_DATA__abc123 = {...}</script>
- * // <div class="weather">22°C - Sunny</div><script>window.__SSR_DATA__def456 = {...}</script>
- * ```
- *
- * @example
- * ```javascript
- * // 🚀 Perfect for Complex Layouts - No Structure Dependency
- * import { Router } from "@raven-js/wings";
- * import { html } from "@raven-js/beak";
- * import { ssr } from "@raven-js/reflex";
- *
- * const router = new Router();
- *
- * // Main page handler
- * router.get("/dashboard", ssr(async (ctx) => {
- *   // Each section is independent with its own SSR data
- *   const HeaderComponent = ssr(async () => {
- *     const user = await fetch("/api/user").then(r => r.json());
- *     return \`<nav>Hello \${user.name}</nav>\`;
- *   });
- *
- *   const SidebarComponent = ssr(async () => {
- *     const menu = await fetch("/api/menu").then(r => r.json());
- *     return \`<aside>\${menu.map(item => \`<a href="\${item.url}">\${item.title}</a>\`).join("")}</aside>\`;
- *   });
- *
- *   const ContentComponent = ssr(async () => {
- *     const posts = await fetch("/api/posts").then(r => r.json());
- *     return \`<main>\${posts.map(post => \`<article>\${post.title}</article>\`).join("")}</main>\`;
- *   });
- *
- *   return ctx.html(html\`
- *     <html>
- *       <head><title>Dashboard</title></head>
- *       <body>
- *         \${await HeaderComponent()}    <!-- Independent SSR data -->
- *         <div class="layout">
- *           \${await SidebarComponent()} <!-- Independent SSR data -->
- *           \${await ContentComponent()} <!-- Independent SSR data -->
- *         </div>
- *       </body>
- *     </html>
- *   \`);
- * }));
- *
- * // Result: Each component's fetch cache is embedded inline with its output!
- * // No global state, no HTML structure dependency, complete isolation.
- * ```
+ * @param {(...a:any) => T|Promise<T>} fn
+ * @param {{
+ *   timeout?: number,
+ *   maxSettleAttempts?: number,
+ *   maxPasses?: number,
+ *   _testComponentId?: string
+ * }} [options]
+ * @returns {(...a:any) => Promise<T>}
  */
 export function ssr(fn, options = {}) {
-	// Prevent double-wrapping
-	if (/** @type {any} */ (fn)._ssrWrapped) {
-		return /** @type {any} */ (fn);
-	}
+	if (/** @type {any} */ (fn)._ssrWrapped) return /** @type {any} */ (fn);
 
 	const {
 		timeout = 10000,
 		maxSettleAttempts = 100,
+		maxPasses = 8,
 		_testComponentId,
 	} = options;
 
-	// Generate unique component ID for this ssr() call (or use test override)
-	const componentId = _testComponentId || generateComponentId();
+	const cid =
+		_testComponentId ||
+		(typeof crypto !== "undefined" && crypto.randomUUID
+			? crypto.randomUUID().replace(/-/g, "").slice(0, 8)
+			: (
+					Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+				).slice(-8));
 
 	const wrapped = async function (/** @type {...any} */ ...args) {
-		const isServer = env.isServer();
-		const isClient = env.isClient();
-		const isHydrating = env.isHydrating();
-		const isRoot = env.isRoot();
+		const isServer =
+			typeof globalThis.window === "undefined" ||
+			(typeof globalThis.window !== "undefined" &&
+				globalThis.window?.navigator?.userAgent === "Node.js");
+		const isClient =
+			typeof globalThis.window !== "undefined" &&
+			(!globalThis.window?.navigator ||
+				globalThis.window?.navigator.userAgent !== "Node.js");
+		const isRoot = contextStack.length === 0;
 
-		// CLIENT: Use component-scoped cached SSR data if hydrating
-		if (isClient && isHydrating && isRoot) {
-			const originalFetch = globalThis.fetch;
+		// Hydration: serve from component-scoped cache on the client, then restore fetch.
+		if (
+			isClient &&
+			isRoot &&
+			typeof globalThis.window !== "undefined" &&
+			globalThis.window &&
+			Object.keys(globalThis.window).some((k) => k.startsWith("__SSR_DATA__"))
+		) {
+			// Before setting fetch override
+			const w = /** @type {any} */ (globalThis.window);
+			for (const k of Object.keys(w)) {
+				if (!k.startsWith("__SSR_DATA__")) continue;
+				const bag = w[k];
+				if (bag && typeof bag.__base === "string") {
+					/** @type {any} */ (globalThis).__REFLEX_BASE_URL__ = bag.__base;
+					break; // first one is enough
+				}
+			}
 
-			// Intercept fetch calls and use component-scoped cached data
-			globalThis.fetch = /** @type {any} */ (
-				(/** @type {any} */ url, /** @type {any} */ opts = {}) => {
-					const cacheKey = createCacheKey(url, opts);
-					const ssrData = /** @type {any} */ (window)[
-						`__SSR_DATA__${componentId}`
-					];
-					const cached = ssrData?.fetch?.[cacheKey];
+			const orig = globalThis.fetch;
 
-					if (cached) {
-						// Delete this specific cache entry after use (per-entry consumption)
-						delete ssrData.fetch[cacheKey];
+			// find a cached entry across any component-scoped SSR blob
+			/** @param {string} cacheKey */
+			function findCached(cacheKey) {
+				const w = /** @type {any} */ (window);
 
-						// If fetch cache is now empty, clean up the component-scoped __SSR_DATA__
-						if (Object.keys(ssrData.fetch).length === 0) {
-							delete (
-								/** @type {any} */ (window)[`__SSR_DATA__${componentId}`]
-							);
+				// 1) exact match
+				for (const k of Object.keys(w)) {
+					if (!k.startsWith("__SSR_DATA__")) continue;
+					const bag = w[k];
+					const entry = bag?.fetch?.[cacheKey];
+					if (entry) return { bag, key: k, entry, matchedKey: cacheKey };
+				}
+
+				// 2) fallback: match by method + pathname + search, ignoring origin
+				const want = JSON.parse(cacheKey);
+				try {
+					const wantURL = new URL(want.url);
+					const wantSig = `${want.method} ${wantURL.pathname}${wantURL.search}`;
+					for (const k of Object.keys(w)) {
+						if (!k.startsWith("__SSR_DATA__")) continue;
+						const bag = w[k];
+						const fetchMap = bag?.fetch;
+						if (!fetchMap) continue;
+						for (const fk of Object.keys(fetchMap)) {
+							try {
+								const parsed = JSON.parse(fk);
+								const u = new URL(parsed.url);
+								const sig = `${parsed.method} ${u.pathname}${u.search}`;
+								if (sig === wantSig) {
+									return { bag, key: k, entry: fetchMap[fk], matchedKey: fk };
+								}
+							} catch {}
 						}
+					}
+				} catch {}
 
-						// Create absolute URL for Response.url field
-						let urlString;
-						if (url instanceof URL) {
-							urlString = url.toString();
-						} else if (typeof url === "object" && url.url) {
-							urlString = url.url;
-						} else {
-							urlString = String(url);
-						}
+				return null;
+			}
 
-						let baseUrl = globalThis.location?.href || "http://localhost/";
-						if (baseUrl === "/" || !baseUrl.includes("://")) {
-							baseUrl = "http://localhost/";
-						}
+			globalThis.fetch = (url, opts = {}) => {
+				const key = createCacheKey(url, opts);
+				const hit = findCached(key);
 
-						// Return cached response as Promise with complete Response shape parity
-						const absoluteUrl = new URL(urlString, baseUrl).toString();
-						return Promise.resolve({
+				if (hit) {
+					// consume this entry
+					delete hit.bag.fetch[hit.matchedKey];
+					if (Object.keys(hit.bag.fetch).length === 0) {
+						delete (/** @type {any} */ (window)[hit.key]);
+					}
+
+					// normalize absolute URL for the Response-like object
+					let urlString;
+					if (url instanceof URL) urlString = url.toString();
+					else if (typeof url === "object" && /** @type {any} */ (url).url)
+						urlString = /** @type {any} */ (url).url;
+					else urlString = String(url);
+					const absolute = new URL(urlString, getBaseURL()).toString();
+
+					const cached = hit.entry;
+					return /** @type {Promise<Response>} */ (
+						Promise.resolve({
 							ok: cached.ok,
 							status: cached.status,
 							statusText: cached.statusText,
 							headers: new Headers(cached.headers),
-							url: absoluteUrl,
+							url: absolute,
 							redirected: false,
 							type: "basic",
 							body: null,
@@ -522,394 +325,212 @@ export function ssr(fn, options = {}) {
 							text: () => Promise.resolve(cached.text),
 							arrayBuffer: () => Promise.resolve(cached.arrayBuffer),
 							blob: () => Promise.resolve(cached.blob),
+							clone() {
+								return this;
+							},
 							formData: () =>
 								Promise.reject(
 									new Error("formData not available in SSR cache"),
 								),
-							clone: function () {
-								return this;
-							},
+							bytes: () =>
+								Promise.resolve(cached.arrayBuffer || new ArrayBuffer(0)),
+						})
+					);
+				}
+
+				// Optional: tiny dev guard
+				if (
+					/** @type {any} */ (globalThis).__REFLEX_DEBUG__ &&
+					Object.keys(w).some((k) => k.startsWith("__SSR_DATA__"))
+				) {
+					// eslint-disable-next-line no-console
+					console.warn(
+						"[Reflex] Hydration cache miss for",
+						key,
+						"base:",
+						getBaseURL(),
+					);
+				}
+
+				const absolute = new URL(String(url), getBaseURL()).toString();
+				return orig(absolute, opts);
+			};
+
+			// Schedule delayed restoration for deferred effects
+			const timeoutId = setTimeout(() => {
+				globalThis.fetch = orig;
+			}, 0);
+
+			try {
+				const result = /** @type {any} */ (await fn.apply(this, args));
+				// Clear timeout since we're restoring immediately
+				clearTimeout(timeoutId);
+				globalThis.fetch = orig;
+				return result;
+			} catch (error) {
+				// Clear timeout and restore on error
+				clearTimeout(timeoutId);
+				globalThis.fetch = orig;
+				throw error;
+			}
+		}
+
+		// Server root: do a settle loop
+		if (isServer && isRoot) {
+			// derive per-request origin and expose to key resolver
+			const derived =
+				deriveBaseURLFromArgs(args) ||
+				process?.env?.SSR_ORIGIN ||
+				"http://localhost/";
+			const prevBase = /** @type {any} */ (globalThis).__REFLEX_BASE_URL__;
+			/** @type {any} */ (globalThis).__REFLEX_BASE_URL__ = derived;
+
+			const ctx = {
+				promises: new Set(),
+				fetchCache: new Map(),
+				ssrData:
+					/** @type {{fetch:Record<string,any>, __base?:string}|null} */ (null),
+				track(/** @type {Promise<any>} */ p) {
+					if (p && typeof p.then === "function") {
+						this.promises.add(p);
+						p.finally(() => this.promises.delete(p)).catch(() => {});
+					}
+				},
+			};
+			contextStack.push(ctx);
+
+			const orig = globalThis.fetch;
+
+			globalThis.fetch = async (url, opts = {}) => {
+				const method = (opts.method || "GET").toUpperCase();
+				const key = createCacheKey(url, opts);
+				if (method === "GET" && ctx.fetchCache.has(key))
+					return ctx.fetchCache.get(key);
+
+				const absolute = (() => {
+					if (url instanceof URL) return url.toString();
+					if (typeof url === "object" && /** @type {any} */ (url).url)
+						url = /** @type {any} */ (url).url;
+					return new URL(String(url), getBaseURL()).toString();
+				})();
+
+				const p = orig(absolute, opts).then(async (resp) => {
+					const clone = resp.clone();
+					const data = {
+						ok: resp.ok,
+						status: resp.status,
+						statusText: resp.statusText,
+						headers: Array.from(resp.headers.entries()),
+						json: /** @type {any} */ (null),
+						text: /** @type {any} */ (null),
+						arrayBuffer: /** @type {any} */ (null),
+						blob: /** @type {any} */ (null),
+					};
+
+					// Track body reads on the response we return
+					const proxy = new Proxy(resp, {
+						get(target, prop) {
+							const v = /** @type {any} */ (target)[/** @type {any} */ (prop)];
+							if (
+								typeof v === "function" &&
+								["json", "text", "arrayBuffer", "blob", "formData"].includes(
+									String(prop),
+								)
+							) {
+								return (/** @type {...any} */ ...a) => {
+									const bp = v.apply(target, a);
+									ctx.track(bp);
+									return bp;
+								};
+							}
+							return v;
+						},
+					});
+
+					// Try to pre-read a representation for hydration cache
+					try {
+						const ct = resp.headers.get("content-type") || "";
+						if (ct.includes("application/json")) data.json = await clone.json();
+						else if (ct.includes("text/")) data.text = await clone.text();
+						else data.arrayBuffer = await clone.arrayBuffer();
+					} catch {
+						try {
+							data.text = await clone.text();
+						} catch {}
+					}
+
+					if (method === "GET") {
+						if (!ctx.ssrData) ctx.ssrData = { fetch: {}, __base: derived };
+						ctx.ssrData.fetch[key] = data;
+					}
+					return proxy;
+				});
+
+				ctx.track(p);
+				if (method === "GET") ctx.fetchCache.set(key, p);
+				return p;
+			};
+
+			// stable render scope across passes (prevents instance churn)
+			const scope = { slots: /** @type {any[]} */ ([]), cursor: 0 };
+			let html = "";
+			let prevHtml = "";
+			let prevVer = __getWriteVersion();
+			let pass = 0;
+
+			try {
+				while (pass++ < maxPasses) {
+					const out = withTemplateContext(() => fn.apply(this, args), scope);
+					html = await Promise.resolve(out);
+
+					// 1) run deferred effects (handled by withTemplateContext root)
+					// 2) flush graph
+					await afterFlush();
+					// 3) settle async
+					await settleAllPromises(ctx, timeout, maxSettleAttempts);
+					// 4) final flush
+					await afterFlush();
+
+					const stable =
+						ctx.promises.size === 0 &&
+						__getWriteVersion() === prevVer &&
+						html === prevHtml;
+
+					// Debug hook for tracing SSR behavior
+					if (/** @type {any} */ (globalThis).__REFLEX_DEBUG__) {
+						// eslint-disable-next-line no-console
+						console.log("[SSR] pass", pass, {
+							promises: ctx.promises.size,
+							writeVersion: __getWriteVersion(),
+							htmlChanged: html !== prevHtml,
+							stable,
 						});
 					}
 
-					// Fall back to normal fetch for non-cached requests
-					// Use absolute URL for fetch fallback
-					let baseUrl = globalThis.location?.href || "http://localhost/";
-					if (baseUrl === "/" || !baseUrl.includes("://")) {
-						baseUrl = "http://localhost/";
-					}
-					const absoluteUrl = new URL(url, baseUrl).toString();
-					return originalFetch(absoluteUrl, opts);
+					if (stable) break;
+
+					prevVer = __getWriteVersion();
+					prevHtml = html;
 				}
-			);
-
-			// Schedule fetch restoration after first microtask to limit interception scope
-			queueMicrotask(() => {
-				globalThis.fetch = originalFetch;
-			});
-
-			try {
-				const result = await fn.apply(this, args);
-
-				// Note: SSR data is cleaned up per-entry in fetch interception above
-
-				return result;
 			} finally {
-				// Ensure fetch is restored even if handler throws
-				// (Note: microtask restoration above handles the normal case)
-				if (globalThis.fetch !== originalFetch) {
-					globalThis.fetch = originalFetch;
-				}
-			}
-		}
-
-		// SERVER: Intercept fetch and track async operations
-		if (isServer && isRoot) {
-			// Install browser API shims automatically during SSR
-			env.installBrowserAPIShims();
-
-			const context = {
-				promises: new Set(),
-				fetchCache: new Map(),
-				/** @type {{fetch: any}|null} */
-				ssrData: null,
-				componentId,
-				track: (/** @type {Promise<any>} */ promise) => {
-					if (promise && typeof promise.then === "function") {
-						context.promises.add(promise);
-						promise
-							.finally(() => context.promises.delete(promise))
-							.catch(() => {
-								// Prevent unhandled rejection warnings for tracked promises
-							});
-					}
-				},
-			};
-
-			contextStack.push(context);
-
-			const originalFetch = globalThis.fetch;
-
-			// Intercept fetch calls and cache responses (GET only)
-			globalThis.fetch = async (url, opts = {}) => {
-				try {
-					const method = (opts.method || "GET").toUpperCase();
-					const cacheKey = createCacheKey(url, opts);
-
-					// Only cache GET requests for idempotency
-					if (method === "GET" && context.fetchCache.has(cacheKey)) {
-						return context.fetchCache.get(cacheKey);
-					}
-
-					// Resolve relative URLs to absolute URLs for Node.js fetch
-					const absoluteUrl = (() => {
-						let urlString;
-						if (url instanceof URL) {
-							return url.toString();
-						} else if (typeof url === "object" && url.url) {
-							urlString = url.url;
-						} else {
-							urlString = String(url);
-						}
-						// If already absolute, return as-is
-						if (urlString.includes("://")) {
-							return urlString;
-						}
-						// Resolve relative URL
-						const baseUrl = globalThis.location?.href || "http://localhost/";
-						return new URL(urlString, baseUrl).toString();
-					})();
-
-					const fetchPromise = originalFetch(absoluteUrl, opts).then(
-						async (response) => {
-							// Cache the response data
-							const cloned = response.clone();
-							const responseData = {
-								ok: response.ok,
-								status: response.status,
-								statusText: response.statusText,
-								headers: Array.from(response.headers.entries()),
-								/** @type {any} */
-								json: null,
-								/** @type {any} */
-								text: null,
-								/** @type {any} */
-								arrayBuffer: null,
-								/** @type {any} */
-								blob: null,
-							};
-
-							// Wrap response in Proxy to track body reads for settlement
-							const responseProxy = new Proxy(response, {
-								get(target, prop) {
-									const value = /** @type {any} */ (target)[
-										/** @type {any} */ (prop)
-									];
-
-									// Track body reading methods
-									if (
-										typeof value === "function" &&
-										[
-											"json",
-											"text",
-											"arrayBuffer",
-											"blob",
-											"formData",
-										].includes(String(prop))
-									) {
-										return (/** @type {...any} */ ...args) => {
-											const promise = value.apply(target, args);
-											context.track(promise);
-											return promise;
-										};
-									}
-
-									return value;
-								},
-							});
-
-							// Try to read as different formats (using cloned response to avoid proxy tracking)
-							try {
-								const contentType = response.headers.get("content-type") || "";
-
-								if (contentType.includes("application/json")) {
-									responseData.json = await cloned.json();
-								} else if (contentType.includes("text/")) {
-									responseData.text = await cloned.text();
-								} else {
-									responseData.arrayBuffer = await cloned.arrayBuffer();
-								}
-							} catch (_error) {
-								// If parsing fails, store as text (using cloned to avoid proxy tracking)
-								responseData.text = await cloned.text();
-							}
-
-							// Store in SSR cache for client hydration (GET only)
-							if (method === "GET") {
-								if (!context.ssrData) {
-									context.ssrData = { fetch: {} };
-								}
-								/** @type {any} */ (context.ssrData).fetch[cacheKey] =
-									responseData;
-							}
-
-							return responseProxy;
-						},
-					);
-
-					context.track(fetchPromise);
-
-					// Only cache GET requests for idempotency
-					if (method === "GET") {
-						context.fetchCache.set(cacheKey, fetchPromise);
-					}
-
-					return fetchPromise;
-				} catch (error) {
-					// Ensure fetch is restored even if interception fails
-					globalThis.fetch = originalFetch;
-					throw error;
-				}
-			};
-
-			try {
-				// Execute the wrapped function
-				const result = await fn.apply(this, args);
-
-				// Wait for all async operations to complete
-				await settleAllPromises(context, timeout, maxSettleAttempts);
-
-				// Inject component-scoped SSR data inline after component content
-				if (typeof result === "string" && context.ssrData) {
-					return injectComponentSSRData(result, context.ssrData, componentId);
-				}
-
-				return result;
-			} finally {
-				// Restore original fetch and clean up context
-				globalThis.fetch = originalFetch;
+				globalThis.fetch = orig;
 				contextStack.pop();
+				/** @type {any} */ (globalThis).__REFLEX_BASE_URL__ = prevBase;
 			}
+
+			if (typeof html === "string" && ctx.ssrData) {
+				return /** @type {any} */ (injectSSRData(html, ctx.ssrData, cid));
+			}
+			return /** @type {any} */ (html);
 		}
 
-		// REGULAR: Non-root calls or client without hydration
-		const result = await fn.apply(this, args);
-
-		// Track promise in parent context if available
-		const parentContext = contextStack[contextStack.length - 1];
-		if (parentContext && result && typeof result.then === "function") {
-			parentContext.track(result);
-		}
-
-		return result;
+		// Fallback (non-root / non-SSR)
+		const res = await fn.apply(this, args);
+		const parent = contextStack[contextStack.length - 1];
+		if (parent && res && typeof res.then === "function") parent.track(res);
+		return /** @type {any} */ (res);
 	};
 
-	// Mark as wrapped to prevent double-wrapping
 	/** @type {any} */ (wrapped)._ssrWrapped = true;
-
 	return wrapped;
 }
-
-/**
- * Waits for all pending promises in a context to settle with robust timeout handling.
- *
- * Prevents SSR hangs by implementing multiple timeout strategies:
- * - Global timeout: Maximum total time allowed
- * - Individual promise timeout: Per-promise timeout wrapper
- * - Graceful degradation: Continues with partial data on timeout
- *
- * @param {{promises: Set<Promise<any>>}} context - The reactive context
- * @param {number} timeout - Maximum time to wait (ms)
- * @param {number} maxAttempts - Maximum settle attempts
- * @returns {Promise<void>}
- */
-async function settleAllPromises(context, timeout, maxAttempts) {
-	const startTime = Date.now();
-	let attempts = 0;
-	const timeoutWarnings = new Set();
-
-	/**
-	 * Wraps a promise with individual timeout.
-	 * @param {Promise<any>} promise - Promise to wrap
-	 * @param {number} individualTimeout - Timeout for this promise
-	 * @returns {Promise<any>} Timeout-wrapped promise
-	 */
-	const withTimeout = (promise, individualTimeout) => {
-		return Promise.race([
-			promise,
-			new Promise((_, reject) => {
-				const timeoutId = setTimeout(() => {
-					reject(new Error(`Promise timeout: ${individualTimeout}ms exceeded`));
-				}, individualTimeout);
-
-				// Clean up timeout if promise resolves first
-				promise.finally(() => clearTimeout(timeoutId)).catch(() => {});
-			}),
-		]);
-	};
-
-	while (context.promises.size > 0 && attempts < maxAttempts) {
-		const elapsed = Date.now() - startTime;
-
-		// Global timeout check
-		if (elapsed > timeout) {
-			const pendingCount = context.promises.size;
-			console.warn(
-				`SSR timeout: ${pendingCount} promises still pending after ${timeout}ms. Continuing with partial data.`,
-			);
-
-			// Cancel remaining promises by removing them from tracking
-			const remainingPromises = Array.from(context.promises);
-			remainingPromises.forEach((promise) => {
-				context.promises.delete(promise);
-			});
-
-			break;
-		}
-
-		const currentPromises = Array.from(context.promises);
-		const individualTimeout = Math.min(5000, timeout - elapsed); // Max 5s per promise
-
-		// Wrap each promise with individual timeout
-		const timeoutWrappedPromises = currentPromises.map((promise) => {
-			return withTimeout(promise, individualTimeout).catch(
-				/** @type {(error: Error) => null} */ (error) => {
-					if (error.message.includes("Promise timeout")) {
-						const key = promise.toString();
-						if (!timeoutWarnings.has(key)) {
-							timeoutWarnings.add(key);
-							console.warn(
-								`Individual promise timeout (${individualTimeout}ms):`,
-								error.message,
-							);
-						}
-					}
-					return null; // Graceful degradation - continue with null value
-				},
-			);
-		});
-
-		// Wait for current batch with graceful error handling
-		try {
-			await Promise.allSettled(timeoutWrappedPromises);
-		} catch (error) {
-			console.warn("Error during promise settlement:", error.message);
-		}
-
-		attempts++;
-
-		// Exponential backoff for new promise detection
-		if (context.promises.size > 0) {
-			const backoffDelay = Math.min(100, 1 << attempts); // 2ms, 4ms, 8ms, ..., max 100ms
-			await new Promise((resolve) => setTimeout(resolve, backoffDelay));
-		}
-	}
-
-	// Final summary
-	const finalElapsed = Date.now() - startTime;
-	if (attempts >= maxAttempts) {
-		console.warn(
-			`SSR max attempts: stopped after ${maxAttempts} attempts (${finalElapsed}ms). ${context.promises.size} promises may still be pending.`,
-		);
-	}
-
-	if (context.promises.size > 0) {
-		console.warn(
-			`SSR completion: ${context.promises.size} promises remain unresolved after ${finalElapsed}ms`,
-		);
-	}
-}
-
-/**
- * Safely escapes JSON for embedding in HTML script tags.
- * Prevents XSS by escaping dangerous characters and Unicode line separators.
- *
- * @param {any} data - Data to escape
- * @returns {string} XSS-safe JSON string
- */
-function escapeJsonForScript(data) {
-	return JSON.stringify(data)
-		.replace(/</g, "\\u003c") // Escape < to prevent </script> injection
-		.replace(/>/g, "\\u003e") // Escape > for symmetry
-		.replace(/\u2028/g, "\\u2028") // Escape Unicode line separator
-		.replace(/\u2029/g, "\\u2029"); // Escape Unicode paragraph separator
-}
-
-/**
- * Injects component-scoped SSR data inline after component content.
- * Includes XSS protection and size cap to prevent payload abuse.
- *
- * @param {string} componentContent - The component's HTML content
- * @param {Object} ssrData - The SSR data to inject
- * @param {string} componentId - Unique component identifier
- * @returns {string} Component content with inline SSR data
- */
-function injectComponentSSRData(componentContent, ssrData, componentId) {
-	if (!ssrData || Object.keys(ssrData).length === 0) {
-		return componentContent;
-	}
-
-	// Size cap: skip injection if payload is too large (512KB)
-	const jsonString = escapeJsonForScript(ssrData);
-	const maxSize = 512 * 1024; // 512KB
-
-	if (jsonString.length > maxSize) {
-		console.warn(
-			`SSR payload too large (${Math.round(jsonString.length / 1024)}KB > ${maxSize / 1024}KB). Skipping injection to prevent HTML bloat.`,
-		);
-		return componentContent;
-	}
-
-	// Check for optional CSP nonce
-	const nonce = /** @type {any} */ (globalThis).__REFLEX_CSP_NONCE__;
-	const nonceAttr = nonce ? ` nonce="${nonce}"` : "";
-
-	// Create component-scoped SSR script that injects inline after component content
-	const ssrScript = `<script${nonceAttr}>window.__SSR_DATA__${componentId} = ${jsonString};</script>`;
-
-	// Inject inline after component content - truly colocated
-	return componentContent + ssrScript;
-}
-
-// Export env for testing
-export { env };

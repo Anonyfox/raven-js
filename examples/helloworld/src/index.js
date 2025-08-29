@@ -13,8 +13,8 @@ router.get("/greet", (ctx) => {
 	ctx.html(Greet);
 });
 
-router.get("/todos", (ctx) => {
-	ctx.html(TodosPage());
+router.get("/todos", async (ctx) => {
+	ctx.html(await TodosPage());
 });
 
 router.get("/api/todos/examples", async (ctx) => {
