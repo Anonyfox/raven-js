@@ -13,7 +13,9 @@
  * Neural oscillations, circadian rhythms, and precise calendar calculations.
  * Optimized for V8 engine with zero external dependencies.
  *
- * The murder's temporal arsenal: chronological algorithms, date computations.
+ * The murder's temporal arsenal: chronological algorithms, date computations,
+ * governmental holiday patterns with bureaucratic precision.
  */
 
 export { calculateEasterSunday } from "./calculate-easter-sunday.js";
+export { calculateHolidaysOfYear } from "./calculate-holidays-of-year/index.js";

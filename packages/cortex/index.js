@@ -26,10 +26,19 @@
  *
  * @example
  * // Temporal computation with surgical precision
- * import { calculateEasterSunday } from "@raven-js/cortex";
+ * import { calculateEasterSunday, calculateHolidaysOfYear } from "@raven-js/cortex";
  *
  * const easter2024 = calculateEasterSunday(2024);
  * console.log(easter2024); // 2024-03-31 (March 31, 2024)
+ *
+ * const germanHolidays = calculateHolidaysOfYear({
+ *   year: 2024,
+ *   country: 'DE',
+ *   region: 'BY'
+ * });
+ * console.log(germanHolidays.length); // 13 holidays (9 national + 4 Bavaria)
+ * console.log(germanHolidays[0].name); // 'Neujahr'
+ * console.log(germanHolidays[0].isWorkFree); // true
  */
 
 /**
@@ -62,4 +71,7 @@ export { LinearRegression, Model, NeuralNetwork } from "./learning/index.js";
 export { Matrix, Schema } from "./structures/index.js";
 
 // Export temporal functions
-export { calculateEasterSunday } from "./temporal/index.js";
+export {
+	calculateEasterSunday,
+	calculateHolidaysOfYear,
+} from "./temporal/index.js";
