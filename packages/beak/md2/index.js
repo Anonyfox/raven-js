@@ -7,3 +7,4 @@
  */
 
 export { markdownToHTML } from "./markdown-to-html.js";
+export { code, md, ref, table } from "./md.js";
