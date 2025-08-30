@@ -184,12 +184,15 @@ export class ClassEntity extends EntityBase {
 
 			if (!inClassBody) continue;
 
-			// Skip empty lines and comments
+			// Skip empty lines and comments (including JSDoc lines)
 			if (
 				!trimmed ||
 				trimmed.startsWith("//") ||
 				trimmed.startsWith("/*") ||
-				trimmed.endsWith("*/")
+				trimmed.endsWith("*/") ||
+				(trimmed.startsWith("*") && !trimmed.match(/^\*[A-Za-z_$]/)) || // JSDoc comment, but not generator method
+				trimmed.startsWith("/**") ||
+				trimmed === "*/"
 			) {
 				// Still need to track brace depth for comments that contain braces
 				for (const char of line) {

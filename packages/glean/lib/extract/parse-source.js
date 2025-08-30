@@ -139,7 +139,13 @@ function createEntityFromBlock(
 
 	// Set the source code if available and extract function call references
 	if (block.followingCode) {
-		entity.setSource(block.followingCode);
+		// For class entities, provide complete file content for proper member extraction
+		if (entityType === "class" && fileContent) {
+			entity.setSource(fileContent);
+			entity.parseContent(fileContent); // Parse the complete file content for classes
+		} else {
+			entity.setSource(block.followingCode);
+		}
 
 		// Extract cross-references from function calls in the source code
 		const functionCallMatches = block.followingCode.match(/\b(\w+)\s*\(/g);
@@ -575,6 +581,7 @@ function extractFollowingCode(codeAfterJSDoc) {
 	let parenCount = 0;
 	let inExportBlock = false;
 	let inArrowFunction = false;
+	let inClass = false;
 
 	for (const line of lines) {
 		const trimmedLine = line.trim();
@@ -610,6 +617,11 @@ function extractFollowingCode(codeAfterJSDoc) {
 			inArrowFunction = true;
 		}
 
+		// Check if this looks like a class definition
+		if (trimmedLine.startsWith("export") && trimmedLine.includes("class")) {
+			inClass = true;
+		}
+
 		// Count braces and parentheses
 		braceCount += (trimmedLine.match(/\{/g) || []).length;
 		braceCount -= (trimmedLine.match(/\}/g) || []).length;
@@ -639,17 +651,25 @@ function extractFollowingCode(codeAfterJSDoc) {
 				break;
 			}
 			// Otherwise continue collecting the arrow function body
+		} else if (inClass) {
+			// For classes, continue until we have the complete class body
+			if (braceCount === 0 && trimmedLine === "}") {
+				// Complete class definition
+				break;
+			}
+			// Otherwise continue collecting the class body
 		} else if (
 			!inExportBlock &&
 			!inArrowFunction &&
+			!inClass &&
 			(trimmedLine.includes("{") || trimmedLine.endsWith(";"))
 		) {
 			// Simple statement or function/class declaration
 			break;
 		}
 
-		// Safety limit - increase significantly for arrow functions
-		if (codeLines.length >= (inArrowFunction ? 60 : 10)) {
+		// Safety limit - increase significantly for arrow functions and classes
+		if (codeLines.length >= (inArrowFunction || inClass ? 600 : 10)) {
 			break;
 		}
 	}
