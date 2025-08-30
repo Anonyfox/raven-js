@@ -344,16 +344,18 @@ const parseBlockElement = (lines, startIndex, references) => {
  * @returns {boolean}
  */
 const isBlockStart = (line) => {
-	return (
+	return Boolean(
 		/^ {0,3}#{1,6}\s/.test(line) || // heading
-		/^ {0,3}```/.test(line) || // code block
-		/^ {0,3}([-*+]|\d+\.)\s/.test(line) || // list
-		/^ {0,3}>/.test(line) || // blockquote
-		(/^ {0,3}([-*_])\s*(\1\s*){2,}$/.test(line) && !/[a-zA-Z]/.test(line)) || // horizontal rule (no letters)
-		/^ {0,3}\|/.test(line) || // table
-		/^ {0,3}\[([^\]]+)\]:\s*\S+/.test(line) || // reference definition
-		(line.match(/^ {0,3}<[a-zA-Z][^>]*>/) &&
-			!line.match(/^ {0,3}<(https?:\/\/[^>]+>|[^@\s>]+@[^@\s>]+\.[^@\s>]+>)/)) // HTML block
+			/^ {0,3}```/.test(line) || // code block
+			/^ {0,3}([-*+]|\d+\.)\s/.test(line) || // list
+			/^ {0,3}>/.test(line) || // blockquote
+			(/^ {0,3}([-*_])\s*(\1\s*){2,}$/.test(line) && !/[a-zA-Z]/.test(line)) || // horizontal rule (no letters)
+			/^ {0,3}\|/.test(line) || // table
+			/^ {0,3}\[([^\]]+)\]:\s*\S+/.test(line) || // reference definition
+			(line.match(/^ {0,3}<[a-zA-Z][^>]*>/) &&
+				!line.match(
+					/^ {0,3}<(https?:\/\/[^>]+>|[^@\s>]+@[^@\s>]+\.[^@\s>]+>)/,
+				)), // HTML block
 	);
 };
 
@@ -376,12 +378,12 @@ const astToHTML = (ast, references) => {
 const renderNode = (node, references) => {
 	switch (node.type) {
 		case "heading": {
-			const text = renderInline(node.text, references);
+			const text = renderInline(node.text || "", references);
 			return `<h${node.level}>${text}</h${node.level}>`;
 		}
 
 		case "paragraph": {
-			const text = renderInline(node.text, references);
+			const text = renderInline(node.text || "", references);
 			// Escape any remaining HTML in paragraph text
 			const escapedText = text.replace(
 				/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
@@ -393,7 +395,7 @@ const renderNode = (node, references) => {
 		}
 
 		case "code": {
-			const escapedCode = escapeHTML(node.code);
+			const escapedCode = escapeHTML(node.code || "");
 			const langAttr = node.lang
 				? ` class="language-${escapeHTML(node.lang)}"`
 				: "";
@@ -409,7 +411,7 @@ const renderNode = (node, references) => {
 
 		case "list": {
 			const tag = node.ordered ? "ol" : "ul";
-			const items = node.items
+			const items = (node.items || [])
 				.map(
 					(/** @type {string} */ item) =>
 						`<li>${renderInline(item, references)}</li>`,
@@ -419,23 +421,27 @@ const renderNode = (node, references) => {
 		}
 
 		case "table": {
-			const headerRow = node.headers
+			const headers = node.headers || [];
+			const alignments = node.alignments || [];
+			const rows = node.rows || [];
+
+			const headerRow = headers
 				.map((/** @type {string} */ header, /** @type {number} */ i) => {
 					const align =
-						node.alignments[i] !== "left"
-							? ` style="text-align:${node.alignments[i]}"`
+						alignments[i] !== "left"
+							? ` style="text-align:${alignments[i]}"`
 							: "";
 					return `<th${align}>${renderInline(header, references)}</th>`;
 				})
 				.join("");
 
-			const bodyRows = node.rows
+			const bodyRows = rows
 				.map((/** @type {string[]} */ row) => {
 					const cells = row
 						.map((/** @type {string} */ cell, /** @type {number} */ i) => {
 							const align =
-								node.alignments[i] !== "left"
-									? ` style="text-align:${node.alignments[i]}"`
+								alignments[i] !== "left"
+									? ` style="text-align:${alignments[i]}"`
 									: "";
 							return `<td${align}>${renderInline(cell || "", references)}</td>`;
 						})

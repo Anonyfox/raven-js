@@ -14,7 +14,7 @@
  * Follows WEBAPP.md specification for detailed API documentation pages.
  */
 
-import { html, md } from "@raven-js/beak";
+import { html, markdownToHTML } from "@raven-js/beak";
 import {
 	codeBlock,
 	contentSection,
@@ -138,7 +138,7 @@ export function entityPageTemplate(data) {
 	const content = html`
 		${pageHeader({
 			title: ent.name,
-			subtitle: ent.description ? md`${ent.description}` : undefined,
+			subtitle: ent.description ? markdownToHTML(ent.description) : undefined,
 			breadcrumbs,
 			badges,
 			description:
@@ -196,7 +196,7 @@ export function entityPageTemplate(data) {
 												? html`<code class="text-secondary">${param.type}</code>`
 												: html`<span class="text-muted">any</span>`,
 											param.description
-												? md`${param.description}`
+												? markdownToHTML(param.description)
 												: html`<em class="text-muted">No description</em>`,
 											param.defaultValue
 												? html`<code class="text-success">${param.defaultValue}</code>`
@@ -230,7 +230,7 @@ export function entityPageTemplate(data) {
 						${
 							docs.returns.description
 								? html`
-						<div class="mb-0">${md`${docs.returns.description}`}</div>
+						<div class="mb-0">${markdownToHTML(docs.returns.description)}</div>
 						`
 								: ""
 						}
@@ -252,7 +252,7 @@ export function entityPageTemplate(data) {
 										/** @param {any} throwsInfo */ (throwsInfo) => [
 											html`<code class="text-danger">${throwsInfo.type}</code>`,
 											throwsInfo.description
-												? md`${throwsInfo.description}`
+												? markdownToHTML(throwsInfo.description)
 												: html`<em class="text-muted">No description</em>`,
 										],
 									),

@@ -70,7 +70,6 @@ function processArrayValue(array, context, indent) {
 			return processed.join("\n");
 		case CONTEXT.PARAGRAPH:
 			return processed.join(" ");
-		case CONTEXT.ROOT:
 		default:
 			// Only add double newlines for distinct sections
 			return processed.filter((p) => p.trim()).join("\n\n");
@@ -79,9 +78,9 @@ function processArrayValue(array, context, indent) {
 
 /**
  * Process object values - convert to markdown structures
- * @param {Object} obj - Object to process
- * @param {string} context - Current context
- * @param {number} indent - Current indentation level
+ * @param {any} obj - Object to process
+ * @param {string} _context - Current context (unused)
+ * @param {number} _indent - Current indentation level (unused)
  * @returns {string} Processed markdown
  */
 function processObjectValue(obj, _context, _indent) {
@@ -110,7 +109,7 @@ function processObjectValue(obj, _context, _indent) {
 
 /**
  * Format table object to markdown table
- * @param {Object} tableObj - Table object with headers and rows
+ * @param {any} tableObj - Table object with headers and rows
  * @returns {string} Markdown table
  */
 function formatTable(tableObj) {
@@ -119,7 +118,9 @@ function formatTable(tableObj) {
 
 	const headerRow = `| ${headers.join(" | ")} |`;
 	const separator = `| ${headers.map(() => "---").join(" | ")} |`;
-	const dataRows = rows.map((row) => `| ${row.join(" | ")} |`).join("\n");
+	const dataRows = rows
+		.map((/** @type {string[]} */ row) => `| ${row.join(" | ")} |`)
+		.join("\n");
 
 	return `${headerRow}\n${separator}\n${dataRows}`;
 }
@@ -147,7 +148,7 @@ function normalizeMarkdownWhitespace(content) {
 		normalized.includes("\n") ||
 		/^#+\s|^\s*[-*+]|\d+\.\s|```|^\|/.test(normalized)
 	) {
-		return normalized + "\n";
+		return `${normalized}\n`;
 	}
 
 	return normalized;
@@ -212,6 +213,7 @@ export function md(strings, ...values) {
 			fn = () => normalizeMarkdownWhitespace(strings[0]);
 		} else {
 			// Create context-aware template function
+			/** @param {...any} templateValues */
 			fn = (...templateValues) => {
 				let result = "";
 				let currentContext = CONTEXT.ROOT;

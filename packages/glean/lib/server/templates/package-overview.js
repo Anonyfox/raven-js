@@ -14,7 +14,7 @@
  * content specification for package overview pages.
  */
 
-import { html, md } from "@raven-js/beak";
+import { html, markdownToHTML } from "@raven-js/beak";
 import {
 	contentSection,
 	gettingStarted,
@@ -82,7 +82,7 @@ export function packageOverviewTemplate(data) {
 	const content = html`
 		${pageHeader({
 			title: name,
-			subtitle: description ? md`${description}` : undefined,
+			subtitle: description ? markdownToHTML(description) : undefined,
 			badges,
 			description: packageStatsDisplay,
 		})}
@@ -114,7 +114,7 @@ export function packageOverviewTemplate(data) {
 						? contentSection({
 								title: "Documentation",
 								icon: "📄",
-								content: html`<div class="readme-content">${md`${readmeMarkdown}`}</div>`,
+								content: html`<div class="readme-content">${markdownToHTML(readmeMarkdown)}</div>`,
 							})
 						: contentSection({
 								title: "No README Available",

@@ -14,7 +14,7 @@
  * Follows WEBAPP.md specification for module overview presentation.
  */
 
-import { html, md } from "@raven-js/beak";
+import { html, markdownToHTML } from "@raven-js/beak";
 import {
 	cardGrid,
 	contentSection,
@@ -65,7 +65,7 @@ export function moduleOverviewTemplate(data) {
 	} = data;
 
 	// Process README content through beak markdown processor
-	const readmeHTML = module.hasReadme ? md`${module.readme}` : "";
+	const readmeHTML = module.hasReadme ? markdownToHTML(module.readme) : "";
 
 	// Generate breadcrumbs
 	const breadcrumbs = [

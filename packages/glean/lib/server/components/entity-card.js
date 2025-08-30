@@ -13,7 +13,7 @@
  * Surgical design eliminating custom CSS through semantic Bootstrap patterns.
  */
 
-import { html, md, safeHtml } from "@raven-js/beak";
+import { html, markdownToHTML, safeHtml } from "@raven-js/beak";
 
 /**
  * Generate entity card for grid display
@@ -72,7 +72,7 @@ export function entityCard({
 					description
 						? html`
 				<div class="card-text text-muted small mb-0 flex-grow-1">
-					${md`${description}`}
+					${markdownToHTML(description)}
 				</div>
 				`
 						: html`
@@ -225,7 +225,7 @@ export function moduleCard({
 							? html`
 					<div class="small text-muted mt-1">
 						<div style="max-height: 2.5rem; overflow: hidden;">
-							${md`${entity.description}`}
+							${markdownToHTML(entity.description)}
 						</div>
 						${entity.description.length >= 100 ? html`<small class="text-muted">...</small>` : ""}
 					</div>
