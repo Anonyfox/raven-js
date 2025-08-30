@@ -13,8 +13,6 @@
  * Uses += concatenation, monomorphic value processing, character-level escaping.
  */
 
-export { compile } from "../compile/index.js";
-
 // Template cache for memoized code generation
 const TEMPLATE_CACHE = new WeakMap();
 

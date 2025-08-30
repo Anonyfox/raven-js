@@ -19,10 +19,6 @@ import { escapeXml } from "./escape-xml.js";
 const needsTrim = (/** @type {string} */ str) =>
 	str.charAt(0) <= " " || str.charAt(str.length - 1) <= " ";
 
-// Raven-fast string conversion - extracted for V8 optimization
-const fastStringify = (/** @type {unknown} */ value) =>
-	typeof value === "string" ? value : String(value);
-
 /**
  * Process XML values with context-aware formatting (trusted mode).
  * No automatic escaping - assumes content is trusted.
@@ -65,50 +61,6 @@ function processXmlValue(value) {
 	}
 
 	return String(value);
-}
-
-/**
- * Process XML values with context-aware formatting (safe mode).
- * All content gets escaped for security.
- *
- * Objects → attribute pairs with escaped values
- * Arrays → space-separated escaped values
- * Primitives → escaped string conversion
- * null/undefined → empty string
- *
- * @param {unknown} value - Value to process for XML context
- * @returns {string} Processed and escaped XML content
- */
-function processXmlValueSafe(value) {
-	if (value == null || value === false) return "";
-	if (value === true) return "true";
-	if (typeof value === "string") return escapeXml(value);
-	if (typeof value === "number") return String(value);
-
-	if (Array.isArray(value)) {
-		return value
-			.filter((v) => v != null && v !== false)
-			.map((v) => processXmlValueSafe(v))
-			.join("");
-	}
-
-	if (typeof value === "object") {
-		// Convert object to attribute pairs: {host: "localhost", port: 3306} → `host="localhost" port="3306"`
-		return Object.entries(value)
-			.filter(([_, v]) => v != null)
-			.map(([key, val]) => {
-				// Kebab-case conversion for attribute names
-				const attrName = key.replace(
-					/[A-Z]/g,
-					(match) => `-${match.toLowerCase()}`,
-				);
-				const attrValue = escapeXml(String(val));
-				return `${attrName}="${attrValue}"`;
-			})
-			.join(" ");
-	}
-
-	return escapeXml(String(value));
 }
 
 /**

@@ -19,7 +19,7 @@
 
 import { ok, strictEqual } from "node:assert";
 import { describe, test } from "node:test";
-import { compile, escapeHtml, html, safeHtml } from "./html/index.js";
+import { escapeHtml, html, safeHtml } from "./html/index.js";
 
 describe("Basic Template Functionality", () => {
 	test("empty template produces empty string", () => {
@@ -365,45 +365,6 @@ describe("Security and XSS Protection", () => {
 });
 
 describe("Performance Features", () => {
-	describe("Template Compilation", () => {
-		test("compile function exists and accepts functions", () => {
-			const template = (data) => html`<p>${data.name}</p>`;
-			const compiled = compile(template);
-			ok(typeof compiled === "function");
-		});
-
-		test("compiled templates produce same output", () => {
-			const data = { name: "Test", value: 42 };
-			const template = (d) => html`<div>${d.name}: ${d.value}</div>`;
-			const compiled = compile(template);
-
-			strictEqual(template(data), compiled(data));
-		});
-
-		test("compile handles template without interpolation", () => {
-			const template = () => html`<div>Static</div>`;
-			const compiled = compile(template);
-			strictEqual(template(), compiled());
-		});
-
-		test("compile gracefully handles non-template functions", () => {
-			const nonTemplate = (x) => x * 2;
-			const compiled = compile(nonTemplate);
-			ok(typeof compiled === "function");
-			strictEqual(compiled(5), nonTemplate(5));
-		});
-
-		test("compile handles functions with closures", () => {
-			const external = "External";
-			const template = (data) => html`<p>${external} ${data}</p>`;
-			const compiled = compile(template);
-
-			// Should work whether optimized or not
-			const result = compiled("Test");
-			ok(result.includes("External") && result.includes("Test"));
-		});
-	});
-
 	describe("Large Data Handling", () => {
 		test("handles large arrays efficiently", () => {
 			const large = Array(1000)

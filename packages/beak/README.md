@@ -127,15 +127,15 @@ import { openGraph } from "@raven-js/beak/seo";
 
 **Core modules:**
 
-| Module     | Purpose                          |
-| ---------- | -------------------------------- |
-| `html/`    | XSS protection, normalization    |
-| `css/`     | Minification, object→kebab-case  |
-| `md/`      | GitHub Flavored Markdown parser  |
-| `js/`      | Script tag variations, filtering |
-| `sql/`     | Injection prevention, escaping   |
-| `seo/`     | Meta generators, structured data |
-| `compile/` | Build-time optimization          |
+| Module  | Purpose                          |
+| ------- | -------------------------------- |
+| `html/` | XSS protection, normalization    |
+| `css/`  | Minification, object→kebab-case  |
+| `md/`   | GitHub Flavored Markdown parser  |
+| `js/`   | Script tag variations, filtering |
+| `sql/`  | Injection prevention, escaping   |
+| `seo/`  | Meta generators, structured data |
+| `xml/`  | Well-formed XML with escaping    |
 
 **Zero lookups for native browser imports.** Each sub-export resolves directly without filesystem traversal.
 

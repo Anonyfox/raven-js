@@ -2,7 +2,7 @@
 
 [![Website](https://img.shields.io/badge/ravenjs.dev-000000?style=flat&logo=firefox&logoColor=white)](https://ravenjs.dev)
 
-**Runtime template compilation engine** - WeakMap-cached function generation at 0.337μs per operation.
+**Runtime template processing engine** - WeakMap-cached function generation at 0.337μs per operation.
 
 ## Install
 
@@ -29,7 +29,7 @@ const escaped = escapeHtml('<script>alert("xss")</script>');
 
 ### `html(strings, ...values)`
 
-Tagged template compiles to specialized functions per unique template signature. Automatic isomorphic event binding via global function exposure.
+Tagged template caches to specialized functions per unique template signature. Automatic isomorphic event binding via global function exposure.
 
 ```js
 const navigation = html`
@@ -72,22 +72,6 @@ escapeHtml("javascript:alert()"); // → "blocked:alert()"
 escapeHtml('onclick="evil()"'); // → "blocked-click=&quot;evil()&quot;"
 ```
 
-## Optimization ⚡
-
-### `compile(templateFunc)` **EXPERIMENTAL**
-
-AST-based template optimization converts tagged templates to string concatenation.
-
-```js
-import { compile } from "@raven-js/beak/core/html/compile";
-
-const optimized = compile((data) => html`<div>${data.value}</div>`);
-const result = optimized({ value: "fast" });
-```
-
-**Status**: Experimental - API may change
-**Fallback**: Returns original function on complex cases
-
 ## Performance
 
 Measured performance on modern V8:
@@ -100,7 +84,7 @@ Measured performance on modern V8:
 
 ## Architecture
 
-- **WeakMap template caching**: Unique templates compile once to specialized functions
+- **WeakMap template caching**: Unique templates cached as specialized functions
 - **Monomorphic value processing**: V8-optimized type paths with fast/slow specialization
 - **String concatenation via `+=`**: Zero-allocation approach for V8 optimization
 - **Hoisted regex constants**: Prevent per-call allocation overhead
