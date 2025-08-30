@@ -80,7 +80,7 @@ function processXmlValue(value) {
  * **Value Processing**: All dynamic values pass through processXmlValue() automatically.
  * **Whitespace**: Trims leading/trailing whitespace only when detected (performance).
  *
- * @param {TemplateStringsArray} strings - Static template string parts
+ * @param {TemplateStringsArray|readonly string[]} strings - Static template string parts
  * @param {...unknown} values - Dynamic values to interpolate and process
  * @returns {string} Complete XML with processed values and trimmed whitespace
  *

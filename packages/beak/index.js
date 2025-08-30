@@ -39,5 +39,6 @@ export { html, safeHtml } from "./html/index.js";
 export { js, script, scriptAsync, scriptDefer } from "./js/index.js";
 export * from "./md/index.js";
 export * from "./seo/index.js";
+export { sh } from "./sh/index.js";
 export { sql } from "./sql/index.js";
 export { cdata, xml } from "./xml/index.js";

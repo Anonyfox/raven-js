@@ -117,10 +117,12 @@ export function entityPageTemplate(data) {
 		if (!typeString) return html`<span class="text-muted">any</span>`;
 
 		// Check all available entities (same module, references, and referenced by)
+		/** @type {{sameModule?: any[], similar?: any[], references?: any[], referencedBy?: any[]}} */
+		const typedRelatedEntities = relatedEntities;
 		const allEntities = [
-			...(relatedEntities.sameModule || []),
-			...(relatedEntities.references || []),
-			...(relatedEntities.referencedBy || []),
+			...(typedRelatedEntities.sameModule || []),
+			...(typedRelatedEntities.references || []),
+			...(typedRelatedEntities.referencedBy || []),
 		];
 
 		// If the type matches the current entity, link to current page
@@ -257,7 +259,12 @@ export function entityPageTemplate(data) {
 								content: tableSection({
 									headers: ["Property", "Type", "Modifiers"],
 									rows: docs.properties
-										.sort((a, b) => a.name.localeCompare(b.name))
+										.sort(
+											/** @param {{name: string}} a @param {{name: string}} b */ (
+												a,
+												b,
+											) => a.name.localeCompare(b.name),
+										)
 										.map(
 											/** @param {any} property */ (property) => [
 												// Property name and description
@@ -321,7 +328,12 @@ export function entityPageTemplate(data) {
 								content: tableSection({
 									headers: ["Method", "Parameters", "Returns", "Modifiers"],
 									rows: docs.methods
-										.sort((a, b) => a.name.localeCompare(b.name))
+										.sort(
+											/** @param {{name: string}} a @param {{name: string}} b */ (
+												a,
+												b,
+											) => a.name.localeCompare(b.name),
+										)
 										.map(
 											/** @param {any} method */ (method) => [
 												// Method name and description
@@ -341,7 +353,10 @@ export function entityPageTemplate(data) {
 													? html`<div class="small">
 														${method.parameters
 															.map(
-																(param, index) => html`
+																/** @param {any} param @param {number} index */ (
+																	param,
+																	index,
+																) => html`
 															<div class="mb-2">
 																${index > 0 ? html`<hr class="my-2"/>` : ""}
 																<code class="text-info">${safeHtml`${param.name}`}${param.isOptional ? "?" : ""}</code>: ${linkTypeIfEntity(param.type, "text-secondary")}

@@ -304,7 +304,7 @@ function extractMethods(entity) {
 
 /**
  * Get method description from JSDoc or generate fallback
- * @param {Object} classMethod - Class method object
+ * @param {{documentation?: {description?: string}, methodType?: string, name?: string, isStatic?: boolean}} classMethod - Class method object
  * @param {string} className - Name of the containing class
  * @returns {string} Method description
  */
@@ -329,7 +329,7 @@ function getMethodDescription(classMethod, className) {
 
 /**
  * Get method return type from JSDoc
- * @param {Object} classMethod - Class method object
+ * @param {{documentation?: {returns?: {type?: string}}, methodType?: string}} classMethod - Class method object
  * @returns {string} Return type
  */
 function getMethodReturnType(classMethod) {
@@ -352,32 +352,36 @@ function getMethodReturnType(classMethod) {
 
 /**
  * Get method parameters from JSDoc
- * @param {Object} classMethod - Class method object
+ * @param {{documentation?: {parameters?: any[]}, signature?: string}} classMethod - Class method object
  * @returns {Array<Object>} Method parameters
  */
 function getMethodParameters(classMethod) {
 	if (classMethod.documentation?.parameters) {
-		return classMethod.documentation.parameters.map((param) => ({
-			name: param.name,
-			type: param.type,
-			description: param.description,
-			isOptional: param.optional || false,
-		}));
+		return classMethod.documentation.parameters.map(
+			/** @param {any} param */ (param) => ({
+				name: param.name,
+				type: param.type,
+				description: param.description,
+				isOptional: param.optional || false,
+			}),
+		);
 	}
 
 	// Try to extract parameters from signature
 	const signature = classMethod.signature || "";
 	const paramMatch = signature.match(/\(([^)]*)\)/);
-	if (paramMatch && paramMatch[1].trim()) {
+	if (paramMatch?.[1].trim()) {
 		const paramNames = paramMatch[1]
 			.split(",")
-			.map((p) => p.trim().split(/\s+/)[0]);
-		return paramNames.map((name) => ({
-			name: name.replace(/[=\s].*$/, ""), // Remove default values
-			type: "any",
-			description: "",
-			isOptional: name.includes("=") || name.includes("null"),
-		}));
+			.map(/** @param {string} p */ (p) => p.trim().split(/\s+/)[0]);
+		return paramNames.map(
+			/** @param {string} name */ (name) => ({
+				name: name.replace(/[=\s].*$/, ""), // Remove default values
+				type: "any",
+				description: "",
+				isOptional: name.includes("=") || name.includes("null"),
+			}),
+		);
 	}
 
 	return [];
@@ -385,7 +389,7 @@ function getMethodParameters(classMethod) {
 
 /**
  * Try to infer property type from its characteristics
- * @param {Object} classProp - Class property object
+ * @param {{signature?: string, name?: string}} classProp - Class property object
  * @returns {string} Inferred type
  */
 function inferPropertyType(classProp) {

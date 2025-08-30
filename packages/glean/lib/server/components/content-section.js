@@ -104,7 +104,7 @@ export function applySyntaxHighlighting(html) {
 	const codeBlockRegex =
 		/<pre><code(?:\s+class="language-([^"]*)")?>([\s\S]*?)<\/code><\/pre>/g;
 
-	return html.replace(codeBlockRegex, (match, language, content) => {
+	return html.replace(codeBlockRegex, (_match, language, content) => {
 		// Decode HTML entities back to original code
 		const decodedContent = content
 			.replace(/&lt;/g, "<")

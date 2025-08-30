@@ -12,6 +12,7 @@
     "md/**/*.js",
     "sql/**/*.js",
     "xml/**/*.js",
+    "sh/**/*.js",
     "seo/**/*.js",
     "highlight/**/*.js",
     "compile/**/*.js",
@@ -56,6 +57,10 @@
     "./xml": {
       "import": "./xml/index.js",
       "types": "./types.xml.d.ts"
+    },
+    "./sh": {
+      "import": "./sh/index.js",
+      "types": "./types.sh.d.ts"
     }
   },
   "scripts": {
@@ -65,7 +70,7 @@
     "test": "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
     "test:code": "node --no-warnings --test --test-reporter=dot",
     "test:coverage": "node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
-    "test:style": "npx biome lint --error-on-warnings index.js ./seo ./html ./css ./js ./md ./sql ./xml",
+    "test:style": "npx biome lint --error-on-warnings index.js ./seo ./html ./css ./js ./md ./sql ./xml ./sh",
     "test:types": "tsc --noEmit --project jsconfig.json"
   },
   "keywords": [

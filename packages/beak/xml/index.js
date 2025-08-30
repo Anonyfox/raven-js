@@ -34,7 +34,7 @@ const TEMPLATE_CACHE = new WeakMap();
  * - null/undefined/false: Empty string
  * - true: String "true"
  *
- * @param {readonly string[]} strings - Template literal static parts
+ * @param {TemplateStringsArray} strings - Template literal static parts
  * @param {...any} values - Template literal interpolated values
  * @returns {string} Well-formed XML string
  *
@@ -64,8 +64,12 @@ export function xml(strings, ...values) {
 	// Check cache for compiled template
 	let fn = TEMPLATE_CACHE.get(strings);
 	if (!fn) {
-		// Bind the template processor to avoid repeated function allocation
-		fn = processXmlTemplate.bind(null, strings);
+		// Create a bound version that passes through the template strings
+		/**
+		 * @param {...any} vals
+		 * @returns {string}
+		 */
+		fn = (...vals) => processXmlTemplate(strings, ...vals);
 		TEMPLATE_CACHE.set(strings, fn);
 	}
 

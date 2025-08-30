@@ -32,6 +32,7 @@ function pluralizeType(type, count) {
 	if (count === 1) return type;
 
 	// Handle special cases
+	/** @type {{[key: string]: string}} */
 	const pluralMap = {
 		class: "classes",
 		function: "functions",
@@ -40,7 +41,7 @@ function pluralizeType(type, count) {
 		callback: "callbacks",
 	};
 
-	return pluralMap[type] || type + "s";
+	return pluralMap[type] || `${type}s`;
 }
 
 /**

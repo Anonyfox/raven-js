@@ -37,7 +37,7 @@ npm install @raven-js/beak
 ## Templates That Just Work
 
 ```javascript
-import { html, css, md, sql } from "@raven-js/beak";
+import { html, css, md, sh, sql } from "@raven-js/beak";
 
 // JSX-like HTML without React overhead
 const page = html`
@@ -60,6 +60,9 @@ const doc = md`
   # ${title}
   ${posts.map((post) => `- [${post.title}](${post.url})`).join("\n")}
 `;
+
+// Shell commands with array joining
+const cmd = sh`docker run ${flags} -v ${volume} ${image}`;
 
 // SQL with injection protection
 const query = sql`
@@ -133,6 +136,7 @@ import { openGraph } from "@raven-js/beak/seo";
 | `css/`  | Minification, object→kebab-case  |
 | `md/`   | GitHub Flavored Markdown parser  |
 | `js/`   | Script tag variations, filtering |
+| `sh/`   | Shell command assembly, arrays   |
 | `sql/`  | Injection prevention, escaping   |
 | `seo/`  | Meta generators, structured data |
 | `xml/`  | Well-formed XML with escaping    |

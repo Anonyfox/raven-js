@@ -319,7 +319,7 @@ export class ClassEntity extends EntityBase {
 	 * Parse method information
 	 * @param {string} line - Line of code
 	 * @param {number} lineNumber - Line number
-	 * @returns {Object|null} Method information
+	 * @returns {{type: string, name: string, line: number, isStatic: boolean, isPrivate: boolean, isAsync: boolean, isGenerator: boolean, methodType: string, signature: string, jsDocBlock?: string, documentation?: any}|null} Method information
 	 * @private
 	 */
 	_parseMethod(line, lineNumber) {
@@ -368,7 +368,7 @@ export class ClassEntity extends EntityBase {
 	 * Parse property information
 	 * @param {string} line - Line of code
 	 * @param {number} lineNumber - Line number
-	 * @returns {Object|null} Property information
+	 * @returns {{name: string, line: number, isStatic: boolean, isPrivate: boolean, signature?: string, jsDocBlock?: string, documentation?: any}|null} Property information
 	 * @private
 	 */
 	_parseProperty(line, lineNumber) {
@@ -402,6 +402,7 @@ export class ClassEntity extends EntityBase {
 	 * @private
 	 */
 	_parseJSDocBlock(jsDocLines) {
+		/** @type {{description: string, parameters: any[], returns: any, throws: any[], deprecated: boolean, since: string, see: any[], example: string, private?: boolean}} */
 		const documentation = {
 			description: "",
 			parameters: [],
@@ -502,7 +503,7 @@ export class ClassEntity extends EntityBase {
 
 			// Check if this property is already tracked (avoid duplicates)
 			const existingProperty = this.properties.find(
-				(p) => p.name === propertyName,
+				/** @param {{name: string}} p */ (p) => p.name === propertyName,
 			);
 			if (!existingProperty) {
 				const property = {
