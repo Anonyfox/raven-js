@@ -313,12 +313,8 @@ describe("moduleDirectoryTemplate", () => {
 		);
 		assert(html.includes("📖 Explore Module"), "Contains explore button text");
 
-		// API search buttons
-		assert(
-			html.includes('href="/api/?search=test-package"'),
-			"Contains API search link",
-		);
-		assert(html.includes("🔍 APIs"), "Contains API button text");
+		// Only explore module buttons now
+		assert(!html.includes("🔍"), "No API search links");
 	});
 
 	test("omits API buttons when no public entities", () => {
@@ -349,8 +345,8 @@ describe("moduleDirectoryTemplate", () => {
 		const html = moduleDirectoryTemplate(data);
 
 		assert(html.includes('href="/"'), "Contains package overview link");
-		assert(html.includes('href="/api/"'), "Contains API reference link");
 		assert(html.includes('href="/sitemap.xml"'), "Contains sitemap link");
+		assert(!html.includes('href="/api/"'), "No broken API reference links");
 	});
 
 	test("handles long README preview with truncation", () => {
@@ -551,9 +547,9 @@ describe("moduleDirectoryTemplate", () => {
 
 		const html = moduleDirectoryTemplate(data);
 
-		// Should use responsive grid classes
+		// Should use responsive grid classes (3 columns = col-md-6 col-lg-4)
 		assert(
-			html.includes('class="col-md-6 col-lg-3 col-xl-3"'),
+			html.includes('class="col-md-6 col-lg-4"'),
 			"Should use responsive grid classes",
 		);
 		assert(

@@ -16,15 +16,32 @@
 
 import { html, markdownToHTML } from "@raven-js/beak";
 import {
-	cardGrid,
 	contentSection,
-	entityCard,
 	moduleNavigation,
 	pageHeader,
 	quickActions,
 	statsCard,
 } from "../components/index.js";
 import { baseTemplate } from "./base.js";
+
+/**
+ * Get Bootstrap variant class for entity type badge
+ * @param {string} entityType - The entity type (function, class, etc.)
+ * @returns {string} Bootstrap variant class
+ */
+function getTypeVariant(entityType) {
+	/** @type {Record<string, string>} */
+	const typeVariantMap = {
+		function: "primary",
+		class: "success",
+		typedef: "info",
+		interface: "warning",
+		enum: "secondary",
+		constant: "dark",
+		variable: "light",
+	};
+	return typeVariantMap[entityType] || "secondary";
+}
 
 /**
  * Generate module overview HTML page
@@ -47,7 +64,6 @@ import { baseTemplate } from "./base.js";
  * @param {number} data.stats.withExamplesCount - Entity count with examples
  * @param {string} data.packageName - Package name
  * @param {boolean} data.hasEntities - Whether module has entities
-
  * @param {boolean} data.hasDeprecatedEntities - Whether module has deprecated entities
  * @param {boolean} data.hasExampleEntities - Whether module has entities with examples
  * @returns {string} Complete HTML page
@@ -153,42 +169,44 @@ export function moduleOverviewTemplate(data) {
 									.map(
 										/** @param {[string, Array<any>]} entry */
 										([type, entities]) => {
-											const entityCards = entities.map((entity) =>
-												entityCard({
-													name: entity.name,
-													type: entity.entityType || type,
-													description: entity.description,
-													link: entity.link,
-													badges: [
-														{
-															text: entity.entityType || type,
-															variant: "secondary",
-														},
-														...(entity.isDeprecated
-															? [{ text: "deprecated", variant: "warning" }]
-															: []),
-														...(entity.hasExamples
-															? [{ text: "examples", variant: "success" }]
-															: []),
-														...(entity.hasParams
-															? [{ text: "params", variant: "info" }]
-															: []),
-														...(entity.hasReturns
-															? [{ text: "returns", variant: "primary" }]
-															: []),
-													],
-													location: entity.location,
-												}),
-											);
 											return html`
 								<div class="mb-4">
 									<h4 class="h6 fw-bold text-uppercase text-muted mb-3">
 										${type.toUpperCase()}${entities.length !== 1 ? "S" : ""} (${entities.length})
 									</h4>
-									${cardGrid({
-										items: entityCards,
-										columns: 2,
-									})}
+									<div class="list-group list-group-flush">
+										${entities.map((entity) => html`
+											<div class="list-group-item d-flex justify-content-between align-items-start">
+												<div class="flex-grow-1 me-3">
+													<div class="d-flex align-items-center mb-2">
+														<h5 class="mb-0 me-2">
+															<a href="${entity.link}" class="text-decoration-none">${entity.name}</a>
+														</h5>
+														<span class="badge bg-${getTypeVariant(entity.entityType || type)} me-2">${entity.entityType || type}</span>
+														${entity.isDeprecated ? html`<span class="badge bg-warning">deprecated</span>` : ""}
+														${entity.hasExamples ? html`<span class="badge bg-success">examples</span>` : ""}
+													</div>
+													${entity.description ? html`
+														<div class="text-muted mb-2">
+															${markdownToHTML(entity.description)}
+														</div>
+													` : html`
+														<div class="text-muted fst-italic mb-2">No description available</div>
+													`}
+													${entity.location ? html`
+														<small class="text-muted">
+															${entity.location.file}:${entity.location.line}
+														</small>
+													` : ""}
+												</div>
+												<div class="flex-shrink-0">
+													<a href="${entity.link}" class="btn btn-outline-primary btn-sm">
+														📖 View
+													</a>
+												</div>
+											</div>
+										`)}
+									</div>
 								</div>
 							`;
 										},

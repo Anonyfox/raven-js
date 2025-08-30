@@ -46,7 +46,6 @@ export function moduleDirectoryTemplate(data) {
 		packageName,
 		packageDescription,
 		hasModules,
-		hasPublicEntities,
 	} = data;
 
 	// Generate header badges
@@ -176,15 +175,6 @@ export function moduleDirectoryTemplate(data) {
 								text: "📋 Package Overview",
 								variant: "outline-primary",
 							},
-							...(hasPublicEntities
-								? [
-										{
-											href: "/api/",
-											text: "🔍 API Reference",
-											variant: "outline-secondary",
-										},
-									]
-								: []),
 							{
 								href: "/sitemap.xml",
 								text: "🗺️ Sitemap",

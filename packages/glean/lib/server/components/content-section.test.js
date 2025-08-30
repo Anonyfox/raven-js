@@ -173,7 +173,7 @@ describe("cardGrid component", () => {
 		const result = cardGrid({ items });
 
 		ok(result.includes('class="row g-4"'));
-		ok(result.includes('class="col-md-6 col-lg-4 col-xl-3"'));
+		ok(result.includes('class="col-md-6"')); // Default 2 columns per row
 		ok(result.includes("<div>Card 1</div>"));
 		ok(result.includes("<div>Card 2</div>"));
 	});
@@ -181,9 +181,10 @@ describe("cardGrid component", () => {
 	test("uses custom column size", () => {
 		const items = ["<div>Item</div>"];
 
-		const result = cardGrid({ items, columns: 6 });
+		// columns: 6 gets normalized to 4 (max), which gives 4 items per row
+		const result = cardGrid({ items, columns: 4 });
 
-		ok(result.includes("col-lg-6"));
+		ok(result.includes("col-md-6 col-lg-3")); // 4 per row
 	});
 
 	test("uses custom gap", () => {
@@ -194,16 +195,20 @@ describe("cardGrid component", () => {
 		ok(result.includes('class="row g-2"'));
 	});
 
-	test("limits XL columns to maximum of 3", () => {
+	test("handles different column configurations", () => {
 		const items = ["<div>Item</div>"];
 
+		// 2 columns per row
 		const result = cardGrid({ items, columns: 2 });
+		ok(result.includes("col-md-6"));
 
-		ok(result.includes("col-xl-2"));
-
+		// 1 column per row
 		const result2 = cardGrid({ items, columns: 1 });
+		ok(result2.includes("col-12"));
 
-		ok(result2.includes("col-xl-1"));
+		// 3 columns per row
+		const result3 = cardGrid({ items, columns: 3 });
+		ok(result3.includes("col-md-6 col-lg-4"));
 	});
 });
 

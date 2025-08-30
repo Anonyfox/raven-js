@@ -250,15 +250,6 @@ export function moduleCard({
 					<a href="/modules/${moduleName}/" class="btn btn-primary btn-sm flex-fill">
 						📖 Explore Module
 					</a>
-					${
-						publicEntityCount > 0
-							? html`
-					<a href="/api/?search=${importPath}" class="btn btn-outline-secondary btn-sm">
-						🔍 APIs
-					</a>
-					`
-							: ""
-					}
 				</div>
 			</div>
 		</div>

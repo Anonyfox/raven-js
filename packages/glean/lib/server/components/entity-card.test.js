@@ -278,7 +278,7 @@ describe("moduleCard component", () => {
 		ok(result.includes("No public entities available"));
 	});
 
-	test("shows API search link only when entities exist", () => {
+	test("always shows explore module button", () => {
 		const moduleWithAPIs = {
 			name: "test",
 			importPath: "lib/test",
@@ -288,7 +288,7 @@ describe("moduleCard component", () => {
 		};
 
 		const result1 = moduleCard(moduleWithAPIs);
-		ok(result1.includes("🔍 APIs"));
+		ok(result1.includes("📖 Explore Module"));
 
 		const moduleWithoutAPIs = {
 			name: "empty",
@@ -299,6 +299,7 @@ describe("moduleCard component", () => {
 		};
 
 		const result2 = moduleCard(moduleWithoutAPIs);
-		ok(!result2.includes("🔍 APIs"));
+		ok(result2.includes("📖 Explore Module"));
+		ok(!result2.includes("🔍")); // No search links at all
 	});
 });

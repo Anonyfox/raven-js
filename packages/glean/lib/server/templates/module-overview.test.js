@@ -250,18 +250,17 @@ describe("moduleOverviewTemplate", () => {
 		const data = createMockData();
 		const html = moduleOverviewTemplate(data);
 
-		// Function with params and returns
-		assert(html.includes('badge bg-info">params'), "Shows params badge");
-		assert(html.includes('badge bg-primary">returns'), "Shows returns badge");
+		// Should show type badges with correct Bootstrap variants and classes
+		assert(html.includes('badge bg-primary me-2">function'), "Shows function type badge");
+		assert(html.includes('badge bg-success me-2">class'), "Shows class type badge");
 
-		// Class with examples
+		// Should show essential badges only
 		assert(html.includes('badge bg-success">examples'), "Shows examples badge");
+		assert(html.includes('badge bg-warning">deprecated'), "Shows deprecated badge");
 
-		// Deprecated function
-		assert(
-			html.includes('badge bg-warning">deprecated'),
-			"Shows deprecated badge",
-		);
+		// Should NOT show redundant badges
+		assert(!html.includes('badge bg-info">params'), "No params badge");
+		assert(!html.includes('badge bg-primary">returns'), "No returns badge");
 	});
 
 	test("includes entity links and location information", () => {
@@ -277,7 +276,7 @@ describe("moduleOverviewTemplate", () => {
 			html.includes('href="/modules/utils/UtilClass/"'),
 			"Contains class link",
 		);
-		assert(html.includes("📖 View Details"), "Contains view details button");
+		assert(html.includes("📖 View"), "Contains view button");
 
 		// Location information
 		assert(html.includes("utils.js:10"), "Shows function location");

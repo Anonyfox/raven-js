@@ -134,12 +134,23 @@ export function tableSection({
  * Generate grid layout for cards
  * @param {Object} options - Grid configuration
  * @param {Array<string>} options.items - Grid items (HTML content)
- * @param {number} [options.columns] - Bootstrap columns per item (1-12)
+ * @param {number} [options.columns] - Items per row (1-4)
  * @param {string} [options.gap] - Grid gap class (g-1, g-2, g-3, g-4, g-5)
  * @returns {string} Grid HTML
  */
-export function cardGrid({ items, columns = 4, gap = "g-4" }) {
-	const colClass = `col-md-6 col-lg-${columns} col-xl-${Math.min(3, columns)}`;
+export function cardGrid({ items, columns = 2, gap = "g-4" }) {
+	// Calculate Bootstrap column class based on items per row
+	// 1 per row = col-12, 2 per row = col-md-6, 3 per row = col-md-4, 4 per row = col-md-3
+	/** @type {Record<number, string>} */
+	const colMap = {
+		1: "col-12",
+		2: "col-md-6",
+		3: "col-md-6 col-lg-4",
+		4: "col-md-6 col-lg-3"
+	};
+
+	const normalizedColumns = Math.min(4, Math.max(1, columns));
+	const colClass = colMap[normalizedColumns] || "col-md-6";
 
 	return html`
 		<div class="row ${gap}">
