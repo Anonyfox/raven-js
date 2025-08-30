@@ -37,12 +37,6 @@
 export { css, style } from "./css/index.js";
 export { html, safeHtml } from "./html/index.js";
 export { js, script, scriptAsync, scriptDefer } from "./js/index.js";
-export { md } from "./md/index.js";
-// Internal exports for advanced markdown processing (used by @raven-js/glean)
-// NOTE: TypeScript may show module resolution errors for internal.js but it works at runtime
-export {
-	extractStructuredContent as mdExtractStructuredContent,
-	parseMarkdownToAST,
-} from "./md/md-structures.js";
+export * from "./md/index.js";
 export * from "./seo/index.js";
 export { sql } from "./sql/index.js";
