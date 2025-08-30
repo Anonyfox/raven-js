@@ -46,7 +46,7 @@
     "url": "https://github.com/Anonyfox/raven-js/issues"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.0",
+    "@biomejs/biome": "^2.2.2",
     "@types/node": "^22.5.0",
     "typedoc": "^0.26.5",
     "typescript": "^5.5.3"
