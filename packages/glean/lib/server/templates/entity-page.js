@@ -245,46 +245,48 @@ export function entityPageTemplate(data) {
 								noPadding: true,
 								content: tableSection({
 									headers: ["Property", "Type", "Description", "Modifiers"],
-									rows: docs.properties.map(
-										/** @param {any} property */ (property) => [
-											html`<code class="text-primary">${safeHtml`${property.name}`}</code>${property.isOptional ? html`<span class="text-muted">?</span>` : ""}`,
-											linkTypeIfEntity(property.type),
-											property.description
-												? markdownToHTML(property.description)
-												: html`<em class="text-muted">No description</em>`,
-											// Handle both typedef properties (required/optional) and class properties (static/instance/private)
-											html`<div class="d-flex gap-1 flex-wrap">
-												${
-													property.isOptional
-														? html`<span class="badge bg-secondary">optional</span>`
-														: Object.hasOwn(property, "isOptional")
-															? html`<span class="badge bg-primary">required</span>`
+									rows: docs.properties
+										.sort((a, b) => a.name.localeCompare(b.name))
+										.map(
+											/** @param {any} property */ (property) => [
+												html`<code class="text-primary">${safeHtml`${property.name}`}</code>${property.isOptional ? html`<span class="text-muted">?</span>` : ""}`,
+												linkTypeIfEntity(property.type),
+												property.description
+													? markdownToHTML(property.description)
+													: html`<em class="text-muted">No description</em>`,
+												// Handle both typedef properties (required/optional) and class properties (static/instance/private)
+												html`<div class="d-flex gap-1 flex-wrap">
+													${
+														property.isOptional
+															? html`<span class="badge bg-secondary">optional</span>`
+															: Object.hasOwn(property, "isOptional")
+																? html`<span class="badge bg-primary">required</span>`
+																: ""
+													}
+													${
+														property.isStatic
+															? html`<span class="badge bg-info">static</span>`
 															: ""
-												}
-												${
-													property.isStatic
-														? html`<span class="badge bg-info">static</span>`
-														: ""
-												}
-												${
-													property.isPrivate
-														? html`<span class="badge bg-dark">private</span>`
-														: ""
-												}
-												${
-													property.isInstance
-														? html`<span class="badge bg-success">instance</span>`
-														: ""
-												}
-												${
-													property.defaultValue &&
-													property.defaultValue !== null
-														? html`<span class="badge bg-warning text-dark">has default</span>`
-														: ""
-												}
-											</div>`,
-										],
-									),
+													}
+													${
+														property.isPrivate
+															? html`<span class="badge bg-dark">private</span>`
+															: ""
+													}
+													${
+														property.isInstance
+															? html`<span class="badge bg-success">instance</span>`
+															: ""
+													}
+													${
+														property.defaultValue &&
+														property.defaultValue !== null
+															? html`<span class="badge bg-warning text-dark">has default</span>`
+															: ""
+													}
+												</div>`,
+											],
+										),
 								}),
 							})
 						: ""
@@ -298,56 +300,69 @@ export function entityPageTemplate(data) {
 								icon: "🔧",
 								noPadding: true,
 								content: tableSection({
-									headers: ["Method", "Returns", "Description", "Modifiers"],
-									rows: docs.methods.map(
-										/** @param {any} method */ (method) => [
-											html`<div class="mb-1">
-												<code class="text-primary">${safeHtml`${method.name}`}</code>
-												<span class="badge bg-${method.type === "constructor" ? "success" : "primary"} ms-2">${safeHtml`${method.type}`}</span>
-												${method.isDeprecated ? html`<span class="badge bg-warning ms-1">deprecated</span>` : ""}
-											</div>
-											${
+									headers: ["Method", "Parameters", "Returns", "Modifiers"],
+									rows: docs.methods
+										.sort((a, b) => a.name.localeCompare(b.name))
+										.map(
+											/** @param {any} method */ (method) => [
+												// Method name and description
+												html`<div class="mb-1">
+													<code class="text-primary">${safeHtml`${method.name}`}</code>
+													<span class="badge bg-${method.type === "constructor" ? "success" : "primary"} ms-2">${safeHtml`${method.type}`}</span>
+													${method.isDeprecated ? html`<span class="badge bg-warning ms-1">deprecated</span>` : ""}
+												</div>
+												${
+													method.description
+														? html`<div class="small text-muted mt-1">${markdownToHTML(method.description)}</div>`
+														: html`<div class="small text-muted fst-italic mt-1">No description</div>`
+												}`,
+
+												// Parameters column - each on its own line
 												method.parameters && method.parameters.length > 0
-													? html`<div class="small text-muted mt-1">
-													<strong>Parameters:</strong>
-													${method.parameters
-														.map(
-															(param, i) =>
-																`${i > 0 ? ", " : ""}${param.name}${param.isOptional ? "?" : ""}: ${param.type}`,
-														)
-														.join("")}
-												</div>`
-													: ""
-											}`,
-											linkTypeIfEntity(method.returnType),
-											method.description
-												? markdownToHTML(method.description)
-												: html`<em class="text-muted">No description</em>`,
-											// Method modifiers badges
-											html`<div class="d-flex gap-1 flex-wrap">
-												${
-													method.isStatic
-														? html`<span class="badge bg-info">static</span>`
-														: ""
-												}
-												${
-													method.isPrivate
-														? html`<span class="badge bg-dark">private</span>`
-														: ""
-												}
-												${
-													method.isAsync
-														? html`<span class="badge bg-warning text-dark">async</span>`
-														: ""
-												}
-												${
-													method.isGenerator
-														? html`<span class="badge bg-secondary">generator</span>`
-														: ""
-												}
-											</div>`,
-										],
-									),
+													? html`<div class="small">
+														${method.parameters
+															.map(
+																(param, index) => html`
+															<div class="mb-2">
+																${index > 0 ? html`<hr class="my-2"/>` : ""}
+																<code class="text-info">${safeHtml`${param.name}`}${param.isOptional ? "?" : ""}</code>:
+																${linkTypeIfEntity(param.type, "text-secondary")}
+																${param.description ? html`<br><span class="text-muted">${safeHtml`${param.description}`}</span>` : ""}
+															</div>
+														`,
+															)
+															.join("")}
+													</div>`
+													: html`<span class="text-muted fst-italic">None</span>`,
+
+												// Returns column
+												linkTypeIfEntity(method.returnType),
+
+												// Method modifiers badges
+												html`<div class="d-flex gap-1 flex-wrap">
+													${
+														method.isStatic
+															? html`<span class="badge bg-info">static</span>`
+															: ""
+													}
+													${
+														method.isPrivate
+															? html`<span class="badge bg-dark">private</span>`
+															: ""
+													}
+													${
+														method.isAsync
+															? html`<span class="badge bg-warning text-dark">async</span>`
+															: ""
+													}
+													${
+														method.isGenerator
+															? html`<span class="badge bg-secondary">generator</span>`
+															: ""
+													}
+												</div>`,
+											],
+										),
 								}),
 							})
 						: ""
