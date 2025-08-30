@@ -19,6 +19,27 @@ import { contentSection, pageHeader } from "../components/index.js";
 import { baseTemplate } from "./base.js";
 
 /**
+ * Properly pluralize entity type names
+ * @param {string} type - Entity type
+ * @param {number} count - Entity count
+ * @returns {string} Properly pluralized type name
+ */
+function pluralizeType(type, count) {
+	if (count === 1) return type;
+
+	// Handle special cases
+	const pluralMap = {
+		class: "classes",
+		function: "functions",
+		variable: "variables",
+		typedef: "typedefs",
+		callback: "callbacks",
+	};
+
+	return pluralMap[type] || type + "s";
+}
+
+/**
  * Get Bootstrap variant class for entity type badge
  * @param {string} entityType - The entity type (function, class, etc.)
  * @returns {string} Bootstrap variant class
@@ -155,7 +176,7 @@ export function moduleOverviewTemplate(data) {
 											return html`
 								<div class="mb-4">
 									<h4 class="h6 fw-bold text-uppercase text-muted mb-3">
-										${type.toUpperCase()}${entities.length !== 1 ? "S" : ""} (${entities.length})
+										${pluralizeType(type, entities.length).toUpperCase()} (${entities.length})
 									</h4>
 									<div class="list-group list-group-flush">
 										${entities.map(

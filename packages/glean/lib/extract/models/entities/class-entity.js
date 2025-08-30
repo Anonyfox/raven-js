@@ -425,7 +425,7 @@ export class ClassEntity extends EntityBase {
 			if (trimmed.startsWith("@param")) {
 				inDescription = false;
 				const paramMatch = trimmed.match(
-					/@param\s+\{([^}]+)\}\s+(\[?([^\]]+)\]?)\s*-?\s*(.*)/,
+					/@param\s+\{([^}]+)\}\s+(\[?([^\]\s-]+)\]?)\s*-?\s*(.*)/,
 				);
 				if (paramMatch) {
 					documentation.parameters.push({

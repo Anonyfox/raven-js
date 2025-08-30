@@ -116,10 +116,21 @@ export function entityPageTemplate(data) {
 	) => {
 		if (!typeString) return html`<span class="text-muted">any</span>`;
 
-		// Check if this type matches an entity in the same module
+		// Check all available entities (same module, references, and referenced by)
+		const allEntities = [
+			...(relatedEntities.sameModule || []),
+			...(relatedEntities.references || []),
+			...(relatedEntities.referencedBy || []),
+		];
+
+		// If the type matches the current entity, link to current page
+		if (typeString === entity.name) {
+			return html`<a href="${entity.importPath ? `/modules/${entity.importPath.split("/").pop()}/${entity.name}/` : "#"}" class="text-decoration-none"><code class="${colorClass}">${safeHtml`${typeString}`}</code></a>`;
+		}
+
 		/** @type {any} */
-		const matchingEntity = relatedEntities.sameModule.find(
-			/** @param {any} entity */ (entity) => entity.name === typeString,
+		const matchingEntity = allEntities.find(
+			/** @param {any} ent */ (ent) => ent.name === typeString,
 		);
 
 		if (matchingEntity) {
@@ -244,16 +255,24 @@ export function entityPageTemplate(data) {
 								icon: "📝",
 								noPadding: true,
 								content: tableSection({
-									headers: ["Property", "Type", "Description", "Modifiers"],
+									headers: ["Property", "Type", "Modifiers"],
 									rows: docs.properties
 										.sort((a, b) => a.name.localeCompare(b.name))
 										.map(
 											/** @param {any} property */ (property) => [
-												html`<code class="text-primary">${safeHtml`${property.name}`}</code>${property.isOptional ? html`<span class="text-muted">?</span>` : ""}`,
+												// Property name and description
+												html`<div class="mb-1">
+													<code class="text-primary">${safeHtml`${property.name}`}</code>${property.isOptional ? html`<span class="text-muted">?</span>` : ""}
+												</div>
+												${
+													property.description
+														? html`<div class="small text-muted mt-1">${markdownToHTML(property.description)}</div>`
+														: html`<div class="small text-muted fst-italic mt-1">No description</div>`
+												}`,
+
+												// Type column
 												linkTypeIfEntity(property.type),
-												property.description
-													? markdownToHTML(property.description)
-													: html`<em class="text-muted">No description</em>`,
+
 												// Handle both typedef properties (required/optional) and class properties (static/instance/private)
 												html`<div class="d-flex gap-1 flex-wrap">
 													${
@@ -325,8 +344,7 @@ export function entityPageTemplate(data) {
 																(param, index) => html`
 															<div class="mb-2">
 																${index > 0 ? html`<hr class="my-2"/>` : ""}
-																<code class="text-info">${safeHtml`${param.name}`}${param.isOptional ? "?" : ""}</code>:
-																${linkTypeIfEntity(param.type, "text-secondary")}
+																<code class="text-info">${safeHtml`${param.name}`}${param.isOptional ? "?" : ""}</code>: ${linkTypeIfEntity(param.type, "text-secondary")}
 																${param.description ? html`<br><span class="text-muted">${safeHtml`${param.description}`}</span>` : ""}
 															</div>
 														`,
