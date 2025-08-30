@@ -1,11 +1,14 @@
 {
+  // nest-ignore: jsconfig-custom - workspace root needs additional exclude patterns
   "compilerOptions": {
     "checkJs": true,
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "target": "ESNext",
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "resolveJsonModule": true
   },
+  "include": ["**/*.js"],
   "exclude": [
     "docs/**",
     "examples/**",

@@ -1,15 +1,13 @@
 {
   "compilerOptions": {
     "checkJs": false,
+    "noImplicitAny": false,
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "target": "ESNext",
-    "noImplicitAny": false,
     "allowJs": true,
-    "strict": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false
+    "resolveJsonModule": true
   },
-  "include": ["**/*.js", "**/*.mjs"],
-  "exclude": ["node_modules/**"]
+  "include": ["**/*.js"],
+  "exclude": ["node_modules/**", "static/**", "**/*.min.js"]
 }

@@ -7,12 +7,6 @@
     "noImplicitAny": true,
     "resolveJsonModule": true
   },
-  "include": [
-    "index.js",
-    "index.test.js",
-    "learning/**/*.js",
-    "structures/**/*.js",
-    "temporal/**/*.js"
-  ],
-  "exclude": ["**/*.test.js"]
+  "include": ["**/*.js"],
+  "exclude": ["**/*.test.js", "node_modules/**", "static/**", "**/*.min.js"]
 }

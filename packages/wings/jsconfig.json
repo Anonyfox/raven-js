@@ -7,11 +7,6 @@
     "noImplicitAny": true,
     "resolveJsonModule": true
   },
-  "include": [
-    "core/**/*.js",
-    "spa/**/*.js",
-    "server/**/*.js",
-    "terminal/**/*.js"
-  ],
-  "exclude": ["**/*.test.js"]
+  "include": ["**/*.js"],
+  "exclude": ["**/*.test.js", "node_modules/**", "static/**", "**/*.min.js"]
 }

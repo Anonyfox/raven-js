@@ -7,6 +7,10 @@
     "noImplicitAny": true,
     "resolveJsonModule": true
   },
-  "include": ["**/*.js"],
-  "exclude": ["**/*.test.js", "node_modules/**", "static/**", "**/*.min.js"]
+  "include": [
+    "**/*.js"
+  ],
+  "exclude": [
+    "node_modules/**"
+  ]
 }

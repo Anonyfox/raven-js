@@ -22,6 +22,7 @@ import {
 	shouldHaveJSDocHeader,
 	shouldHaveTestFile,
 } from "./js-file/index.js";
+import { HasMinimalSettings } from "./jsconfig-json/index.js";
 import {
 	HasValidAuthor,
 	HasValidBugs,
@@ -205,6 +206,9 @@ export const validateWorkspaceRoot = (workspacePath) => {
 	checks.push(
 		runCheck("folder structure", () => FolderHasValidStructure(workspacePath)),
 	);
+	checks.push(
+		runCheck("jsconfig.json settings", () => HasMinimalSettings(workspacePath)),
+	);
 
 	const passed = checks.every(
 		(/** @type {any} */ check) => /** @type {any} */ (check).passed,
@@ -337,6 +341,9 @@ export const validatePackage = (packagePath) => {
 	// 3. Folder/file structure validation
 	checks.push(
 		runCheck("folder structure", () => FolderHasValidStructure(packagePath)),
+	);
+	checks.push(
+		runCheck("jsconfig.json settings", () => HasMinimalSettings(packagePath)),
 	);
 	checks.push(runCheck("test files", () => validateTestFiles(packagePath)));
 	checks.push(
