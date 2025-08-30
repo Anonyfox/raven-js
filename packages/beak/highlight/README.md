@@ -2,6 +2,8 @@
 
 **Zero-dependency syntax highlighting for generated code documentation.** Transform raw source code into semantically-colored HTML using Bootstrap classes for consistent theming. Built for documentation generators that need fast, reliable syntax highlighting without dependency hell or custom CSS maintenance. Returns clean HTML spans with Bootstrap color classes that inherit from user themes automatically.
 
+**Supported languages:** HTML, CSS, JavaScript, SQL, Shell/Bash, XML, and JSON with full Bootstrap semantic mapping.
+
 ## Color Semantic Mapping
 
 Bootstrap class assignments follow semantic consistency across all supported languages:
@@ -52,6 +54,21 @@ Bootstrap class assignments follow semantic consistency across all supported lan
 - **Built-ins:** Flags (`-l`, `-a`, `--help`, `--version`), operators (`|`, `>`, `>>`, `&&`, `||`)
 - **Literals:** File paths, quoted strings, environment variables (`$VAR`, `${VAR}`)
 - **Edge cases:** Command substitution (`` `command` ``, `$(command)`), heredoc
+
+### XML (`xml.js`)
+
+- **Keywords:** Tag names (`<root>`, `<element>`, `<ns:tag>`)
+- **Built-ins:** Attribute names (`id`, `class`, `xmlns`, `type`, custom attributes)
+- **Literals:** Attribute values (`"value"`, `'value'`), text content, CDATA sections
+- **Constants:** Processing instructions (`<?xml?>`, `<?xml-stylesheet?>`), entities (`&lt;`, `&#65;`, `&custom;`)
+- **Edge cases:** Namespaces, self-closing tags, mixed content, malformed XML
+
+### JSON (`json.js`)
+
+- **Keywords:** Object property keys (`"name"`, `"id"`, `"config"`)
+- **Literals:** String values (`"hello world"`, `"path/to/file"`), arrays, objects
+- **Constants:** Numbers (`42`, `3.14`, `1e10`), booleans (`true`, `false`), `null`
+- **Edge cases:** Escaped strings, scientific notation, JSON5/JSONC comments (`//`, `/* */`)
 
 ## CSS Backfill Support
 
