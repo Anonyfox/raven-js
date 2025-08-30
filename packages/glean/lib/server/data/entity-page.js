@@ -102,8 +102,11 @@ export function extractEntityPageData(packageInstance, moduleName, entityName) {
 		// Parameters (for functions)
 		parameters: extractParameters(entity),
 
-		// Properties (for typedefs)
+		// Properties (for typedefs and classes)
 		properties: extractProperties(entity),
+
+		// Methods (for classes)
+		methods: extractMethods(entity),
 
 		// Return information
 		returns: extractReturns(entity),
@@ -176,6 +179,7 @@ export function extractEntityPageData(packageInstance, moduleName, entityName) {
 		// Computed flags for conditional rendering
 		hasParameters: docs.parameters.length > 0,
 		hasProperties: docs.properties.length > 0,
+		hasMethods: docs.methods.length > 0,
 		hasReturns: Boolean(docs.returns.description),
 		hasExamples: docs.examples.length > 0,
 		hasRelatedEntities:
@@ -211,24 +215,215 @@ function extractParameters(entity) {
 }
 
 /**
- * Extract property information from JSDoc @property tags (for typedefs)
+ * Extract property information from JSDoc @property tags (for typedefs) and class properties
  * @param {Object} entity - Entity instance
  * @returns {Array<Object>} Property documentation
  */
 function extractProperties(entity) {
 	/** @type {any} */
 	const ent = entity;
-	if (!ent.getJSDocTagsByType) return [];
+	const properties = [];
 
-	return ent.getJSDocTagsByType("property").map(
-		/** @param {any} propertyTag */ (propertyTag) => ({
-			name: propertyTag.name || "",
-			type: propertyTag.type || "",
-			description: propertyTag.description || "",
-			isOptional: propertyTag.optional || false,
-			defaultValue: propertyTag.defaultValue || null,
+	// Extract JSDoc @property tags (for typedefs)
+	if (ent.getJSDocTagsByType) {
+		properties.push(
+			...ent.getJSDocTagsByType("property").map(
+				/** @param {any} propertyTag */ (propertyTag) => ({
+					name: propertyTag.name || "",
+					type: propertyTag.type || "",
+					description: propertyTag.description || "",
+					isOptional: propertyTag.optional || false,
+					defaultValue: propertyTag.defaultValue || null,
+				}),
+			),
+		);
+	}
+
+	// Extract class properties (for class entities)
+	if (
+		ent.entityType === "class" &&
+		ent.properties &&
+		Array.isArray(ent.properties)
+	) {
+		properties.push(
+			...ent.properties.map(
+				/** @param {any} classProp */ (classProp) => ({
+					name: classProp.name || "",
+					type: inferPropertyType(classProp), // Try to infer better types
+					description:
+						classProp.description ||
+						(classProp.isInstance ? "Instance property" : "Class property"),
+					isOptional: false, // Class properties are not optional by default
+					defaultValue: classProp.hasInitializer ? "initialized" : null,
+					isStatic: classProp.isStatic || false,
+					isPrivate: classProp.isPrivate || false,
+					isInstance: classProp.isInstance || false,
+				}),
+			),
+		);
+	}
+
+	return properties;
+}
+
+/**
+ * Extract method information from class entities
+ * @param {Object} entity - Entity instance
+ * @returns {Array<Object>} Method documentation
+ */
+function extractMethods(entity) {
+	/** @type {any} */
+	const ent = entity;
+
+	// Only extract methods for class entities
+	if (
+		ent.entityType !== "class" ||
+		!ent.methods ||
+		!Array.isArray(ent.methods)
+	) {
+		return [];
+	}
+
+	return ent.methods.map(
+		/** @param {any} classMethod */ (classMethod) => ({
+			name: classMethod.name || "",
+			type: classMethod.methodType || "method",
+			description: getMethodDescription(classMethod, ent.name),
+			returnType: getMethodReturnType(classMethod),
+			parameters: getMethodParameters(classMethod),
+			isStatic: classMethod.isStatic || false,
+			isPrivate: classMethod.isPrivate || false,
+			isAsync: classMethod.isAsync || false,
+			isGenerator: classMethod.isGenerator || false,
+			isDeprecated: classMethod.documentation?.deprecated || false,
+			signature: classMethod.signature || "",
+			line: classMethod.line || 0,
 		}),
 	);
+}
+
+/**
+ * Get method description from JSDoc or generate fallback
+ * @param {Object} classMethod - Class method object
+ * @param {string} className - Name of the containing class
+ * @returns {string} Method description
+ */
+function getMethodDescription(classMethod, className) {
+	// Use JSDoc description if available
+	if (classMethod.documentation?.description) {
+		return classMethod.documentation.description;
+	}
+
+	// Generate fallback description
+	const methodType = classMethod.methodType || "method";
+	if (methodType === "constructor") {
+		return `Creates a new instance of ${className}`;
+	} else if (methodType === "getter") {
+		return `Gets the value of ${classMethod.name}`;
+	} else if (methodType === "setter") {
+		return `Sets the value of ${classMethod.name}`;
+	} else {
+		return `${classMethod.isStatic ? "Static method" : "Method"} of ${className}`;
+	}
+}
+
+/**
+ * Get method return type from JSDoc
+ * @param {Object} classMethod - Class method object
+ * @returns {string} Return type
+ */
+function getMethodReturnType(classMethod) {
+	if (classMethod.documentation?.returns?.type) {
+		return classMethod.documentation.returns.type;
+	}
+
+	// Infer return type from method type
+	const methodType = classMethod.methodType || "method";
+	if (methodType === "constructor") {
+		return "void";
+	} else if (methodType === "setter") {
+		return "void";
+	} else if (methodType === "getter") {
+		return "any";
+	}
+
+	return "any";
+}
+
+/**
+ * Get method parameters from JSDoc
+ * @param {Object} classMethod - Class method object
+ * @returns {Array<Object>} Method parameters
+ */
+function getMethodParameters(classMethod) {
+	if (classMethod.documentation?.parameters) {
+		return classMethod.documentation.parameters.map((param) => ({
+			name: param.name,
+			type: param.type,
+			description: param.description,
+			isOptional: param.optional || false,
+		}));
+	}
+
+	// Try to extract parameters from signature
+	const signature = classMethod.signature || "";
+	const paramMatch = signature.match(/\(([^)]*)\)/);
+	if (paramMatch && paramMatch[1].trim()) {
+		const paramNames = paramMatch[1]
+			.split(",")
+			.map((p) => p.trim().split(/\s+/)[0]);
+		return paramNames.map((name) => ({
+			name: name.replace(/[=\s].*$/, ""), // Remove default values
+			type: "any",
+			description: "",
+			isOptional: name.includes("=") || name.includes("null"),
+		}));
+	}
+
+	return [];
+}
+
+/**
+ * Try to infer property type from its characteristics
+ * @param {Object} classProp - Class property object
+ * @returns {string} Inferred type
+ */
+function inferPropertyType(classProp) {
+	// If signature contains type hints, try to extract
+	if (classProp.signature) {
+		const signature = classProp.signature;
+
+		// Look for common patterns
+		if (signature.includes("new Float32Array")) return "Float32Array";
+		if (signature.includes("new Array")) return "Array";
+		if (signature.includes("[]")) return "Array";
+		if (signature.includes('"') || signature.includes("'")) return "string";
+		if (signature.includes("true") || signature.includes("false"))
+			return "boolean";
+		if (/= \d+/.test(signature)) return "number";
+		if (signature.includes("null")) return "null";
+		if (signature.includes("{}")) return "Object";
+	}
+
+	// Try to infer from property name patterns
+	const name = classProp.name;
+	if (
+		name.includes("count") ||
+		name.includes("length") ||
+		name.includes("size") ||
+		name === "rows" ||
+		name === "cols"
+	) {
+		return "number";
+	}
+	if (name.includes("is") || name.includes("has") || name.includes("enabled")) {
+		return "boolean";
+	}
+	if (name.includes("data") || name.includes("buffer")) {
+		return "TypedArray";
+	}
+
+	return "any"; // fallback
 }
 
 /**

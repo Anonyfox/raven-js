@@ -937,7 +937,7 @@ describe("entityPageTemplate", () => {
 			html.includes("Description</th>"),
 			"Contains Description column header",
 		);
-		assert(html.includes("Required</th>"), "Contains Required column header");
+		assert(html.includes("Modifiers</th>"), "Contains Modifiers column header");
 
 		// Required property formatting
 		assert(

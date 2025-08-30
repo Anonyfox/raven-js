@@ -166,6 +166,10 @@ export class ClassEntity extends EntityBase {
 		const lines = sourceCode.split("\n");
 		let inClassBody = false;
 		let braceDepth = 0;
+		let inConstructor = false;
+		let constructorBraceDepth = 0;
+		let currentJSDocBlock = null;
+		let inJSDocBlock = false;
 
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i];
@@ -184,34 +188,71 @@ export class ClassEntity extends EntityBase {
 
 			if (!inClassBody) continue;
 
-			// Skip empty lines and comments (including JSDoc lines)
-			if (
-				!trimmed ||
-				trimmed.startsWith("//") ||
-				trimmed.startsWith("/*") ||
-				trimmed.endsWith("*/") ||
-				(trimmed.startsWith("*") && !trimmed.match(/^\*[A-Za-z_$]/)) || // JSDoc comment, but not generator method
-				trimmed.startsWith("/**") ||
-				trimmed === "*/"
-			) {
-				// Still need to track brace depth for comments that contain braces
-				for (const char of line) {
-					if (char === "{") braceDepth++;
-					if (char === "}") braceDepth--;
+			// Track JSDoc blocks
+			if (trimmed.startsWith("/**")) {
+				inJSDocBlock = true;
+				currentJSDocBlock = [trimmed];
+			} else if (inJSDocBlock) {
+				currentJSDocBlock.push(trimmed);
+				if (trimmed.endsWith("*/")) {
+					inJSDocBlock = false;
 				}
-				continue;
+			} else if (!trimmed || trimmed.startsWith("//")) {
+				// Skip empty lines and single-line comments but don't reset JSDoc
+			} else if (braceDepth === 1) {
+				// We're at class level - check for methods/properties
+				if (this._isMethod(trimmed)) {
+					const method = this._parseMethod(trimmed, i + 1);
+					if (method) {
+						// Associate JSDoc block with method if available
+						if (currentJSDocBlock) {
+							method.jsDocBlock = currentJSDocBlock.join("\n");
+							method.documentation = this._parseJSDocBlock(currentJSDocBlock);
+						}
+						this.methods.push(method);
+					}
+				} else if (this._isProperty(trimmed)) {
+					const property = this._parseProperty(trimmed, i + 1);
+					if (property) {
+						// Associate JSDoc block with property if available
+						if (currentJSDocBlock) {
+							property.jsDocBlock = currentJSDocBlock.join("\n");
+							property.documentation = this._parseJSDocBlock(currentJSDocBlock);
+						}
+						this.properties.push(property);
+					}
+				}
+				// Reset JSDoc block after processing a member
+				currentJSDocBlock = null;
 			}
 
-			// Detect methods and properties only at class level (not inside method bodies)
-			// Check BEFORE updating brace depth
-			if (braceDepth === 1) {
-				this._analyzeMember(trimmed, i + 1);
+			// Track constructor boundaries for instance property detection
+			if (braceDepth === 1 && trimmed.includes("constructor(")) {
+				inConstructor = true;
+				constructorBraceDepth = 0;
 			}
 
-			// Track brace depth AFTER analyzing
+			// Detect instance properties within constructor
+			if (inConstructor && braceDepth > 1) {
+				this._analyzeConstructorProperty(trimmed, i + 1);
+			}
+
+			// Track brace depth
 			for (const char of line) {
-				if (char === "{") braceDepth++;
-				if (char === "}") braceDepth--;
+				if (char === "{") {
+					braceDepth++;
+					if (inConstructor) constructorBraceDepth++;
+				}
+				if (char === "}") {
+					braceDepth--;
+					if (inConstructor) {
+						constructorBraceDepth--;
+						// Exit constructor when we return to class level
+						if (constructorBraceDepth === 0 && braceDepth === 1) {
+							inConstructor = false;
+						}
+					}
+				}
 			}
 
 			// Exit class body
@@ -352,6 +393,131 @@ export class ClassEntity extends EntityBase {
 		}
 
 		return property.name ? property : null;
+	}
+
+	/**
+	 * Parse JSDoc block to extract documentation
+	 * @param {Array<string>} jsDocLines - Lines of JSDoc block
+	 * @returns {Object} Parsed documentation
+	 * @private
+	 */
+	_parseJSDocBlock(jsDocLines) {
+		const documentation = {
+			description: "",
+			parameters: [],
+			returns: null,
+			throws: [],
+			deprecated: false,
+			since: "",
+			see: [],
+			example: "",
+		};
+
+		const currentDescription = [];
+		let inDescription = true;
+
+		for (const line of jsDocLines) {
+			const trimmed = line
+				.replace(/^\s*\*\s?/, "")
+				.replace(/^\s*\/\*\*\s?/, "")
+				.replace(/\s*\*\/\s*$/, "");
+
+			if (trimmed.startsWith("@param")) {
+				inDescription = false;
+				const paramMatch = trimmed.match(
+					/@param\s+\{([^}]+)\}\s+(\[?([^\]]+)\]?)\s*-?\s*(.*)/,
+				);
+				if (paramMatch) {
+					documentation.parameters.push({
+						name: paramMatch[3] || paramMatch[2],
+						type: paramMatch[1],
+						optional: paramMatch[2].includes("["),
+						description: paramMatch[4] || "",
+					});
+				}
+			} else if (
+				trimmed.startsWith("@returns") ||
+				trimmed.startsWith("@return")
+			) {
+				inDescription = false;
+				const returnMatch = trimmed.match(
+					/@returns?\s+\{([^}]+)\}\s*-?\s*(.*)/,
+				);
+				if (returnMatch) {
+					documentation.returns = {
+						type: returnMatch[1],
+						description: returnMatch[2] || "",
+					};
+				}
+			} else if (trimmed.startsWith("@throws")) {
+				inDescription = false;
+				const throwMatch = trimmed.match(/@throws\s+\{([^}]+)\}\s*-?\s*(.*)/);
+				if (throwMatch) {
+					documentation.throws.push({
+						type: throwMatch[1],
+						description: throwMatch[2] || "",
+					});
+				}
+			} else if (trimmed.startsWith("@deprecated")) {
+				documentation.deprecated = true;
+			} else if (trimmed.startsWith("@since")) {
+				const sinceMatch = trimmed.match(/@since\s+(.*)/);
+				if (sinceMatch) {
+					documentation.since = sinceMatch[1];
+				}
+			} else if (trimmed.startsWith("@see")) {
+				const seeMatch = trimmed.match(/@see\s+(.*)/);
+				if (seeMatch) {
+					documentation.see.push(seeMatch[1]);
+				}
+			} else if (trimmed.startsWith("@example")) {
+				inDescription = false;
+				// Example content will be on following lines
+			} else if (trimmed.startsWith("@private")) {
+				documentation.private = true;
+			} else if (inDescription && trimmed && !trimmed.startsWith("@")) {
+				currentDescription.push(trimmed);
+			}
+		}
+
+		documentation.description = currentDescription.join(" ").trim();
+		return documentation;
+	}
+
+	/**
+	 * Analyze constructor line for instance property assignments
+	 * @param {string} line - Line of code
+	 * @param {number} lineNumber - Line number
+	 * @private
+	 */
+	_analyzeConstructorProperty(line, lineNumber) {
+		// Look for this.propertyName = value patterns
+		const instancePropertyPattern =
+			/this\.([A-Za-z_$][A-Za-z0-9_$]*)\s*=\s*(.+)/;
+		const match = line.match(instancePropertyPattern);
+
+		if (match) {
+			const propertyName = match[1];
+			const initializer = match[2].trim();
+
+			// Check if this property is already tracked (avoid duplicates)
+			const existingProperty = this.properties.find(
+				(p) => p.name === propertyName,
+			);
+			if (!existingProperty) {
+				const property = {
+					name: propertyName,
+					line: lineNumber,
+					isStatic: false,
+					isPrivate: false,
+					hasInitializer: true,
+					signature: `${propertyName} = ${initializer}`,
+					isInstance: true, // Mark as instance property
+				};
+
+				this.properties.push(property);
+			}
+		}
 	}
 
 	/**

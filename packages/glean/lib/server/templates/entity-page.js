@@ -39,6 +39,8 @@ import { baseTemplate } from "./base.js";
  * @param {boolean} data.entity.isDefault - Whether from default module
  * @param {Object} data.documentation - JSDoc documentation
  * @param {Array<Object>} data.documentation.parameters - Parameter documentation
+ * @param {Array<Object>} data.documentation.properties - Property documentation
+ * @param {Array<Object>} data.documentation.methods - Method documentation
  * @param {Object} data.documentation.returns - Return documentation
  * @param {Array<Object>} data.documentation.examples - Code examples
  * @param {string} data.documentation.since - Since version
@@ -57,6 +59,7 @@ import { baseTemplate } from "./base.js";
  * @param {string} data.moduleName - Module name
  * @param {boolean} data.hasParameters - Whether entity has parameters
  * @param {boolean} data.hasProperties - Whether entity has properties (for typedefs)
+ * @param {boolean} data.hasMethods - Whether entity has methods (for classes)
  * @param {boolean} data.hasReturns - Whether entity has return documentation
  * @param {boolean} data.hasExamples - Whether entity has examples
  * @param {boolean} data.hasRelatedEntities - Whether entity has related entities
@@ -76,6 +79,7 @@ export function entityPageTemplate(data) {
 		moduleName,
 		hasParameters,
 		hasProperties,
+		hasMethods,
 		hasReturns,
 		hasExamples,
 		hasRelatedEntities,
@@ -240,7 +244,7 @@ export function entityPageTemplate(data) {
 								icon: "📝",
 								noPadding: true,
 								content: tableSection({
-									headers: ["Property", "Type", "Description", "Required"],
+									headers: ["Property", "Type", "Description", "Modifiers"],
 									rows: docs.properties.map(
 										/** @param {any} property */ (property) => [
 											html`<code class="text-primary">${safeHtml`${property.name}`}</code>${property.isOptional ? html`<span class="text-muted">?</span>` : ""}`,
@@ -248,9 +252,100 @@ export function entityPageTemplate(data) {
 											property.description
 												? markdownToHTML(property.description)
 												: html`<em class="text-muted">No description</em>`,
-											property.isOptional
-												? html`<span class="badge bg-secondary">optional</span>`
-												: html`<span class="badge bg-primary">required</span>`,
+											// Handle both typedef properties (required/optional) and class properties (static/instance/private)
+											html`<div class="d-flex gap-1 flex-wrap">
+												${
+													property.isOptional
+														? html`<span class="badge bg-secondary">optional</span>`
+														: Object.hasOwn(property, "isOptional")
+															? html`<span class="badge bg-primary">required</span>`
+															: ""
+												}
+												${
+													property.isStatic
+														? html`<span class="badge bg-info">static</span>`
+														: ""
+												}
+												${
+													property.isPrivate
+														? html`<span class="badge bg-dark">private</span>`
+														: ""
+												}
+												${
+													property.isInstance
+														? html`<span class="badge bg-success">instance</span>`
+														: ""
+												}
+												${
+													property.defaultValue &&
+													property.defaultValue !== null
+														? html`<span class="badge bg-warning text-dark">has default</span>`
+														: ""
+												}
+											</div>`,
+										],
+									),
+								}),
+							})
+						: ""
+				}
+
+				<!-- Methods -->
+				${
+					hasMethods
+						? contentSection({
+								title: "Methods",
+								icon: "🔧",
+								noPadding: true,
+								content: tableSection({
+									headers: ["Method", "Returns", "Description", "Modifiers"],
+									rows: docs.methods.map(
+										/** @param {any} method */ (method) => [
+											html`<div class="mb-1">
+												<code class="text-primary">${safeHtml`${method.name}`}</code>
+												<span class="badge bg-${method.type === "constructor" ? "success" : "primary"} ms-2">${safeHtml`${method.type}`}</span>
+												${method.isDeprecated ? html`<span class="badge bg-warning ms-1">deprecated</span>` : ""}
+											</div>
+											${
+												method.parameters && method.parameters.length > 0
+													? html`<div class="small text-muted mt-1">
+													<strong>Parameters:</strong>
+													${method.parameters
+														.map(
+															(param, i) =>
+																`${i > 0 ? ", " : ""}${param.name}${param.isOptional ? "?" : ""}: ${param.type}`,
+														)
+														.join("")}
+												</div>`
+													: ""
+											}`,
+											linkTypeIfEntity(method.returnType),
+											method.description
+												? markdownToHTML(method.description)
+												: html`<em class="text-muted">No description</em>`,
+											// Method modifiers badges
+											html`<div class="d-flex gap-1 flex-wrap">
+												${
+													method.isStatic
+														? html`<span class="badge bg-info">static</span>`
+														: ""
+												}
+												${
+													method.isPrivate
+														? html`<span class="badge bg-dark">private</span>`
+														: ""
+												}
+												${
+													method.isAsync
+														? html`<span class="badge bg-warning text-dark">async</span>`
+														: ""
+												}
+												${
+													method.isGenerator
+														? html`<span class="badge bg-secondary">generator</span>`
+														: ""
+												}
+											</div>`,
 										],
 									),
 								}),
