@@ -790,4 +790,111 @@ describe("entityPageTemplate", () => {
 			"Should not render code HTML in header",
 		);
 	});
+
+	test("links typedef names in parameters and returns to their entity pages", () => {
+		const data = createMockData({
+			documentation: {
+				...createMockData().documentation,
+				parameters: [
+					{
+						name: "config",
+						type: "TestConfig",
+						description: "Configuration object with test options",
+						isOptional: false,
+						defaultValue: null,
+					},
+				],
+				returns: {
+					type: "TestResult",
+					description: "Result of the test operation",
+				},
+			},
+			relatedEntities: {
+				sameModule: [
+					{
+						name: "TestConfig",
+						type: "typedef",
+						description: "Configuration options for testing",
+						link: "/modules/utils/TestConfig/",
+					},
+					{
+						name: "TestResult",
+						type: "typedef",
+						description: "Result of a test operation",
+						link: "/modules/utils/TestResult/",
+					},
+				],
+				similar: [],
+			},
+		});
+		const html = entityPageTemplate(data);
+
+		// Parameter type should be linked
+		assert(
+			html.includes('<a href="/modules/utils/TestConfig/"'),
+			"Links TestConfig parameter type",
+		);
+		assert(
+			html.includes('<code class="text-secondary">TestConfig</code>'),
+			"Shows TestConfig in code style",
+		);
+
+		// Return type should be linked
+		assert(
+			html.includes('<a href="/modules/utils/TestResult/"'),
+			"Links TestResult return type",
+		);
+		assert(
+			html.includes('<code class="text-secondary">TestResult</code>'),
+			"Shows TestResult in code style",
+		);
+
+		// Links should be properly formatted
+		assert(
+			html.includes('class="text-decoration-none"'),
+			"Uses proper link styling",
+		);
+	});
+
+	test("does not link parameter types that are not entities in the same module", () => {
+		const data = createMockData({
+			documentation: {
+				...createMockData().documentation,
+				parameters: [
+					{
+						name: "data",
+						type: "string",
+						description: "A simple string parameter",
+						isOptional: false,
+						defaultValue: null,
+					},
+				],
+				returns: {
+					type: "number",
+					description: "A numeric result",
+				},
+			},
+		});
+		const html = entityPageTemplate(data);
+
+		// Built-in types should not be linked
+		assert(
+			!html.includes('<a href="/modules/utils/string/"'),
+			"Does not link string type",
+		);
+		assert(
+			!html.includes('<a href="/modules/utils/number/"'),
+			"Does not link number type",
+		);
+
+		// Should still show the types in code style
+		assert(
+			html.includes('<code class="text-secondary">string</code>'),
+			"Shows string in code style",
+		);
+		assert(
+			html.includes('<code class="text-secondary">number</code>'),
+			"Shows number in code style",
+		);
+	});
 });

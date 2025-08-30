@@ -103,6 +103,27 @@ export function entityPageTemplate(data) {
 		return typeColors[type] || "bg-secondary";
 	};
 
+	// Helper function to link type names to entity pages if they exist
+	const linkTypeIfEntity = (
+		/** @type {string} */ typeString,
+		/** @type {string} */ colorClass = "text-secondary",
+	) => {
+		if (!typeString) return html`<span class="text-muted">any</span>`;
+
+		// Check if this type matches an entity in the same module
+		/** @type {any} */
+		const matchingEntity = relatedEntities.sameModule.find(
+			/** @param {any} entity */ (entity) => entity.name === typeString,
+		);
+
+		if (matchingEntity) {
+			return html`<a href="${safeHtml`${matchingEntity.link}`}" class="text-decoration-none"><code class="${colorClass}">${safeHtml`${typeString}`}</code></a>`;
+		}
+
+		// No matching entity, return as plain text
+		return html`<code class="${colorClass}">${safeHtml`${typeString}`}</code>`;
+	};
+
 	// Generate breadcrumbs
 	const breadcrumbs = [
 		{ href: "/", text: `📦 ${packageName}` },
@@ -193,9 +214,7 @@ export function entityPageTemplate(data) {
 									rows: docs.parameters.map(
 										/** @param {any} param */ (param) => [
 											html`<code class="text-primary">${safeHtml`${param.name}`}</code>${param.isOptional ? html`<span class="text-muted">?</span>` : ""}`,
-											param.type
-												? html`<code class="text-secondary">${safeHtml`${param.type}`}</code>`
-												: html`<span class="text-muted">any</span>`,
+											linkTypeIfEntity(param.type),
 											param.description
 												? markdownToHTML(param.description)
 												: html`<em class="text-muted">No description</em>`,
@@ -223,7 +242,7 @@ export function entityPageTemplate(data) {
 								? html`
 						<div class="mb-2">
 							<strong>Type:</strong>
-							<code class="text-secondary">${safeHtml`${docs.returns.type}`}</code>
+							${linkTypeIfEntity(docs.returns.type)}
 						</div>
 						`
 								: ""
@@ -251,7 +270,7 @@ export function entityPageTemplate(data) {
 									headers: ["Type", "Description"],
 									rows: docs.throws.map(
 										/** @param {any} throwsInfo */ (throwsInfo) => [
-											html`<code class="text-danger">${safeHtml`${throwsInfo.type}`}</code>`,
+											linkTypeIfEntity(throwsInfo.type, "text-danger"),
 											throwsInfo.description
 												? markdownToHTML(throwsInfo.description)
 												: html`<em class="text-muted">No description</em>`,
