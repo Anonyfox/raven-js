@@ -1,0 +1,9 @@
+{
+  "name": "test-workspace",
+  "workspaces": [
+    "packages/test"
+  ],
+  "devDependencies": {
+    "@biomejs/biome": "^2.2.0"
+  }
+}

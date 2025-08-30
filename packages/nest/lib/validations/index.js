@@ -14,6 +14,7 @@ import {
 	GetAllFilePaths,
 	PackageJsonListWorkspacePackages,
 } from "../queries/index.js";
+import { HasProperBiomeSetup } from "./dev-tooling/index.js";
 import { HasValidStructure as FolderHasValidStructure } from "./folder/index.js";
 import { IsNpmPackage } from "./is-npm-package.js";
 import {
@@ -208,6 +209,11 @@ export const validateWorkspaceRoot = (workspacePath) => {
 	);
 	checks.push(
 		runCheck("jsconfig.json settings", () => HasMinimalSettings(workspacePath)),
+	);
+	checks.push(
+		runCheck("biome dev tooling setup", () =>
+			HasProperBiomeSetup(workspacePath),
+		),
 	);
 
 	const passed = checks.every(
