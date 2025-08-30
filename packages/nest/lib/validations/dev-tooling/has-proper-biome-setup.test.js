@@ -7,22 +7,27 @@
  */
 
 import assert from "node:assert";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { beforeEach, describe, it } from "node:test";
+import { afterEach, beforeEach, describe, it } from "node:test";
 import { HasProperBiomeSetup } from "./has-proper-biome-setup.js";
 
 describe("HasProperBiomeSetup", () => {
-	const testDir = join(process.cwd(), "test-temp", "biome-validation");
+	let testDir;
 
 	beforeEach(() => {
-		// Clean up and create test directory
+		// Create unique temporary directory for each test
+		testDir = mkdtempSync(join(tmpdir(), "biome-validation-"));
+	});
+
+	afterEach(() => {
+		// Clean up temporary directory after each test
 		try {
 			rmSync(testDir, { recursive: true, force: true });
 		} catch {
-			// Ignore if doesn't exist
+			// Ignore cleanup errors
 		}
-		mkdirSync(testDir, { recursive: true });
 	});
 
 	it("should throw error for empty workspace path", () => {

@@ -7,22 +7,27 @@
  */
 
 import assert from "node:assert";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { beforeEach, describe, it } from "node:test";
+import { afterEach, beforeEach, describe, it } from "node:test";
 import { HasMinimalSettings } from "./has-minimal-settings.js";
 
 describe("HasMinimalSettings", () => {
-	const testDir = join(process.cwd(), "test-temp", "jsconfig-validation");
+	let testDir;
 
 	beforeEach(() => {
-		// Clean up and create test directory
+		// Create unique temporary directory for each test
+		testDir = mkdtempSync(join(tmpdir(), "jsconfig-validation-"));
+	});
+
+	afterEach(() => {
+		// Clean up temporary directory after each test
 		try {
 			rmSync(testDir, { recursive: true, force: true });
 		} catch {
-			// Ignore if doesn't exist
+			// Ignore cleanup errors
 		}
-		mkdirSync(testDir, { recursive: true });
 	});
 
 	it("should throw error for empty package path", () => {
@@ -179,7 +184,7 @@ describe("HasMinimalSettings", () => {
 		);
 	});
 
-	it("should throw error for wrong exclude patterns", () => {
+	it("should throw error for missing required exclude patterns", () => {
 		const jsconfigPath = join(testDir, "jsconfig.json");
 		const wrongExcludeConfig = {
 			compilerOptions: {
@@ -196,6 +201,35 @@ describe("HasMinimalSettings", () => {
 
 		writeFileSync(jsconfigPath, JSON.stringify(wrongExcludeConfig, null, 2));
 
-		assert.throws(() => HasMinimalSettings(testDir), /exclude: expected.*got/);
+		assert.throws(
+			() => HasMinimalSettings(testDir),
+			/exclude: missing required patterns/,
+		);
+	});
+
+	it("should allow additional include/exclude patterns", () => {
+		const jsconfigPath = join(testDir, "jsconfig.json");
+		const extendedConfig = {
+			compilerOptions: {
+				checkJs: true,
+				module: "NodeNext",
+				moduleResolution: "NodeNext",
+				target: "ESNext",
+				noImplicitAny: true,
+				resolveJsonModule: true,
+			},
+			include: ["**/*.js", "**/*.mjs"], // Additional .mjs pattern
+			exclude: [
+				"**/*.test.js",
+				"node_modules/**",
+				"static/**",
+				"**/*.min.js",
+				"build/**",
+			], // Additional build/** pattern
+		};
+
+		writeFileSync(jsconfigPath, JSON.stringify(extendedConfig, null, 2));
+
+		assert.strictEqual(HasMinimalSettings(testDir), true);
 	});
 });

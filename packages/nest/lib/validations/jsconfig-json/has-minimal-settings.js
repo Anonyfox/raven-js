@@ -134,21 +134,27 @@ function compareJsconfig(actual, expected, _packagePath) {
 		}
 	}
 
-	// Check include array
+	// Check include array contains required patterns (allow additional ones)
 	if (!Array.isArray(actual.include)) {
 		violations.push("  Missing or invalid include array");
-	} else if (!arraysEqual(actual.include, expected.include)) {
+	} else if (!arrayContainsAll(actual.include, expected.include)) {
+		const missingPatterns = expected.include.filter(
+			(pattern) => !actual.include.includes(pattern),
+		);
 		violations.push(
-			`  include: expected ${JSON.stringify(expected.include)}, got ${JSON.stringify(actual.include)}`,
+			`  include: missing required patterns ${JSON.stringify(missingPatterns)}`,
 		);
 	}
 
-	// Check exclude array
+	// Check exclude array contains required patterns (allow additional ones)
 	if (!Array.isArray(actual.exclude)) {
 		violations.push("  Missing or invalid exclude array");
-	} else if (!arraysEqual(actual.exclude, expected.exclude)) {
+	} else if (!arrayContainsAll(actual.exclude, expected.exclude)) {
+		const missingPatterns = expected.exclude.filter(
+			(pattern) => !actual.exclude.includes(pattern),
+		);
 		violations.push(
-			`  exclude: expected ${JSON.stringify(expected.exclude)}, got ${JSON.stringify(actual.exclude)}`,
+			`  exclude: missing required patterns ${JSON.stringify(missingPatterns)}`,
 		);
 	}
 
@@ -156,15 +162,12 @@ function compareJsconfig(actual, expected, _packagePath) {
 }
 
 /**
- * Check if two arrays are equal (order independent for some flexibility)
- * @param {string[]} a - First array
- * @param {string[]} b - Second array
- * @returns {boolean} True if arrays contain same elements
+ * Check if array contains all required elements
+ * @param {string[]} actual - Actual array to check
+ * @param {string[]} required - Required elements that must be present
+ * @returns {boolean} True if all required elements are present
  * @private
  */
-function arraysEqual(a, b) {
-	if (a.length !== b.length) return false;
-	const sortedA = [...a].sort();
-	const sortedB = [...b].sort();
-	return sortedA.every((val, idx) => val === sortedB[idx]);
+function arrayContainsAll(actual, required) {
+	return required.every((item) => actual.includes(item));
 }

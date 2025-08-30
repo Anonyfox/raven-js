@@ -5,7 +5,8 @@
  */
 
 import assert from "node:assert";
-import { existsSync, mkdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, test } from "node:test";
 import { updatePackageVersions } from "./update-package-versions.js";
@@ -13,7 +14,7 @@ import { updatePackageVersions } from "./update-package-versions.js";
 describe("updatePackageVersions", () => {
 	test("should handle invalid workspace gracefully", () => {
 		// Create a temporary directory for testing
-		const tempDir = join(process.cwd(), "test-temp");
+		const tempDir = mkdtempSync(join(tmpdir(), "semver-test-"));
 		mkdirSync(tempDir, { recursive: true });
 
 		try {
@@ -51,7 +52,7 @@ describe("updatePackageVersions", () => {
 
 	test("should handle invalid workspace gracefully", () => {
 		// Create a temporary directory for testing
-		const tempDir = join(process.cwd(), "test-temp");
+		const tempDir = mkdtempSync(join(tmpdir(), "semver-test-"));
 		mkdirSync(tempDir, { recursive: true });
 
 		try {

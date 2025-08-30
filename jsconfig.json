@@ -8,7 +8,7 @@
     "noImplicitAny": true,
     "resolveJsonModule": true
   },
-  "include": ["**/*.js"],
+  "include": ["**/*.js", "**/*.mjs"],
   "exclude": [
     "docs/**",
     "examples/**",
@@ -17,6 +17,7 @@
     "**/_dist/**",
     "plugins/vscode/**",
     "**/*.test.js",
-    "**/static/**"
+    "**/static/**",
+    "temp/**"
   ]
 }
