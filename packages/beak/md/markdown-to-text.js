@@ -17,6 +17,10 @@
 
 /**
  * Parse a single block element (extracted from markdown-to-html.js)
+ * @param {string[]} lines - Array of markdown lines
+ * @param {number} startIndex - Starting line index
+ * @param {Map<string, {url: string, title: string}>} references - Reference definitions
+ * @returns {{node: ASTNode|null, nextIndex: number}} Parse result
  */
 const parseBlockElement = (lines, startIndex, references) => {
 	// Skip empty lines
@@ -159,7 +163,7 @@ const parseBlockElement = (lines, startIndex, references) => {
 			// Parse table structure
 			const headers = tableLines[0]
 				.split("|")
-				.map((h) => h.trim())
+				.map(/** @param {string} h */ (h) => h.trim())
 				.filter(Boolean);
 			const separatorLine = tableLines[1];
 
@@ -167,7 +171,7 @@ const parseBlockElement = (lines, startIndex, references) => {
 				const rows = tableLines.slice(2).map((row) =>
 					row
 						.split("|")
-						.map((cell) => cell.trim())
+						.map(/** @param {string} cell */ (cell) => cell.trim())
 						.filter(Boolean),
 				);
 
@@ -196,6 +200,8 @@ const parseBlockElement = (lines, startIndex, references) => {
 
 /**
  * Check if line starts a new block element
+ * @param {string} line - Line to check
+ * @returns {boolean} Whether line starts a block element
  */
 const isBlockStart = (line) => {
 	return (
@@ -211,6 +217,8 @@ const isBlockStart = (line) => {
 
 /**
  * Main parsing function (reusing logic structure)
+ * @param {string[]} lines - Array of markdown lines
+ * @returns {{ast: ASTNode[], references: Map<string, {url: string, title: string}>}} Parsed AST and references
  */
 const parseToAST = (lines) => {
 	const ast = [];
@@ -245,8 +253,8 @@ export const markdownToText = (markdown) => {
 
 /**
  * Transform AST to plain text
- * @param {Object[]} ast - Parsed AST
- * @param {Map} references - Reference definitions
+ * @param {ASTNode[]} ast - Parsed AST
+ * @param {Map<string, {url: string, title: string}>} references - Reference definitions
  * @returns {string} Plain text output
  */
 const astToText = (ast, references) => {
@@ -254,9 +262,23 @@ const astToText = (ast, references) => {
 };
 
 /**
+ * @typedef {Object} ASTNode
+ * @property {string} type - Node type
+ * @property {string} [text] - Text content
+ * @property {string} [code] - Code content
+ * @property {number} [level] - Heading level
+ * @property {string} [lang] - Code language
+ * @property {boolean} [ordered] - Whether list is ordered
+ * @property {string[]} [items] - List items
+ * @property {string[]} [headers] - Table headers
+ * @property {string[][]} [rows] - Table rows
+ * @property {ASTNode[]} [content] - Nested content
+ */
+
+/**
  * Render single AST node to plain text
- * @param {Object} node - AST node
- * @param {Map} references - Reference definitions
+ * @param {ASTNode} node - AST node
+ * @param {Map<string, {url: string, title: string}>} references - Reference definitions
  * @returns {string} Plain text
  */
 const renderNodeAsText = (node, references) => {
@@ -283,7 +305,10 @@ const renderNodeAsText = (node, references) => {
 
 		case "list": {
 			return (node.items || [])
-				.map((item) => `- ${renderInlineAsText(item, references)}`)
+				.map(
+					/** @param {string} item */ (item) =>
+						`- ${renderInlineAsText(item, references)}`,
+				)
 				.join("\n");
 		}
 
@@ -328,7 +353,7 @@ const renderNodeAsText = (node, references) => {
 /**
  * Render inline markdown elements as plain text
  * @param {string} text - Text with inline markdown
- * @param {Map} references - Reference definitions
+ * @param {Map<string, {url: string, title: string}>} _references - Reference definitions
  * @returns {string} Plain text with formatting stripped
  */
 const renderInlineAsText = (text, _references) => {
@@ -337,6 +362,7 @@ const renderInlineAsText = (text, _references) => {
 	let result = text;
 
 	// Handle backslash escaping - restore escaped characters
+	/** @type {string[]} */
 	const escapedChars = [];
 	result = result.replace(/\\(.)/g, (_match, char) => {
 		const placeholder = `\uE000${escapedChars.length}\uE001`;

@@ -431,14 +431,14 @@ More text after reference.`;
 
 	describe("performance cases", () => {
 		it("handles large content efficiently", () => {
-			const largeContent = "# Title\n\n" + "This is a paragraph. ".repeat(1000);
+			const largeContent = `# Title\n\n${"This is a paragraph. ".repeat(1000)}`;
 			const result = markdownToText(largeContent);
 			assert.ok(result.startsWith("Title"));
 			assert.ok(result.includes("This is a paragraph."));
 		});
 
 		it("handles deeply nested quotes", () => {
-			const nested = "> ".repeat(10) + "Deep quote";
+			const nested = `${"> ".repeat(10)}Deep quote`;
 			const result = markdownToText(nested);
 			// Current implementation doesn't fully flatten deeply nested quotes
 			assert.equal(result, "> > > > > > > > > Deep quote");
