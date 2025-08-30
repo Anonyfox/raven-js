@@ -9,7 +9,7 @@
 /**
  * @file Zero-dependency template literal engine for modern JavaScript
  *
- * Tagged template literals for HTML, CSS, JavaScript, SQL, and Markdown generation.
+ * Tagged template literals for HTML, CSS, JavaScript, SQL, XML, and Markdown generation.
  * Near string-concatenation performance with intelligent value processing,
  * array flattening, and whitespace optimization.
  *
@@ -40,3 +40,4 @@ export { js, script, scriptAsync, scriptDefer } from "./js/index.js";
 export * from "./md/index.js";
 export * from "./seo/index.js";
 export { sql } from "./sql/index.js";
+export { cdata, xml } from "./xml/index.js";
