@@ -361,7 +361,10 @@ export const NODE_TYPES = {
  */
 export function isValidNodeType(type) {
 	return Object.values(NODE_TYPES).includes(type);
-}`,
+}
+
+// Export the NodeTypes typedef to make it part of the public API
+export { NodeTypes };`,
 						},
 					],
 				},

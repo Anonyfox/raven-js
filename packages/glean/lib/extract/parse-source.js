@@ -29,9 +29,16 @@ import { createTag } from "./models/jsdoc/index.js";
  *
  * @param {{content: string, startLine: number, tags: Array<{name: string, content: string}>, followingCode?: string}} block - JSDoc block data
  * @param {string} filePath - Relative file path for location metadata
+ * @param {string} fileContent - Complete file content for export checking
+ * @param {boolean} enforceExports - Whether to enforce export checking (default: true)
  * @returns {import('./models/entities/base.js').EntityBase|Array<import('./models/entities/base.js').EntityBase>|null} Entity instance, array of entities (for re-exports), or null
  */
-function createEntityFromBlock(block, filePath) {
+function createEntityFromBlock(
+	block,
+	filePath,
+	fileContent = "",
+	enforceExports = true,
+) {
 	if (!block || !block.tags || !Array.isArray(block.tags)) {
 		return null;
 	}
@@ -57,13 +64,18 @@ function createEntityFromBlock(block, filePath) {
 			entityName = entityTypeTag.content.split(/\s+/)[0] || "anonymous";
 		}
 
-		// For @callback and @typedef, we don't require exported code as they're type definitions
-		// For other entity types, we must verify the entity is exported
+		// For @callback and @typedef, check if they're explicitly exported (if enforcing exports)
 		if (
-			entityType !== "callback" &&
-			entityType !== "typedef" &&
-			block.followingCode
+			enforceExports &&
+			(entityType === "callback" || entityType === "typedef")
 		) {
+			if (!isTypedefOrCallbackExported(entityName, fileContent)) {
+				// Not exported - don't create entity
+				return null;
+			}
+		}
+		// For other entity types, we must verify the entity is exported (if enforcing exports)
+		else if (enforceExports && block.followingCode) {
 			const codeAnalysis = analyzeFollowingCode(block.followingCode);
 			if (!codeAnalysis) {
 				// Not exported - don't create entity
@@ -316,12 +328,118 @@ function createReexportEntities(codeAnalysis, block, filePath) {
 }
 
 /**
+ * Check if a typedef or callback entity is explicitly exported
+ * @param {string} entityName - Name of the entity to check
+ * @param {string} fileContent - Complete file content to search
+ * @returns {boolean} True if the entity is explicitly exported
+ */
+function isTypedefOrCallbackExported(entityName, fileContent) {
+	// Check for various export patterns:
+	// export { EntityName }
+	// export { EntityName as SomeName }
+	// export { EntityName } from './somewhere'
+	const namedExportPattern = new RegExp(
+		`export\\s*\\{[^}]*\\b${entityName}\\b[^}]*\\}`,
+		"g",
+	);
+	if (namedExportPattern.test(fileContent)) {
+		return true;
+	}
+
+	// Check for: export default EntityName
+	const defaultExportPattern = new RegExp(
+		`export\\s+default\\s+${entityName}\\b`,
+		"g",
+	);
+	if (defaultExportPattern.test(fileContent)) {
+		return true;
+	}
+
+	// Check for: export EntityName (less common but possible)
+	const directExportPattern = new RegExp(`export\\s+${entityName}\\b`, "g");
+	if (directExportPattern.test(fileContent)) {
+		return true;
+	}
+
+	// Check for: export const EntityName = ... or export let EntityName = ... or export var EntityName = ...
+	// This handles cases where typedef is followed by an export assignment
+	const exportAssignmentPattern = new RegExp(
+		`export\\s+(const|let|var)\\s+${entityName}\\b`,
+		"g",
+	);
+	if (exportAssignmentPattern.test(fileContent)) {
+		return true;
+	}
+
+	return false;
+}
+
+/**
+ * Extract type names referenced in JSDoc tags of an entity
+ * @param {import('./models/entities/base.js').EntityBase} entity - Entity to analyze
+ * @returns {Set<string>} Set of referenced type names
+ */
+function extractReferencedTypes(entity) {
+	const referencedTypes = new Set();
+
+	if (!entity.jsdocTags) return referencedTypes;
+
+	for (const tag of entity.jsdocTags) {
+		if (
+			tag.tagType === "param" ||
+			tag.tagType === "returns" ||
+			tag.tagType === "throws"
+		) {
+			// Extract type from JSDoc content like "{UserConfig}" or "{Array<UserConfig>}"
+			const typeMatches = tag.rawContent.match(/\{([^}]+)\}/g);
+			if (typeMatches) {
+				for (const match of typeMatches) {
+					// Remove braces and extract type names, handling generics and unions
+					const typeContent = match.slice(1, -1);
+					// Split on | for union types, < > for generics, , for multiple types
+					const typeNames = typeContent.split(/[|<>,\s]+/).filter(
+						(name) =>
+							name &&
+							name.length > 0 &&
+							// Exclude primitive types and common patterns
+							![
+								"string",
+								"number",
+								"boolean",
+								"object",
+								"function",
+								"Array",
+								"Object",
+								"Promise",
+								"Map",
+								"Set",
+								"undefined",
+								"null",
+								"void",
+								"*",
+								"...",
+							].includes(name.toLowerCase()),
+					);
+					for (const typeName of typeNames) {
+						if (typeName.trim()) {
+							referencedTypes.add(typeName.trim());
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return referencedTypes;
+}
+
+/**
  * Parse single file to extract entities and re-exports from JSDoc blocks
  *
  * **Algorithm:**
  * 1. Extract JSDoc comment blocks using regex
- * 2. For each block, analyze following code to determine entity type/name
- * 3. Create entity instance and parse JSDoc tags, or create re-export references
+ * 2. First pass: Extract directly exported entities
+ * 3. Second pass: Include typedef/callback entities referenced by exported entities
  * 4. Return object with entities and re-exports arrays
  *
  * @param {import('../discover/models/file.js').File} file - File instance with content
@@ -336,8 +454,9 @@ function parseFileEntities(file) {
 	const entities = [];
 	const reexports = [];
 
+	// First pass: Extract directly exported entities (with normal export enforcement)
 	for (const block of jsdocBlocks) {
-		const result = createEntityFromBlock(block, file.path);
+		const result = createEntityFromBlock(block, file.path, file.text, true);
 		if (result) {
 			// Handle different return types
 			if (Array.isArray(result)) {
@@ -353,6 +472,33 @@ function parseFileEntities(file) {
 				reexports.push(result);
 			} else {
 				entities.push(result);
+			}
+		}
+	}
+
+	// Second pass: Check for typedef/callback entities referenced by exported entities
+	const allReferencedTypes = new Set();
+	for (const entity of entities) {
+		const referencedTypes = extractReferencedTypes(entity);
+		for (const type of referencedTypes) {
+			allReferencedTypes.add(type);
+		}
+	}
+
+	// Third pass: Add referenced typedef/callback entities that aren't exported but are referenced
+	if (allReferencedTypes.size > 0) {
+		for (const block of jsdocBlocks) {
+			// Skip export enforcement to get all typedef/callback entities
+			const result = createEntityFromBlock(block, file.path, file.text, false);
+			if (result && !Array.isArray(result) && result.type !== "reexport") {
+				if (
+					(result.entityType === "typedef" ||
+						result.entityType === "callback") &&
+					allReferencedTypes.has(result.name) &&
+					!entities.find((e) => e.name === result.name)
+				) {
+					entities.push(result);
+				}
 			}
 		}
 	}
@@ -426,7 +572,9 @@ function extractFollowingCode(codeAfterJSDoc) {
 	const lines = codeAfterJSDoc.split(/\r?\n/);
 	const codeLines = [];
 	let braceCount = 0;
+	let parenCount = 0;
 	let inExportBlock = false;
+	let inArrowFunction = false;
 
 	for (const line of lines) {
 		const trimmedLine = line.trim();
@@ -445,26 +593,63 @@ function extractFollowingCode(codeAfterJSDoc) {
 		codeLines.push(line);
 
 		// Check if we're starting an export block
-		if (trimmedLine.startsWith("export") && trimmedLine.includes("{")) {
+		if (
+			trimmedLine.startsWith("export") &&
+			trimmedLine.includes("{") &&
+			!trimmedLine.includes("=")
+		) {
 			inExportBlock = true;
 		}
 
-		// Count braces to handle multi-line export statements
+		// Check if this looks like an arrow function definition
+		if (
+			trimmedLine.startsWith("export") &&
+			trimmedLine.includes("=") &&
+			trimmedLine.includes("(")
+		) {
+			inArrowFunction = true;
+		}
+
+		// Count braces and parentheses
 		braceCount += (trimmedLine.match(/\{/g) || []).length;
 		braceCount -= (trimmedLine.match(/\}/g) || []).length;
+		parenCount += (trimmedLine.match(/\(/g) || []).length;
+		parenCount -= (trimmedLine.match(/\)/g) || []).length;
 
 		// Stop conditions
 		if (inExportBlock && braceCount === 0) {
 			// End of export block
 			break;
+		} else if (inArrowFunction) {
+			// For arrow functions, continue until we have the complete definition
+			if (
+				parenCount === 0 &&
+				braceCount === 0 &&
+				(trimmedLine.endsWith(";") || trimmedLine.endsWith("};"))
+			) {
+				// Complete arrow function
+				break;
+			} else if (
+				parenCount === 0 &&
+				braceCount === 0 &&
+				trimmedLine.endsWith("`") &&
+				codeLines.length > 5
+			) {
+				// Likely end of tagged template literal return
+				break;
+			}
+			// Otherwise continue collecting the arrow function body
 		} else if (
 			!inExportBlock &&
+			!inArrowFunction &&
 			(trimmedLine.includes("{") || trimmedLine.endsWith(";"))
 		) {
 			// Simple statement or function/class declaration
 			break;
-		} else if (codeLines.length >= 10) {
-			// Safety limit
+		}
+
+		// Safety limit - increase significantly for arrow functions
+		if (codeLines.length >= (inArrowFunction ? 60 : 10)) {
 			break;
 		}
 	}
@@ -639,11 +824,11 @@ function analyzeFollowingCode(code) {
 		}
 	}
 
-	// Variable/constant patterns - but check if it's actually a function
+	// Variable/constant patterns - but check if it's actually a function (multiline-aware)
 	const variablePatterns = [
-		/^export\s+const\s+(\w+)\s*=\s*(.+)/,
-		/^export\s+let\s+(\w+)\s*=\s*(.+)/,
-		/^export\s+var\s+(\w+)\s*=\s*(.+)/,
+		/^export\s+const\s+(\w+)\s*=\s*([\s\S]+)/,
+		/^export\s+let\s+(\w+)\s*=\s*([\s\S]+)/,
+		/^export\s+var\s+(\w+)\s*=\s*([\s\S]+)/,
 	];
 
 	for (const pattern of variablePatterns) {
@@ -656,16 +841,37 @@ function analyzeFollowingCode(code) {
 			// Tagged template literal pattern: (strings, ...values) => {}
 			const taggedTemplatePattern =
 				/^\s*\(\s*strings\s*,\s*\.\.\.[\w]+\s*\)\s*=>/;
-			// General arrow function pattern
-			const arrowFunctionPattern = /^\s*\(.*\)\s*=>/;
+			// General arrow function pattern (handle multiline parameters)
+			const arrowFunctionPattern = /^\s*\([\s\S]*?\)\s*=>/;
 			// Function expression pattern
 			const functionExpressionPattern = /^\s*function\s*\(/;
 
 			if (
 				taggedTemplatePattern.test(initializer) ||
-				arrowFunctionPattern.test(initializer) ||
 				functionExpressionPattern.test(initializer)
 			) {
+				return { type: "function", name };
+			}
+
+			// Check for arrow functions - need special handling for tagged template detection
+			if (arrowFunctionPattern.test(initializer)) {
+				// Look for tagged template literals in the function body
+				// Pattern: ({ params }) => { ... html`...` ... } or ({ params }) => html`...`
+				const bodyMatch = initializer.match(/=>\s*([\s\S]+)$/);
+				if (bodyMatch) {
+					const functionBody = bodyMatch[1].trim();
+					// Check for common tagged template patterns: html`, md`, css`, js`, etc.
+					// Also check for return statements with tagged templates
+					if (
+						/\b(?:html|md|css|js|code|template|render|sql)\s*`/.test(
+							functionBody,
+						) ||
+						/return\s+\w+\s*`/.test(functionBody)
+					) {
+						return { type: "function", name };
+					}
+				}
+				// Default: classify arrow functions as functions
 				return { type: "function", name };
 			}
 
