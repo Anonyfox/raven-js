@@ -598,9 +598,11 @@ function parseJSDocTags(content) {
  * **Patterns detected (PUBLIC EXPORTS ONLY):**
  * - `export function name()` → function entity
  * - `export class Name` → class entity
- * - `export const name` → variable entity
+ * - `export const name = value` → variable entity (unless value is a function)
+ * - `export const name = () => {}` → function entity (arrow function)
+ * - `export const name = (strings, ...values) => {}` → function entity (tagged template)
+ * - `export const name = function() {}` → function entity (function expression)
  * - `export default function` / `export default class` → default export
- * - `export const name = () => {}` → arrow function
  * - `export { name1, name2 } from './module'` → re-export
  *
  * @param {string} code - JavaScript code following JSDoc block
@@ -637,17 +639,37 @@ function analyzeFollowingCode(code) {
 		}
 	}
 
-	// Variable/constant patterns - ONLY exported variables
+	// Variable/constant patterns - but check if it's actually a function
 	const variablePatterns = [
-		/^export\s+const\s+(\w+)/,
-		/^export\s+let\s+(\w+)/,
-		/^export\s+var\s+(\w+)/,
+		/^export\s+const\s+(\w+)\s*=\s*(.+)/,
+		/^export\s+let\s+(\w+)\s*=\s*(.+)/,
+		/^export\s+var\s+(\w+)\s*=\s*(.+)/,
 	];
 
 	for (const pattern of variablePatterns) {
 		const match = cleanCode.match(pattern);
 		if (match) {
-			return { type: "variable", name: match[1] };
+			const name = match[1];
+			const initializer = match[2];
+
+			// Check if the initializer is a function (arrow function or regular function)
+			// Tagged template literal pattern: (strings, ...values) => {}
+			const taggedTemplatePattern =
+				/^\s*\(\s*strings\s*,\s*\.\.\.[\w]+\s*\)\s*=>/;
+			// General arrow function pattern
+			const arrowFunctionPattern = /^\s*\(.*\)\s*=>/;
+			// Function expression pattern
+			const functionExpressionPattern = /^\s*function\s*\(/;
+
+			if (
+				taggedTemplatePattern.test(initializer) ||
+				arrowFunctionPattern.test(initializer) ||
+				functionExpressionPattern.test(initializer)
+			) {
+				return { type: "function", name };
+			}
+
+			return { type: "variable", name };
 		}
 	}
 

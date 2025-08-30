@@ -87,6 +87,99 @@ export class TestClass {
 		strictEqual(result[1].entityType, "class", "Should identify class type");
 	});
 
+	test("should classify tagged template literals and arrow functions as functions", () => {
+		const discoveryModule = {
+			files: [
+				{
+					path: "templates.js",
+					text: `/**
+ * Tagged template for HTML generation
+ * @param {TemplateStringsArray} strings - Template strings
+ * @param {...any} values - Template values
+ * @returns {string} Generated HTML
+ */
+export const html = (strings, ...values) => {
+	return strings.join('');
+};
+
+/**
+ * Tagged template for markdown
+ * @param {TemplateStringsArray} strings - Template strings
+ * @param {...any} values - Template values
+ * @returns {string} Generated markdown
+ */
+export const md = (strings, ...values) => {
+	return strings.join('');
+};
+
+/**
+ * Regular arrow function
+ * @param {number} x - Input value
+ * @returns {number} Result
+ */
+export const multiply = (x) => x * 2;
+
+/**
+ * Function expression
+ * @param {string} str - Input string
+ * @returns {string} Processed string
+ */
+export const process = function(str) { return str.toUpperCase(); };
+
+/**
+ * Regular variable
+ * @type {string}
+ */
+export const MESSAGE = 'Hello World';`,
+				},
+			],
+		};
+
+		const result = parseModuleEntities(discoveryModule);
+
+		strictEqual(result.length, 5, "Should parse all 5 entities");
+
+		// Tagged template with (strings, ...values) signature should be function
+		const htmlEntity = result.find((e) => e.name === "html");
+		strictEqual(
+			htmlEntity.entityType,
+			"function",
+			"Tagged template html should be classified as function",
+		);
+
+		// Another tagged template
+		const mdEntity = result.find((e) => e.name === "md");
+		strictEqual(
+			mdEntity.entityType,
+			"function",
+			"Tagged template md should be classified as function",
+		);
+
+		// Regular arrow function
+		const multiplyEntity = result.find((e) => e.name === "multiply");
+		strictEqual(
+			multiplyEntity.entityType,
+			"function",
+			"Arrow function should be classified as function",
+		);
+
+		// Function expression
+		const processEntity = result.find((e) => e.name === "process");
+		strictEqual(
+			processEntity.entityType,
+			"function",
+			"Function expression should be classified as function",
+		);
+
+		// Regular variable should remain variable
+		const messageEntity = result.find((e) => e.name === "MESSAGE");
+		strictEqual(
+			messageEntity.entityType,
+			"variable",
+			"Regular variable should remain as variable",
+		);
+	});
+
 	test("should handle files without content", () => {
 		const discoveryModule = {
 			files: [
