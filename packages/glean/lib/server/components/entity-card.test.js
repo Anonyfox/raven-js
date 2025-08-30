@@ -216,7 +216,7 @@ describe("moduleCard component", () => {
 
 		const result = moduleCard(module);
 
-		ok(result.includes('<small class="text-muted">...</small>'));
+		ok(result.includes("..."));
 	});
 
 	test("shows entity types when available", () => {

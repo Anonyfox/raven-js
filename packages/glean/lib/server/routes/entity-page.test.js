@@ -541,7 +541,10 @@ describe("createEntityPageHandler", () => {
 		// Check comprehensive JSDoc rendering
 		assert(html.includes("Input data array"), "Contains parameter description");
 		assert(html.includes("ProcessOptions"), "Contains parameter type");
-		assert(html.includes("Promise<ProcessedData>"), "Contains return type");
+		assert(
+			html.includes("Promise&lt;ProcessedData&gt;"),
+			"Contains return type",
+		);
 		assert(html.includes("Basic usage"), "Contains example title");
 		assert(html.includes("Since 1.2.0"), "Contains since version");
 		assert(html.includes("Test Author"), "Contains author information");

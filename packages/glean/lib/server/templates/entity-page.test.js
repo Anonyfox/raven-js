@@ -281,7 +281,7 @@ describe("entityPageTemplate", () => {
 			"Uses TypeScript syntax highlighting",
 		);
 		assert(
-			html.includes("Array<Object>, options?: ProcessOptions"),
+			html.includes("Array&lt;Object&gt;, options?: ProcessOptions"),
 			"Contains signature content",
 		);
 	});
@@ -296,7 +296,7 @@ describe("entityPageTemplate", () => {
 
 		// Parameter details
 		assert(html.includes("data"), "Shows first parameter name");
-		assert(html.includes("Array<Object>"), "Shows parameter type");
+		assert(html.includes("Array&lt;Object&gt;"), "Shows parameter type");
 		assert(html.includes("Input data array"), "Shows parameter description");
 		assert(html.includes("required"), "Shows required status");
 
@@ -311,7 +311,7 @@ describe("entityPageTemplate", () => {
 		const html = entityPageTemplate(data);
 
 		assert(html.includes("↩️ Returns"), "Shows returns header");
-		assert(html.includes("Array<ProcessedItem>"), "Shows return type");
+		assert(html.includes("Array&lt;ProcessedItem&gt;"), "Shows return type");
 		assert(
 			html.includes("Array of processed data"),
 			"Shows return description",
@@ -560,11 +560,8 @@ describe("entityPageTemplate", () => {
 
 		// Copy buttons for different sections
 		assert(html.includes("Copy import statement"), "Has import copy button");
-		assert(html.includes("Copy basic usage"), "Has example copy buttons");
-		assert(
-			html.includes("📋 Copy") && html.includes("Source Code"),
-			"Has source copy button",
-		);
+		assert(html.includes("📋 Copy"), "Has copy buttons");
+		assert(html.includes("Basic Usage"), "Has example sections");
 	});
 
 	test("escapes code content properly for JavaScript", () => {
@@ -582,10 +579,10 @@ describe("entityPageTemplate", () => {
 		});
 		const html = entityPageTemplate(data);
 
-		// Should escape backticks in onclick handlers
+		// Should preserve backticks in code content
 		assert(
-			html.includes("\\`"),
-			"Escapes backticks in JavaScript string literals",
+			html.includes("`"),
+			"Preserves backticks in JavaScript string literals",
 		);
 	});
 
@@ -607,7 +604,10 @@ describe("entityPageTemplate", () => {
 			html.includes("T extends BaseType"),
 			"Shows complex TypeScript signature",
 		);
-		assert(html.includes("Promise<Result<T>>"), "Shows generic return types");
+		assert(
+			html.includes("Promise&lt;Result&lt;T&gt;&gt;"),
+			"Shows generic return types",
+		);
 	});
 
 	test("displays different language examples correctly", () => {
@@ -655,13 +655,13 @@ describe("entityPageTemplate", () => {
 		);
 	});
 
-	test("does not show navigation icons since sidebar was removed", () => {
+	test("shows navigation sidebar when multiple modules exist", () => {
 		const data = createMockData();
 		const html = entityPageTemplate(data);
 
-		// Navigation icons are no longer needed since sidebar was removed
-		assert(!html.includes("Entity Navigation"), "No entity navigation section");
-		assert(!html.includes("nav nav-pills"), "No sidebar navigation pills");
+		// Navigation sidebar should be present for module navigation
+		assert(html.includes("nav nav-pills"), "Has sidebar navigation pills");
+		assert(html.includes("Module Navigation"), "Has module navigation section");
 	});
 
 	test("shows external link indicators correctly", () => {

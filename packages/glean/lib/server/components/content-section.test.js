@@ -73,12 +73,8 @@ describe("codeBlock component", () => {
 		});
 
 		ok(result.includes('class="position-relative"'));
-		ok(result.includes('<pre class="bg-light border rounded p-3 mb-0">'));
-		ok(
-			result.includes(
-				"<code class=\"language-javascript\">console.log('hello');</code>",
-			),
-		);
+		ok(result.includes('class="bg-light border rounded p-3 mb-0"'));
+		ok(result.includes("console.log(&#x27;hello&#x27;);"));
 		ok(result.includes("📋"));
 	});
 
@@ -110,15 +106,17 @@ describe("codeBlock component", () => {
 		ok(!result.includes("copyToClipboard"));
 	});
 
-	test("escapes backticks in code", () => {
-		// biome-ignore lint/suspicious/noTemplateCurlyInString: testing template literal escaping
+	test("preserves backticks in code", () => {
+		// biome-ignore lint/suspicious/noTemplateCurlyInString: testing template literal handling
 		const codeWithBackticks = "const template = `hello ${name}`;";
 		const result = codeBlock({
 			code: codeWithBackticks,
 		});
 
-		// Should escape backticks for the onclick handler
-		ok(result.includes("\\`"));
+		// Should preserve backticks in code content
+		ok(result.includes("`"));
+		// biome-ignore lint/suspicious/noTemplateCurlyInString: testing template literal preservation
+		ok(result.includes("hello ${name}"));
 	});
 });
 

@@ -13,7 +13,28 @@
  * Surgical design eliminating custom CSS through semantic Bootstrap patterns.
  */
 
-import { html, markdownToHTML, safeHtml } from "@raven-js/beak";
+import { html, markdownToHTML, markdownToText, safeHtml } from "@raven-js/beak";
+
+/**
+ * Truncate plain text safely at word boundaries
+ * @param {string} text - Plain text to truncate
+ * @param {number} maxLength - Maximum length in characters
+ * @returns {string} Truncated text
+ */
+function truncateText(text, maxLength) {
+	if (!text || text.length <= maxLength) return text;
+
+	// Find the last space before maxLength
+	let truncated = text.substring(0, maxLength);
+	const lastSpace = truncated.lastIndexOf(" ");
+
+	// If we found a space, truncate there to avoid cutting words
+	if (lastSpace > maxLength * 0.8) {
+		truncated = truncated.substring(0, lastSpace);
+	}
+
+	return `${truncated.trim()}...`;
+}
 
 /**
  * Generate entity card for grid display
@@ -160,7 +181,7 @@ export function moduleCard({
 						? html`
 				<div class="mb-3">
 					<div class="text-muted mb-0" style="max-height: 3rem; overflow: hidden;">
-						${markdownToHTML(description)}
+						${safeHtml`${truncateText(markdownToText(description), 200)}`}
 					</div>
 				</div>
 				`
@@ -173,9 +194,8 @@ export function moduleCard({
 				<div class="mb-3">
 					<div class="small text-muted bg-light p-2 rounded">
 						<div style="max-height: 4rem; overflow: hidden;">
-							${markdownToHTML(readmePreview)}
+							${safeHtml`${truncateText(markdownToText(readmePreview), 200)}`}
 						</div>
-						${readmePreview.length >= 200 ? html`<small class="text-muted">...</small>` : ""}
 					</div>
 				</div>
 				`
@@ -225,9 +245,8 @@ export function moduleCard({
 							? html`
 					<div class="small text-muted mt-1">
 						<div style="max-height: 2.5rem; overflow: hidden;">
-							${markdownToHTML(entity.description)}
+							${safeHtml`${truncateText(markdownToText(entity.description), 100)}`}
 						</div>
-						${entity.description.length >= 100 ? html`<small class="text-muted">...</small>` : ""}
 					</div>
 					`
 							: ""
