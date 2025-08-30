@@ -99,8 +99,11 @@ export function extractEntityPageData(packageInstance, moduleName, entityName) {
 
 	// STEP 3: JSDoc documentation extraction
 	const documentation = {
-		// Parameters
+		// Parameters (for functions)
 		parameters: extractParameters(entity),
+
+		// Properties (for typedefs)
+		properties: extractProperties(entity),
 
 		// Return information
 		returns: extractReturns(entity),
@@ -172,6 +175,7 @@ export function extractEntityPageData(packageInstance, moduleName, entityName) {
 
 		// Computed flags for conditional rendering
 		hasParameters: docs.parameters.length > 0,
+		hasProperties: docs.properties.length > 0,
 		hasReturns: Boolean(docs.returns.description),
 		hasExamples: docs.examples.length > 0,
 		hasRelatedEntities:
@@ -202,6 +206,27 @@ function extractParameters(entity) {
 			description: paramTag.description || "",
 			isOptional: paramTag.optional || false,
 			defaultValue: paramTag.defaultValue || null,
+		}),
+	);
+}
+
+/**
+ * Extract property information from JSDoc @property tags (for typedefs)
+ * @param {Object} entity - Entity instance
+ * @returns {Array<Object>} Property documentation
+ */
+function extractProperties(entity) {
+	/** @type {any} */
+	const ent = entity;
+	if (!ent.getJSDocTagsByType) return [];
+
+	return ent.getJSDocTagsByType("property").map(
+		/** @param {any} propertyTag */ (propertyTag) => ({
+			name: propertyTag.name || "",
+			type: propertyTag.type || "",
+			description: propertyTag.description || "",
+			isOptional: propertyTag.optional || false,
+			defaultValue: propertyTag.defaultValue || null,
 		}),
 	);
 }

@@ -462,4 +462,60 @@ describe("JSDocPropertyTag functionality", () => {
 			);
 		});
 	});
+
+	it("should handle optional property syntax with brackets", () => {
+		const testCases = [
+			[
+				"{string} [url] - URL to author's profile or website",
+				"string",
+				"url",
+				"URL to author's profile or website",
+				true,
+			],
+			[
+				"{string} [email] - Author's email address",
+				"string",
+				"email",
+				"Author's email address",
+				true,
+			],
+			[
+				"{string} name - Author's full name",
+				"string",
+				"name",
+				"Author's full name",
+				false,
+			],
+			[
+				"[optionalProp] Simple optional property",
+				"",
+				"optionalProp",
+				"Simple optional property",
+				true,
+			],
+		];
+
+		testCases.forEach(
+			([input, expectedType, expectedName, expectedDesc, expectedOptional]) => {
+				const tag = new JSDocPropertyTag(input);
+				assert.strictEqual(tag.type, expectedType, `Type failed for: ${input}`);
+				assert.strictEqual(tag.name, expectedName, `Name failed for: ${input}`);
+				assert.strictEqual(
+					tag.description,
+					expectedDesc,
+					`Description failed for: ${input}`,
+				);
+				assert.strictEqual(
+					tag.optional,
+					expectedOptional,
+					`Optional failed for: ${input}`,
+				);
+				assert.strictEqual(
+					tag.isValidated,
+					true,
+					`Validation failed for: ${input}`,
+				);
+			},
+		);
+	});
 });

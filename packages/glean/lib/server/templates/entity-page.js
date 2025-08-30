@@ -56,6 +56,7 @@ import { baseTemplate } from "./base.js";
  * @param {string} data.packageName - Package name
  * @param {string} data.moduleName - Module name
  * @param {boolean} data.hasParameters - Whether entity has parameters
+ * @param {boolean} data.hasProperties - Whether entity has properties (for typedefs)
  * @param {boolean} data.hasReturns - Whether entity has return documentation
  * @param {boolean} data.hasExamples - Whether entity has examples
  * @param {boolean} data.hasRelatedEntities - Whether entity has related entities
@@ -74,6 +75,7 @@ export function entityPageTemplate(data) {
 		packageName,
 		moduleName,
 		hasParameters,
+		hasProperties,
 		hasReturns,
 		hasExamples,
 		hasRelatedEntities,
@@ -223,6 +225,32 @@ export function entityPageTemplate(data) {
 												: param.isOptional
 													? html`<span class="text-muted">undefined</span>`
 													: html`<span class="text-muted">required</span>`,
+										],
+									),
+								}),
+							})
+						: ""
+				}
+
+				<!-- Properties -->
+				${
+					hasProperties
+						? contentSection({
+								title: "Properties",
+								icon: "📝",
+								noPadding: true,
+								content: tableSection({
+									headers: ["Property", "Type", "Description", "Required"],
+									rows: docs.properties.map(
+										/** @param {any} property */ (property) => [
+											html`<code class="text-primary">${safeHtml`${property.name}`}</code>${property.isOptional ? html`<span class="text-muted">?</span>` : ""}`,
+											linkTypeIfEntity(property.type),
+											property.description
+												? markdownToHTML(property.description)
+												: html`<em class="text-muted">No description</em>`,
+											property.isOptional
+												? html`<span class="badge bg-secondary">optional</span>`
+												: html`<span class="badge bg-primary">required</span>`,
 										],
 									),
 								}),

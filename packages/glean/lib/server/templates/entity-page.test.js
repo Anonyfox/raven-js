@@ -101,6 +101,7 @@ describe("entityPageTemplate", () => {
 					typeParameters: [],
 					namespace: "",
 				},
+				properties: [],
 			},
 			relatedEntities: {
 				sameModule: [
@@ -170,6 +171,7 @@ describe("entityPageTemplate", () => {
 			packageName: "test-package",
 			moduleName: "utils",
 			hasParameters: true,
+			hasProperties: false,
 			hasReturns: true,
 			hasExamples: true,
 			hasRelatedEntities: true,
@@ -896,5 +898,90 @@ describe("entityPageTemplate", () => {
 			html.includes('<code class="text-secondary">number</code>'),
 			"Shows number in code style",
 		);
+	});
+
+	test("displays typedef properties with correct formatting", () => {
+		const data = createMockData({
+			entity: {
+				...createMockData().entity,
+				type: "typedef",
+			},
+			documentation: {
+				...createMockData().documentation,
+				properties: [
+					{
+						name: "title",
+						type: "string",
+						description: "The title of the item",
+						isOptional: false,
+						defaultValue: null,
+					},
+					{
+						name: "url",
+						type: "string",
+						description: "Optional URL for the item",
+						isOptional: true,
+						defaultValue: null,
+					},
+				],
+			},
+			hasProperties: true,
+		});
+		const html = entityPageTemplate(data);
+
+		// Properties section should be present
+		assert(html.includes("📝 Properties"), "Contains Properties section");
+		assert(html.includes("Property</th>"), "Contains Property column header");
+		assert(html.includes("Type</th>"), "Contains Type column header");
+		assert(
+			html.includes("Description</th>"),
+			"Contains Description column header",
+		);
+		assert(html.includes("Required</th>"), "Contains Required column header");
+
+		// Required property formatting
+		assert(
+			html.includes('<code class="text-primary">title</code>'),
+			"Shows title property name",
+		);
+		assert(
+			html.includes('<code class="text-secondary">string</code>'),
+			"Shows property type",
+		);
+		assert(
+			html.includes("The title of the item"),
+			"Shows property description",
+		);
+		assert(
+			html.includes('<span class="badge bg-primary">required</span>'),
+			"Shows required badge",
+		);
+
+		// Optional property formatting
+		assert(
+			html.includes('<code class="text-primary">url</code>'),
+			"Shows url property name",
+		);
+		assert(
+			html.includes('<span class="text-muted">?</span>'),
+			"Shows optional indicator",
+		);
+		assert(
+			html.includes('<span class="badge bg-secondary">optional</span>'),
+			"Shows optional badge",
+		);
+		assert(
+			html.includes("Optional URL for the item"),
+			"Shows optional property description",
+		);
+	});
+
+	test("does not display properties section when hasProperties is false", () => {
+		const data = createMockData({
+			hasProperties: false,
+		});
+		const html = entityPageTemplate(data);
+
+		assert(!html.includes("📝 Properties"), "Does not show Properties section");
 	});
 });

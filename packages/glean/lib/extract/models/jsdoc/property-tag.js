@@ -71,36 +71,52 @@ export class JSDocPropertyTag extends JSDocTagBase {
 			}
 		}
 
-		// Parse name and description
-		const nameDescMatch = nameAndDesc.match(/^(\w+)?\s*(.*)?$/);
-		if (nameDescMatch) {
-			const [, name, description] = nameDescMatch;
-			/**
-			 * @type {string} Property type annotation
-			 */
-			this.type = type;
-			/**
-			 * @type {string} Property name
-			 */
-			this.name = name ? name.trim() : "";
-			/**
-			 * @type {string} Property description
-			 */
-			this.description = description ? description.trim() : "";
+		// Parse name and description, handling optional syntax [propertyName]
+		let isOptional = false;
+		let propertyName = "";
+		let description = "";
+
+		// Check for optional property syntax [propertyName]
+		const optionalMatch = nameAndDesc.match(/^\[(\w+)\]\s*(.*)$/);
+		if (optionalMatch) {
+			isOptional = true;
+			propertyName = optionalMatch[1].trim();
+			description = optionalMatch[2].trim();
 		} else {
-			/**
-			 * @type {string} Property type annotation
-			 */
-			this.type = type;
-			/**
-			 * @type {string} Property name
-			 */
-			this.name = "";
-			/**
-			 * @type {string} Property description
-			 */
-			this.description = nameAndDesc;
+			// Check for regular property syntax propertyName
+			const regularMatch = nameAndDesc.match(/^(\w+)\s*(.*)$/);
+			if (regularMatch) {
+				propertyName = regularMatch[1].trim();
+				description = regularMatch[2].trim();
+			} else {
+				// Fallback: treat entire nameAndDesc as description
+				description = nameAndDesc.trim();
+			}
 		}
+
+		// Clean up description by removing leading dash
+		if (description.startsWith("- ")) {
+			description = description.slice(2).trim();
+		} else if (description.startsWith("-")) {
+			description = description.slice(1).trim();
+		}
+
+		/**
+		 * @type {string} Property type annotation
+		 */
+		this.type = type;
+		/**
+		 * @type {string} Property name
+		 */
+		this.name = propertyName;
+		/**
+		 * @type {string} Property description
+		 */
+		this.description = description;
+		/**
+		 * @type {boolean} Whether property is optional
+		 */
+		this.optional = isOptional;
 	}
 
 	/**
