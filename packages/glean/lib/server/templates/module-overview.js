@@ -14,7 +14,7 @@
  * Follows WEBAPP.md specification for module overview presentation.
  */
 
-import { html, markdownToHTML } from "@raven-js/beak";
+import { html, markdownToHTML, safeHtml } from "@raven-js/beak";
 import { contentSection, pageHeader } from "../components/index.js";
 import { baseTemplate } from "./base.js";
 
@@ -164,9 +164,9 @@ export function moduleOverviewTemplate(data) {
 												<div class="flex-grow-1 me-3">
 													<div class="d-flex align-items-center mb-2">
 														<h5 class="mb-0 me-2">
-															<a href="${entity.link}" class="text-decoration-none">${entity.name}</a>
+															<a href="${safeHtml`${entity.link}`}" class="text-decoration-none">${safeHtml`${entity.name}`}</a>
 														</h5>
-														<span class="badge bg-${getTypeVariant(entity.entityType || type)} me-2">${entity.entityType || type}</span>
+														<span class="badge bg-${getTypeVariant(entity.entityType || type)} me-2">${safeHtml`${entity.entityType || type}`}</span>
 														${entity.isDeprecated ? html`<span class="badge bg-warning">deprecated</span>` : ""}
 														${entity.hasExamples ? html`<span class="badge bg-success">examples</span>` : ""}
 													</div>
@@ -183,7 +183,7 @@ export function moduleOverviewTemplate(data) {
 													}
 												</div>
 												<div class="flex-shrink-0">
-													<a href="${entity.link}" class="btn btn-outline-primary btn-sm">
+													<a href="${safeHtml`${entity.link}`}" class="btn btn-outline-primary btn-sm">
 														📖 View
 													</a>
 												</div>

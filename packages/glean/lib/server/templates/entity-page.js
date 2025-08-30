@@ -14,15 +14,13 @@
  * Follows WEBAPP.md specification for detailed API documentation pages.
  */
 
-import { html, markdownToHTML } from "@raven-js/beak";
+import { html, markdownToHTML, safeHtml } from "@raven-js/beak";
 import {
 	codeBlock,
 	contentSection,
 	deprecationAlert,
 	entityCard,
-	moduleNavigation,
 	pageHeader,
-	quickActions,
 	tableSection,
 } from "../components/index.js";
 import { baseTemplate } from "./base.js";
@@ -82,7 +80,6 @@ export function entityPageTemplate(data) {
 		hasTypeInfo,
 		isDeprecated,
 		hasSource,
-		hasLocation,
 	} = data;
 
 	// Type casts for object property access
@@ -122,11 +119,8 @@ export function entityPageTemplate(data) {
 		badges.push({ text: "default module", variant: "primary" });
 	}
 
-	// Generate metadata description
+	// Generate metadata description (removed file location to save space)
 	const metadataItems = [];
-	if (hasLocation) {
-		metadataItems.push(`📍 ${ent.location.file}:${ent.location.line}`);
-	}
 	if (docs.since) {
 		metadataItems.push(`📅 Since ${docs.since}`);
 	}
@@ -138,7 +132,7 @@ export function entityPageTemplate(data) {
 	const content = html`
 		${pageHeader({
 			title: ent.name,
-			subtitle: ent.description ? markdownToHTML(ent.description) : undefined,
+			subtitle: ent.description,
 			breadcrumbs,
 			badges,
 			description:
@@ -155,15 +149,22 @@ export function entityPageTemplate(data) {
 		}
 
 		<!-- Import Statement -->
-		${codeBlock({
-			code: ent.importStatement,
-			language: "javascript",
-			title: "Import Statement",
-		})}
+		<div class="card border-primary mb-4">
+			<div class="card-header bg-primary text-white">
+				<h5 class="mb-0">📦 Import</h5>
+			</div>
+			<div class="card-body">
+				<div class="input-group">
+					<input type="text" class="form-control font-monospace" value="${safeHtml`${ent.importStatement}`}" readonly id="import-${ent.name}">
+					<button class="btn btn-outline-primary" type="button" onclick="copyImportStatement('import-${ent.name}')" title="Copy import statement">
+						📋 Copy
+					</button>
+				</div>
+			</div>
+		</div>
 
-		<div class="row">
-			<!-- Main Documentation -->
-			<div class="${navigation.allModules.length > 1 ? "col-lg-8" : "col-12"} mb-4">
+		<!-- Main Documentation -->
+		<div class="mb-4">
 
 				<!-- TypeScript Signature -->
 				${
@@ -191,15 +192,15 @@ export function entityPageTemplate(data) {
 									headers: ["Name", "Type", "Description", "Default"],
 									rows: docs.parameters.map(
 										/** @param {any} param */ (param) => [
-											html`<code class="text-primary">${param.name}</code>${param.isOptional ? html`<span class="text-muted">?</span>` : ""}`,
+											html`<code class="text-primary">${safeHtml`${param.name}`}</code>${param.isOptional ? html`<span class="text-muted">?</span>` : ""}`,
 											param.type
-												? html`<code class="text-secondary">${param.type}</code>`
+												? html`<code class="text-secondary">${safeHtml`${param.type}`}</code>`
 												: html`<span class="text-muted">any</span>`,
 											param.description
 												? markdownToHTML(param.description)
 												: html`<em class="text-muted">No description</em>`,
 											param.defaultValue
-												? html`<code class="text-success">${param.defaultValue}</code>`
+												? html`<code class="text-success">${safeHtml`${param.defaultValue}`}</code>`
 												: param.isOptional
 													? html`<span class="text-muted">undefined</span>`
 													: html`<span class="text-muted">required</span>`,
@@ -222,7 +223,7 @@ export function entityPageTemplate(data) {
 								? html`
 						<div class="mb-2">
 							<strong>Type:</strong>
-							<code class="text-secondary">${docs.returns.type}</code>
+							<code class="text-secondary">${safeHtml`${docs.returns.type}`}</code>
 						</div>
 						`
 								: ""
@@ -250,7 +251,7 @@ export function entityPageTemplate(data) {
 									headers: ["Type", "Description"],
 									rows: docs.throws.map(
 										/** @param {any} throwsInfo */ (throwsInfo) => [
-											html`<code class="text-danger">${throwsInfo.type}</code>`,
+											html`<code class="text-danger">${safeHtml`${throwsInfo.type}`}</code>`,
 											throwsInfo.description
 												? markdownToHTML(throwsInfo.description)
 												: html`<em class="text-muted">No description</em>`,
@@ -296,11 +297,11 @@ export function entityPageTemplate(data) {
 									headers: ["Function", "Type", "Context"],
 									rows: ent.crossReferences.map(
 										/** @param {any} ref */ (ref) => [
-											html`<a href="/modules/utils/${ref.entityName}/" class="text-decoration-none">
-								<code class="bg-light px-2 py-1 rounded">${ref.entityName}</code>
+											html`<a href="/modules/utils/${safeHtml`${ref.entityName}`}/" class="text-decoration-none">
+								<code class="bg-light px-2 py-1 rounded">${safeHtml`${ref.entityName}`}</code>
 							</a>`,
-											html`<span class="badge ${ref.type === "see" ? "bg-info" : "bg-secondary"}">${ref.type}</span>`,
-											html`<span class="text-muted small">${ref.context}</span>`,
+											html`<span class="badge ${ref.type === "see" ? "bg-info" : "bg-secondary"}">${safeHtml`${ref.type}`}</span>`,
+											html`<span class="text-muted small">${safeHtml`${ref.context}`}</span>`,
 										],
 									),
 								}),
@@ -336,13 +337,13 @@ export function entityPageTemplate(data) {
 								${
 									seeRef.link
 										? html`
-								<a href="${seeRef.link}" class="text-decoration-none ${seeRef.isExternal ? "link-primary" : ""}"
+								<a href="${safeHtml`${seeRef.link}`}" class="text-decoration-none ${seeRef.isExternal ? "link-primary" : ""}"
 									${seeRef.isExternal ? 'target="_blank" rel="noopener noreferrer"' : ""}>
-									${seeRef.text}
+									${safeHtml`${seeRef.text}`}
 									${seeRef.isExternal ? html`<span class="ms-1">🔗</span>` : ""}
 								</a>
 								`
-										: html`<span>${seeRef.text}</span>`
+										: html`<span>${safeHtml`${seeRef.text}`}</span>`
 								}
 							</li>
 							`,
@@ -416,64 +417,31 @@ export function entityPageTemplate(data) {
 							})
 						: ""
 				}
-			</div>
-
-			<!-- Navigation Sidebar -->
-			${
-				navigation.allModules.length > 1
-					? html`
-			<div class="col-lg-4">
-				<!-- Module APIs Navigation -->
-				<div class="mb-4">
-					${moduleNavigation({
-						modules: navigation.moduleEntities.map(
-							/** @param {any} entity */ (entity) => ({
-								name: entity.name,
-								link: entity.link,
-								entityCount: 1,
-								fullImportPath: entity.type,
-								isCurrent: entity.isCurrent,
-							}),
-						),
-						title: `🗂️ ${moduleName} APIs`,
-					})}
-				</div>
-
-				<!-- All Modules Navigation -->
-				<div class="mb-4">
-					${moduleNavigation({
-						modules: navigation.allModules,
-						title: "📦 All Modules",
-					})}
-				</div>
-
-				<!-- Quick Actions -->
-				${quickActions({
-					actions: [
-						{
-							href: `/modules/${moduleName}/`,
-							text: "📄 Module Overview",
-							variant: "outline-primary",
-						},
-						{
-							href: `/api/?search=${encodeURIComponent(ent.name)}`,
-							text: "🔍 Search APIs",
-							variant: "outline-secondary",
-						},
-						{
-							href: "/modules/",
-							text: "📦 Browse Modules",
-							variant: "outline-info",
-						},
-						{ href: "/", text: "🏠 Package Home", variant: "outline-dark" },
-					],
-				})}
-			</div>
-			`
-					: ""
-			}
 		</div>
 	`;
+
+	// Generate sidebar navigation (matching module-overview.js exactly)
+	const sidebar =
+		navigation.allModules.length > 1
+			? html`
+		<h6 class="fw-bold mb-3">Module Navigation</h6>
+		<ul class="nav nav-pills flex-column">
+			${navigation.allModules.map(
+				/** @param {any} navModule */
+				(navModule) => html`
+			<li class="nav-item">
+				<a
+					href="${navModule.link}"
+					class="nav-link ${navModule.isCurrent ? "active" : ""}"
+				>
+					${navModule.isDefault ? "📦 " : "📄 "}${navModule.name}
+				</a>
+			</li>
+			`,
+			)}
+		</ul>
+		`
+			: "";
 
 	// Return complete HTML page using base template
 	return baseTemplate({
@@ -483,47 +451,10 @@ export function entityPageTemplate(data) {
 		content,
 		navigation: {
 			current: "modules",
-			sidebar:
-				navigation.allModules.length > 1
-					? html`
-				<h6 class="fw-bold mb-3">Entity Navigation</h6>
-				<ul class="nav nav-pills flex-column">
-					${navigation.moduleEntities.map(
-						/** @param {any} navEntity */
-						(navEntity) => html`
-					<li class="nav-item">
-						<a href="${navEntity.link}"
-							class="nav-link ${navEntity.isCurrent ? "active" : ""}">
-							${getTypeIcon(navEntity.type)} ${navEntity.name}
-						</a>
-					</li>
-					`,
-					)}
-				</ul>
-				`
-					: "",
+			sidebar,
 		},
 		seo: {
 			url: "", // Will be filled by route handler
 		},
 	});
-}
-
-/**
- * Get icon for entity type
- * @param {string} type - Entity type
- * @returns {string} Icon emoji
- */
-function getTypeIcon(type) {
-	/** @type {Record<string, string>} */
-	const typeIcons = {
-		function: "⚙️",
-		class: "🏗️",
-		typedef: "📋",
-		interface: "🔌",
-		enum: "📝",
-		constant: "🔒",
-		variable: "📊",
-	};
-	return typeIcons[type] || "📄";
 }

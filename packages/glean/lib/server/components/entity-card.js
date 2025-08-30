@@ -160,7 +160,7 @@ export function moduleCard({
 						? html`
 				<div class="mb-3">
 					<div class="text-muted mb-0" style="max-height: 3rem; overflow: hidden;">
-						${safeHtml`${description}`}
+						${markdownToHTML(description)}
 					</div>
 				</div>
 				`
@@ -173,7 +173,7 @@ export function moduleCard({
 				<div class="mb-3">
 					<div class="small text-muted bg-light p-2 rounded">
 						<div style="max-height: 4rem; overflow: hidden;">
-							${safeHtml`${readmePreview}`}
+							${markdownToHTML(readmePreview)}
 						</div>
 						${readmePreview.length >= 200 ? html`<small class="text-muted">...</small>` : ""}
 					</div>

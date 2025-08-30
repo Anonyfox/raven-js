@@ -13,7 +13,7 @@
  * Semantic markup eliminating custom CSS through utility classes.
  */
 
-import { html } from "@raven-js/beak";
+import { html, safeHtml } from "@raven-js/beak";
 
 /**
  * Generate content section with card wrapper
@@ -65,18 +65,19 @@ export function codeBlock({
 	title,
 	showCopy = true,
 }) {
-	const escapedCode = code.replace(/`/g, "\\`");
+	// Generate unique ID for this code block
+	const blockId = `code-${Math.random().toString(36).substr(2, 9)}`;
 
 	return html`
-		${title ? html`<h6 class="fw-bold mb-3">${title}</h6>` : ""}
+		${title ? html`<h6 class="fw-bold mb-3">${safeHtml`${title}`}</h6>` : ""}
 		<div class="position-relative">
-			<pre class="bg-light border rounded p-3 mb-0"><code class="language-${language}">${code}</code></pre>
+			<pre class="bg-light border rounded p-3 mb-0" id="${blockId}"><code class="language-${safeHtml`${language}`}">${safeHtml`${code}`}</code></pre>
 			${
 				showCopy
 					? html`
 			<button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
-				onclick="copyToClipboard(\`${escapedCode}\`)" title="Copy ${title || "code"}">
-				📋 Copy ${title ? title.toLowerCase() : "code"}
+				onclick="copyCodeBlock('${blockId}')" title="Copy ${safeHtml`${title || "code"}`}">
+				📋 Copy
 			</button>
 			`
 					: ""
@@ -146,7 +147,7 @@ export function cardGrid({ items, columns = 2, gap = "g-4" }) {
 		1: "col-12",
 		2: "col-md-6",
 		3: "col-md-6 col-lg-4",
-		4: "col-md-6 col-lg-3"
+		4: "col-md-6 col-lg-3",
 	};
 
 	const normalizedColumns = Math.min(4, Math.max(1, columns));

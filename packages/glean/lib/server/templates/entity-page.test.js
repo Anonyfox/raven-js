@@ -385,8 +385,8 @@ describe("entityPageTemplate", () => {
 		const data = createMockData();
 		const html = entityPageTemplate(data);
 
-		// Location information
-		assert(html.includes("📍 utils.js:42"), "Shows source location");
+		// Location information is no longer shown to save space
+		assert(!html.includes("📍 utils.js:42"), "Does not show source location");
 
 		// Since version
 		assert(html.includes("📅 Since 1.2.0"), "Shows since version");
@@ -416,37 +416,32 @@ describe("entityPageTemplate", () => {
 		assert(html.includes("processor"), "Shows module name for similar entity");
 	});
 
-	test("displays navigation sidebar with module entities", () => {
+	test("does not display navigation sidebar for clean layout", () => {
 		const data = createMockData();
 		const html = entityPageTemplate(data);
 
-		// Module entities navigation
-		assert(html.includes("🗂️ utils APIs"), "Shows module APIs header");
-		assert(html.includes("processData"), "Shows current entity");
-		assert(html.includes("transformData"), "Shows other entity");
-		assert(html.includes("active"), "Marks current entity as active");
-
-		// All modules navigation
-		assert(html.includes("📦 All Modules"), "Shows all modules header");
-		assert(html.includes("test-package"), "Shows package module");
-		assert(html.includes("utils"), "Shows utils module");
+		// Navigation sidebar was removed for full-width content
+		assert(!html.includes("🗂️ utils APIs"), "No duplicate module navigation");
+		assert(
+			!html.includes("📦 All Modules"),
+			"No duplicate all modules navigation",
+		);
+		assert(!html.includes("col-lg-8"), "Uses full width layout");
+		assert(!html.includes("col-lg-4"), "No sidebar column");
 	});
 
-	test("includes quick actions sidebar", () => {
+	test("does not include quick actions for clean layout", () => {
 		const data = createMockData();
 		const html = entityPageTemplate(data);
 
-		assert(html.includes("🚀 Quick Actions"), "Shows quick actions header");
-		assert(html.includes("📄 Module Overview"), "Shows module overview link");
-		assert(html.includes("🔍 Search APIs"), "Shows search link");
-		assert(html.includes("📦 Browse Modules"), "Shows browse modules link");
-		assert(html.includes("🏠 Package Home"), "Shows package home link");
-
-		// Check search link encoding
+		// Quick actions were removed for cleaner UI
+		assert(!html.includes("🚀 Quick Actions"), "No quick actions section");
 		assert(
-			html.includes("search=processData"),
-			"Includes encoded entity name in search",
+			!html.includes("📄 Module Overview"),
+			"No duplicate module overview link",
 		);
+		assert(!html.includes("🔍 Search APIs"), "No broken search API links");
+		assert(!html.includes("search=processData"), "No API search links");
 	});
 
 	test("handles single module layout correctly", () => {
@@ -660,13 +655,13 @@ describe("entityPageTemplate", () => {
 		);
 	});
 
-	test("handles entity types with proper icons in navigation", () => {
+	test("does not show navigation icons since sidebar was removed", () => {
 		const data = createMockData();
 		const html = entityPageTemplate(data);
 
-		// Should include type icons in sidebar navigation
-		assert(html.includes("⚙️"), "Shows function icon");
-		assert(html.includes("🏗️"), "Shows class icon");
+		// Navigation icons are no longer needed since sidebar was removed
+		assert(!html.includes("Entity Navigation"), "No entity navigation section");
+		assert(!html.includes("nav nav-pills"), "No sidebar navigation pills");
 	});
 
 	test("shows external link indicators correctly", () => {
@@ -777,24 +772,22 @@ describe("entityPageTemplate", () => {
 
 		const html = entityPageTemplate(data);
 
-		// Should render markdown in description
-		assert(
-			html.includes("<strong>bold</strong>"),
-			"Should render bold markdown",
-		);
-		assert(
-			html.includes("<code>inline code</code>"),
-			"Should render inline code markdown",
-		);
-		assert(
-			html.includes('<a href="https://example.com">link</a>'),
-			"Should render link markdown",
-		);
+		// Description is now rendered as plain text in page header
 		assert(
 			html.includes(
-				'This is a <strong>bold</strong> function with <code>inline code</code> and a <a href="https://example.com">link</a>.',
+				"This is a **bold** function with `inline code` and a [link](https://example.com).",
 			),
-			"Should render complete markdown description",
+			"Should render description as plain text without markdown processing",
+		);
+
+		// Should not process markdown in the header description
+		assert(
+			!html.includes("<strong>bold</strong>"),
+			"Should not render bold HTML in header",
+		);
+		assert(
+			!html.includes("<code>inline code</code>"),
+			"Should not render code HTML in header",
 		);
 	});
 });

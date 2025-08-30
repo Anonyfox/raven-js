@@ -281,9 +281,9 @@ export function baseTemplate({
 			});
 		});
 
-		// Copy code block functionality
+		// Copy code block functionality (only for blocks without existing copy buttons)
 		document.querySelectorAll('pre').forEach(block => {
-			if (block.querySelector('code')) {
+			if (block.querySelector('code') && !block.parentElement.querySelector('button[onclick*="copyCodeBlock"]')) {
 				const copyBtn = document.createElement('button');
 				copyBtn.className = 'btn btn-sm btn-outline-secondary code-copy-btn';
 				copyBtn.textContent = '📋';
@@ -310,6 +310,25 @@ export function baseTemplate({
 					btn.textContent = '✓ Copied!';
 					setTimeout(() => btn.textContent = originalText, 2000);
 				}
+			}
+		};
+
+		// Copy code block functionality
+		window.copyCodeBlock = function(blockId) {
+			const block = document.getElementById(blockId);
+			if (block) {
+				const codeElement = block.querySelector('code');
+				const text = codeElement ? codeElement.textContent : block.textContent;
+				navigator.clipboard.writeText(text).then(() => {
+					const btn = block.parentElement.querySelector('button[onclick*="copyCodeBlock"]');
+					if (btn) {
+						const originalText = btn.textContent;
+						btn.textContent = '✓ Copied!';
+						setTimeout(() => btn.textContent = originalText, 2000);
+					}
+				}).catch(() => {
+					console.error('Failed to copy code');
+				});
 			}
 		};
 
