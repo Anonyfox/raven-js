@@ -49,7 +49,7 @@ describe("component exports", () => {
 
 	test("all exports are functions", () => {
 		const exportedFunctions = Object.values(components);
-		strictEqual(exportedFunctions.length, 17);
+		strictEqual(exportedFunctions.length, 18);
 
 		exportedFunctions.forEach((fn) => {
 			strictEqual(typeof fn, "function");

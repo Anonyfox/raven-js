@@ -16,6 +16,7 @@
 
 import { html, markdownToHTML } from "@raven-js/beak";
 import {
+	applySyntaxHighlighting,
 	contentSection,
 	gettingStarted,
 	moduleNavigation,
@@ -113,7 +114,7 @@ export function packageOverviewTemplate(data) {
 						? contentSection({
 								title: "Documentation",
 								icon: "📄",
-								content: html`<div class="readme-content">${markdownToHTML(readmeMarkdown)}</div>`,
+								content: html`<div class="readme-content">${applySyntaxHighlighting(markdownToHTML(readmeMarkdown))}</div>`,
 							})
 						: contentSection({
 								title: "No README Available",

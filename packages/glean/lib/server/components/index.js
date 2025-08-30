@@ -16,6 +16,7 @@
 // Alert components
 export { alert, deprecationAlert, emptyState } from "./alert.js";
 export {
+	applySyntaxHighlighting,
 	cardGrid,
 	codeBlock,
 	contentSection,

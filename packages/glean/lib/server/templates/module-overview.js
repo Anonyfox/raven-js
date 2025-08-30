@@ -15,7 +15,11 @@
  */
 
 import { html, markdownToHTML, safeHtml } from "@raven-js/beak";
-import { contentSection, pageHeader } from "../components/index.js";
+import {
+	applySyntaxHighlighting,
+	contentSection,
+	pageHeader,
+} from "../components/index.js";
 import { baseTemplate } from "./base.js";
 
 /**
@@ -93,8 +97,10 @@ export function moduleOverviewTemplate(data) {
 		hasEntities,
 	} = data;
 
-	// Process README content through beak markdown processor
-	const readmeHTML = module.hasReadme ? markdownToHTML(module.readme) : "";
+	// Process README content through beak markdown processor and apply syntax highlighting
+	const readmeHTML = module.hasReadme
+		? applySyntaxHighlighting(markdownToHTML(module.readme))
+		: "";
 
 	// Generate breadcrumbs
 	const breadcrumbs = [

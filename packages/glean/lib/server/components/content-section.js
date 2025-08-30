@@ -90,6 +90,44 @@ function resolveHighlighter(language) {
 }
 
 /**
+ * Post-process HTML to apply syntax highlighting to code blocks
+ * Finds <pre><code class="language-xxx"> blocks and applies beak highlighting
+ * @param {string} html - HTML content containing code blocks
+ * @returns {string} HTML with syntax-highlighted code blocks
+ */
+export function applySyntaxHighlighting(html) {
+	if (!html || typeof html !== "string") {
+		return html;
+	}
+
+	// Match <pre><code class="language-xxx">content</code></pre> blocks
+	const codeBlockRegex =
+		/<pre><code(?:\s+class="language-([^"]*)")?>([\s\S]*?)<\/code><\/pre>/g;
+
+	return html.replace(codeBlockRegex, (match, language, content) => {
+		// Decode HTML entities back to original code
+		const decodedContent = content
+			.replace(/&lt;/g, "<")
+			.replace(/&gt;/g, ">")
+			.replace(/&amp;/g, "&")
+			.replace(/&#39;/g, "'")
+			.replace(/&quot;/g, '"');
+
+		// Apply syntax highlighting if supported language
+		const highlighterKey = resolveHighlighter(language);
+		const highlightedCode = highlighterKey
+			? HIGHLIGHTERS[highlighterKey](decodedContent)
+			: safeHtml`${decodedContent}`;
+
+		// Return enhanced code block
+		const langClass = language
+			? ` class="language-${safeHtml`${language}`}"`
+			: "";
+		return `<pre><code${langClass}>${highlightedCode}</code></pre>`;
+	});
+}
+
+/**
  * Generate content section with card wrapper
  * @param {Object} options - Section configuration
  * @param {string} [options.title] - Section title

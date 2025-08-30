@@ -16,6 +16,7 @@
 import { ok } from "node:assert";
 import { describe, test } from "node:test";
 import {
+	applySyntaxHighlighting,
 	cardGrid,
 	codeBlock,
 	contentSection,
@@ -119,6 +120,58 @@ describe("codeBlock component", () => {
 		ok(result.includes("`"));
 		// biome-ignore lint/suspicious/noTemplateCurlyInString: testing template literal preservation
 		ok(result.includes("hello ${name}"));
+	});
+});
+
+describe("applySyntaxHighlighting function", () => {
+	test("highlights supported languages in code blocks", () => {
+		const html = `
+<h2>Examples</h2>
+<pre><code class="language-javascript">const x = "hello";</code></pre>
+<pre><code class="language-sql">SELECT * FROM users;</code></pre>
+`;
+		const result = applySyntaxHighlighting(html);
+
+		// Should highlight JavaScript
+		ok(result.includes('text-primary">const</span>'));
+		ok(result.includes('text-success">&quot;hello&quot;</span>'));
+
+		// Should highlight SQL
+		ok(result.includes('text-primary">SELECT</span>'));
+	});
+
+	test("preserves unsupported languages without highlighting", () => {
+		const html = `<pre><code class="language-python">print("hello")</code></pre>`;
+		const result = applySyntaxHighlighting(html);
+
+		// Should not add highlighting spans for unsupported language
+		ok(!result.includes('<span class="text-'));
+		// But should preserve the content with proper escaping
+		ok(result.includes("print(&quot;hello&quot;)"));
+	});
+
+	test("handles code blocks without language classes", () => {
+		const html = `<pre><code>plain code</code></pre>`;
+		const result = applySyntaxHighlighting(html);
+
+		// Should not add highlighting spans
+		ok(!result.includes('<span class="text-'));
+		// Should preserve content
+		ok(result.includes("plain code"));
+	});
+
+	test("leaves non-code content unchanged", () => {
+		const html = `<h1>Title</h1><p>Some text</p>`;
+		const result = applySyntaxHighlighting(html);
+
+		// Should be identical
+		ok(result === html);
+	});
+
+	test("handles empty or invalid input", () => {
+		ok(applySyntaxHighlighting("") === "");
+		ok(applySyntaxHighlighting(null) === null);
+		ok(applySyntaxHighlighting(undefined) === undefined);
 	});
 });
 
