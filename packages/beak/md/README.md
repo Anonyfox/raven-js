@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@raven-js/beak)](https://www.npmjs.com/package/@raven-js/beak)
 
-**Dual-purpose markdown toolkit: intelligent composition + fast HTML rendering**
+**Triple-purpose markdown toolkit: intelligent composition + fast HTML rendering + surgical text extraction**
 
 ## Quick Start
 
@@ -11,7 +11,7 @@ npm install @raven-js/beak
 ```
 
 ```javascript
-import { md, markdownToHTML } from "@raven-js/beak/md";
+import { md, markdownToHTML, markdownToText } from "@raven-js/beak/md";
 
 // Compose markdown with context-aware formatting
 const doc = md`# ${title}
@@ -20,6 +20,9 @@ ${code("npm install", "bash")}`;
 
 // Convert to HTML (69K+ ops/sec)
 const html = markdownToHTML(doc);
+
+// Extract clean plaintext (surgical formatting removal)
+const text = markdownToText(doc);
 ```
 
 ## Architecture
@@ -28,6 +31,7 @@ const html = markdownToHTML(doc);
 
 - `md()` tagged template → markdown composition (markdown → markdown)
 - `markdownToHTML()` function → HTML rendering (markdown → HTML)
+- `markdownToText()` function → text extraction (markdown → plaintext)
 
 ## Markdown Composition
 
@@ -171,6 +175,74 @@ for (let i = 0; i < iterations; i++) {
 console.timeEnd("parse"); // ~144ms for 10K iterations
 ```
 
+## Text Conversion
+
+### Surgical Plaintext Extraction
+
+**Zero formatting artifacts, maximum content preservation:**
+
+```javascript
+import { markdownToText } from "@raven-js/beak/md";
+
+const markdown = `# Project Overview
+
+This is a **bold** statement with *emphasis* and [links](url).
+
+- Feature 1: Fast parsing
+- Feature 2: Zero dependencies
+- Feature 3: 100% test coverage
+
+\`\`\`javascript
+console.log('code example');
+\`\`\`
+
+| Component | Status |
+|-----------|--------|
+| Parser | ✅ Ready |
+| Renderer | ✅ Ready |
+
+> Important: Always test your implementation.`;
+
+const plaintext = markdownToText(markdown);
+console.log(plaintext);
+```
+
+**Output** (clean plaintext):
+
+```
+Project Overview
+
+This is a bold statement with emphasis and links.
+
+- Feature 1: Fast parsing
+- Feature 2: Zero dependencies
+- Feature 3: 100% test coverage
+
+console.log('code example');
+
+Component: Parser, Status: Ready
+Component: Renderer, Status: Ready
+
+Important: Always test your implementation.
+```
+
+### Text Extraction Features
+
+**Surgical formatting removal:**
+
+- **Preserves**: Content flow, paragraph breaks, list markers (`- `), meaningful structure
+- **Removes**: All emphasis markers (`**bold**`, `*italic*`), link syntax, image syntax, HTML tags
+- **Converts**: Tables → key-value pairs, blockquotes → plain text, code blocks → raw content
+- **Output**: Arbitrary-width reflowable text optimized for search indexing and accessibility
+
+**Common use cases:**
+
+- Full-text search indexing
+- Content summaries and excerpts
+- Screen reader optimization
+- Plain text email generation
+- Content analysis and processing
+
 ## Implementation Notes
 
 **Architecture decisions:**
@@ -199,6 +271,9 @@ function table(headers: string[], rows: string[][]): TableObject;
 
 // HTML conversion
 function markdownToHTML(markdown: string): string;
+
+// Text extraction
+function markdownToText(markdown: string): string;
 ```
 
 ---

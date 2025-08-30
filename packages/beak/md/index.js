@@ -14,4 +14,5 @@
  */
 
 export { markdownToHTML } from "./markdown-to-html.js";
+export { markdownToText } from "./markdown-to-text.js";
 export { code, md, ref, table } from "./md.js";
