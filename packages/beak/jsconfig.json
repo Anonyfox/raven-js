@@ -7,19 +7,6 @@
     "noImplicitAny": true,
     "resolveJsonModule": true
   },
-  "include": [
-    "core/**/*.js",
-    "seo/**/*.js",
-    "html/**/*.js",
-    "css/**/*.js",
-    "md/**/*.js",
-    "sql/**/*.js",
-    "highlight/**/*.js",
-    "index.js",
-    "index.test.js",
-    "requirements.css.test.js",
-    "requirements.html.test.js",
-    "requirements.js.test.js"
-  ],
+  "include": ["**/*.js", "index.js", "index.test.js"],
   "exclude": ["**/*.test.js"]
 }
