@@ -8,13 +8,14 @@
     "glean": "bin/glean.min.js"
   },
   "files": [
-    "index.js",
-    "types.d.ts",
-    "bin/glean.min.js",
-    "lib/**/!(*.test).js",
-    "static/**/*",
+    "**/*.js",
+    "*.d.ts",
+    "types.*.d.ts",
+    "**/README.md",
     "LICENSE",
-    "README.md"
+    "media/**/*",
+    "static/**/*",
+    "!**/*.test.js"
   ],
   "exports": {
     ".": {

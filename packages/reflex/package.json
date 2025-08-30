@@ -4,13 +4,14 @@
   "version": "0.4.12",
   "type": "module",
   "files": [
-    "*.js",
-    "*.d.ts",
     "**/*.js",
-    "index.js",
+    "*.d.ts",
     "types.*.d.ts",
+    "**/README.md",
     "LICENSE",
-    "README.md"
+    "media/**/*",
+    "static/**/*",
+    "!**/*.test.js"
   ],
   "exports": {
     ".": {

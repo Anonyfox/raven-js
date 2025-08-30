@@ -4,22 +4,14 @@
   "version": "0.4.12",
   "type": "module",
   "files": [
-    "*.js",
+    "**/*.js",
     "*.d.ts",
-    "html/**/*.js",
-    "css/**/*.js",
-    "js/**/*.js",
-    "md/**/*.js",
-    "sql/**/*.js",
-    "xml/**/*.js",
-    "sh/**/*.js",
-    "seo/**/*.js",
-    "highlight/**/*.js",
-    "compile/**/*.js",
-    "!**/*.test.js",
     "types.*.d.ts",
+    "**/README.md",
     "LICENSE",
-    "README.md"
+    "media/**/*",
+    "static/**/*",
+    "!**/*.test.js"
   ],
   "exports": {
     ".": {

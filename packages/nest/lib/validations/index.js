@@ -25,6 +25,7 @@ import {
 } from "./js-file/index.js";
 import { HasMinimalSettings } from "./jsconfig-json/index.js";
 import {
+	HasProperFilesField,
 	HasValidAuthor,
 	HasValidBugs,
 	HasValidEngines,
@@ -343,6 +344,13 @@ export const validatePackage = (packagePath) => {
 		runCheck("valid publish config", () => HasValidPublishConfig(packagePath)),
 	);
 	checks.push(runCheck("valid scripts", () => HasValidScripts(packagePath)));
+
+	// Files field validation
+	checks.push(
+		runCheck("package.json files field", () =>
+			HasProperFilesField(packagePath),
+		),
+	);
 
 	// 3. Folder/file structure validation
 	checks.push(
