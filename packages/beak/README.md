@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="../../media/raven-logo-beak.webp" alt="Beak Logo" width="200" height="200" />
+<img src="logo.webp" alt="Beak Logo" width="200" height="200" />
 
 [![Website](https://img.shields.io/badge/ravenjs.dev-000000?style=flat&logo=firefox&logoColor=white)](https://ravenjs.dev)
 [![Zero Dependencies](https://img.shields.io/badge/Zero-Dependencies-brightgreen.svg)](https://github.com/Anonyfox/ravenjs)
