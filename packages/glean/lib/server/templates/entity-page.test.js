@@ -329,9 +329,11 @@ describe("entityPageTemplate", () => {
 		assert(html.includes("Basic Usage"), "Shows first example title");
 		assert(html.includes("Advanced Processing"), "Shows second example title");
 
-		// Code content
+		// Code content (now syntax highlighted)
 		assert(
-			html.includes("const result = processData"),
+			html.includes("const") &&
+				html.includes("result") &&
+				html.includes("processData"),
 			"Shows example code content",
 		);
 		assert(
@@ -350,11 +352,14 @@ describe("entityPageTemplate", () => {
 
 		assert(html.includes("📄 Source Code"), "Shows source code header");
 		assert(
-			html.includes("function processData(data, options"),
+			html.includes("function") &&
+				html.includes("processData") &&
+				html.includes("data") &&
+				html.includes("options"),
 			"Shows source code content",
 		);
 		assert(
-			html.includes("return data.map"),
+			html.includes("return") && html.includes("data") && html.includes("map"),
 			"Shows source code implementation",
 		);
 	});

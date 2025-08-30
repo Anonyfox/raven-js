@@ -14,6 +14,80 @@
  */
 
 import { html, safeHtml } from "@raven-js/beak";
+import {
+	highlightCSS,
+	highlightHTML,
+	highlightJS,
+	highlightShell,
+	highlightSQL,
+} from "@raven-js/beak/highlight";
+
+/**
+ * Language alias mappings for syntax highlighting
+ * Maps common language identifiers to their corresponding highlighter functions
+ * @type {Record<string, string>}
+ */
+const LANGUAGE_MAPPINGS = {
+	// JavaScript variants
+	js: "javascript",
+	javascript: "javascript",
+	jsx: "javascript",
+	es6: "javascript",
+	node: "javascript",
+	mjs: "javascript",
+
+	// Shell variants
+	sh: "shell",
+	shell: "shell",
+	bash: "shell",
+	zsh: "shell",
+	fish: "shell",
+	powershell: "shell",
+
+	// HTML variants
+	html: "html",
+	htm: "html",
+	xml: "html",
+
+	// CSS variants
+	css: "css",
+	scss: "css",
+	sass: "css",
+	less: "css",
+	styl: "css",
+
+	// SQL variants
+	sql: "sql",
+	mysql: "sql",
+	postgres: "sql",
+	postgresql: "sql",
+	sqlite: "sql",
+	mariadb: "sql",
+};
+
+/**
+ * Available syntax highlighters
+ * @type {Record<string, (sourceText: string) => string>}
+ */
+const HIGHLIGHTERS = {
+	javascript: highlightJS,
+	html: highlightHTML,
+	css: highlightCSS,
+	sql: highlightSQL,
+	shell: highlightShell,
+};
+
+/**
+ * Resolve language to highlighter function
+ * @param {string} [language] - Language identifier
+ * @returns {string|null} Resolved highlighter key or null if unsupported
+ */
+function resolveHighlighter(language) {
+	if (!language) return null;
+	const normalizedKey = language.toLowerCase();
+	const normalized = LANGUAGE_MAPPINGS[normalizedKey];
+	return normalized && HIGHLIGHTERS[normalized] ? normalized : null;
+}
 
 /**
  * Generate content section with card wrapper
@@ -68,10 +142,16 @@ export function codeBlock({
 	// Generate unique ID for this code block
 	const blockId = `code-${Math.random().toString(36).substr(2, 9)}`;
 
+	// Apply syntax highlighting if supported language
+	const highlighterKey = resolveHighlighter(language);
+	const highlightedCode = highlighterKey
+		? HIGHLIGHTERS[highlighterKey](code)
+		: safeHtml`${code}`;
+
 	return html`
 		${title ? html`<h6 class="fw-bold mb-3">${safeHtml`${title}`}</h6>` : ""}
 		<div class="position-relative">
-			<pre class="bg-light border rounded p-3 mb-0" id="${blockId}"><code class="language-${safeHtml`${language}`}">${safeHtml`${code}`}</code></pre>
+			<pre class="bg-light border rounded p-3 mb-0" id="${blockId}"><code class="language-${safeHtml`${language}`}">${highlightedCode}</code></pre>
 			${
 				showCopy
 					? html`

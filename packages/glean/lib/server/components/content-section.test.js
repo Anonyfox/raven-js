@@ -74,7 +74,9 @@ describe("codeBlock component", () => {
 
 		ok(result.includes('class="position-relative"'));
 		ok(result.includes('class="bg-light border rounded p-3 mb-0"'));
-		ok(result.includes("console.log(&#x27;hello&#x27;);"));
+		// Test that JavaScript highlighting is applied
+		ok(result.includes('class="text-info">console</span>'));
+		ok(result.includes('class="text-success">&#39;hello&#39;</span>'));
 		ok(result.includes("📋"));
 	});
 
