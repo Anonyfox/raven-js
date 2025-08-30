@@ -164,21 +164,22 @@ describe("moduleOverviewTemplate", () => {
 		assert(html.includes("badge bg-primary"), "Uses primary badge styling");
 	});
 
-	test("displays module statistics when entities exist", () => {
+	test("displays import statement when entities exist", () => {
 		const data = createMockData();
 		const html = moduleOverviewTemplate(data);
 
-		// Statistics section
-		assert(html.includes("5"), "Shows total entity count");
-		assert(html.includes("Total Entities"), "Shows total entity label");
-		assert(html.includes("2"), "Shows entity type count");
-		assert(html.includes("Entity Types"), "Shows entity type label");
-		assert(html.includes("1"), "Shows deprecated count");
-		assert(html.includes("Deprecated"), "Shows deprecated label");
-		assert(html.includes("With Examples"), "Shows examples label");
+		// Import statement section
+		assert(html.includes("📦 Import"), "Shows import section header");
+		assert(
+			html.includes("import { /* ... */ } from 'test-package/utils'"),
+			"Shows import statement",
+		);
+		assert(html.includes("📋 Copy"), "Shows copy button");
+		assert(html.includes("5"), "Shows entity count");
+		assert(html.includes("Exports"), "Shows exports label");
 	});
 
-	test("omits statistics section when no entities", () => {
+	test("shows import statement but omits count when no entities", () => {
 		const data = createMockData({
 			hasEntities: false,
 			stats: {
@@ -190,10 +191,15 @@ describe("moduleOverviewTemplate", () => {
 		});
 		const html = moduleOverviewTemplate(data);
 
+		// Still shows import statement even when no entities
+		assert(html.includes("📦 Import"), "Shows import section header");
 		assert(
-			!html.includes("Total Entities"),
-			"Does not show statistics section",
+			html.includes("import { /* ... */ } from 'test-package/utils'"),
+			"Shows import statement",
 		);
+
+		// But omits entity count
+		assert(!html.includes("Exports"), "Does not show exports count section");
 	});
 
 	test("renders README content as markdown", () => {
@@ -251,12 +257,21 @@ describe("moduleOverviewTemplate", () => {
 		const html = moduleOverviewTemplate(data);
 
 		// Should show type badges with correct Bootstrap variants and classes
-		assert(html.includes('badge bg-primary me-2">function'), "Shows function type badge");
-		assert(html.includes('badge bg-success me-2">class'), "Shows class type badge");
+		assert(
+			html.includes('badge bg-primary me-2">function'),
+			"Shows function type badge",
+		);
+		assert(
+			html.includes('badge bg-success me-2">class'),
+			"Shows class type badge",
+		);
 
 		// Should show essential badges only
 		assert(html.includes('badge bg-success">examples'), "Shows examples badge");
-		assert(html.includes('badge bg-warning">deprecated'), "Shows deprecated badge");
+		assert(
+			html.includes('badge bg-warning">deprecated'),
+			"Shows deprecated badge",
+		);
 
 		// Should NOT show redundant badges
 		assert(!html.includes('badge bg-info">params'), "No params badge");
@@ -278,9 +293,9 @@ describe("moduleOverviewTemplate", () => {
 		);
 		assert(html.includes("📖 View"), "Contains view button");
 
-		// Location information
-		assert(html.includes("utils.js:10"), "Shows function location");
-		assert(html.includes("utils.js:30"), "Shows class location");
+		// Location information is no longer shown to save space
+		assert(!html.includes("utils.js:10"), "Does not show location info");
+		assert(!html.includes("utils.js:30"), "Does not show location info");
 	});
 
 	test("handles entities without descriptions", () => {
@@ -313,55 +328,25 @@ describe("moduleOverviewTemplate", () => {
 		);
 	});
 
-	test("displays navigation sidebar with all modules", () => {
+	test("does not display navigation sidebar for clean layout", () => {
 		const data = createMockData();
 		const html = moduleOverviewTemplate(data);
 
-		// Module navigation
-		assert(html.includes("🗂️ All Modules"), "Contains module navigation header");
-		assert(html.includes("test-package"), "Contains package module");
-		assert(html.includes("utils"), "Contains utils module");
-		assert(html.includes("helpers"), "Contains helpers module");
-
-		// Current module styling
-		assert(html.includes("active"), "Marks current module as active");
-
-		// Default module badge in navigation
-		assert(
-			html.includes('badge bg-primary me-2">default'),
-			"Shows default badge in navigation",
-		);
-
-		// Entity counts in navigation
-		assert(html.includes("3"), "Shows package module entity count");
-		assert(html.includes("5"), "Shows utils module entity count");
-		assert(html.includes("2"), "Shows helpers module entity count");
+		// Navigation sidebar was removed for full-width content
+		assert(!html.includes("🗂️ All Modules"), "No duplicate module navigation");
+		assert(!html.includes("col-lg-8"), "Uses full width layout");
+		assert(!html.includes("col-lg-4"), "No sidebar column");
 	});
 
-	test("includes quick actions sidebar", () => {
+	test("does not include quick actions for clean layout", () => {
 		const data = createMockData();
 		const html = moduleOverviewTemplate(data);
 
-		// Quick actions
-		assert(html.includes("🚀 Quick Actions"), "Contains quick actions header");
-		assert(
-			html.includes("📦 Browse All Modules"),
-			"Contains browse modules link",
-		);
-		assert(
-			html.includes("🔍 Search This Module"),
-			"Contains search module link",
-		);
-		assert(
-			html.includes("🏠 Package Overview"),
-			"Contains package overview link",
-		);
-
-		// Search link with encoded module name
-		assert(
-			html.includes("search=test-package%2Futils"),
-			"Contains encoded module name in search",
-		);
+		// Quick actions were removed for cleaner UI
+		assert(!html.includes("🚀 Quick Actions"), "No quick actions section");
+		assert(!html.includes("📦 Browse All Modules"), "No duplicate browse link");
+		assert(!html.includes("🔍 Search This Module"), "No broken search links");
+		assert(!html.includes("🏠 Package Overview"), "No duplicate overview link");
 	});
 
 	test("handles single module layout correctly", () => {

@@ -15,13 +15,7 @@
  */
 
 import { html, markdownToHTML } from "@raven-js/beak";
-import {
-	contentSection,
-	moduleNavigation,
-	pageHeader,
-	quickActions,
-	statsCard,
-} from "../components/index.js";
+import { contentSection, pageHeader } from "../components/index.js";
 import { baseTemplate } from "./base.js";
 
 /**
@@ -76,8 +70,6 @@ export function moduleOverviewTemplate(data) {
 		stats,
 		packageName,
 		hasEntities,
-		hasDeprecatedEntities,
-		hasExampleEntities,
 	} = data;
 
 	// Process README content through beak markdown processor
@@ -110,46 +102,37 @@ export function moduleOverviewTemplate(data) {
 			badges,
 		})}
 
-		<!-- Module Statistics -->
-		${
-			hasEntities
-				? (
-						() => {
-							const moduleStatsData = [
-								{
-									value: stats.totalEntities,
-									label: `Total Entit${stats.totalEntities !== 1 ? "ies" : "y"}`,
-									variant: "primary",
-								},
-								{
-									value: Object.keys(stats.entitiesByType).length,
-									label: `Entity Type${Object.keys(stats.entitiesByType).length !== 1 ? "s" : ""}`,
-									variant: "info",
-								},
-							];
-							if (hasDeprecatedEntities) {
-								moduleStatsData.push({
-									value: stats.deprecatedCount,
-									label: "Deprecated",
-									variant: "warning",
-								});
-							}
-							if (hasExampleEntities) {
-								moduleStatsData.push({
-									value: stats.withExamplesCount,
-									label: "With Examples",
-									variant: "success",
-								});
-							}
-							return statsCard({ stats: moduleStatsData });
-						}
-					)()
-				: ""
-		}
+		<!-- Import Statement -->
+		<div class="card border-primary mb-4">
+			<div class="card-header bg-primary text-white">
+				<h5 class="mb-0">📦 Import</h5>
+			</div>
+			<div class="card-body">
+				<div class="d-flex align-items-center gap-3">
+					<div class="flex-grow-1">
+						<div class="input-group">
+							<input type="text" class="form-control font-monospace" value="import { /* ... */ } from '${module.fullName}';" readonly id="import-${module.name}">
+							<button class="btn btn-outline-primary" type="button" onclick="copyImportStatement('import-${module.name}')" title="Copy import statement">
+								📋 Copy
+							</button>
+						</div>
+					</div>
+					${
+						hasEntities
+							? html`
+					<div class="text-center">
+						<div class="fw-bold text-primary">${stats.totalEntities}</div>
+						<small class="text-muted">Export${stats.totalEntities !== 1 ? "s" : ""}</small>
+					</div>
+					`
+							: ""
+					}
+				</div>
+			</div>
+		</div>
 
-		<div class="row">
-			<!-- Main Content -->
-			<div class="${navigation.allModules.length > 1 ? "col-lg-8" : "col-12"} mb-4">
+		<!-- Main Content -->
+		<div class="mb-4">
 				<!-- README Section -->
 				${
 					module.hasReadme
@@ -175,7 +158,8 @@ export function moduleOverviewTemplate(data) {
 										${type.toUpperCase()}${entities.length !== 1 ? "S" : ""} (${entities.length})
 									</h4>
 									<div class="list-group list-group-flush">
-										${entities.map((entity) => html`
+										${entities.map(
+											(entity) => html`
 											<div class="list-group-item d-flex justify-content-between align-items-start">
 												<div class="flex-grow-1 me-3">
 													<div class="d-flex align-items-center mb-2">
@@ -186,18 +170,17 @@ export function moduleOverviewTemplate(data) {
 														${entity.isDeprecated ? html`<span class="badge bg-warning">deprecated</span>` : ""}
 														${entity.hasExamples ? html`<span class="badge bg-success">examples</span>` : ""}
 													</div>
-													${entity.description ? html`
+													${
+														entity.description
+															? html`
 														<div class="text-muted mb-2">
 															${markdownToHTML(entity.description)}
 														</div>
-													` : html`
+													`
+															: html`
 														<div class="text-muted fst-italic mb-2">No description available</div>
-													`}
-													${entity.location ? html`
-														<small class="text-muted">
-															${entity.location.file}:${entity.location.line}
-														</small>
-													` : ""}
+													`
+													}
 												</div>
 												<div class="flex-shrink-0">
 													<a href="${entity.link}" class="btn btn-outline-primary btn-sm">
@@ -205,7 +188,8 @@ export function moduleOverviewTemplate(data) {
 													</a>
 												</div>
 											</div>
-										`)}
+										`,
+										)}
 									</div>
 								</div>
 							`;
@@ -224,44 +208,6 @@ export function moduleOverviewTemplate(data) {
 					</div>
 				`
 				}
-			</div>
-
-			<!-- Navigation Sidebar -->
-			${
-				navigation.allModules.length > 1
-					? html`
-				<div class="col-lg-4">
-					${moduleNavigation({ modules: navigation.allModules })}
-					${quickActions({
-						actions: [
-							{
-								href: "/modules/",
-								icon: "📦",
-								text: "Browse All Modules",
-								variant: "outline-primary",
-							},
-							...(hasEntities
-								? [
-										{
-											href: `/api/?search=${encodeURIComponent(module.fullName)}`,
-											icon: "🔍",
-											text: "Search This Module",
-											variant: "outline-secondary",
-										},
-									]
-								: []),
-							{
-								href: "/",
-								icon: "🏠",
-								text: "Package Overview",
-								variant: "outline-info",
-							},
-						],
-					})}
-				</div>
-			`
-					: ""
-			}
 		</div>
 
 

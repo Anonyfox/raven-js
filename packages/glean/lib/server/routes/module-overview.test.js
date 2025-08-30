@@ -170,13 +170,12 @@ describe("createModuleOverviewHandler", () => {
 		);
 		assert(html.includes("📦 awesome-package"), "Contains package breadcrumb");
 
-		// Should include navigation
+		// Should include main navigation (in base template)
 		assert(html.includes('href="/"'), "Contains package overview link");
 		assert(
 			html.includes('href="/modules/"'),
 			"Contains modules directory link",
 		);
-		assert(html.includes("🗂️ All Modules"), "Contains module navigation");
 	});
 
 	test("handles missing module name parameter", async () => {

@@ -298,6 +298,21 @@ export function baseTemplate({
 			}
 		});
 
+		// Copy import statement functionality
+		window.copyImportStatement = function(inputId) {
+			const input = document.getElementById(inputId);
+			if (input) {
+				input.select();
+				navigator.clipboard.writeText(input.value);
+				const btn = input.nextElementSibling;
+				if (btn) {
+					const originalText = btn.textContent;
+					btn.textContent = '✓ Copied!';
+					setTimeout(() => btn.textContent = originalText, 2000);
+				}
+			}
+		};
+
 		// Search highlighting (basic implementation)
 		const searchParams = new URLSearchParams(window.location.search);
 		const searchTerm = searchParams.get('search');
