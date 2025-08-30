@@ -29,6 +29,7 @@ import {
 	HasValidAuthor,
 	HasValidBugs,
 	HasValidEngines,
+	HasValidExports,
 	HasValidFunding,
 	HasValidHomepage,
 	HasValidLicense,
@@ -350,6 +351,11 @@ export const validatePackage = (packagePath) => {
 		runCheck("package.json files field", () =>
 			HasProperFilesField(packagePath),
 		),
+	);
+
+	// Exports field validation
+	checks.push(
+		runCheck("package.json exports field", () => HasValidExports(packagePath)),
 	);
 
 	// 3. Folder/file structure validation

@@ -14,6 +14,7 @@ export { HasProperFilesField } from "./has-proper-files-field.js";
 export { HasValidAuthor } from "./has-valid-author.js";
 export { HasValidBugs } from "./has-valid-bugs.js";
 export { HasValidEngines } from "./has-valid-engines.js";
+export { HasValidExports } from "./has-valid-exports.js";
 export { HasValidFunding } from "./has-valid-funding.js";
 export { HasValidHomepage } from "./has-valid-homepage.js";
 export { HasValidLicense } from "./has-valid-license.js";
