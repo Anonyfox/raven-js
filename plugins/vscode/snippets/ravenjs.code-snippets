@@ -24,6 +24,21 @@
     "body": ["md`", "\t$1", "`"],
     "description": "Create a RavenJS Markdown template"
   },
+  "RavenJS Markdown Reference": {
+    "prefix": "raven-ref",
+    "body": ["ref('$1', '$2')"],
+    "description": "Create a RavenJS Markdown reference link"
+  },
+  "RavenJS Markdown Code Block": {
+    "prefix": "raven-code",
+    "body": ["code('$1', '$2')"],
+    "description": "Create a RavenJS Markdown code block"
+  },
+  "RavenJS Markdown Table": {
+    "prefix": "raven-table",
+    "body": ["table(['$1'], [", "\t['$2']", "])"],
+    "description": "Create a RavenJS Markdown table"
+  },
   "RavenJS JavaScript Template": {
     "prefix": "raven-js",
     "body": ["js`", "\t$1", "`"],
@@ -38,6 +53,21 @@
     "prefix": "raven-sql",
     "body": ["sql`", "\t$1", "`"],
     "description": "Create a RavenJS SQL template"
+  },
+  "RavenJS Shell Template": {
+    "prefix": "raven-sh",
+    "body": ["sh`", "\t$1", "`"],
+    "description": "Create a RavenJS shell command template"
+  },
+  "RavenJS XML Template": {
+    "prefix": "raven-xml",
+    "body": ["xml`", "\t$1", "`"],
+    "description": "Create a RavenJS XML template"
+  },
+  "RavenJS CDATA Template": {
+    "prefix": "raven-cdata",
+    "body": ["cdata($1)"],
+    "description": "Create a RavenJS CDATA section"
   },
   "RavenJS Template with Interpolation": {
     "prefix": "raven-interp",

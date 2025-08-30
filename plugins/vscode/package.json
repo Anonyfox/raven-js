@@ -1,7 +1,7 @@
 {
   "name": "ravenjs-vscode",
   "version": "0.1.0",
-  "description": "VS Code extension for RavenJS tagged template literals - syntax highlighting and IntelliSense for Beak's HTML, CSS, SQL, Markdown, and JavaScript templates",
+  "description": "VS Code extension for RavenJS tagged template literals - syntax highlighting and IntelliSense for Beak's HTML, CSS, SQL, Markdown, JavaScript, Shell, and XML templates",
   "displayName": "RavenJS",
   "icon": "icon.png",
   "publisher": "raven-js",
@@ -32,7 +32,9 @@
     "css",
     "sql",
     "markdown",
-    "javascript"
+    "javascript",
+    "shell",
+    "xml"
   ],
   "engines": {
     "vscode": "^1.85.0"
@@ -63,7 +65,9 @@
           "source.css": "css",
           "source.sql": "sql",
           "text.markdown.embedded.ravenjs": "markdown",
-          "source.js": "javascript"
+          "source.js": "javascript",
+          "source.shell": "shellscript",
+          "text.xml": "xml"
         }
       }
     ],

@@ -69,6 +69,22 @@
       ]
     },
     {
+      "begin": "\\b(ref|code|table)\\s*\\(",
+      "beginCaptures": {
+        "1": { "name": "entity.name.function.md.ravenjs" }
+      },
+      "end": "\\)",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.arguments.end.js" }
+      },
+      "contentName": "source.js.embedded.ravenjs",
+      "patterns": [
+        {
+          "include": "source.js"
+        }
+      ]
+    },
+    {
       "begin": "\\b(js|script|scriptDefer|scriptAsync)\\s*`",
       "beginCaptures": {
         "1": { "name": "entity.name.tagged-template.js.ravenjs" }
@@ -103,6 +119,44 @@
         },
         {
           "include": "source.sql"
+        }
+      ]
+    },
+    {
+      "begin": "\\b(sh)\\s*`",
+      "beginCaptures": {
+        "1": { "name": "entity.name.tagged-template.sh.ravenjs" }
+      },
+      "end": "(?<!\\\\)`",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.template.end.js" }
+      },
+      "contentName": "source.shell.embedded.ravenjs",
+      "patterns": [
+        {
+          "include": "#interpolation"
+        },
+        {
+          "include": "source.shell"
+        }
+      ]
+    },
+    {
+      "begin": "\\b(xml|cdata)\\s*`",
+      "beginCaptures": {
+        "1": { "name": "entity.name.tagged-template.xml.ravenjs" }
+      },
+      "end": "(?<!\\\\)`",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.template.end.js" }
+      },
+      "contentName": "text.xml.embedded.ravenjs",
+      "patterns": [
+        {
+          "include": "#interpolation"
+        },
+        {
+          "include": "text.xml"
         }
       ]
     }
