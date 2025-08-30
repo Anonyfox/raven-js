@@ -91,14 +91,13 @@ export function packageOverviewTemplate(data) {
 		${
 			hasModules
 				? contentSection({
-						title: "Quick Navigation",
+						title: "Documentation",
 						icon: "📚",
 						headerVariant: "light",
 						content: html`
 				<div class="d-flex gap-2 flex-wrap">
-					<a href="/modules/" class="btn btn-outline-primary btn-sm">📖 Browse Modules</a>
-					<a href="/api/" class="btn btn-outline-success btn-sm">🔍 API Reference</a>
-					${hasPublicEntities ? html`<a href="/api/?search=" class="btn btn-outline-info btn-sm">🚀 Search APIs</a>` : ""}
+					<a href="/modules/" class="btn btn-primary btn-sm">📖 Browse All Modules</a>
+					${hasPublicEntities ? html`<a href="/sitemap.xml" class="btn btn-outline-secondary btn-sm">🗺️ Sitemap</a>` : ""}
 				</div>
 			`,
 					})
@@ -192,7 +191,6 @@ export function packageOverviewTemplate(data) {
 								text: "Explore Modules",
 								variant: "primary",
 							},
-							{ href: "/api/", text: "Browse API", variant: "outline-primary" },
 						],
 					})
 				: ""
@@ -202,7 +200,7 @@ export function packageOverviewTemplate(data) {
 	// Generate complete page using base template
 	return baseTemplate({
 		title: `${name} Documentation`,
-		description: description || `Documentation for ${name} package`,
+		description: description || `Documentation for ${name}`,
 		packageName: name,
 		content,
 		navigation: {

@@ -174,9 +174,7 @@ describe("packageOverviewTemplate", () => {
 
 		// Quick navigation
 		assert(html.includes('href="/modules/"'), "Contains modules link");
-		assert(html.includes('href="/api/"'), "Contains API reference link");
-		assert(html.includes("Browse Modules"), "Contains module browse text");
-		assert(html.includes("API Reference"), "Contains API reference text");
+		assert(html.includes("Browse All Modules"), "Contains module browse text");
 	});
 
 	test("includes getting started section when modules exist", () => {
@@ -273,7 +271,7 @@ describe("packageOverviewTemplate", () => {
 		// Should include base template structure
 		assert(html.includes("<!DOCTYPE html>"), "Contains proper DOCTYPE");
 		assert(
-			html.includes("test-package Documentation"),
+			html.includes("<title>test-package Documentation</title>"),
 			"Contains proper title",
 		);
 		assert(
@@ -303,29 +301,5 @@ describe("packageOverviewTemplate", () => {
 		// Should still render without errors
 		assert(html.includes("test-package"), "Still contains package name");
 		assert(html.includes("<!DOCTYPE html>"), "Still valid HTML");
-	});
-
-	test("includes search functionality when entities exist", () => {
-		const data = createMockData({
-			hasPublicEntities: true,
-		});
-		const html = packageOverviewTemplate(data);
-
-		assert(
-			html.includes("Search APIs"),
-			"Contains search link when entities exist",
-		);
-	});
-
-	test("omits search functionality when no entities", () => {
-		const data = createMockData({
-			hasPublicEntities: false,
-		});
-		const html = packageOverviewTemplate(data);
-
-		assert(
-			!html.includes("Search APIs"),
-			"Does not show search when no entities",
-		);
 	});
 });

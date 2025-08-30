@@ -439,10 +439,7 @@ describe("moduleDirectoryTemplate", () => {
 
 		// Should include base template structure
 		assert(html.includes("<!DOCTYPE html>"), "Contains proper DOCTYPE");
-		assert(
-			html.includes("Modules - test-package Documentation"),
-			"Contains proper title",
-		);
+		assert(html.includes("<title>Modules</title>"), "Contains proper title");
 		assert(
 			html.includes("Browse 2 modules in test-package"),
 			"Contains description",

@@ -488,7 +488,7 @@ describe("createModuleDirectoryHandler", () => {
 
 		// Should include base template structure with modules navigation active
 		assert(
-			ctx.responseBody.includes("Modules - test-package Documentation"),
+			ctx.responseBody.includes("<title>Modules</title>"),
 			"Contains proper title",
 		);
 		assert(

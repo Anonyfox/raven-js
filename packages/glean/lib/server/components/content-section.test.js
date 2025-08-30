@@ -223,7 +223,7 @@ describe("gettingStarted component", () => {
 	test("includes action buttons when provided", () => {
 		const actions = [
 			{ href: "/docs", text: "📋 Documentation" },
-			{ href: "/api", text: "🔍 API", variant: "secondary" },
+			{ href: "/modules/", text: "🗂️ Modules", variant: "secondary" },
 		];
 
 		const result = gettingStarted({
@@ -239,7 +239,7 @@ describe("gettingStarted component", () => {
 		);
 		ok(
 			result.includes(
-				'<a href="/api" class="btn btn-secondary btn-sm">🔍 API</a>',
+				'<a href="/modules/" class="btn btn-secondary btn-sm">🗂️ Modules</a>',
 			),
 		);
 	});
