@@ -134,10 +134,10 @@ describe("Server", () => {
 		});
 		createdServers.push(server);
 
-		// Should timeout and reject - expect crash message instead of retry message
+		// Should timeout and reject - expect retry exhaustion message
 		await assert.rejects(
 			async () => await server.boot({ timeout: 20, maxAttempts: 1 }),
-			/Server crashed during boot/,
+			/Failed to boot server after 1 attempts/,
 		);
 
 		// Ensure cleanup

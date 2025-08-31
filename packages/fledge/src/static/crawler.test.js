@@ -7,10 +7,25 @@
  */
 
 import assert from "node:assert";
-import { describe, test } from "node:test";
+import { afterEach, describe, test } from "node:test";
 import { Config } from "./config/config.js";
 import { Discover } from "./config/discover.js";
 import { Crawler } from "./crawler.js";
+
+// Global cleanup to ensure no hanging Crawler instances
+let createdCrawlers = [];
+
+afterEach(async () => {
+	// Stop all crawlers created during tests
+	for (const crawler of createdCrawlers) {
+		try {
+			await crawler.stop();
+		} catch {
+			// Ignore cleanup errors
+		}
+	}
+	createdCrawlers = [];
+});
 
 describe("Crawler", () => {
 	test("constructs with valid Config instance", () => {
@@ -20,6 +35,7 @@ describe("Crawler", () => {
 		});
 
 		const crawler = new Crawler(config);
+		createdCrawlers.push(crawler);
 
 		assert.strictEqual(crawler.isStarted(), false);
 		assert.strictEqual(crawler.isCrawling(), false);
@@ -49,6 +65,7 @@ describe("Crawler", () => {
 		});
 
 		const crawler = new Crawler(config);
+		createdCrawlers.push(crawler);
 
 		await crawler.start();
 
@@ -72,6 +89,7 @@ describe("Crawler", () => {
 		});
 
 		const crawler = new Crawler(config);
+		createdCrawlers.push(crawler);
 
 		await crawler.start();
 
@@ -90,6 +108,7 @@ describe("Crawler", () => {
 		});
 
 		const crawler = new Crawler(config);
+		createdCrawlers.push(crawler);
 
 		await assert.rejects(
 			async () => await crawler.crawl(),
@@ -104,6 +123,7 @@ describe("Crawler", () => {
 		});
 
 		const crawler = new Crawler(config);
+		createdCrawlers.push(crawler);
 		await crawler.start();
 
 		// Mock Resource.fetch to reject immediately without timers
@@ -135,6 +155,7 @@ describe("Crawler", () => {
 		});
 
 		const crawler = new Crawler(config);
+		createdCrawlers.push(crawler);
 		await crawler.start();
 
 		const frontierStats = crawler.getFrontierStats();
@@ -151,6 +172,7 @@ describe("Crawler", () => {
 		});
 
 		const crawler = new Crawler(config);
+		createdCrawlers.push(crawler);
 		await crawler.start();
 
 		const statsBeforeCrawl = crawler.getStatistics();
@@ -190,6 +212,7 @@ describe("Crawler", () => {
 		});
 
 		const crawler = new Crawler(config);
+		createdCrawlers.push(crawler);
 		await crawler.start();
 
 		// Mock fetch failure
@@ -217,6 +240,7 @@ describe("Crawler", () => {
 		});
 
 		const crawler = new Crawler(config);
+		createdCrawlers.push(crawler);
 		await crawler.start();
 
 		// Mock HTML response with links
@@ -257,6 +281,7 @@ describe("Crawler", () => {
 		});
 
 		const crawler = new Crawler(config);
+		createdCrawlers.push(crawler);
 		await crawler.start();
 
 		// Mock HTML response with links
@@ -297,6 +322,7 @@ describe("Crawler", () => {
 		});
 
 		const crawler = new Crawler(config);
+		createdCrawlers.push(crawler);
 		await crawler.start();
 
 		// Mock HTML response with mixed links
@@ -336,6 +362,7 @@ describe("Crawler", () => {
 		});
 
 		const crawler = new Crawler(config);
+		createdCrawlers.push(crawler);
 		await crawler.start();
 
 		// Mock mixed content types
@@ -389,6 +416,7 @@ describe("Crawler", () => {
 		});
 
 		const crawler = new Crawler(config);
+		createdCrawlers.push(crawler);
 		await crawler.start();
 
 		// Mock successful responses
@@ -424,6 +452,7 @@ describe("Crawler", () => {
 		});
 
 		const crawler = new Crawler(config);
+		createdCrawlers.push(crawler);
 		await crawler.start();
 
 		const json = crawler.toJSON();
@@ -446,6 +475,7 @@ describe("Crawler", () => {
 		});
 
 		const crawler = new Crawler(config);
+		createdCrawlers.push(crawler);
 
 		// Should not throw
 		await crawler.stop();
@@ -459,6 +489,7 @@ describe("Crawler", () => {
 		});
 
 		const crawler = new Crawler(config);
+		createdCrawlers.push(crawler);
 		await crawler.start();
 
 		const allUrls = crawler.getAllDiscoveredUrls();
@@ -476,6 +507,7 @@ describe("Crawler", () => {
 		});
 
 		const crawler = new Crawler(config);
+		createdCrawlers.push(crawler);
 		await crawler.start();
 
 		// Add small delay to ensure timing difference

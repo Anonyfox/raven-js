@@ -228,9 +228,11 @@ export class Server {
 				} catch (error) {
 					const err = /** @type {any} */ (error);
 
-					// Clean up failed attempt
+					// Clean up failed attempt - Don't wait for exit, just kill and nullify
 					if (this.#childProcess) {
 						this.#childProcess.kill("SIGKILL");
+						// Set to null immediately instead of waiting for exit event
+						// The process will die but we don't need to block on it
 						this.#childProcess = null;
 					}
 
@@ -378,13 +380,23 @@ export class Server {
 
 		return new Promise((resolve, reject) => {
 			const timer = setTimeout(() => {
+				// Clean up event listener on timeout
+				if (this.#childProcess) {
+					this.#childProcess.removeAllListeners("exit");
+				}
 				reject(new Error("Process exit timeout"));
 			}, timeout);
 
-			this.#childProcess?.on("exit", () => {
+			// Create one-time exit handler that cleans itself up
+			const exitHandler = () => {
 				clearTimeout(timer);
+				if (this.#childProcess) {
+					this.#childProcess.removeListener("exit", exitHandler);
+				}
 				resolve();
-			});
+			};
+
+			this.#childProcess?.on("exit", exitHandler);
 
 			// If process is already dead
 			if (this.#childProcess?.killed || this.#childProcess?.exitCode !== null) {
