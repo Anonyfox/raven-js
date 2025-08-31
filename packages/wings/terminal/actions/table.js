@@ -9,31 +9,15 @@
 /**
  * @file Tabular data display function for terminal applications.
  *
- * **Purpose**: Render structured data as formatted tables with Unicode borders.
- * Automatically calculates column widths, handles varying data types.
- *
- * **Key Features**:
- * - Auto-sizing columns based on content width
- * - Unicode box-drawing characters for clean borders
- * - Custom header support or auto-generated from object keys
- * - Left-aligned text with configurable padding
- * - Handles empty arrays and missing data gracefully
- *
- * **Performance**: O(n*m) complexity where n=rows, m=columns.
- * String operations for width calculation, console.log for output.
- *
- * **Compatibility**: Unicode box-drawing requires UTF-8 terminal support.
+ * Renders structured data as formatted tables with Unicode borders and auto-sizing columns.
+ * Supports custom headers and configurable padding.
  */
 
 /**
  * Render array of objects as formatted table with Unicode borders.
  *
- * **Algorithm**: Calculate max column widths, generate border/data rows,
- * output via console.log. Uses object keys as default headers.
- *
- * **Column Width**: Max of header length and longest data value per column.
- * **Data Handling**: Missing properties become empty strings.
- * **Edge Cases**: Empty arrays, no columns, all-null values handled.
+ * Calculates column widths automatically and uses object keys as default headers.
+ * Missing properties are displayed as empty strings.
  *
  * @param {Object[]} data - Array of objects to display as table rows
  * @param {Object} [options={}] - Configuration options

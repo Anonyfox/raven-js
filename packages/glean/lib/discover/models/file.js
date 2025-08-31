@@ -12,18 +12,20 @@ import { extractIdentifiers } from "../parser/extract-identifiers.js";
 import { Identifier } from "./identifier.js";
 
 /**
- * Abstraction over a file in the file system with public API tracking.
+ * File abstraction with public API tracking and immutable content.
  *
- * **Design Intent**: Represents a single file and tracks its publicly exported identifiers
- * to enable dependency resolution. The file's content is immutable after construction to
- * prevent external tampering. Only tracks identifiers that contribute to the public API
- * (re-exported symbols), not internal imports.
+ * Represents a single file tracking publicly exported identifiers for dependency resolution.
+ * Immutable after construction - only tracks re-exported symbols, not internal imports.
  *
- * **Encapsulation**: All properties are private to prevent external modification. Files
- * should be treated as immutable data structures once created.
+ * @example
+ * // Basic file with export tracking
+ * const file = new File('./src/utils.js', 'export { helper } from "./core.js";');
+ * console.log(file.path, file.importedFilePaths(availableFiles));
  *
- * Primitive to speed up subsequent algorithms and make testing easier instead
- * of always having to touch disk over and over again.
+ * @example
+ * // Re-export dependency tracking
+ * const dependencies = file.importedFilePaths(new Set(['./src/core.js']));
+ * // Only includes files that contribute to public API
  */
 export class File {
 	/** @type {string} - Relative path to the file within the project (immutable after construction) */
@@ -46,11 +48,7 @@ export class File {
 	#identifiers = [];
 
 	/**
-	 * Creates a new File instance with immutable content.
-	 *
-	 * **Design Intent**: Parses the file content once during construction to extract
-	 * publicly exported identifiers. The file becomes immutable after creation to
-	 * prevent accidental modification that could invalidate the parsed identifiers.
+	 * Creates a new File instance with immutable content and parsed identifiers.
 	 *
 	 * @param {string} path - The RELATIVE path to the file within the project (must be relative)
 	 * @param {string} text - The file's content as a string (will be parsed for exports)
@@ -62,11 +60,7 @@ export class File {
 	}
 
 	/**
-	 * Get the file path (readonly).
-	 *
-	 * **Design Intent**: Provides readonly access to the file's relative path.
-	 * No setter is provided to maintain immutability.
-	 *
+	 * Get the file path (readonly)
 	 * @returns {string} The relative file path within the project
 	 */
 	get path() {
@@ -74,12 +68,7 @@ export class File {
 	}
 
 	/**
-	 * Get the file text content (readonly).
-	 *
-	 * **Design Intent**: Provides readonly access to the file's content.
-	 * No setter is provided to maintain immutability and prevent invalidation
-	 * of the parsed identifiers.
-	 *
+	 * Get the file text content (readonly)
 	 * @returns {string} The complete file content as a string
 	 */
 	get text() {
@@ -87,22 +76,14 @@ export class File {
 	}
 
 	/**
-	 * Returns file paths that this file depends on through re-exported imports.
+	 * Returns file paths that contribute to this file's public API through re-exports.
 	 *
-	 * **Design Intent**: ONLY tracks files that contribute to this file's public API
-	 * through re-exports (e.g., `export { helper } from './utils.js'`). Regular imports
-	 * that are not re-exported are ignored because they don't affect the public interface.
-	 *
-	 * **Critical Rule**: This method tracks PUBLIC dependencies only, not internal imports.
-	 * If you import something but don't re-export it, the source file won't appear in
-	 * the results. This enables building accurate module dependency graphs based on
-	 * what each module actually exposes publicly.
-	 *
-	 * Uses pickEntrypointFile to resolve relative import paths to actual files,
-	 * handling different file extensions and index file resolution.
+	 * ONLY tracks public dependencies - files whose symbols are re-exported. Regular imports
+	 * that are not re-exported are ignored. Uses pickEntrypointFile for path resolution.
 	 *
 	 * @param {Set<string>} availableFilePaths - Set of available file paths for resolution
 	 * @returns {Set<string>} Set of unique file paths that contribute to this file's public API
+	 *
 	 * @example
 	 * // Given file content:
 	 * // import { helper } from './utils.js';

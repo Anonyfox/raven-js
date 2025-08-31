@@ -7,12 +7,11 @@
  */
 
 /**
- * @file Attribution bar component - surgical authorship display
+ * @file Attribution bar component with author and contributor display.
  *
- * Ravens display authorship territories with predatory precision.
  * Renders author information with proper mailto links and contributor
- * intelligence through Bootstrap utility classes. Optional rendering -
- * nothing displayed when no attribution exists.
+ * information through Bootstrap utility classes. Optional rendering -
+ * displays nothing when no attribution exists.
  */
 
 import { html } from "@raven-js/beak";
@@ -76,17 +75,21 @@ function renderContributors(contributors) {
 }
 
 /**
- * Attribution bar component for entity cards and pages
+ * Attribution bar component displaying primary author and contributors with subtitle styling.
  *
- * Displays primary author and contributors in a subtle, non-intrusive way.
- * Uses Bootstrap small text styling with muted colors. Renders nothing
- * when no attribution context exists.
- *
- * **Bootstrap Dependencies:** text-muted, small, text-decoration-none
- * **Surgical Design:** Optional rendering, proper mailto: links
+ * Displays primary author and contributors using Bootstrap small text and muted colors.
+ * Returns empty string when no attribution context exists.
  *
  * @param {import('../../extract/models/attribution.js').AttributionContext} attributionContext - Attribution context
  * @returns {string} HTML attribution bar or empty string
+ *
+ * @example
+ * // Basic attribution bar
+ * attributionBar(attributionContext);
+ *
+ * @example
+ * // Returns empty string when no attribution
+ * attributionBar(null); // → ""
  */
 export function attributionBar(attributionContext) {
 	if (

@@ -7,18 +7,10 @@
  */
 
 /**
- * **Bit Flags** - Ultra-fast HTTP method and status code operations through bit manipulation.
+ * @file Bitwise operations for HTTP methods and status codes with Map-based lookups and precomputed combinations.
  *
- * This module provides bitwise operations for HTTP methods and status codes that are
- * exponentially faster than string comparisons and array operations. By encoding
- * HTTP methods as binary flags, we enable constant-time set operations.
- *
- * **Performance Impact**: Significantly faster than string-based method checking
- * **Memory Usage**: Constant O(1) memory regardless of method count
- * **Operations**: Union, intersection, difference via single CPU instructions
- *
- * **Mathematical Foundation**: Each HTTP method maps to a unique power of 2,
- * enabling bitwise OR for combining, AND for checking, XOR for toggling.
+ * Provides bit flag constants, conversion functions, and method validation using bitwise operations
+ * instead of string comparisons. Includes precomputed method combinations for common use cases.
  */
 
 /**
@@ -27,10 +19,16 @@
  * Each method is assigned a unique power of 2, enabling bitwise operations.
  * These flags can be combined using bitwise OR (|) and checked using bitwise AND (&).
  *
- * **Mathematical precision**: Uses powers of 2 for perfect bit isolation
- * **Performance**: Single CPU instruction vs multiple string comparisons
- *
  * @type {Object<string, number>}
+ *
+ * @example
+ * // Individual flags
+ * const getFlag = HTTP_METHOD_FLAGS.GET; // 1
+ * const postFlag = HTTP_METHOD_FLAGS.POST; // 2
+ *
+ * @example
+ * // Combining flags
+ * const readMethods = HTTP_METHOD_FLAGS.GET | HTTP_METHOD_FLAGS.HEAD; // 33
  */
 export const HTTP_METHOD_FLAGS = {
 	GET: 1, // 2^0 = 0b00000001
@@ -47,10 +45,16 @@ export const HTTP_METHOD_FLAGS = {
 /**
  * Reverse mapping from HTTP method strings to bit flags.
  *
- * This enables O(1) conversion from method names to bit flags for
- * ultra-fast flag-based operations.
- *
  * @type {Map<string, number>}
+ *
+ * @example
+ * // Get flag for method
+ * const getFlag = METHOD_TO_FLAG.get('GET'); // 1
+ * const postFlag = METHOD_TO_FLAG.get('POST'); // 2
+ *
+ * @example
+ * // Check if method exists
+ * const hasMethod = METHOD_TO_FLAG.has('PUT'); // true
  */
 export const METHOD_TO_FLAG = new Map([
 	["GET", HTTP_METHOD_FLAGS.GET],
@@ -67,9 +71,16 @@ export const METHOD_TO_FLAG = new Map([
 /**
  * Reverse mapping from bit flags to HTTP method strings.
  *
- * This enables O(1) conversion from bit flags back to method names.
- *
  * @type {Map<number, string>}
+ *
+ * @example
+ * // Get method for flag
+ * const getMethod = FLAG_TO_METHOD.get(1); // 'GET'
+ * const postMethod = FLAG_TO_METHOD.get(2); // 'POST'
+ *
+ * @example
+ * // Check if flag exists
+ * const hasFlag = FLAG_TO_METHOD.has(4); // true (PUT)
  */
 export const FLAG_TO_METHOD = new Map([
 	[HTTP_METHOD_FLAGS.GET, "GET"],
@@ -86,12 +97,15 @@ export const FLAG_TO_METHOD = new Map([
 /**
  * Common HTTP method combinations as precomputed bit flags.
  *
- * These constants eliminate runtime bitwise OR operations for frequently
- * used method combinations in middleware and route definitions.
- *
- * **Performance**: Precomputed values vs runtime bit operations
- *
  * @type {Object<string, number>}
+ *
+ * @example
+ * // Safe methods check
+ * const isSafe = (methodFlag & METHOD_COMBINATIONS.SAFE_METHODS) !== 0;
+ *
+ * @example
+ * // Read methods validation
+ * const allowsRead = (methodFlag & METHOD_COMBINATIONS.READ_METHODS) !== 0;
  */
 export const METHOD_COMBINATIONS = {
 	// Safe methods (idempotent, cacheable)
@@ -139,24 +153,21 @@ export const METHOD_COMBINATIONS = {
 /**
  * Converts an HTTP method string to its corresponding bit flag.
  *
- * This function provides O(1) conversion from method strings to bit flags
- * for ultra-fast bitwise operations and set membership testing.
- *
- * **Performance**: O(1) Map lookup vs O(n) string comparison loops
+ * Converts HTTP method strings to bit flags using Map lookup for bitwise operations.
  *
  * @param {string} method - The HTTP method to convert
  * @returns {number} The bit flag for the method, or 0 if invalid
  *
  * @example
- * ```javascript
+ * // Basic usage
  * const getFlag = methodToFlag("GET");     // 1
  * const postFlag = methodToFlag("POST");   // 2
  * const invalid = methodToFlag("INVALID"); // 0
  *
- * // Ultra-fast method checking
+ * @example
+ * // Method validation with bitmasks
  * const allowedMethods = HTTP_METHOD_FLAGS.GET | HTTP_METHOD_FLAGS.POST;
  * const isAllowed = (methodToFlag(userMethod) & allowedMethods) !== 0;
- * ```
  */
 export function methodToFlag(method) {
 	return METHOD_TO_FLAG.get(method) || 0;
@@ -165,20 +176,16 @@ export function methodToFlag(method) {
 /**
  * Converts a bit flag back to its corresponding HTTP method string.
  *
- * This function provides O(1) conversion from bit flags back to method strings
- * for debugging, logging, and response generation.
- *
- * **Performance**: O(1) Map lookup with single-bit validation
+ * Converts bit flags back to HTTP method strings with single-bit validation.
  *
  * @param {number} flag - The bit flag to convert
  * @returns {string|null} The HTTP method string, or null if invalid
  *
  * @example
- * ```javascript
+ * // Basic usage
  * const method = flagToMethod(1);   // "GET"
  * const method2 = flagToMethod(2);  // "POST"
  * const invalid = flagToMethod(3);  // null (not a single bit)
- * ```
  */
 export function flagToMethod(flag) {
 	// Ensure flag represents exactly one bit (power of 2)
@@ -191,30 +198,18 @@ export function flagToMethod(flag) {
 /**
  * Checks if a method is allowed against a bitmask of permitted methods.
  *
- * This function uses bitwise AND for ultra-fast method validation,
- * replacing string comparisons and array searches with single CPU instructions.
- *
- * **Performance**: Single bitwise AND vs O(n) array iteration
- * **Algorithmic Complexity**: O(1) vs O(n) for traditional approaches
+ * Validates HTTP methods against a bitmask using bitwise AND operations.
  *
  * @param {string} method - The HTTP method to check
  * @param {number} allowedMask - Bitmask of allowed method flags
  * @returns {boolean} True if method is allowed, false otherwise
  *
  * @example
- * ```javascript
- * // Allow GET and POST only
+ * // Basic validation
  * const allowedMethods = HTTP_METHOD_FLAGS.GET | HTTP_METHOD_FLAGS.POST;
- *
  * isMethodAllowed("GET", allowedMethods);    // true
  * isMethodAllowed("POST", allowedMethods);   // true
  * isMethodAllowed("DELETE", allowedMethods); // false
- *
- * // Compare traditional approach:
- * // ["GET", "POST"].includes(method) // O(n) linear search
- * // vs
- * // isMethodAllowed(method, mask)     // O(1) bitwise operation
- * ```
  */
 export function isMethodAllowed(method, allowedMask) {
 	const flag = methodToFlag(method);
@@ -224,25 +219,20 @@ export function isMethodAllowed(method, allowedMask) {
 /**
  * Combines multiple HTTP methods into a single bitmask.
  *
- * This function accepts an array of method strings and produces a single
- * bit flag representing the union of all methods for ultra-fast operations.
- *
- * **Performance**: Single loop with bitwise OR vs repeated array operations
+ * Combines multiple HTTP method strings into a single bitmask using bitwise OR operations.
  *
  * @param {string[]} methods - Array of HTTP method strings
  * @returns {number} Combined bitmask representing all methods
  *
  * @example
- * ```javascript
+ * // Creating method combinations
  * const restMethods = combineMethodFlags(["GET", "POST", "PUT", "DELETE"]);
  * const safeMethods = combineMethodFlags(["GET", "HEAD", "OPTIONS"]);
  *
- * // Ultra-fast intersection check
+ * @example
+ * // Set operations on bitmasks
  * const hasOverlap = (restMethods & safeMethods) !== 0;
- *
- * // Ultra-fast subset check
  * const isSubset = (safeMethods & restMethods) === safeMethods;
- * ```
  */
 export function combineMethodFlags(methods) {
 	let combined = 0;
@@ -255,22 +245,19 @@ export function combineMethodFlags(methods) {
 /**
  * Extracts individual method strings from a combined bitmask.
  *
- * This function decodes a bitmask back into an array of method strings,
- * useful for debugging, logging, and API responses.
- *
- * **Mathematical precision**: Tests each bit position individually
+ * Decodes a bitmask into an array of HTTP method strings by testing each bit position.
  *
  * @param {number} mask - The combined method bitmask
  * @returns {string[]} Array of HTTP method strings
  *
  * @example
- * ```javascript
+ * // Basic extraction
  * const mask = HTTP_METHOD_FLAGS.GET | HTTP_METHOD_FLAGS.POST;
  * const methods = extractMethodsFromMask(mask); // ["GET", "POST"]
  *
- * // Useful for API responses
+ * @example
+ * // API response headers
  * ctx.responseHeaders.set("Allow", extractMethodsFromMask(allowedMask).join(", "));
- * ```
  */
 export function extractMethodsFromMask(mask) {
 	const methods = [];
@@ -283,62 +270,56 @@ export function extractMethodsFromMask(mask) {
 }
 
 /**
- * Status code ranges encoded as bit patterns for ultra-fast classification.
- *
- * These constants enable single bitwise operations to classify HTTP status codes
- * by category, replacing multiple range comparisons with bit operations.
- *
- * **Mathematical foundation**: Each status code maps to (code - 100) for 0-based indexing
- * **Performance**: Single bit test vs multiple range comparisons
+ * Status code category constants for classification.
  *
  * @type {Object<string, number>}
+ *
+ * @example
+ * // Category constants
+ * const success = STATUS_CATEGORIES.SUCCESS; // 2
+ * const error = STATUS_CATEGORIES.CLIENT_ERROR; // 4
+ *
+ * @example
+ * // Switch statements
+ * switch (category) {
+ *   case STATUS_CATEGORIES.SUCCESS: return 'ok';
+ *   case STATUS_CATEGORIES.CLIENT_ERROR: return 'bad request';
+ * }
  */
-export const STATUS_CODE_MASKS = {
-	// 1xx Informational
-	INFORMATIONAL: 0b1111, // Covers 100-103
-
-	// 2xx Success
-	SUCCESS: 0b11111111 << 100, // Covers 200-207
-
-	// 3xx Redirection
-	REDIRECT: 0b11111111 << 200, // Covers 300-307
-
-	// 4xx Client Error
-	CLIENT_ERROR: 0b11111111111111111111111111111111 << 300, // Covers 400-431
-
-	// 5xx Server Error
-	SERVER_ERROR: 0b11111111111111111111111111111111 << 400, // Covers 500-531
+export const STATUS_CATEGORIES = {
+	INFORMATIONAL: 1, // 1xx
+	SUCCESS: 2, // 2xx
+	REDIRECT: 3, // 3xx
+	CLIENT_ERROR: 4, // 4xx
+	SERVER_ERROR: 5, // 5xx
+	INVALID: 0, // Invalid codes
 };
 
 /**
- * Classifies an HTTP status code using ultra-fast bit operations.
+ * Classifies HTTP status codes into standard categories (1xx, 2xx, etc.).
  *
- * This function determines the status code category (1xx, 2xx, etc.) using
- * bit shifting and masking instead of multiple range comparisons.
- *
- * **Performance**: Single bit operation vs multiple conditional branches
+ * Uses integer division to determine category from the status code's hundreds digit.
+ * Returns string category names matching HTTP specification.
  *
  * @param {number} statusCode - The HTTP status code to classify
- * @returns {string} The status code category
+ * @returns {string} The status code category name
  *
  * @example
- * ```javascript
+ * // Basic classification
  * classifyStatusCode(200); // "success"
  * classifyStatusCode(404); // "client_error"
  * classifyStatusCode(500); // "server_error"
  *
- * // Ultra-fast error checking
- * const isError = statusCode >= 400; // Traditional
- * const isErrorBit = (1 << (statusCode - 100)) & (STATUS_CODE_MASKS.CLIENT_ERROR | STATUS_CODE_MASKS.SERVER_ERROR);
- * ```
+ * @example
+ * // Error detection
+ * const isError = classifyStatusCode(code).endsWith('_error');
  */
 export function classifyStatusCode(statusCode) {
 	if (statusCode < 100 || statusCode >= 600) {
 		return "invalid";
 	}
 
-	// Optimized integer division: (statusCode / 100) | 0 is faster than Math.floor()
-	const category = (statusCode / 100) | 0;
+	const category = Math.floor(statusCode / 100);
 	switch (category) {
 		case 1:
 			return "informational";

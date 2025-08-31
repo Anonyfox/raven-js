@@ -316,5 +316,18 @@ describe("CSS Syntax Highlighter", () => {
 			assert.ok(result.includes('<span class="text-secondary">{</span>'));
 			assert.ok(result.includes('<span class="text-secondary">}</span>'));
 		});
+
+		it("should highlight !important declarations - direct detection (surgical coverage for lines 193-202)", () => {
+			const css = "color: red !important;";
+			const result = highlightCSS(css);
+			assert.ok(result.includes('<span class="text-danger">!important</span>'));
+		});
+
+		it("should highlight !important as word token (surgical coverage for lines 260-263)", () => {
+			// Test the word === "!important" path by having it come through word parsing
+			const css = ".class { margin: 0 !important }";
+			const result = highlightCSS(css);
+			assert.ok(result.includes('<span class="text-danger">!important</span>'));
+		});
 	});
 });

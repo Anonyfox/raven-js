@@ -294,11 +294,62 @@ describe("Schema", () => {
 			assert.strictEqual(schema.validate(invalidData), false);
 		});
 
+		it("should reject missing required plain fields (lines 223-224)", () => {
+			const schema = new PlainFieldSchema();
+			const missingFieldData = {
+				plainString: "test",
+				plainNumber: 42,
+				// plainBoolean missing - this should trigger lines 223-224
+			};
+
+			assert.strictEqual(schema.validate(missingFieldData), false);
+		});
+
 		it("should handle malformed JSON strings", () => {
 			const schema = new SimpleSchema();
 			const malformedJson = "{ invalid json";
 
 			assert.strictEqual(schema.validate(malformedJson), false);
+		});
+
+		it("should handle non-string JSON input path (line 101 branch coverage)", () => {
+			const schema = new SimpleSchema();
+			const nonStringData = { name: "test", age: 25, active: true };
+
+			// This should hit the non-string branch of the ternary operator
+			assert.strictEqual(schema.validate(nonStringData), true);
+		});
+
+		it("should handle undefined values for primitive fields in edge cases", () => {
+			const schema = new SimpleSchema();
+
+			// This should trigger validation paths for undefined values
+			const partialData = {
+				name: "test",
+				age: undefined, // This should hit the undefined branch
+				active: true,
+			};
+
+			assert.strictEqual(schema.validate(partialData), false);
+		});
+
+		it("should handle metadata edge cases for branch coverage", () => {
+			// Create schema with metadata that has falsy optional and description values
+			class EdgeCaseSchema extends Schema {
+				field1 = Schema.field("", { optional: false, description: "" });
+				field2 = Schema.field(0, { optional: true, description: null });
+				field3 = Schema.field(true, { optional: false });
+			}
+
+			const schema = new EdgeCaseSchema();
+			const json = schema.toJSON();
+			const parsed = JSON.parse(json);
+
+			// This should hit the branches where description is falsy
+			assert.ok(parsed.properties.field1);
+			assert.ok(parsed.properties.field2);
+			assert.ok(parsed.properties.field3);
+			assert.ok(Array.isArray(parsed.required));
 		});
 	});
 

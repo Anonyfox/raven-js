@@ -3,62 +3,107 @@
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
  * @see {@link https://ravenjs.dev}
- * @see {@link https://anonyfox.com} Trie data structure for fast route matching including wildcards and named param matches. see: https://www.enjoyalgorithms.com/blog/introduction-to-trie-data-structure - Accessing a random key in an object is roughly O(1) with a very low constant factor in JS. - class methods are more performant than object function literals and saves memory. (since they exist only once on the prototype and not on every instance) Building up the trie is roughly O(numRoutes * avgNumSegments), with special care of keeping the constant factor low (simple imperative operations, early returns, ...). Usually avgNumSegments is very low (1-3) for most routes, so this is very efficient, even though we have duplicated iterations for multiple named parameters in the same position in the sub-path. This is a trade-off for simpler code. A medium sized app might have 100 routes with ~3 segments each, and since we can exploit the low constant factor of O(1) for object key access, this is probably pretty much instant resolution, while allowing route declarations in arbitrary order.
+ * @see {@link https://anonyfox.com}
+ */
+
+/**
+ * @file Trie data structure for route matching with support for static paths, named parameters, and wildcards.
+ *
+ * Provides tree-based route storage and matching with priority-ordered resolution:
+ * fixed segments > named parameters > wildcards. Uses Object.create(null) for performance.
+ */
+/**
+ * Trie data structure for route matching with support for wildcards and named parameters.
+ *
+ * Routes are stored as tree nodes with three types of children: fixed segments for exact matches,
+ * dynamic segments for named parameters, and wildcards for catch-all patterns. Uses priority-based
+ * matching with exact matches taking precedence over parameters and wildcards.
+ *
+ * @example
+ * // Basic usage
+ * const trie = new Trie();
+ * trie.register(['api', 'users'], 1);
+ * trie.register(['api', 'users', ':id'], 2);
+ *
+ * @example
+ * // Route matching with parameters
+ * const result = trie.match(['api', 'users', '123']);
+ * // → { id: 2, params: { id: '123' } }
  */
 export class Trie {
 	/**
+	 * Route identifier for this node (-1 indicates no route registered at this level).
 	 *
-	 * Unique identifier for the route, -1 (or < 0 actually) means no route.
-	 * So if this is set, this is a leaf node representing a route.
+	 * @type {number}
 	 */
 	id = -1;
 
 	/**
-	 * Cache of the segment name for quicker retrieval of named parameters. this
-	 * way we can avoid looking up the name in the parent Trie node (no pointer!).
+	 * Segment name for this node, used for named parameter collection.
 	 *
-	 * @type {string}
+	 * @type {string|undefined}
 	 */
 	name;
 
 	/**
-	 * Children: Normal path segments with a known string value
+	 * Fixed path segments for exact string matches.
 	 *
 	 * @type {Object<string, Trie>}
 	 */
 	fixed = Object.create(null);
 
 	/**
-	 * Children: Dynamic path segments with a named parameter or wildcards.
-	 * Their segment name actually is the name of the named parameter.
-	 *
-	 * V8 optimization: Object.create(null) creates cleaner object shapes
-	 * without prototype pollution for faster property access.
+	 * Dynamic path segments for named parameters (e.g., :id, :name).
 	 *
 	 * @type {Object<string, Trie>}
 	 */
 	dynamic = Object.create(null);
 
 	/**
-	 * Wildcard segment, only one per route segment is allowed.
-	 * This is a special case of a dynamic segment, stopping further matching.
+	 * Wildcard route identifier (-1 indicates no wildcard at this level).
 	 *
 	 * @type {number}
 	 */
 	wildcard = -1;
 
 	/**
-	 * Create a new Trie instance.
-	 * @param {string} [name] - the segment name for quicker retrieval of named parameters
+	 * Creates a new Trie node.
+	 *
+	 * @param {string} [name] - Segment name for this node
+	 *
+	 * @example
+	 * // Basic trie creation
+	 * const trie = new Trie();
+	 *
+	 * @example
+	 * // Named node creation
+	 * const userNode = new Trie('user');
 	 */
 	constructor(name) {
 		this.name = name;
 	}
 
 	/**
-	 * @param {string[]} pathSegments
-	 * @param {number} id
-	 * @param {number} [startIndex=0] - Index to start processing from (optimization to avoid array copying)
+	 * Registers a route path in the trie with the given identifier.
+	 *
+	 * Processes path segments recursively, creating trie nodes for each segment type.
+	 * Validates wildcard placement (must be last) and uniqueness per segment.
+	 *
+	 * @param {string[]} pathSegments - Array of path segments to register
+	 * @param {number} id - Unique identifier for this route
+	 * @param {number} [startIndex=0] - Starting index for processing segments
+	 *
+	 * @example
+	 * // Static route
+	 * trie.register(['api', 'users'], 1);
+	 *
+	 * @example
+	 * // Named parameter route
+	 * trie.register(['api', 'users', ':id'], 2);
+	 *
+	 * @example
+	 * // Wildcard route
+	 * trie.register(['files', '*'], 3);
 	 */
 	register(pathSegments, id, startIndex = 0) {
 		// stop recursion if there are no more path segments, this is a leaf node then
@@ -97,9 +142,24 @@ export class Trie {
 	}
 
 	/**
-	 * @param {string[]} remainingPathSegments
-	 * @param {Object<string, string>} [params] - the collected named parameters
-	 * @returns {{id: number | undefined, params: Object<string, string>}}
+	 * Matches a path against registered routes using priority-based resolution.
+	 *
+	 * Tries exact matches first, then named parameters, then wildcards.
+	 * Collects named parameter values during traversal.
+	 *
+	 * @param {string[]} remainingPathSegments - Path segments to match
+	 * @param {Object<string, string>} [params={}] - Collected named parameters
+	 * @returns {{id: number | undefined, params: Object<string, string>}} Match result
+	 *
+	 * @example
+	 * // Exact match
+	 * const result = trie.match(['api', 'users']);
+	 * // → { id: 1, params: {} }
+	 *
+	 * @example
+	 * // Parameter match
+	 * const result = trie.match(['api', 'users', '123']);
+	 * // → { id: 2, params: { id: '123' } }
 	 */
 	match(remainingPathSegments, params = {}) {
 		// stop recursion if there are no more path segments, this is a leaf node then

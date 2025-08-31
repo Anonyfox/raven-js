@@ -590,5 +590,36 @@ describe("SQL Syntax Highlighter", () => {
 			assert.ok(result.includes('<span class="text-body">_private</span>'));
 			assert.ok(result.includes('<span class="text-body">column$</span>'));
 		});
+
+		it("should handle doubled quotes in SQL strings (surgical coverage for lines 479-481)", () => {
+			const sql = "SELECT 'Don''t stop' AS message";
+			const result = highlightSQL(sql);
+			assert.ok(
+				result.includes('<span class="text-success">&#39;Don&#39;</span>'),
+			);
+			assert.ok(
+				result.includes('<span class="text-success">&#39;t stop&#39;</span>'),
+			);
+		});
+
+		it("should highlight multi-character SQL operators (surgical coverage for line 547)", () => {
+			const sql =
+				"SELECT * WHERE a <=> b AND c <> d AND e !< f AND g !> h AND i || j";
+			const result = highlightSQL(sql);
+			assert.ok(
+				result.includes('<span class="text-secondary">&lt;=&gt;</span>'),
+			);
+			assert.ok(
+				result.includes('<span class="text-secondary">&lt;&gt;</span>'),
+			);
+			assert.ok(result.includes('<span class="text-secondary">!&lt;</span>'));
+			assert.ok(result.includes('<span class="text-secondary">!&gt;</span>'));
+			// || is rendered as two separate | characters
+			assert.ok(
+				result.includes(
+					'<span class="text-secondary">|</span><span class="text-secondary">|</span>',
+				),
+			);
+		});
 	});
 });

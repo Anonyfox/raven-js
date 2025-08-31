@@ -7,54 +7,44 @@
  */
 
 /**
- * @file Zero-dependency machine learning, AI, and data processing library for modern JavaScript
+ * @file Machine learning, data structures, and temporal computation using platform-native algorithms.
  *
- * The raven's neural nexus: intelligence distillation through platform-native algorithms.
- * Machine learning, data structures, temporal computation, and cognitive processing
- * using pure JavaScript primitives and Node.js built-ins.
- *
- * **Intelligence over dependencies.** Zero external attack vectors, maximum adaptability.
- * **Platform mastery.** Native Math APIs, precise temporal algorithms, structural validation.
- * **Cognitive processing.** Pattern recognition, memory palace construction, chronological computation.
+ * Neural networks, matrix operations, schema validation, and holiday calculations
+ * using pure JavaScript primitives and Node.js built-ins. Exports learning algorithms,
+ * structural primitives, and temporal functions for cognitive processing tasks.
  *
  * @example
- * // Neural computation and data structures
- * import { Matrix, Schema, NeuralNetwork } from "@raven-js/cortex";
+ * // Neural networks and machine learning
+ * import { NeuralNetwork, LinearRegression } from "@raven-js/cortex";
+ *
+ * const nn = new NeuralNetwork([2, 4, 1]);
+ * const regression = new LinearRegression();
+ *
+ * @example
+ * // Matrix operations and data structures
+ * import { Matrix, Schema } from "@raven-js/cortex";
  *
  * const matrix = Matrix.random(3, 3);
- * const network = new NeuralNetwork([2, 4, 1]);
+ * const result = matrix.multiply(Matrix.identity(3));
  *
  * @example
- * // Temporal computation with surgical precision
+ * // Temporal computation
  * import { calculateEasterSunday, calculateHolidaysOfYear } from "@raven-js/cortex";
  *
  * const easter2024 = calculateEasterSunday(2024);
- * console.log(easter2024); // 2024-03-31 (March 31, 2024)
- *
- * const germanHolidays = calculateHolidaysOfYear({
- *   year: 2024,
- *   country: 'DE',
- *   region: 'BY'
- * });
- * console.log(germanHolidays.length); // 13 holidays (9 national + 4 Bavaria)
- * console.log(germanHolidays[0].name); // 'Neujahr'
- * console.log(germanHolidays[0].isWorkFree); // true
+ * const holidays = calculateHolidaysOfYear({ year: 2024, country: 'US' });
  */
 
 /**
- * A simple hello world function to establish the Cortex neural interface.
- * Demonstrates the foundational pattern for all Cortex cognitive functions.
+ * Basic greeting function demonstrating Cortex package functionality.
  *
- * @param {string} name - The entity to greet
- * @returns {string} A greeting message that acknowledges the raven's awakening intelligence
+ * @param {string} name - Name to include in greeting
+ * @returns {string} Greeting message with Cortex branding
  *
  * @example
+ * // Basic usage
  * const greeting = hello("Developer");
  * console.log(greeting); // "Hello, Developer! The raven's mind awakens."
- *
- * @example
- * const greeting = hello("AI");
- * console.log(greeting); // "Hello, AI! The raven's mind awakens."
  */
 export function hello(name) {
 	if (typeof name !== "string") {

@@ -7,14 +7,10 @@
  */
 
 /**
- * @file Blazing-fast JavaScript symbol extraction with V8 optimizations.
+ * @file JavaScript symbol extraction with single-pass processing optimization.
  *
- * Ultra-high performance single-pass processing delivering 23.6% speed improvement:
- * • Single-pass import/export processing (no duplicate line splitting)
- * • Character-based early exit optimizations
- * • Pre-compiled regex patterns for maximum V8 performance
- * • Reduced object allocations in hot paths
- * • Smart fast-path detection with inlined logic
+ * Extracts publicly exported identifiers from JavaScript source code using
+ * pre-compiled regex patterns and character-based early exit optimizations.
  */
 
 import { Identifier } from "../models/identifier.js";
@@ -35,34 +31,33 @@ const DESTRUCTURE_PATTERN = /\{([^}]+)\}/;
 const ARRAY_DESTRUCTURE_PATTERN = /\[([^\]]+)\]/;
 
 /**
- * Extracts publicly exported identifiers from JavaScript code with blazing-fast V8-optimized performance.
+ * Extracts publicly exported identifiers from JavaScript source code.
  *
- * **Design Intent**: ONLY returns identifiers that are actually exported (made publicly available)
- * by the module. For re-exports (e.g., `export { helper } from './utils.js'`), it captures the
- * source path to enable dependency tracking. Regular imports that are NOT re-exported are
- * completely ignored since they don't contribute to the public API.
- *
- * **Critical Rule**: This function tracks PUBLIC exports only, not internal imports. If you import
- * something but don't re-export it, it won't appear in the results. This is by design for
- * building accurate module dependency graphs based on public interfaces.
- *
- * Significantly faster than AST-based solutions or simple regex-based solutions.
- * Handles all ES module patterns: default exports, named exports, re-exports, destructuring,
- * wildcard exports, and complex import/export chains with perfect accuracy.
+ * Returns ONLY identifiers that are exported (made publicly available) by the module.
+ * For re-exports, captures source path for dependency tracking. Regular imports
+ * that are not re-exported are ignored.
  *
  * @param {string} code - JavaScript source code to analyze
  * @returns {Array<Identifier>} Array of exported identifiers with source paths (null for local exports)
+ *
  * @example
- * // Given this code:
- * // import { helper } from './utils.js';
- * // import { unused } from './other.js';  // ← NOT tracked (not re-exported)
- * // export { helper };                    // ← Tracked with sourcePath: './utils.js'
- * // export const local = 'value';         // ← Tracked with sourcePath: null
- * //
- * // Returns: [
- * //   Identifier('helper', 'helper', './utils.js'),
- * //   Identifier('local', 'local', null)
- * // ]
+ * // Basic exports extraction
+ * const identifiers = extractIdentifiers(`
+ *   import { helper } from './utils.js';
+ *   import { unused } from './other.js';  // ← NOT tracked (not re-exported)
+ *   export { helper };                    // ← Tracked with sourcePath
+ *   export const local = 'value';         // ← Tracked as local
+ * `);
+ * // → [Identifier('helper', 'helper', './utils.js'), Identifier('local', 'local', null)]
+ *
+ * @example
+ * // Complex export patterns
+ * const identifiers = extractIdentifiers(`
+ *   export default class MyClass {}
+ *   export * as utils from './utils.js';
+ *   export { func as alias } from './lib.js';
+ * `);
+ * // → Handles all ES module patterns
  */
 export function extractIdentifiers(code) {
 	if (!code || typeof code !== "string") {
@@ -74,9 +69,7 @@ export function extractIdentifiers(code) {
 }
 
 /**
- * Ultra-fast single-pass extraction optimized for V8.
- * Processes imports and exports simultaneously for maximum performance.
- *
+ * Single-pass extraction processing imports and exports simultaneously
  * @param {string} code - Raw JavaScript code
  * @returns {Array<Identifier>}
  */
@@ -136,8 +129,7 @@ function processImportLine(line, importMap) {
 }
 
 /**
- * Fast import clause parsing optimized for V8.
- *
+ * Parse import clause into import map
  * @param {string} clause - Import clause
  * @param {string} sourcePath - Source path
  * @param {Map<string, {originalName: string, sourcePath: string}>} importMap - Map to update
@@ -249,8 +241,7 @@ function processExportLine(line, lines, lineIndex, importMap, exports) {
 }
 
 /**
- * Ultra-fast export line processing optimized for V8.
- *
+ * Process export line with pattern matching
  * @param {string} line - Export line
  * @param {Map<string, {originalName: string, sourcePath: string}>} importMap - Import map
  * @param {Array<Identifier>} exports - Exports array
@@ -457,4 +448,4 @@ function parseArrayDestructuringFast(content, exports) {
 	}
 }
 
-// All legacy functions removed - replaced by ultra-fast single-pass V8-optimized implementation above
+// Single-pass implementation with regex pattern matching

@@ -19,32 +19,31 @@ import { glob } from "../fsutils/glob.js";
 import { pickEntrypointFile } from "../fsutils/pick-entrypoint-file.js";
 
 /**
- * Extracts and validates entry points from a package.json object, resolving
- * wildcards and validating against actual files.
+ * Extracts and validates entry points from package.json, resolving wildcards against actual files.
  *
- * **Design Intent**: Entry points define how external code can import from a package.
- * This function REQUIRES file validation to ensure only real, existing files are
- * included in the results. This prevents broken imports and ensures the module
- * graph accurately reflects the package's public API.
- *
- * **Mandatory Validation**: The availableFiles parameter is REQUIRED (not optional).
- * This enforces that entry points are always validated against actual files,
- * preventing theoretical or non-existent entry points from being returned.
- *
- * **Critical Rule**: Only returns entry points that correspond to actual files.
- * If a package.json declares an entry point but the file doesn't exist, it's excluded
- * from the results. This ensures consumers can reliably import from the returned paths.
+ * Entry points define how external code imports from a package. Only returns entry points
+ * that correspond to existing files, preventing broken imports.
  *
  * @param {{exports?: any, main?: string, [key: string]: any}} packageJson - The parsed package.json object
- * @param {Set<string>} availableFiles - MANDATORY set of available file paths for validation (throws if missing)
+ * @param {Set<string>} availableFiles - Set of available file paths for validation (required)
  * @returns {Record<string, string>} Map of import paths to actual validated file paths
  * @throws {TypeError} If availableFiles is not provided or not a Set
+ *
  * @example
- * // Given package.json with "main": "./lib/index.js"
- * // and availableFiles containing "./lib/index.js"
- * // Returns: { ".": "./lib/index.js" }
- * //
- * // If the file doesn't exist, returns: {}
+ * // Basic main field extraction
+ * const entries = extractEntryPoints(
+ *   { main: "./lib/index.js" },
+ *   new Set(["./lib/index.js"])
+ * );
+ * // → { ".": "./lib/index.js" }
+ *
+ * @example
+ * // Exports field with wildcards
+ * const entries = extractEntryPoints(
+ *   { exports: { "./utils/*": "./lib/utils/*.js" } },
+ *   new Set(["./lib/utils/helper.js"])
+ * );
+ * // → { "./utils/helper": "./lib/utils/helper.js" }
  */
 export function extractEntryPoints(packageJson, availableFiles) {
 	if (!packageJson || typeof packageJson !== "object") {

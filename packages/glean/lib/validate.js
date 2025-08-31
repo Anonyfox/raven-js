@@ -7,11 +7,10 @@
  */
 
 /**
- * @file Validation orchestrator for lib2 - predatory JSDoc analysis
+ * @file JSDoc validation orchestrator with comprehensive quality analysis.
  *
- * Ravens validate with surgical precision, exposing documentation
- * inconsistencies and quality issues. Transforms discovery and extraction
- * models into comprehensive validation reports.
+ * Transforms discovery and extraction models into validation reports,
+ * exposing documentation inconsistencies and quality issues.
  */
 
 import { discover } from "./discover/index.js";

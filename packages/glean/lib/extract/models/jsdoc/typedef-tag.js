@@ -16,22 +16,21 @@
 import { JSDocTagBase } from "./base.js";
 
 /**
- * JSDoc typedef tag implementation
+ * JSDoc typedef tag implementation for custom type definition documentation.
  *
- * **Official JSDoc Tag:** Defines a custom type.
+ * Parses typedef tag content with structured data extraction.
  *
- * **Syntax:**
- * - Object type: `{Object} TypeName`
- * - Function type: `{Function} TypeName`
- * - Complex type: `{Object<string, number>} TypeName`
- * - With description: `{Object} TypeName Description of type`
- *
- * **Raven Design:**
- * - Clean type/name extraction
- * - Complex type support
- * - Essential for type system intelligence
+ * @example
+ * // Basic usage
+ * const tag = new JSDocTypedefTag('{Object} MyType');
+ * // Access parsed properties
  */
 export class JSDocTypedefTag extends JSDocTagBase {
+	/**
+	 * @type {string} Parsed tag content
+	 */
+	content = "";
+
 	/**
 	 * Create typedef tag instance
 	 * @param {string} rawContent - Raw typedef tag content
@@ -47,17 +46,8 @@ export class JSDocTypedefTag extends JSDocTagBase {
 		const content = this.rawContent?.trim() || "";
 
 		if (!content) {
-			/**
-			 * @type {string} Type definition
-			 */
 			this.type = "";
-			/**
-			 * @type {string} Type name
-			 */
 			this.name = "";
-			/**
-			 * @type {string} Type description
-			 */
 			this.description = "";
 			return;
 		}
@@ -93,30 +83,12 @@ export class JSDocTypedefTag extends JSDocTagBase {
 		if (spaceIndex !== -1) {
 			const name = nameAndDesc.slice(0, spaceIndex).trim();
 			const description = nameAndDesc.slice(spaceIndex + 1).trim();
-			/**
-			 * @type {string} Type definition
-			 */
 			this.type = type;
-			/**
-			 * @type {string} Type name
-			 */
 			this.name = name;
-			/**
-			 * @type {string} Type description
-			 */
 			this.description = description;
 		} else {
-			/**
-			 * @type {string} Type definition
-			 */
 			this.type = type;
-			/**
-			 * @type {string} Type name
-			 */
 			this.name = nameAndDesc;
-			/**
-			 * @type {string} Type description
-			 */
 			this.description = "";
 		}
 	}

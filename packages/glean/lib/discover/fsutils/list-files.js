@@ -19,10 +19,23 @@ import { glob } from "./glob.js";
 
 /**
  * Lists all files in a directory recursively, respecting gitignore patterns.
- * important: all paths will be prefixed with "./" for relative path comparisons
+ *
+ * Scans directory tree with gitignore pattern inheritance and hardcoded exclusions.
+ * All returned paths are prefixed with "./" for consistent relative path comparisons.
  *
  * @param {string} targetPath - Directory path to scan
- * @returns {Set<string>} Set of relative file paths
+ * @returns {Set<string>} Set of relative file paths with "./" prefix
+ *
+ * @example
+ * // Basic directory listing
+ * const files = listFiles('./src');
+ * console.log(files); // → Set(['./src/index.js', './src/utils.js'])
+ *
+ * @example
+ * // Respects .gitignore patterns
+ * // With .gitignore containing "*.test.js"
+ * const files = listFiles('./lib');
+ * // → Excludes test files, includes only source files
  */
 export function listFiles(targetPath) {
 	if (!targetPath || typeof targetPath !== "string") {

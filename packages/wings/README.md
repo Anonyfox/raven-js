@@ -8,7 +8,9 @@ _Your app's flight control. Same routes work everywhere - server, CLI, wherever.
 [![ESM](https://img.shields.io/badge/ESM-Only-blue.svg)](https://nodejs.org/api/esm.html)
 [![Node.js](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
 
-## What Raven Built
+<div align="center">
+  <img src="media/logo.webp" alt="Wings Logo" width="200" height="200" />
+</div>
 
 Wings gives you isomorphic routing that actually works. Define routes once, use them everywhere. Server, CLI, doesn't matter. Each route is a Feather - light, movable, composable.
 

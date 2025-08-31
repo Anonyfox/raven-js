@@ -6,16 +6,17 @@
  * @see {@link https://anonyfox.com}
  */
 
+/**
+ * @file HTTP route definition class with static factory methods for creating routes with specific HTTP methods.
+ *
+ * Provides the Route class for encapsulating HTTP method, path, handler function, and optional
+ * configuration like middleware, parameter constraints, and descriptions. Includes validation and filtering utilities.
+ */
+
 import { HTTP_METHODS } from "./http-methods.js";
 
 /**
- * Optimized function to filter truthy middleware from arrays.
- *
- * This function provides a performance-optimized alternative to `.filter(Boolean)`
- * by using direct iteration and pre-allocated result arrays.
- *
- * **Performance**: Faster than Array.filter() through direct iteration and pre-allocation.
- * **Memory**: Avoids intermediate array allocations during filtering.
+ * Filters truthy middleware from arrays, removing null, undefined, and false values.
  *
  * @param {Array<import('./middleware.js').Handler|null|undefined|false>} middlewareArray - Array of middleware (may contain falsy values)
  * @returns {Array<import('./middleware.js').Handler>} Array containing only truthy middleware values
@@ -36,52 +37,19 @@ function filterTruthyMiddleware(middlewareArray) {
 }
 
 /**
+ * HTTP route definition with method, path, handler, and optional configuration.
  *
- * **Route** - HTTP route definition and configuration.
- * The Route class represents a single HTTP route in the Wings framework.
- * It encapsulates the HTTP method, path, handler function, and optional
- * configuration like middleware, parameter constraints, and documentation.
- * ## Key Features
- * - **Static Factory Methods**: Convenient methods for creating routes with specific HTTP methods
- * - **Flexible Configuration**: Support for middleware, constraints, and descriptions
- * - **Type Safety**: Strong typing with JSDoc for better development experience
- * - **Validation**: Built-in handling of edge cases and invalid inputs
- * - **Extensibility**: Easy to extend with additional properties and methods
- * ## Design Philosophy
- * Routes are designed to be declarative and self-contained. Each route
- * contains all the information needed to handle a specific HTTP request,
- * including validation rules and documentation.
- * **Note**: The Route class uses a mutable design for flexibility, allowing
- * properties to be modified after creation. This enables dynamic route
- * configuration and middleware injection.
- * ```javascript
- * import { Route } from './route.js';
- * // Basic route creation
- * const userRoute = Route.GET('/users/:id', (ctx) => {
- * const userId = ctx.pathParams.id;
- * ctx.json({ id: userId, name: 'John Doe' });
- * });
+ * @example
+ * // Create routes using static methods
+ * const getRoute = Route.GET('/users', async (ctx) => ctx.json(users));
+ * const postRoute = Route.POST('/users', async (ctx) => ctx.json(newUser));
+ *
+ * @example
  * // Route with middleware and constraints
- * const protectedRoute = Route.POST('/users', async (ctx) => {
- * const userData = ctx.requestBody();
- * // Create user logic
- * }, {
- * middleware: [authMiddleware, validationMiddleware],
- * constraints: { id: '\\d+' },
- * description: 'Create a new user'
+ * const route = Route.GET('/users/:id', handler, {
+ *   middleware: [auth, validate],
+ *   constraints: { id: /\d+/ }
  * });
- * // Route with all options
- * const complexRoute = Route.PUT('/users/:id/posts/:postId', (ctx) => {
- * // Update post logic
- * }, {
- * middleware: [authMiddleware, rateLimitMiddleware],
- * constraints: {
- * id: '\\d+',
- * postId: '\\d+'
- * },
- * description: 'Update a specific post for a user'
- * });
- * ```
  */
 
 /**
@@ -94,44 +62,20 @@ function filterTruthyMiddleware(middlewareArray) {
  */
 export class Route {
 	/**
-	 * Creates a new GET route with the specified path and handler.
+	 * Creates a new GET route with specified path and handler.
 	 *
-	 * This is a convenience factory method for creating GET routes.
-	 * It automatically sets the HTTP method to GET and configures
-	 * the route with the provided options.
-	 *
-	 * **GET Method**: Used for retrieving resources. GET requests should
-	 * be idempotent and safe, meaning they should not modify server state.
-	 *
-	 * @param {string} path - The URL path pattern (e.g., '/users/:id')
-	 * @param {import('./middleware.js').Handler} handler - The function to handle the request
+	 * @param {string} path - URL path pattern
+	 * @param {import('./middleware.js').Handler} handler - Request handler function
 	 * @param {RouteOptions} [options] - Optional route configuration
-	 * @returns {Route} A new Route instance configured for GET requests
+	 * @returns {Route} New Route instance for GET requests
 	 *
 	 * @example
-	 * ```javascript
 	 * // Basic GET route
-	 * const userRoute = Route.GET('/users/:id', (ctx) => {
-	 *   const userId = ctx.pathParams.id;
-	 *   const user = await getUserById(userId);
-	 *   ctx.json(user);
-	 * });
+	 * const route = Route.GET('/users', async (ctx) => ctx.json(users));
 	 *
+	 * @example
 	 * // GET route with middleware
-	 * const protectedRoute = Route.GET('/profile', (ctx) => {
-	 *   ctx.json(ctx.data.user);
-	 * }, {
-	 *   middleware: [authMiddleware]
-	 * });
-	 *
-	 * // GET route with constraints
-	 * const validatedRoute = Route.GET('/users/:id', (ctx) => {
-	 *   // Handler logic
-	 * }, {
-	 *   constraints: { id: '\\d+' },
-	 *   description: 'Get user by ID'
-	 * });
-	 * ```
+	 * const route = Route.GET('/admin', handler, { middleware: [auth] });
 	 */
 	static GET(path, handler, options = {}) {
 		const route = new Route();
@@ -145,44 +89,20 @@ export class Route {
 	}
 
 	/**
-	 * Creates a new POST route with the specified path and handler.
+	 * Creates a new POST route with specified path and handler.
 	 *
-	 * This is a convenience factory method for creating POST routes.
-	 * It automatically sets the HTTP method to POST and configures
-	 * the route with the provided options.
-	 *
-	 * **POST Method**: Used for creating new resources. POST requests
-	 * typically include a request body with the data to create.
-	 *
-	 * @param {string} path - The URL path pattern (e.g., '/users')
-	 * @param {import('./middleware.js').Handler} handler - The function to handle the request
+	 * @param {string} path - URL path pattern
+	 * @param {import('./middleware.js').Handler} handler - Request handler function
 	 * @param {RouteOptions} [options] - Optional route configuration
-	 * @returns {Route} A new Route instance configured for POST requests
+	 * @returns {Route} New Route instance for POST requests
 	 *
 	 * @example
-	 * ```javascript
 	 * // Basic POST route
-	 * const createUserRoute = Route.POST('/users', async (ctx) => {
-	 *   const userData = ctx.requestBody();
-	 *   const newUser = await createUser(userData);
-	 *   ctx.json(newUser);
-	 * });
+	 * const route = Route.POST('/users', async (ctx) => ctx.json(newUser));
 	 *
-	 * // POST route with validation middleware
-	 * const validatedRoute = Route.POST('/users', (ctx) => {
-	 *   // Handler logic
-	 * }, {
-	 *   middleware: [validationMiddleware],
-	 *   description: 'Create a new user'
-	 * });
-	 *
-	 * // POST route with authentication
-	 * const protectedRoute = Route.POST('/posts', (ctx) => {
-	 *   // Create post logic
-	 * }, {
-	 *   middleware: [authMiddleware, rateLimitMiddleware]
-	 * });
-	 * ```
+	 * @example
+	 * // POST route with validation
+	 * const route = Route.POST('/users', handler, { middleware: [validate] });
 	 */
 	static POST(path, handler, options = {}) {
 		const route = new Route();
@@ -196,39 +116,20 @@ export class Route {
 	}
 
 	/**
-	 * Creates a new PUT route with the specified path and handler.
+	 * Creates a new PUT route with specified path and handler.
 	 *
-	 * This is a convenience factory method for creating PUT routes.
-	 * It automatically sets the HTTP method to PUT and configures
-	 * the route with the provided options.
-	 *
-	 * **PUT Method**: Used for replacing entire resources. PUT requests
-	 * should be idempotent and typically include a complete resource
-	 * representation in the request body.
-	 *
-	 * @param {string} path - The URL path pattern (e.g., '/users/:id')
-	 * @param {import('./middleware.js').Handler} handler - The function to handle the request
+	 * @param {string} path - URL path pattern
+	 * @param {import('./middleware.js').Handler} handler - Request handler function
 	 * @param {RouteOptions} [options] - Optional route configuration
-	 * @returns {Route} A new Route instance configured for PUT requests
+	 * @returns {Route} New Route instance for PUT requests
 	 *
 	 * @example
-	 * ```javascript
 	 * // Basic PUT route
-	 * const updateUserRoute = Route.PUT('/users/:id', async (ctx) => {
-	 *   const userId = ctx.pathParams.id;
-	 *   const userData = ctx.requestBody();
-	 *   const updatedUser = await updateUser(userId, userData);
-	 *   ctx.json(updatedUser);
-	 * });
+	 * const route = Route.PUT('/users/:id', async (ctx) => ctx.json(updated));
 	 *
-	 * // PUT route with validation
-	 * const validatedRoute = Route.PUT('/users/:id', (ctx) => {
-	 *   // Update logic
-	 * }, {
-	 *   constraints: { id: '\\d+' },
-	 *   middleware: [validationMiddleware]
-	 * });
-	 * ```
+	 * @example
+	 * // PUT with constraints
+	 * const route = Route.PUT('/users/:id', handler, { constraints: { id: /\d+/ } });
 	 */
 	static PUT(path, handler, options = {}) {
 		const route = new Route();
@@ -242,37 +143,20 @@ export class Route {
 	}
 
 	/**
-	 * Creates a new DELETE route with the specified path and handler.
+	 * Creates a new DELETE route with specified path and handler.
 	 *
-	 * This is a convenience factory method for creating DELETE routes.
-	 * It automatically sets the HTTP method to DELETE and configures
-	 * the route with the provided options.
-	 *
-	 * **DELETE Method**: Used for removing resources. DELETE requests
-	 * should be idempotent and typically don't include a request body.
-	 *
-	 * @param {string} path - The URL path pattern (e.g., '/users/:id')
-	 * @param {import('./middleware.js').Handler} handler - The function to handle the request
+	 * @param {string} path - URL path pattern
+	 * @param {import('./middleware.js').Handler} handler - Request handler function
 	 * @param {RouteOptions} [options] - Optional route configuration
-	 * @returns {Route} A new Route instance configured for DELETE requests
+	 * @returns {Route} New Route instance for DELETE requests
 	 *
 	 * @example
-	 * ```javascript
 	 * // Basic DELETE route
-	 * const deleteUserRoute = Route.DELETE('/users/:id', async (ctx) => {
-	 *   const userId = ctx.pathParams.id;
-	 *   await deleteUser(userId);
-	 *   ctx.responseStatusCode = 204; // No Content
-	 * });
+	 * const route = Route.DELETE('/users/:id', async (ctx) => ctx.status(204));
 	 *
-	 * // DELETE route with confirmation
-	 * const confirmedDeleteRoute = Route.DELETE('/users/:id', (ctx) => {
-	 *   // Delete logic with confirmation
-	 * }, {
-	 *   middleware: [authMiddleware],
-	 *   constraints: { id: '\\d+' }
-	 * });
-	 * ```
+	 * @example
+	 * // DELETE with authorization
+	 * const route = Route.DELETE('/posts/:id', handler, { middleware: [auth] });
 	 */
 	static DELETE(path, handler, options = {}) {
 		const route = new Route();
@@ -286,39 +170,20 @@ export class Route {
 	}
 
 	/**
-	 * Creates a new PATCH route with the specified path and handler.
+	 * Creates a new PATCH route with specified path and handler.
 	 *
-	 * This is a convenience factory method for creating PATCH routes.
-	 * It automatically sets the HTTP method to PATCH and configures
-	 * the route with the provided options.
-	 *
-	 * **PATCH Method**: Used for partially updating resources. PATCH requests
-	 * should be idempotent and typically include only the fields to update
-	 * in the request body.
-	 *
-	 * @param {string} path - The URL path pattern (e.g., '/users/:id')
-	 * @param {import('./middleware.js').Handler} handler - The function to handle the request
+	 * @param {string} path - URL path pattern
+	 * @param {import('./middleware.js').Handler} handler - Request handler function
 	 * @param {RouteOptions} [options] - Optional route configuration
-	 * @returns {Route} A new Route instance configured for PATCH requests
+	 * @returns {Route} New Route instance for PATCH requests
 	 *
 	 * @example
-	 * ```javascript
 	 * // Basic PATCH route
-	 * const updateUserRoute = Route.PATCH('/users/:id', async (ctx) => {
-	 *   const userId = ctx.pathParams.id;
-	 *   const updates = ctx.requestBody();
-	 *   const updatedUser = await updateUserPartial(userId, updates);
-	 *   ctx.json(updatedUser);
-	 * });
+	 * const route = Route.PATCH('/users/:id', async (ctx) => ctx.json(patched));
 	 *
-	 * // PATCH route with validation
-	 * const validatedRoute = Route.PATCH('/users/:id', (ctx) => {
-	 *   // Partial update logic
-	 * }, {
-	 *   middleware: [validationMiddleware],
-	 *   constraints: { id: '\\d+' }
-	 * });
-	 * ```
+	 * @example
+	 * // PATCH with validation
+	 * const route = Route.PATCH('/users/:id', handler, { middleware: [validate] });
 	 */
 	static PATCH(path, handler, options = {}) {
 		const route = new Route();
@@ -332,41 +197,20 @@ export class Route {
 	}
 
 	/**
-	 * Creates a new HEAD route with the specified path and handler.
+	 * Creates a new HEAD route with specified path and handler.
 	 *
-	 * This is a convenience factory method for creating HEAD routes.
-	 * It automatically sets the HTTP method to HEAD and configures
-	 * the route with the provided options.
-	 *
-	 * **HEAD Method**: Used for retrieving headers only, without the response body.
-	 * HEAD requests are useful for checking if a resource exists or getting
-	 * metadata without transferring the full content.
-	 *
-	 * @param {string} path - The URL path pattern (e.g., '/users/:id')
-	 * @param {import('./middleware.js').Handler} handler - The function to handle the request
+	 * @param {string} path - URL path pattern
+	 * @param {import('./middleware.js').Handler} handler - Request handler function
 	 * @param {RouteOptions} [options] - Optional route configuration
-	 * @returns {Route} A new Route instance configured for HEAD requests
+	 * @returns {Route} New Route instance for HEAD requests
 	 *
 	 * @example
-	 * ```javascript
 	 * // Basic HEAD route
-	 * const checkUserRoute = Route.HEAD('/users/:id', async (ctx) => {
-	 *   const userId = ctx.pathParams.id;
-	 *   const exists = await userExists(userId);
-	 *   if (!exists) {
-	 *     ctx.responseStatusCode = 404;
-	 *   }
-	 *   // No response body for HEAD requests
-	 * });
+	 * const route = Route.HEAD('/api/status', async (ctx) => ctx.status(200));
 	 *
-	 * // HEAD route for file metadata
-	 * const fileInfoRoute = Route.HEAD('/files/:id', (ctx) => {
-	 *   const fileId = ctx.pathParams.id;
-	 *   const fileInfo = getFileInfo(fileId);
-	 *   ctx.responseHeaders.set('content-length', fileInfo.size);
-	 *   ctx.responseHeaders.set('last-modified', fileInfo.modified);
-	 * });
-	 * ```
+	 * @example
+	 * // HEAD for resource existence check
+	 * const route = Route.HEAD('/files/:id', async (ctx) => ctx.status(200));
 	 */
 	static HEAD(path, handler, options = {}) {
 		const route = new Route();
@@ -380,38 +224,20 @@ export class Route {
 	}
 
 	/**
-	 * Creates a new OPTIONS route with the specified path and handler.
+	 * Creates a new OPTIONS route with specified path and handler.
 	 *
-	 * This is a convenience factory method for creating OPTIONS routes.
-	 * It automatically sets the HTTP method to OPTIONS and configures
-	 * the route with the provided options.
-	 *
-	 * **OPTIONS Method**: Used for discovering the allowed HTTP methods
-	 * and other capabilities of a resource. OPTIONS requests are commonly
-	 * used for CORS preflight requests.
-	 *
-	 * @param {string} path - The URL path pattern (e.g., '/users')
-	 * @param {import('./middleware.js').Handler} handler - The function to handle the request
+	 * @param {string} path - URL path pattern
+	 * @param {import('./middleware.js').Handler} handler - Request handler function
 	 * @param {RouteOptions} [options] - Optional route configuration
-	 * @returns {Route} A new Route instance configured for OPTIONS requests
+	 * @returns {Route} New Route instance for OPTIONS requests
 	 *
 	 * @example
-	 * ```javascript
 	 * // Basic OPTIONS route
-	 * const corsRoute = Route.OPTIONS('/users', (ctx) => {
-	 *   ctx.responseHeaders.set('access-control-allow-methods', 'GET, POST, PUT, DELETE');
-	 *   ctx.responseHeaders.set('access-control-allow-headers', 'Content-Type, Authorization');
-	 *   ctx.responseHeaders.set('access-control-max-age', '86400');
-	 *   ctx.responseStatusCode = 204;
-	 * });
+	 * const route = Route.OPTIONS('/api/*', async (ctx) => ctx.status(200));
 	 *
-	 * // OPTIONS route with dynamic methods
-	 * const dynamicOptionsRoute = Route.OPTIONS('/users/:id', (ctx) => {
-	 *   const allowedMethods = ['GET', 'PUT', 'DELETE'];
-	 *   ctx.responseHeaders.set('access-control-allow-methods', allowedMethods.join(', '));
-	 *   ctx.responseStatusCode = 204;
-	 * });
-	 * ```
+	 * @example
+	 * // CORS preflight handler
+	 * const route = Route.OPTIONS('/*', corsHandler);
 	 */
 	static OPTIONS(path, handler, options = {}) {
 		const route = new Route();
@@ -425,50 +251,20 @@ export class Route {
 	}
 
 	/**
-	 * Creates a new COMMAND route with the specified path and handler.
+	 * Creates a new COMMAND route with specified path and handler for CLI operations.
 	 *
-	 * This is a convenience factory method for creating COMMAND routes.
-	 * It automatically sets the HTTP method to COMMAND and configures
-	 * the route with the provided options.
-	 *
-	 * **COMMAND Method**: Used for CLI command execution. COMMAND routes
-	 * handle terminal commands through the Wings routing system, enabling
-	 * unified handling of both HTTP requests and CLI operations.
-	 *
-	 * @param {string} path - The command path pattern (e.g., '/git/commit')
-	 * @param {import('./middleware.js').Handler} handler - The function to handle the command
+	 * @param {string} path - Command path pattern
+	 * @param {import('./middleware.js').Handler} handler - Command handler function
 	 * @param {RouteOptions} [options] - Optional route configuration
-	 * @returns {Route} A new Route instance configured for COMMAND execution
+	 * @returns {Route} New Route instance for COMMAND execution
 	 *
 	 * @example
-	 * ```javascript
-	 * // Basic COMMAND route
-	 * const gitCommitRoute = Route.COMMAND('/git/commit', async (ctx) => {
-	 *   const message = ctx.queryParams.get('message') || 'Default commit message';
-	 *   await executeGitCommit(message);
-	 *   ctx.text('✅ Committed successfully');
-	 * });
+	 * // Basic CLI command
+	 * const route = Route.COMMAND('build', async (ctx) => runBuild());
 	 *
-	 * // COMMAND route with interactive input
-	 * const interactiveRoute = Route.COMMAND('/user/create', async (ctx) => {
-	 *   let name = ctx.queryParams.get('name');
-	 *   if (!name) {
-	 *     name = await readline.question('Enter username: ');
-	 *   }
-	 *   const user = await createUser(name);
-	 *   ctx.json(user);
-	 * });
-	 *
-	 * // COMMAND route with validation
-	 * const validatedRoute = Route.COMMAND('/deploy/:environment', (ctx) => {
-	 *   const env = ctx.pathParams.environment;
-	 *   console.log(`Deploying to ${env}...`);
-	 *   ctx.text(`✅ Deployed to ${env}`);
-	 * }, {
-	 *   constraints: { environment: 'staging|production' },
-	 *   description: 'Deploy application to specified environment'
-	 * });
-	 * ```
+	 * @example
+	 * // Command with parameters
+	 * const route = Route.COMMAND('deploy :env', deployHandler);
 	 */
 	static COMMAND(path, handler, options = {}) {
 		const route = new Route();
@@ -482,107 +278,28 @@ export class Route {
 	}
 
 	/**
-	 * The HTTP method for this route.
-	 *
-	 * This property specifies which HTTP method this route handles.
-	 * It defaults to GET but can be modified after route creation.
-	 *
-	 * **Valid Values**: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS
+	 * HTTP method for this route (defaults to GET).
 	 *
 	 * @type {import('./http-methods.js').HttpMethod}
-	 *
-	 * @example
-	 * ```javascript
-	 * const route = new Route();
-	 * console.log(route.method); // 'GET'
-	 *
-	 * route.method = HTTP_METHODS.POST;
-	 * console.log(route.method); // 'POST'
-	 *
-	 * // Or use factory methods
-	 * const postRoute = Route.POST('/users', handler);
-	 * console.log(postRoute.method); // 'POST'
-	 * ```
 	 */
 	method = HTTP_METHODS.GET;
 
 	/**
-	 * The URL path pattern for this route.
-	 *
-	 * This property defines the URL pattern that this route matches.
-	 * It can include path parameters (e.g., ':id') and supports
-	 * various path patterns for flexible routing.
-	 *
-	 * **Path Patterns**:
-	 * - Static paths: '/users', '/api/v1/users'
-	 * - Path parameters: '/users/:id', '/posts/:postId/comments/:commentId'
-	 * - Optional segments: '/users/:id?', '/posts/:postId?/comments'
+	 * URL path pattern for this route, supporting parameters like '/users/:id'.
 	 *
 	 * @type {string}
-	 *
-	 * @example
-	 * ```javascript
-	 * const route = new Route();
-	 * console.log(route.path); // ''
-	 *
-	 * route.path = '/users/:id';
-	 * console.log(route.path); // '/users/:id'
-	 *
-	 * // Or use factory methods
-	 * const userRoute = Route.GET('/users/:id', handler);
-	 * console.log(userRoute.path); // '/users/:id'
-	 *
-	 * // Complex path patterns
-	 * const complexRoute = Route.GET('/api/v1/users/:userId/posts/:postId', handler);
-	 * console.log(complexRoute.path); // '/api/v1/users/:userId/posts/:postId'
-	 * ```
 	 */
 	path = "";
 
 	/**
-	 * The function that handles HTTP requests for this route.
-	 *
-	 * This property contains the function that will be executed when
-	 * a request matches this route. The handler receives a Context
-	 * object and can be synchronous or asynchronous.
-	 *
-	 * **Handler Function Signature**: `(ctx: Context) => void | Promise<void>`
-	 *
-	 * **Default Behavior**: The default handler is an empty function
-	 * that does nothing. You should always set a proper handler.
+	 * Function that handles requests for this route.
 	 *
 	 * @type {import('./middleware.js').Handler}
-	 *
-	 * @example
-	 * ```javascript
-	 * const route = new Route();
-	 * console.log(typeof route.handler); // 'function'
-	 *
-	 * // Set a custom handler
-	 * route.handler = (ctx) => {
-	 *   ctx.json({ message: 'Hello World' });
-	 * };
-	 *
-	 * // Async handler
-	 * route.handler = async (ctx) => {
-	 *   const data = await fetchData();
-	 *   ctx.json(data);
-	 * };
-	 *
-	 * // Or use factory methods
-	 * const userRoute = Route.GET('/users/:id', (ctx) => {
-	 *   const userId = ctx.pathParams.id;
-	 *   ctx.json({ id: userId, name: 'John Doe' });
-	 * });
-	 * ```
 	 */
 	handler = () => {};
 
 	/**
 	 * Internal storage for route-specific middleware functions.
-	 *
-	 * This private field stores the array of middleware functions
-	 * that will be executed for this specific route.
 	 *
 	 * @type {import('./middleware.js').Handler[]}
 	 */
@@ -591,9 +308,6 @@ export class Route {
 	/**
 	 * Internal storage for parameter constraints.
 	 *
-	 * This private field stores the constraints object used for
-	 * validating path parameters.
-	 *
 	 * @type {Object.<string, any>}
 	 */
 	_constraints = {};
@@ -601,44 +315,14 @@ export class Route {
 	/**
 	 * Internal storage for route description.
 	 *
-	 * This private field stores the description string used for
-	 * documentation purposes.
-	 *
 	 * @type {string}
 	 */
 	_description = "";
 
 	/**
-	 * Sets the middleware functions for this route.
-	 *
-	 * This setter automatically filters out null/undefined values
-	 * and ensures the middleware is always an array. If a non-array
-	 * value is provided, it defaults to an empty array.
-	 *
-	 * **Validation**: Only arrays are accepted. Non-array values
-	 * result in an empty middleware array.
+	 * Sets middleware functions, filtering out falsy values.
 	 *
 	 * @param {import('./middleware.js').Handler[]} value - Array of middleware functions
-	 *
-	 * @example
-	 * ```javascript
-	 * const route = new Route();
-	 *
-	 * // Set middleware array
-	 * route.middleware = [authMiddleware, validationMiddleware];
-	 * console.log(route.middleware.length); // 2
-	 *
-	 * // Filter out null/undefined values
-	 * route.middleware = [authMiddleware, null, validationMiddleware, undefined];
-	 * console.log(route.middleware.length); // 2
-	 *
-	 * // Non-array values result in empty array
-	 * route.middleware = 'not an array';
-	 * console.log(route.middleware.length); // 0
-	 *
-	 * route.middleware = null;
-	 * console.log(route.middleware.length); // 0
-	 * ```
 	 */
 	set middleware(value) {
 		this._middleware = Array.isArray(value)
@@ -649,167 +333,43 @@ export class Route {
 	/**
 	 * Gets the middleware functions for this route.
 	 *
-	 * This getter returns the array of middleware functions.
-	 * If no middleware is set, it returns an empty array.
-	 *
 	 * @returns {import('./middleware.js').Handler[]} Array of middleware functions
-	 *
-	 * @example
-	 * ```javascript
-	 * const route = new Route();
-	 * console.log(route.middleware); // []
-	 *
-	 * route.middleware = [authMiddleware];
-	 * console.log(route.middleware.length); // 1
-	 * console.log(route.middleware[0]); // authMiddleware function
-	 *
-	 * // Iterate over middleware
-	 * route.middleware.forEach(middleware => {
-	 *   console.log('Middleware:', middleware.name);
-	 * });
-	 * ```
 	 */
 	get middleware() {
 		return this._middleware || [];
 	}
 
 	/**
-	 * Sets the parameter constraints for this route.
+	 * Sets parameter constraints for path validation.
 	 *
-	 * This setter validates that the value is an object and sets
-	 * the constraints for path parameter validation. If a non-object
-	 * value is provided, it defaults to an empty object.
-	 *
-	 * **Validation**: Only objects are accepted. Non-object values
-	 * result in an empty constraints object.
-	 *
-	 * @param {Object.<string, any>} value - Object containing parameter constraints
-	 *
-	 * @example
-	 * ```javascript
-	 * const route = new Route();
-	 *
-	 * // Set constraints object
-	 * route.constraints = { id: '\\d+', name: '[a-zA-Z]+' };
-	 * console.log(Object.keys(route.constraints).length); // 2
-	 *
-	 * // Non-object values result in empty object
-	 * route.constraints = 'not an object';
-	 * console.log(Object.keys(route.constraints).length); // 0
-	 *
-	 * route.constraints = null;
-	 * console.log(Object.keys(route.constraints).length); // 0
-	 *
-	 * // Arrays are objects, so they're accepted
-	 * route.constraints = ['id', 'name'];
-	 * console.log(Array.isArray(route.constraints)); // true
-	 * ```
+	 * @param {Object.<string, any>} value - Parameter constraints object
 	 */
 	set constraints(value) {
 		this._constraints = value && typeof value === "object" ? value : {};
 	}
 
 	/**
-	 * Gets the parameter constraints for this route.
+	 * Gets parameter constraints for this route.
 	 *
-	 * This getter returns the constraints object used for validating
-	 * path parameters. If no constraints are set, it returns an empty object.
-	 *
-	 * @returns {Object.<string, any>} Object containing parameter constraints
-	 *
-	 * @example
-	 * ```javascript
-	 * const route = new Route();
-	 * console.log(route.constraints); // {}
-	 *
-	 * route.constraints = { id: '\\d+', name: '[a-zA-Z]+' };
-	 * console.log(route.constraints.id); // '\\d+'
-	 * console.log(route.constraints.name); // '[a-zA-Z]+'
-	 *
-	 * // Check if constraint exists
-	 * if (route.constraints.id) {
-	 *   console.log('ID constraint:', route.constraints.id);
-	 * }
-	 *
-	 * // Iterate over constraints
-	 * Object.entries(route.constraints).forEach(([param, pattern]) => {
-	 *   console.log(`Parameter ${param} must match: ${pattern}`);
-	 * });
-	 * ```
+	 * @returns {Object.<string, any>} Parameter constraints object
 	 */
 	get constraints() {
 		return this._constraints || {};
 	}
 
 	/**
-	 * Sets the description for this route.
+	 * Sets description for this route.
 	 *
-	 * This setter validates that the value is a string and sets
-	 * the description for documentation purposes. If a non-string
-	 * value is provided, it defaults to an empty string.
-	 *
-	 * **Validation**: Only strings are accepted. Non-string values
-	 * result in an empty description.
-	 *
-	 * @param {string} value - Description string for the route
-	 *
-	 * @example
-	 * ```javascript
-	 * const route = new Route();
-	 *
-	 * // Set description string
-	 * route.description = 'Get user by ID';
-	 * console.log(route.description); // 'Get user by ID'
-	 *
-	 * // Non-string values result in empty string
-	 * route.description = 123;
-	 * console.log(route.description); // ''
-	 *
-	 * route.description = null;
-	 * console.log(route.description); // ''
-	 *
-	 * route.description = {};
-	 * console.log(route.description); // ''
-	 *
-	 * // Empty string is valid
-	 * route.description = '';
-	 * console.log(route.description); // ''
-	 * ```
+	 * @param {string} value - Description string
 	 */
 	set description(value) {
 		this._description = typeof value === "string" ? value : "";
 	}
 
 	/**
-	 * Gets the description for this route.
+	 * Gets description for this route.
 	 *
-	 * This getter returns the description string used for documentation.
-	 * If no description is set, it returns an empty string.
-	 *
-	 * @returns {string} Description string for the route
-	 *
-	 * @example
-	 * ```javascript
-	 * const route = new Route();
-	 * console.log(route.description); // ''
-	 *
-	 * route.description = 'Create a new user';
-	 * console.log(route.description); // 'Create a new user'
-	 *
-	 * // Check if description exists
-	 * if (route.description) {
-	 *   console.log('Route description:', route.description);
-	 * }
-	 *
-	 * // Use in documentation generation
-	 * function generateRouteDocs(routes) {
-	 *   return routes.map(route => ({
-	 *     method: route.method,
-	 *     path: route.path,
-	 *     description: route.description || 'No description available'
-	 *   }));
-	 * }
-	 * ```
+	 * @returns {string} Description string
 	 */
 	get description() {
 		return this._description || "";

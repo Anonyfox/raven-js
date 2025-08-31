@@ -16,20 +16,21 @@
 import { JSDocTagBase } from "./base.js";
 
 /**
- * JSDoc callback tag implementation
+ * JSDoc callback tag implementation for callback function parameter documentation.
  *
- * **Official JSDoc Tag:** Defines a callback function type.
+ * Parses callback tag content with structured data extraction.
  *
- * **Syntax:**
- * - Named callback: `CallbackName`
- * - With description: `CallbackName Description of callback purpose`
- *
- * **Raven Design:**
- * - Simple callback type definition
- * - Optional description support
- * - Essential for async intelligence
+ * @example
+ * // Basic usage
+ * const tag = new JSDocCallbackTag('{function} onComplete Completion callback');
+ * // Access parsed properties
  */
 export class JSDocCallbackTag extends JSDocTagBase {
+	/**
+	 * @type {string} Parsed tag content
+	 */
+	content = "";
+
 	/**
 	 * Create callback tag instance
 	 * @param {string} rawContent - Raw callback tag content
@@ -45,13 +46,7 @@ export class JSDocCallbackTag extends JSDocTagBase {
 		const content = this.rawContent?.trim() || "";
 
 		if (!content) {
-			/**
-			 * @type {string} Callback name/identifier
-			 */
 			this.name = "";
-			/**
-			 * @type {string} Callback description
-			 */
 			this.description = "";
 			return;
 		}

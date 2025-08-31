@@ -21,11 +21,13 @@ import { dirname, join } from "node:path";
 /**
  * Generates import map from package.json dependencies.
  *
- * Implements Node.js resolution algorithm to find packages in node_modules
- * hierarchy and extract their entry points using exports field parsing.
- *
  * @param {string} cwd - Project root directory (where package.json is located)
  * @returns {Promise<object>} Import map object with bare specifier mappings
+ *
+ * @example
+ * // Generate import map from project dependencies
+ * const map = await generateImportMap(process.cwd());
+ * // { imports: { "lodash": "/node_modules/lodash/index.js" } }
  */
 export async function generateImportMap(cwd) {
 	// V8 optimization: Object.create(null) for cleaner object shapes

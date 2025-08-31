@@ -7,12 +7,10 @@
  */
 
 /**
- * @file French holiday definitions - national and regional holiday patterns.
+ * @file French holiday definitions with national and regional variations.
  *
- * France's centralized holiday system with national holidays observed
- * throughout the Republic, plus some regional variations in Alsace-Moselle
- * and overseas territories. The murder remembers the Revolution's calendar
- * reforms and modern Republican traditions.
+ * Centralized holiday system with national holidays throughout the Republic,
+ * plus regional variations in Alsace-Moselle and overseas territories.
  */
 
 import { HolidayDefinition } from "../holiday-definition.js";

@@ -7,11 +7,10 @@
  */
 
 /**
- * Package overview template for documentation homepage
+ * Package overview template for documentation homepage.
  *
- * Renders package information, README content, and module navigation
- * using Bootstrap 5 components. Follows WEBAPP.md content specification
- * for package overview pages.
+ * Renders package information, README content, and module navigation using
+ * Bootstrap 5 components with responsive layout and getting started section.
  */
 
 import { html, markdownToHTML } from "@raven-js/beak";
@@ -25,7 +24,21 @@ import {
 import { baseTemplate } from "./base.js";
 
 /**
- * Generate package overview HTML page
+ * Apply asset path rewriting to HTML content if asset registry is available
+ * @param {string} html - HTML content to process
+ * @param {import('../../assets/registry.js').AssetRegistry} [assetRegistry] - Asset registry
+ * @returns {string} HTML with rewritten asset paths
+ */
+function applyAssetPathRewriting(html, assetRegistry) {
+	if (!assetRegistry || typeof html !== "string") {
+		return html;
+	}
+	return assetRegistry.rewriteImagePaths(html);
+}
+
+/**
+ * Generate package overview HTML page with README content and module navigation.
+ *
  * @param {Object} data - Package overview data from extractor
  * @param {string} data.name - Package name
  * @param {string} data.version - Package version
@@ -34,9 +47,22 @@ import { baseTemplate } from "./base.js";
  * @param {Array<Object>} data.modules - Module information array
  * @param {boolean} data.hasReadme - Whether README content exists
  * @param {boolean} data.hasModules - Whether modules exist
+ * @param {import('../../assets/registry.js').AssetRegistry} [assetRegistry] - Asset registry for path rewriting
  * @returns {string} Complete HTML page
+ *
+ * @example
+ * // Basic package overview
+ * packageOverviewTemplate({
+ *   name: 'my-package',
+ *   version: '1.0.0',
+ *   description: 'A great package',
+ *   readmeMarkdown: '# Hello World',
+ *   modules: [],
+ *   hasReadme: true,
+ *   hasModules: false
+ * }, assetRegistry);
  */
-export function packageOverviewTemplate(data) {
+export function packageOverviewTemplate(data, assetRegistry) {
 	const {
 		name,
 		version,
@@ -86,7 +112,7 @@ export function packageOverviewTemplate(data) {
 						? contentSection({
 								title: "Documentation",
 								icon: "📄",
-								content: html`<div class="readme-content">${applySyntaxHighlighting(markdownToHTML(readmeMarkdown))}</div>`,
+								content: html`<div class="readme-content">${applyAssetPathRewriting(applySyntaxHighlighting(markdownToHTML(readmeMarkdown)), assetRegistry)}</div>`,
 							})
 						: contentSection({
 								title: "No README Available",

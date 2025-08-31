@@ -7,7 +7,11 @@
  */
 
 /**
- * @file CSS template literal processing with optimization and style tag generation
+ * @file CSS tagged template literals with intelligent value interpolation, minification, and style tag generation.
+ *
+ * Template processors for CSS generation with automatic camelCase-to-kebab-case conversion, array flattening,
+ * object-to-CSS transformation, and single-line minification. Provides both raw css() output and
+ * style-wrapped variants for direct HTML insertion.
  */
 
 import { processCSS } from "./process-css.js";

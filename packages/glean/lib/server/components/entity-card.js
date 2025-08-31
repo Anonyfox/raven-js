@@ -19,7 +19,8 @@ import { attributionBar } from "./attribution-bar.js";
 import { seeAlsoLinks } from "./see-links.js";
 
 /**
- * Generate entity card for grid display
+ * Generate entity card for grid display with attribution and location information.
+ *
  * @param {Object} options - Entity card options
  * @param {string} options.name - Entity name
  * @param {string} options.type - Entity type
@@ -34,6 +35,15 @@ import { seeAlsoLinks } from "./see-links.js";
  * @param {Object} [options.packageMetadata] - Package metadata for attribution
  * @param {Array<Object>} [options.allModules] - All modules for re-export tracing
  * @returns {string} Entity card HTML
+ *
+ * @example
+ * // Basic entity card
+ * entityCard({
+ *   name: 'myFunction',
+ *   type: 'function',
+ *   description: 'A utility function',
+ *   link: '/api/myFunction'
+ * });
  */
 export function entityCard({
 	name,

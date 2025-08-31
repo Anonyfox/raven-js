@@ -7,43 +7,20 @@
  */
 
 /**
- * @file Easter Sunday calculation using the Meeus/Jones/Butcher algorithm
+ * @file Easter Sunday calculation using the Meeus/Jones/Butcher algorithm.
  *
  * Implements the Anonymous Gregorian algorithm for determining Easter Sunday dates.
- * This algorithm represents centuries of ecclesiastical astronomy compressed into
- * surgical mathematical precision - exactly the kind of institutional memory
- * ravens preserve across generations.
- *
- * Historical context: Easter calculation has been a critical problem since the
- * Council of Nicaea (325 AD). The algorithm encodes complex lunar-solar calendar
- * relationships into pure integer arithmetic, avoiding floating-point errors
- * that could accumulate over centuries.
+ * Uses integer arithmetic to encode lunar-solar calendar relationships accurately
+ * for the Gregorian calendar from 1583 onwards.
  */
 
 /**
- * Calculate the date of Easter Sunday for a given year using the
- * Meeus/Jones/Butcher algorithm (Anonymous Gregorian algorithm).
+ * Calculate Easter Sunday date using the Meeus/Jones/Butcher algorithm.
  *
- * This algorithm is astronomically accurate for the Gregorian calendar from 1583 onwards.
- * It encodes the complex relationship between lunar months and solar years that
- * determines Easter's date as "the first Sunday after the first full moon occurring
- * on or after the spring equinox."
- *
- * ALGORITHM BREAKDOWN:
- * The calculation involves several astronomical cycles:
- * - Metonic cycle (19 years): lunar months nearly repeat after 19 solar years
- * - Solar cycle (28 years): day-of-week pattern repeats every 28 years
- * - Century corrections: account for Gregorian calendar leap year rules
- *
- * MATHEMATICAL PRECISION:
- * - Uses only integer arithmetic to avoid floating-point drift
- * - Handles century boundary corrections automatically
- * - Accounts for Gregorian leap year suppression (years divisible by 100 but not 400)
- *
- * PERFORMANCE CHARACTERISTICS:
- * - O(1) constant time complexity
- * - Zero dependencies on date libraries
- * - Deterministic output for any valid input year
+ * Accurate for Gregorian calendar from 1583 onwards. Uses integer arithmetic
+ * to determine "the first Sunday after the first full moon occurring
+ * on or after the spring equinox" through astronomical cycle calculations.
+ * Accounts for Gregorian leap year suppression rules.
  *
  * @param {number} year - Year for which to calculate Easter (must be >= 1583)
  * @returns {Date} Date object representing Easter Sunday at midnight UTC

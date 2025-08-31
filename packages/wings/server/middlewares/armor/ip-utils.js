@@ -23,14 +23,13 @@ import { isIP } from "node:net";
 
 /**
  * Parse CIDR notation string into validated network address and prefix length.
- * Supports both IPv4 and IPv6 networks with comprehensive validation.
- *
- * **Validation**: Network address must be valid IP, prefix must be in valid range
- * **IPv4 Range**: 0-32 prefix length, IPv6 Range: 0-128 prefix length
- * **Error Handling**: Returns null for any invalid input instead of throwing
  *
  * @param {string} cidr - CIDR notation string (e.g., "192.168.1.0/24", "2001:db8::/32")
  * @returns {{network: string, prefix: number}|null} Parsed components or null if invalid
+ *
+ * @example
+ * // Parse IPv4 CIDR
+ * const parsed = parseCIDR('192.168.1.0/24'); // { network: '192.168.1.0', prefix: 24 }
  */
 export function parseCIDR(/** @type {string} */ cidr) {
 	if (typeof cidr !== "string") return null;
@@ -53,16 +52,14 @@ export function parseCIDR(/** @type {string} */ cidr) {
 
 /**
  * Check if IP address falls within specified CIDR range using optimized algorithms.
- * Automatically detects IPv4 vs IPv6 and uses appropriate matching algorithm.
- *
- * **IPv4 Performance**: O(1) bitwise operations using 32-bit integers
- * **IPv6 Performance**: O(n) byte-by-byte comparison where n = prefix bits / 8
- * **Mixed Networks**: Returns false for IPv4/IPv6 mismatch (no conversion attempted)
- * **Edge Cases**: Handles /0 networks (match all), invalid inputs gracefully
  *
  * @param {string} ip - IP address to test (IPv4 or IPv6)
  * @param {string} cidr - CIDR notation network range
  * @returns {boolean} true if IP is within CIDR range, false otherwise
+ *
+ * @example
+ * // Check IPv4 address in CIDR range
+ * const inRange = isIPInCIDR('192.168.1.100', '192.168.1.0/24'); // true
  */
 export function isIPInCIDR(ip, cidr) {
 	const parsed = parseCIDR(cidr);
@@ -236,16 +233,14 @@ function expandIPv6(ip) {
 
 /**
  * Extract client IP address from request context with configurable proxy trust.
- * Implements security-conscious proxy header parsing to prevent IP spoofing.
- *
- * **Security Model**: Only use proxy headers when explicitly trusted via configuration
- * **Header Priority**: X-Forwarded-For (first IP) → X-Real-IP → Remote-Addr → "unknown"
- * **Spoofing Protection**: Proxy headers ignored by default to prevent client IP manipulation
- * **Production Safety**: Returns "unknown" rather than error for missing data
  *
  * @param {import('../../../core/context.js').Context} ctx - Request context with headers
  * @param {boolean} [trustProxy=false] - Whether to trust proxy headers (SECURITY: false by default)
  * @returns {string} Client IP address or "unknown" if unavailable
+ *
+ * @example
+ * // Extract client IP safely without trusting proxy headers
+ * const ip = getClientIP(ctx, false); // Uses direct connection IP
  */
 export function getClientIP(ctx, trustProxy = false) {
 	if (trustProxy) {
@@ -266,17 +261,14 @@ export function getClientIP(ctx, trustProxy = false) {
 
 /**
  * Determine if IP address is allowed based on whitelist/blacklist configuration.
- * Supports exact IP matching and CIDR range matching for flexible access control.
- *
- * **Whitelist Mode**: Only IPs in whitelist allowed (deny by default)
- * **Blacklist Mode**: All IPs except those in blacklist allowed (allow by default)
- * **Disabled Mode**: All IPs allowed (no filtering)
- * **Pattern Support**: Exact IP addresses and CIDR ranges in same list
- * **Performance**: Early exit on first match for large IP lists
  *
  * @param {string} ip - IP address to evaluate
  * @param {import('./config.js').IPAccessConfig} config - Access control configuration
  * @returns {boolean} true if IP should be allowed, false if blocked
+ *
+ * @example
+ * // Check IP against whitelist configuration
+ * const allowed = isIPAllowed('192.168.1.100', { mode: 'whitelist', whitelist: ['192.168.1.0/24'] });
  */
 export function isIPAllowed(ip, config) {
 	if (config.mode === "disabled") return true;

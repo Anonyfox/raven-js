@@ -16,19 +16,14 @@
 import { JSDocTagBase } from "./base.js";
 
 /**
- * JSDoc author tag implementation
+ * JSDoc author tag implementation for code authorship attribution.
  *
- * **Official JSDoc Tag:** Documents the author(s) of code or documentation.
+ * Parses author tag content with structured data extraction.
  *
- * **Syntax:**
- * - Name only: `Author Name`
- * - Name with email: `Author Name <email@domain.com>`
- * - Organization: `Author Name (Organization)`
- *
- * **Raven Design:**
- * - Clean name/email extraction
- * - Zero external contact validation
- * - Essential legal attribution intelligence
+ * @example
+ * // Basic usage
+ * const tag = new JSDocAuthorTag('John Doe <john@example.com>');
+ * // Access parsed properties
  */
 export class JSDocAuthorTag extends JSDocTagBase {
 	/**
@@ -52,17 +47,8 @@ export class JSDocAuthorTag extends JSDocTagBase {
 			// Extract name and email if in standard format: Name <email>
 			const emailMatch = this.authorInfo.match(/^([^<]+?)\s*<([^>]+)>(.*)$/);
 			if (emailMatch) {
-				/**
-				 * @type {string} Extracted author name
-				 */
 				this.name = emailMatch[1].trim();
-				/**
-				 * @type {string} Extracted email address
-				 */
 				this.email = emailMatch[2].trim();
-				/**
-				 * @type {string} Additional information
-				 */
 				this.additional = emailMatch[3].trim();
 			} else {
 				this.name = this.authorInfo;

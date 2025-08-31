@@ -7,19 +7,17 @@
  */
 
 /**
+ * Constructs absolute HTTPS URLs from relative paths and domain names.
  *
- * Constructs an absolute URL given a relative URL and a domain.
- * import { absoluteUrl } from '@raven-js/beak/seo/utils';
- * absoluteUrl('/path', 'example.com'); // 'https://example.com/path'
- * absoluteUrl('https://other.com/path', 'example.com'); // 'https://other.com/path'
- * absoluteUrl('', 'example.com'); // 'https://example.com'
- * absoluteUrl('path', 'example.com'); // 'https://example.com/path'
+ * @param {string} url - URL path or full URL to process
+ * @param {string} domain - Domain name without protocol
+ * @returns {string} Absolute HTTPS URL
  */
 export const absoluteUrl = (
 	/** @type {string} */ url,
 	/** @type {string} */ domain,
 ) => {
-	if (url.startsWith("http")) {
+	if (url?.startsWith("http")) {
 		return url;
 	}
 	// Handle empty paths

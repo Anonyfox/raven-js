@@ -11,25 +11,10 @@
  */
 
 /**
- * Recursively flattens values with intelligent type handling.
- *
- * **Type Processing:**
- * - Arrays: Space-separated strings, filters null/undefined
- * - Objects: CSS key-value pairs with camelCase→kebab-case conversion
- * - Primitives: Direct string conversion
- *
- * **Performance:** O(n) flat arrays, O(n*d) nested. Sparse array optimization.
- * **Edge Protection:** Circular references throw RangeError.
+ * Recursively flattens values with intelligent type handling for CSS generation.
  *
  * @param {any} value - Value to flatten (primitives, arrays, objects)
  * @returns {string} CSS-formatted flattened representation
- *
- * @example
- * flattenValue(['red', null, ['blue', 'solid']]);
- * // Returns: "red blue solid"
- *
- * flattenValue({ backgroundColor: '#007bff', fontSize: '16px' });
- * // Returns: "background-color:#007bff; font-size:16px;"
  */
 export const flattenValue = (value) => {
 	if (value == null) return "";
@@ -97,18 +82,11 @@ export const flattenValue = (value) => {
 };
 
 /**
- * Combines template literal parts with interpolated values.
- *
- * **Requirements:** Genuine TemplateStringsArray only - manual construction fails.
- * Values processed via recursive flattenValue(). Handles complex interpolations efficiently.
+ * Combines template literal parts with interpolated values for CSS processing.
  *
  * @param {TemplateStringsArray} strings - Template static parts (immutable array)
  * @param {...any} values - Interpolated values (primitives, arrays, objects)
  * @returns {string} Combined CSS string ready for normalization
- *
- * @example
- * processCSSTemplate`color: ${'red'}; list: ${['a', 'b']}`;
- * // Returns: "color: red; list: a b"
  */
 export const processCSSTemplate = (
 	/** @type {TemplateStringsArray} */ strings,

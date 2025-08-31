@@ -549,9 +549,28 @@ const tokenizeJS = (sourceText) => {
 };
 
 /**
- * Highlight JavaScript source code with Bootstrap semantic classes
+ * Highlight JavaScript source code with Bootstrap semantic classes.
+ *
+ * Transforms JavaScript source into semantically highlighted markup using Bootstrap
+ * color classes. Handles ES2020+ syntax including template literals and arrow functions.
+ *
  * @param {string} sourceText - Raw JavaScript source code
  * @returns {string} HTML with syntax highlighting
+ *
+ * @example
+ * // Basic usage
+ * highlightJS('function greet(name) { return `Hello ${name}`; }');
+ * // → '<span class="text-primary">function</span> <span class="text-body">greet</span>...'
+ *
+ * @example
+ * // Edge case: modern syntax
+ * highlightJS('const arr = [1, 2, 3]; const doubled = arr.map(x => x * 2);');
+ * // → Highlighted with keywords, literals, and operators in semantic colors
+ *
+ * @example
+ * // Edge case: empty input
+ * highlightJS('');
+ * // → ''
  */
 export const highlightJS = (sourceText) => {
 	if (typeof sourceText !== "string") {

@@ -34,9 +34,28 @@
  */
 
 /**
- * Convert markdown text to HTML
- * @param {string} markdown - Markdown source text
- * @returns {string} HTML output
+ * Converts GitHub Flavored Markdown to HTML with single-pass parsing.
+ *
+ * Zero-dependency markdown processor with CommonMark compliance and GitHub extensions.
+ * Single-pass AST construction optimized for performance and deterministic output.
+ *
+ * @param {string} markdown - Markdown source text to convert
+ * @returns {string} Generated HTML output
+ *
+ * @example
+ * // Basic usage
+ * markdownToHtml('# Hello\n\nThis is **bold** text.');
+ * // → '<h1>Hello</h1><p>This is <strong>bold</strong> text.</p>'
+ *
+ * @example
+ * // Edge case: GitHub extensions
+ * markdownToHtml('```js\nconsole.log("code");\n```');
+ * // → '<pre><code class="language-js">console.log("code");</code></pre>'
+ *
+ * @example
+ * // Edge case: empty input
+ * markdownToHtml('');
+ * // → ''
  */
 export const markdownToHTML = (markdown) => {
 	if (typeof markdown !== "string" || !markdown.trim()) {

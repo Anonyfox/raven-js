@@ -16,7 +16,8 @@
 import { html } from "@raven-js/beak";
 
 /**
- * Generate alert component
+ * Generate alert component with Bootstrap styling and optional dismiss functionality.
+ *
  * @param {Object} options - Alert configuration
  * @param {string} options.variant - Bootstrap variant (primary, secondary, success, danger, warning, info, light, dark)
  * @param {string} [options.icon] - Alert icon (emoji or text)
@@ -24,6 +25,20 @@ import { html } from "@raven-js/beak";
  * @param {string} options.message - Alert message content
  * @param {boolean} [options.dismissible] - Whether alert can be dismissed
  * @returns {string} Alert HTML
+ *
+ * @example
+ * // Basic success alert
+ * alert({ variant: 'success', message: 'Operation completed!' });
+ *
+ * @example
+ * // Alert with icon, title and dismiss
+ * alert({
+ *   variant: 'warning',
+ *   icon: '⚠️',
+ *   title: 'Warning',
+ *   message: 'Check your configuration',
+ *   dismissible: true
+ * });
  */
 export function alert({ variant, icon, title, message, dismissible = false }) {
 	return html`

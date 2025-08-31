@@ -189,20 +189,24 @@ function detectContext(str) {
  * @returns {string} Clean, formatted markdown string
  *
  * @example
- * ```js
+ * // Basic usage
  * const title = 'Getting Started';
+ * md`# ${title}\n\nWelcome to the guide.`;
+ * // → "# Getting Started\n\nWelcome to the guide."
+ *
+ * @example
+ * // Array composition with context awareness
  * const features = ['Fast', 'Lean', 'Zero deps'];
+ * md`## Features\n${features.map(f => md`- ${f}`)}`;
+ * // → "## Features\n- Fast\n- Lean\n- Zero deps"
  *
+ * @example
+ * // Complex document assembly
  * const doc = md`# ${title}
- *
- * ## Features
- *
- * ${features.map(f => md`- ${f}`)}
  *
  * ${code('npm install @raven-js/beak', 'bash')}
  * `;
- * // Produces clean, properly formatted markdown
- * ```
+ * // → Clean, properly formatted markdown with code blocks
  */
 export function md(strings, ...values) {
 	// Check cache for compiled template
@@ -254,11 +258,10 @@ export function md(strings, ...values) {
  * @returns {Object} Reference link object
  *
  * @example
- * ```js
+ * // Basic usage
  * const link = ref('Documentation', 'docs');
- * const content = md`See the ${link} for details.`;
- * // Produces: "See the [Documentation][docs] for details."
- * ```
+ * md`See the ${link} for details.`;
+ * // → "See the [Documentation][docs] for details."
  */
 export function ref(text, ref) {
 	return { type: "reference", text, ref };
@@ -271,14 +274,15 @@ export function ref(text, ref) {
  * @returns {Object} Code block object
  *
  * @example
- * ```js
+ * // Basic usage
  * const example = code('console.log("Hello World");', 'javascript');
- * const tutorial = md`Here's how:
+ * md`Here's how: ${example}`;
+ * // → "Here's how: ```javascript\nconsole.log(\"Hello World\");\n```"
  *
- * ${example}
- * `;
- * // Produces fenced code block with syntax highlighting hint
- * ```
+ * @example
+ * // Edge case: no language specified
+ * code('SELECT * FROM users');
+ * // → "```\nSELECT * FROM users\n```"
  */
 export function code(code, language = "") {
 	return { type: "code", code, language };
@@ -291,17 +295,13 @@ export function code(code, language = "") {
  * @returns {Object} Table object
  *
  * @example
- * ```js
+ * // Basic usage
  * const results = table(['Feature', 'Status'], [
  *   ['Templates', '✅ Complete'],
  *   ['Parser', '✅ Complete']
  * ]);
- * const report = md`## Status Report
- *
- * ${results}
- * `;
- * // Produces properly formatted markdown table
- * ```
+ * md`## Status Report\n${results}`;
+ * // → "## Status Report\n| Feature | Status |\n| --- | --- |\n| Templates | ✅ Complete |\n| Parser | ✅ Complete |"
  */
 export function table(headers, rows) {
 	return { type: "table", headers, rows };

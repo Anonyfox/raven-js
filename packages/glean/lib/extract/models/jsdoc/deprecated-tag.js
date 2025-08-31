@@ -16,19 +16,14 @@
 import { JSDocTagBase } from "./base.js";
 
 /**
- * JSDoc deprecated tag implementation
+ * JSDoc deprecated tag implementation for deprecation warning documentation.
  *
- * **Official JSDoc Tag:** Marks functionality as deprecated with optional replacement information.
+ * Parses deprecated tag content with structured data extraction.
  *
- * **Syntax:**
- * - Simple: `@deprecated`
- * - With reason: `@deprecated This method is obsolete, use newMethod() instead`
- * - With version: `@deprecated since version 2.0.0`
- *
- * **Raven Design:**
- * - Optional deprecation message
- * - Critical for migration planning
- * - Zero complexity, maximum clarity
+ * @example
+ * // Basic usage
+ * const tag = new JSDocDeprecatedTag('Use newFunction() instead');
+ * // Access parsed properties
  */
 export class JSDocDeprecatedTag extends JSDocTagBase {
 	/**

@@ -7,8 +7,10 @@
  */
 
 /**
+ * @file HTTP request/response context class with middleware support, automatic parsing, and response helpers.
  *
- * HTTP request/response context and lifecycle management
+ * Provides the Context class for unified HTTP request/response handling in both Node.js and browser environments.
+ * Includes path parsing, header management, body parsing, and convenient response methods.
  */
 
 import { isValidHttpMethod } from "./http-methods.js";
@@ -21,70 +23,23 @@ import {
 } from "./string-pool.js";
 
 /**
- * **Context** - The core HTTP request/response lifecycle abstraction.
- *
- * This class provides a unified interface for handling HTTP requests and responses
- * in an isomorphic manner - working both on the server and in the browser. It
- * encapsulates all request data (headers, body, query params, path params) and
- * provides convenient methods for building responses.
- *
- * ## Key Features
- * - **Isomorphic**: Works in both Node.js and browser environments
- * - **Middleware Support**: Before/after callback system for request processing
- * - **Type Safety**: Private fields with controlled access via getters/methods
- * - **Automatic Parsing**: JSON and form data parsing based on content-type
- * - **Response Helpers**: Convenient methods for common response types
- * - **Method Chaining**: Fluent API for building responses
- *
- * ## Design Philosophy
- * The Context class follows a mutable-by-design approach for performance reasons.
- * Instead of creating new instances for each middleware step, the same context
- * object is passed through the entire request lifecycle. This reduces memory
- * allocation and garbage collection pressure in high-throughput scenarios.
- *
- * ## Security Considerations
- * - Path length is limited to 2048 characters to prevent DoS attacks
- * - Path segments are limited to 100 to prevent CPU exhaustion
- * - All header keys are normalized to lowercase for consistency
- * - Input validation occurs at construction time
+ * HTTP request/response context with middleware support and response helpers.
  *
  * @example
- * ```javascript
- * // Create a context from a request
- * const url = new URL('https://api.example.com/users/123?page=1');
- * const headers = new Headers({ 'content-type': 'application/json' });
- * const body = Buffer.from('{"name":"John"}');
- * const ctx = new Context('POST', url, headers, body);
- *
- * // Access request data
- * console.log(ctx.method); // 'POST'
- * console.log(ctx.path); // '/users/123'
- * console.log(ctx.requestBody()); // { name: 'John' }
- * console.log(ctx.queryParams.get('page')); // '1'
- *
- * // Build a response
- * ctx.json({ success: true, user: ctx.requestBody() });
- * ```
+ * // Basic context usage in route handler
+ * const handler = async (ctx) => {
+ *   const userId = ctx.params.id;
+ *   const user = await getUser(userId);
+ *   return ctx.json(user);
+ * };
  *
  * @example
- * ```javascript
- * // Using middleware callbacks
- * const authMiddleware = new Middleware(async (ctx) => {
+ * // Context with request data
+ * const handler = async (ctx) => {
+ *   const body = await ctx.json();
  *   const token = ctx.requestHeaders.get('authorization');
- *   if (!token) {
- *     ctx.notFound('Unauthorized');
- *     return;
- *   }
- *   ctx.data.user = await validateToken(token);
- * });
- *
- * ctx.addBeforeCallback(authMiddleware);
- * await ctx.runBeforeCallbacks();
- *
- * // Handler logic here...
- *
- * await ctx.runAfterCallbacks();
- * ```
+ *   return ctx.status(201).json({ created: true });
+ * };
  */
 export class Context {
 	#requestHeaders = new Headers();

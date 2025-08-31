@@ -7,12 +7,11 @@
  */
 
 /**
- * @file See links component - surgical reference display
+ * @file See links component for JSDoc @see tag reference display.
  *
- * Ravens display reference territories with link precision.
- * Renders @see tag links with proper external link handling and
- * Bootstrap badge styling. Groups links by type for organized
- * presentation. Optional rendering - nothing when no links exist.
+ * Renders @see tag links with proper external link handling and Bootstrap badge styling.
+ * Groups links by type for organized presentation. Optional rendering - displays nothing
+ * when no links exist.
  */
 
 import { html } from "@raven-js/beak";
@@ -121,20 +120,22 @@ function renderTextLinks(textLinks) {
 }
 
 /**
- * See also links component for entity pages and cards
+ * See also links component displaying @see tag references organized by type.
  *
- * Displays @see tag references organized by type with appropriate styling.
- * External URLs get external link icons, symbols get code styling,
- * modules get info badges. Subtle presentation that doesn't compete
- * with main content.
- *
- * **Bootstrap Dependencies:** badge, bg-secondary, bg-light, bg-info, text-dark, text-muted, me-1
- * **Unicode Icons:** ↗ for external links
- * **Surgical Design:** Optional rendering, grouped by reference type
+ * External URLs get external link icons, symbols get code styling, modules get info badges.
+ * Returns empty string when no attribution context or links exist.
  *
  * @param {import('../../extract/models/attribution.js').AttributionContext} attributionContext - Attribution context
  * @param {boolean} [compact=false] - Whether to use compact styling
  * @returns {string} HTML see links display or empty string
+ *
+ * @example
+ * // Compact style for cards
+ * seeAlsoLinks(attributionContext, true);
+ *
+ * @example
+ * // Full style for pages
+ * seeAlsoLinks(attributionContext, false);
  */
 export function seeAlsoLinks(attributionContext, compact = false) {
 	if (

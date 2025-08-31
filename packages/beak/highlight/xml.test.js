@@ -488,5 +488,20 @@ describe("XML Syntax Highlighter", () => {
 			strictEqual(result.includes('class="text-secondary"'), true); // Punctuation
 			strictEqual(result.includes("deep"), true); // Text content
 		});
+
+		test("unquoted attribute values (surgical coverage for lines 332-345)", () => {
+			const xml = `<element attribute=unquoted>content</element>`;
+			const result = highlightXML(xml);
+			strictEqual(result.includes('class="text-primary"'), true); // Tag name
+			strictEqual(result.includes('class="text-info"'), true); // Attribute name
+			strictEqual(result.includes('class="text-success"'), true); // Attribute value
+		});
+
+		test("invalid characters in attributes (surgical coverage for lines 348-350)", () => {
+			const xml = `<element attr=\x00invalid>content</element>`;
+			const result = highlightXML(xml);
+			strictEqual(result.includes('class="text-primary"'), true); // Should still process
+			strictEqual(result.includes('class="text-info"'), true); // Attribute name
+		});
 	});
 });

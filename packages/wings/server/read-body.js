@@ -3,12 +3,22 @@
  * @license MIT
  * @see {@link https://github.com/Anonyfox/ravenjs}
  * @see {@link https://ravenjs.dev}
- * @see {@link https://anonyfox.com} Security defaults for request body processing. These values provide protection against common attack vectors while maintaining good performance for legitimate requests.
+ * @see {@link https://anonyfox.com}
+ */
+
+/**
+ * @file Request body processing with security defaults and resource management.
+ *
+ * Provides secure request body parsing with protection against common attack vectors
+ * including DoS attacks, memory exhaustion, and request flooding. Implements
+ * configurable limits, timeout handling, and resource cleanup.
  */
 export const SECURITY_DEFAULTS = {
 	/**
+	 * Security defaults for request body processing.
 	 *
-	 * Maximum request body size in bytes (10MB)
+	 * @example
+	 * // Access default values: MAX_BODY_SIZE, MAX_CHUNKS, TIMEOUT_MS
 	 */
 	MAX_BODY_SIZE: 10 * 1024 * 1024,
 	/** Maximum number of data chunks to prevent flooding attacks */
@@ -21,6 +31,9 @@ export const SECURITY_DEFAULTS = {
  * Get the maximum allowed body size.
  *
  * @returns {number} Maximum body size in bytes
+ *
+ * @example
+ * // Returns 10485760 (10MB default limit)
  */
 export function getMaxBodySize() {
 	return SECURITY_DEFAULTS.MAX_BODY_SIZE;
@@ -30,6 +43,9 @@ export function getMaxBodySize() {
  * Get the maximum allowed number of chunks.
  *
  * @returns {number} Maximum number of chunks
+ *
+ * @example
+ * // Returns 1000 (default chunk limit)
  */
 export function getMaxChunks() {
 	return SECURITY_DEFAULTS.MAX_CHUNKS;
@@ -39,6 +55,9 @@ export function getMaxChunks() {
  * Get the request timeout duration.
  *
  * @returns {number} Timeout in milliseconds
+ *
+ * @example
+ * // Returns 30000 (30 second default timeout)
  */
 export function getTimeout() {
 	return SECURITY_DEFAULTS.TIMEOUT_MS;
@@ -55,7 +74,11 @@ export function getTimeout() {
 
 /**
  * Default timer implementation using Node.js built-in timers.
+ *
  * @type {TimerImpl}
+ *
+ * @example
+ * // Uses setTimeout and clearTimeout from Node.js
  */
 export const DEFAULT_TIMER_IMPL = {
 	create: setTimeout,
@@ -69,6 +92,9 @@ export const DEFAULT_TIMER_IMPL = {
  * @param {number} delay - Delay in milliseconds
  * @param {TimerImpl} impl - Timer implementation (for testing)
  * @returns {any} Timer ID that can be cleared
+ *
+ * @example
+ * // Creates a timer with callback and delay
  */
 export function createTimer(callback, delay, impl = DEFAULT_TIMER_IMPL) {
 	return impl.create(callback, delay);
@@ -79,6 +105,9 @@ export function createTimer(callback, delay, impl = DEFAULT_TIMER_IMPL) {
  *
  * @param {any} timerId - Timer ID to clear
  * @param {TimerImpl} impl - Timer implementation (for testing)
+ *
+ * @example
+ * // Clears a timer by ID
  */
 export function clearTimer(timerId, impl = DEFAULT_TIMER_IMPL) {
 	impl.clear(timerId);
@@ -86,6 +115,9 @@ export function clearTimer(timerId, impl = DEFAULT_TIMER_IMPL) {
 
 /**
  * Validation error class for request body processing.
+ *
+ * @example
+ * // Thrown when body size or chunk limits exceeded
  */
 export class ValidationError extends Error {
 	/**
@@ -101,7 +133,9 @@ export class ValidationError extends Error {
 
 /**
  * Request validator for enforcing size and chunk limits.
- * Provides fast validation with minimal overhead for normal requests.
+ *
+ * @example
+ * // Validates request body chunks against size and count limits
  */
 export class RequestValidator {
 	/**
@@ -187,6 +221,9 @@ export class RequestValidator {
  * @param {number} [limits.maxSize] - Maximum body size in bytes
  * @param {number} [limits.maxChunks] - Maximum number of chunks
  * @returns {RequestValidator} New validator instance
+ *
+ * @example
+ * // Creates RequestValidator with custom or default limits
  */
 export function createValidator(limits) {
 	return new RequestValidator(limits);
@@ -194,7 +231,9 @@ export function createValidator(limits) {
 
 /**
  * Resource cleanup manager for handling event listeners and timers.
- * Ensures proper cleanup to prevent memory leaks.
+ *
+ * @example
+ * // Manages cleanup of request listeners and timeout timers
  */
 export class ResourceManager {
 	/**
@@ -321,6 +360,9 @@ export class ResourceManager {
  *
  * @param {TimerImpl} [timerImpl] - Timer implementation (for testing)
  * @returns {ResourceManager} New resource manager instance
+ *
+ * @example
+ * // Creates ResourceManager with custom or default timer
  */
 export function createResourceManager(timerImpl) {
 	return new ResourceManager(timerImpl);
@@ -329,14 +371,14 @@ export function createResourceManager(timerImpl) {
 /**
  * Read the request body as a Buffer from an HTTP request stream.
  *
- * This security-hardened function enforces size limits, chunk limits, and timeout protection
- * while providing proper resource cleanup to prevent memory leaks and potential attacks.
- *
  * @param {import('node:http').IncomingMessage} request - The HTTP request object
  * @param {Object} [options] - Configuration options for testing
  * @param {TimerImpl} [options.timerImpl] - Timer implementation (for testing)
  * @param {Object} [options.limits] - Custom validation limits (for testing)
  * @returns {Promise<Buffer|undefined>} A Promise that resolves to the request body or undefined
+ *
+ * @example
+ * // Security-hardened request body parsing with limits and cleanup
  */
 export async function readBody(request, options = {}) {
 	return new Promise((resolve) => {

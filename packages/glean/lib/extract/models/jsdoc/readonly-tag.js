@@ -16,18 +16,14 @@
 import { JSDocTagBase } from "./base.js";
 
 /**
- * JSDoc readonly tag implementation
+ * JSDoc readonly tag implementation for read-only property documentation.
  *
- * **Official JSDoc Tag:** Marks a symbol as read-only (immutable).
+ * Parses readonly tag content with structured data extraction.
  *
- * **Syntax:**
- * - Standalone: `@readonly`
- * - With description: `@readonly Configuration is immutable after initialization`
- *
- * **Raven Design:**
- * - Simple immutability marker
- * - Optional description support
- * - Critical for data integrity intelligence
+ * @example
+ * // Basic usage
+ * const tag = new JSDocReadonlyTag('tag content');
+ * // Access parsed properties
  */
 export class JSDocReadonlyTag extends JSDocTagBase {
 	/**

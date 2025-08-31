@@ -16,21 +16,21 @@
 import { JSDocTagBase } from "./base.js";
 
 /**
- * JSDoc since tag implementation
+ * JSDoc since tag implementation for version information documentation.
  *
- * **Official JSDoc Tag:** Documents when functionality was introduced.
+ * Parses since tag content with structured data extraction.
  *
- * **Syntax:**
- * - Version: `@since 1.2.0`
- * - With description: `@since 1.2.0 Added async support`
- * - Date format: `@since 2023-12-01`
- *
- * **Raven Design:**
- * - Clean version extraction
- * - Optional description support
- * - Zero version validation complexity
+ * @example
+ * // Basic usage
+ * const tag = new JSDocSinceTag('1.2.0');
+ * // Access parsed properties
  */
 export class JSDocSinceTag extends JSDocTagBase {
+	/**
+	 * @type {string} Parsed tag content
+	 */
+	content = "";
+
 	/**
 	 * Create since tag instance
 	 * @param {string} rawContent - Raw since tag content

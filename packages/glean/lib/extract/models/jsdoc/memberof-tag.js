@@ -16,20 +16,14 @@
 import { JSDocTagBase } from "./base.js";
 
 /**
- * JSDoc memberof tag implementation
+ * JSDoc memberof tag implementation for namespace membership documentation.
  *
- * **Official JSDoc Tag:** Indicates that a symbol belongs to a parent symbol.
+ * Parses memberof tag content with structured data extraction.
  *
- * **Syntax:**
- * - Class membership: `ClassName`
- * - Namespace membership: `NamespaceName`
- * - Nested membership: `Outer.Inner`
- * - Module membership: `module:moduleName`
- *
- * **Raven Design:**
- * - Clean parent reference extraction
- * - Zero hierarchy validation
- * - Essential for documentation structure
+ * @example
+ * // Basic usage
+ * const tag = new JSDocMemberofTag('MyNamespace');
+ * // Access parsed properties
  */
 export class JSDocMemberofTag extends JSDocTagBase {
 	/**

@@ -1,21 +1,30 @@
 # Reflex: Universal Reactive Signals
 
 [![Website](https://img.shields.io/badge/website-ravenjs.dev-blue.svg)](https://ravenjs.dev)
-[![Zero Dependencies](https://img.shields.io/badge/Zero-Dependencies-brightgreen.svg)](https://github.com/Anonyfox/raven-js)
-[![ESM](https://img.shields.io/badge/ESM-Only-blue.svg)](https://nodejs.org/api/esm.html)
-[![Node.js](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
+[![Documentation](https://img.shields.io/badge/docs-docs.ravenjs.dev/reflex-blue.svg)](https://docs.ravenjs.dev/reflex)
+[![Zero Dependencies](https://img.shields.io/badge/Zero-Dependencies-brightgreen.svg)](https://github.com/Anonyfox/ravenjs)
+[![ESM Only](https://img.shields.io/badge/ESM-Only-blue.svg)](https://nodejs.org/api/esm.html)
+[![Node.js 22.5+](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
 
-Universal reactive signals with automatic SSR, seamless hydration, and zero-dependency DOM updates. Works everywhere - browser, Node.js, Deno, Bun.
+<div align="center">
+  <img src="media/logo.webp" alt="Reflex Logo" width="200" height="200" />
+</div>
 
-**Zero dependencies. Zero transpilation. Zero framework lock-in.**
+Universal reactive signals with automatic SSR, seamless hydration, and zero-dependency DOM updates.
 
-## Install
+## Purpose
+
+Reactive programming suffers from complexity taxation - frameworks demand steep learning curves, bloated dependencies, and vendor lock-in. Most reactive systems exhibit glitches where intermediate states leak through, breaking consistency guarantees developers expect.
+
+Reflex provides mathematical precision: computed-first execution prevents glitched states, component-scoped SSR eliminates global state headaches, and zero dependencies mean no supply chain vulnerabilities. Works identically across browser, Node.js, Deno, and Bun environments.
+
+## Installation
 
 ```bash
 npm install @raven-js/reflex
 ```
 
-## API
+## Usage
 
 ### Core Signals
 
@@ -87,9 +96,7 @@ mount(() => `<h1>Hello ${signal("World")()}</h1>`, "#app");
 
 ### Signal Scheduler
 
-Computed-first microtask execution solves the **diamond problem** - when multiple signals feed into a computed value, only one update fires instead of glitched intermediate states. Computeds propagate until stable, then effects execute.
-
-**Why this matters**: "Good enough" reactive systems exhibit glitches where intermediate states leak to effects. Great reactive systems guarantee consistent view of data at effect execution time.
+Computed-first microtask execution prevents glitched intermediate states. Computeds propagate until stable, then effects execute with consistent data view.
 
 ### Template Context System
 
@@ -109,10 +116,10 @@ Server runs multiple passes until output stabilizes (`html === prevHtml && promi
 
 ### Performance Implementation
 
-- WeakMap template caching eliminates compilation overhead
-- Monomorphic signal reads optimize V8 type speculation
-- rAF + microtask scheduling coordination for paint alignment
-- WeakRef DOM tracking for automatic cleanup
+- WeakMap template caching
+- Monomorphic signal reads optimize V8
+- rAF + microtask scheduling for paint alignment
+- WeakRef DOM tracking for cleanup
 
 ## Wings Integration
 
@@ -225,6 +232,18 @@ node server.js
 - **Browsers:** ES2020+ support
 - **Dependencies:** Zero
 
-## License
+## The Raven's Reflex
 
-MIT - Copyright (c) 2025 Anonyfox e.K.
+Like a raven's lightning-fast reflexes responding to environmental changes, Reflex signals react instantly to state mutations, propagating updates through the system with surgical precision and unwavering consistency.
+
+## 🦅 Support RavenJS Development
+
+If you find RavenJS helpful, consider supporting its development:
+
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor%20on%20GitHub-%23EA4AAA?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sponsors/Anonyfox)
+
+Your sponsorship helps keep RavenJS **zero-dependency**, **modern**, and **developer-friendly**.
+
+---
+
+**Built with ❤️ by [Anonyfox](https://anonyfox.com)**

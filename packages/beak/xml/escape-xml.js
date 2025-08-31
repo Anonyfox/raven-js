@@ -27,12 +27,14 @@ const NEEDS_XML_ESC = /[&<>"']/;
  * @returns {string} XML-escaped string
  *
  * @example
+ * // Basic usage
  * escapeXml(`<tag attr="value's & content">`);
- * // Returns: "&lt;tag attr=&quot;value&apos;s &amp; content&quot;&gt;"
+ * // → "&lt;tag attr=&quot;value&apos;s &amp; content&quot;&gt;"
  *
  * @example
+ * // Edge case: clean content fast path
  * escapeXml("clean content");
- * // Returns: "clean content" (zero-cost fast path)
+ * // → "clean content"
  */
 export function escapeXml(str) {
 	const stringValue = `${str}`;
@@ -88,8 +90,9 @@ export function escapeXml(str) {
  * @returns {string} CDATA-safe content
  *
  * @example
+ * // Basic usage
  * escapeCdata("content with ]]> terminator");
- * // Returns: "content with ]]]]><![CDATA[> terminator"
+ * // → "content with ]]]]><![CDATA[> terminator"
  */
 export function escapeCdata(str) {
 	const stringValue = `${str}`;

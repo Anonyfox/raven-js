@@ -7,24 +7,21 @@
  */
 
 /**
- * @file Linear Regression implementation for the Cortex neural network
+ * @file Incremental linear regression implementation using least squares method.
  *
- * Lightweight incremental linear regression that learns from streaming data.
- * Perfect for predicting numerical values based on historical observations.
- * Fully serializable and isomorphic across all JavaScript environments.
+ * Learns from streaming data points without storing entire datasets in memory.
+ * Supports batch training, serialization, and coefficient of determination calculation.
  */
 
 import { Model } from "./model.js";
 
 /**
- * A lightweight Linear Regression model implementation using incremental learning.
+ * Incremental Linear Regression model using least squares method for streaming data.
  *
- * Learns from streaming data points without storing the entire dataset in memory.
- * Uses the least squares method to find the optimal line fit: y = mx + b.
- * Inherits universal serialization capabilities from the base Model class.
+ * Learns from individual data points without storing the entire dataset in memory.
+ * Calculates optimal line fit (y = mx + b) and inherits serialization from Model class.
  *
- * Perfect for time series prediction, trend analysis, and numerical forecasting
- * where you want to predict a continuous value based on a single input feature.
+ * Suitable for time series prediction and numerical forecasting with single input features.
  *
  * @example
  * // Create and train the model incrementally

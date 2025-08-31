@@ -7,12 +7,10 @@
  */
 
 /**
- * @file Package metadata footer component - surgical package attribution
+ * @file Package metadata footer component with external links and Bootstrap styling.
  *
- * Ravens display package territories with link precision.
- * Renders package.json metadata as clean footer links with proper
- * external link handling and Bootstrap styling. Optional rendering -
- * nothing displayed when no package metadata exists.
+ * Renders package.json metadata as clean footer links with proper external link handling.
+ * Optional rendering - displays nothing when no package metadata exists.
  */
 
 import { html } from "@raven-js/beak";
@@ -38,23 +36,22 @@ function renderPackageLink(url, label, icon) {
 }
 
 /**
- * Package metadata footer component for documentation pages
+ * Package metadata footer component displaying homepage, repository, issues, and funding links.
  *
- * Displays package.json metadata links in a clean footer format.
- * Includes homepage, repository, issues, and funding links with
- * appropriate icons. Subtle styling that enhances without intruding.
- *
- * **Bootstrap Dependencies:** text-decoration-none, text-muted, me-3, border-top, pt-3, mt-4
- * **Unicode Icons:**
- * - 🏠 (homepage)
- * - 📁 (repository)
- * - 🐛 (issues)
- * - 💖 (funding)
- * **Surgical Design:** Optional rendering, clean horizontal layout
+ * Renders package.json metadata as horizontal footer links with icons. Optional rendering
+ * returns empty string when no metadata exists.
  *
  * @param {import('../../extract/models/attribution.js').AttributionContext} attributionContext - Attribution context
  * @param {boolean} [minimal=false] - Whether to use minimal styling without border
  * @returns {string} HTML package footer or empty string
+ *
+ * @example
+ * // Basic package footer
+ * packageFooter(attributionContext);
+ *
+ * @example
+ * // Minimal styling footer
+ * packageFooter(attributionContext, true);
  */
 export function packageFooter(attributionContext, minimal = false) {
 	if (

@@ -7,17 +7,28 @@
  */
 
 /**
- * Package overview data extraction for documentation homepage
+ * Package overview data extraction for documentation homepage.
  *
- * Surgical data transformation from Package instance to structured data
- * optimized for homepage rendering. Follows WEBAPP.md specification
- * for step-by-step data extraction patterns.
+ * Transforms Package instance to structured data optimized for homepage rendering
+ * with modules, statistics, and README content organization.
  */
 
 /**
- * Extract package overview data for homepage
+ * Extract package overview data for homepage with modules, statistics, and README content.
+ *
  * @param {import('../../extract/models/package.js').Package} packageInstance - Package data
  * @returns {Object} Structured data for package overview template
+ *
+ * @example
+ * // Basic package overview extraction
+ * const overview = extractPackageOverviewData(packageInstance);
+ * console.log(overview.name, overview.stats.entityCount);
+ *
+ * @example
+ * // Check for available content
+ * const overview = extractPackageOverviewData(packageInstance);
+ * if (overview.hasReadme) console.log('README available');
+ * if (overview.hasModules) console.log('Modules available');
  */
 export function extractPackageOverviewData(packageInstance) {
 	if (!packageInstance || typeof packageInstance !== "object") {

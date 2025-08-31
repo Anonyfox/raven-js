@@ -14,10 +14,19 @@
  */
 
 /**
- * Extract sitemap data from package instance
+ * Extract sitemap data from package instance for SEO optimization with proper priorities.
+ *
+ * Generates XML sitemap URLs for homepage, module pages, and entity pages with
+ * appropriate change frequencies and priority rankings.
+ *
  * @param {{name: string, modules: Array<{importPath: string, isDefault: boolean, publicEntities: Array<{name: string}>}>}} packageInstance - Package instance with modules and entities
  * @param {string} baseUrl - Base URL for the documentation site
  * @returns {{urls: Array<{loc: string, lastmod: string, changefreq: string, priority: string}>, totalUrls: number, generatedAt: string}} Sitemap data with URLs, priorities, and metadata
+ *
+ * @example
+ * // Generate sitemap for documentation site
+ * const sitemap = extractSitemapData(packageInstance, 'https://docs.mypackage.com');
+ * console.log(sitemap.totalUrls, sitemap.urls[0].priority);
  */
 export function extractSitemapData(
 	packageInstance,

@@ -13,7 +13,7 @@
  * Bootstrap class mapping, and edge cases with 100% branch coverage.
  */
 
-import { strictEqual, throws } from "node:assert";
+import { ok, strictEqual, throws } from "node:assert";
 import { describe, test } from "node:test";
 import { highlightJSON } from "./json.js";
 
@@ -357,6 +357,31 @@ describe("JSON Syntax Highlighter", () => {
 			// All should be highlighted as numbers
 			const numberMatches = result.match(/class="text-warning"/g);
 			strictEqual(numberMatches?.length, 4);
+		});
+
+		test("invalid JSON characters (surgical coverage)", () => {
+			// Test characters that don't match any valid JSON patterns (lines 253-261)
+			const json = '{"valid": true} @ # $ invalid characters';
+			const result = highlightJSON(json);
+			strictEqual(typeof result, "string");
+			// Should still process the valid JSON parts and handle invalid characters
+			if (
+				!result.includes("valid") ||
+				!result.includes("true") ||
+				!result.includes("@")
+			) {
+				throw new Error("Should handle valid JSON and invalid characters");
+			}
+		});
+
+		test("decimal numbers starting with dot (surgical coverage for line 142)", () => {
+			// Test the condition: (char === "." && /\d/.test(nextChar))
+			const json = `[.5, .123, .0]`;
+			const result = highlightJSON(json);
+			// Should highlight decimal numbers starting with dot
+			ok(result.includes(span("text-warning", ".5")));
+			ok(result.includes(span("text-warning", ".123")));
+			ok(result.includes(span("text-warning", ".0")));
 		});
 	});
 

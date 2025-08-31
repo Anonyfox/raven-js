@@ -7,28 +7,28 @@
  */
 
 /**
- * @file Documentation package container - apex documentation intelligence
+ * @file Package container for complete documentation model organization.
  *
- * Ravens organize package documentation with predatory precision.
  * Pure documentation model optimized for multiple renderer targets:
- * HTML docs, JSON APIs, SSG with SEO. Zero external dependencies,
- * surgical data organization for maximum renderer flexibility.
+ * HTML docs, JSON APIs, SSG with SEO optimization.
  */
 
 /**
- * Documentation package container
+ * Package container for documentation model organization and module coordination.
  *
- * Lean documentation model for package-level information and module organization.
- * Designed backwards from renderer requirements - HTML docs, JSON APIs, SSG.
- * Provides computed properties for common renderer patterns while maintaining
- * minimal core data structure.
+ * Designed from renderer requirements - HTML docs, JSON APIs, SSG. Computed properties
+ * for common renderer patterns with minimal core data structure.
  *
- * **Design Philosophy:** Container that organizes modules and their entities
- * for documentation generation. Not an extension of discovery Package class -
- * pure documentation model with renderer-optimized API surface.
+ * @example
+ * // Basic package creation
+ * const pkg = new Package('my-package', '1.0.0', 'Description', readme);
+ * pkg.addModule(module);
+ * console.log(pkg.stats.totalModules);
  *
- * **Zero Dependencies:** Pure V8 JavaScript, no external packages
- * **Renderer Agnostic:** Data structure only, no output generation
+ * @example
+ * // Package entity access and filtering
+ * console.log(pkg.getAllEntities());
+ * console.log(pkg.getEntitiesByType('function'));
  */
 export class Package {
 	/**

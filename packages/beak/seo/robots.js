@@ -9,10 +9,6 @@
 import { html } from "../html/index.js";
 
 /**
- *
- */
-
-/**
  * @typedef {Object} RobotsConfig
  * @property {string|boolean} [index] - Index directive (index/noindex)
  * @property {string|boolean} [follow] - Follow directive (follow/nofollow)
@@ -21,32 +17,29 @@ import { html } from "../html/index.js";
  */
 
 /**
- * Generates robots meta tags for the HTML head section.
+ * Generates robots meta tags for search engine crawling control.
  *
- * Controls how search engines crawl and index your pages.
- * Supports both traditional robots directives and modern Google-specific directives.
+ * Controls search engine indexing and link following behavior through
+ * standard robots directives. Essential for SEO content management
+ * and preventing unwanted page indexing.
  *
  * @param {RobotsConfig} config - Configuration object for robots tags
- * @returns {string} The generated robots meta tags as an HTML string
+ * @returns {string} Generated robots meta tags as HTML string
  *
  * @example
- * import { robots } from '@raven-js/beak/seo';
+ * // Basic usage
+ * robots({ index: true, follow: true });
+ * // → '<meta name="robots" content="index, follow" />'
  *
- * // Basic robots tag
- * const tags = robots({
- *   index: true,
- *   follow: true
- * });
- * // Output:
- * // <meta name="robots" content="index, follow" />
+ * @example
+ * // Edge case: block indexing and following
+ * robots({ index: false, follow: false });
+ * // → '<meta name="robots" content="noindex, nofollow" />'
  *
- * // Prevent indexing
- * const noIndexTags = robots({
- *   index: false,
- *   follow: false
- * });
- * // Output:
- * // <meta name="robots" content="noindex, nofollow" />
+ * @example
+ * // Edge case: default behavior
+ * robots({});
+ * // → '<meta name="robots" content="index, follow" />'
  */
 export const robots = ({ index = true, follow = true }) => {
 	const indexValue = index ? "index" : "noindex";

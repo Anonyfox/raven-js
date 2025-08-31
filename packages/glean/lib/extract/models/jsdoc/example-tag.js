@@ -16,19 +16,20 @@
 import { JSDocTagBase } from "./base.js";
 
 /**
- * JSDoc example tag implementation
+ * JSDoc example tag implementation for code usage demonstration.
  *
- * **Official JSDoc Tag:** Documents code examples showing usage patterns.
+ * Parses code examples with optional captions, preserving formatting exactly.
+ * Supports both simple code and captioned examples with clean separation.
  *
- * **Syntax:**
- * - Simple: `functionCall(param1, param2)`
- * - With caption: `<caption>Example description</caption> code here`
- * - Multi-line: Code examples can span multiple lines
+ * @example
+ * // Basic code example
+ * const tag = new JSDocExampleTag('console.log("Hello World")');
+ * console.log(tag.code); // Raw code content
  *
- * **Raven Design:**
- * - Clean caption/code separation
- * - Preserves code formatting exactly
- * - Zero code execution or validation
+ * @example
+ * // Captioned example
+ * const tag = new JSDocExampleTag('<caption>Usage</caption> myFunction(42)');
+ * console.log(tag.caption, tag.code);
  */
 export class JSDocExampleTag extends JSDocTagBase {
 	/**
@@ -44,13 +45,7 @@ export class JSDocExampleTag extends JSDocTagBase {
 	 */
 	parseContent() {
 		if (!this.rawContent?.trim()) {
-			/**
-			 * @type {string} Optional caption/description for the example
-			 */
 			this.caption = "";
-			/**
-			 * @type {string} The actual code example
-			 */
 			this.code = "";
 			return;
 		}
@@ -60,28 +55,16 @@ export class JSDocExampleTag extends JSDocTagBase {
 			/^\s*<caption>(.*?)<\/caption>\s*([\s\S]*)$/,
 		);
 		if (captionMatch) {
-			/**
-			 * @type {string} Optional caption/description for the example
-			 */
 			this.caption = captionMatch[1].trim();
-			/**
-			 * @type {string} The actual code example
-			 */
 			this.code = captionMatch[2].trim();
 		} else {
-			/**
-			 * @type {string} Optional caption/description for the example
-			 */
 			this.caption = "";
-			/**
-			 * @type {string} The actual code example
-			 */
 			this.code = this.rawContent.trim();
 		}
 	}
 
 	/**
-	 * Validate example content
+	 * Validate example content - requires code
 	 */
 	validate() {
 		// Example should have some code content

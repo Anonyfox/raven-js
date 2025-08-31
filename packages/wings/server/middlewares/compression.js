@@ -157,11 +157,7 @@ export function selectBestEncoding(acceptedEncodings, availableAlgorithms) {
 }
 
 /**
- * Determine compression eligibility based on content characteristics
- *
- * **Performance Decision:** Sub-threshold responses skip compression to avoid CPU overhead exceeding benefits.
- * **Critical Logic:** Explicit non-compressible types override compressible patterns for security.
- * **Dangerous Edge:** Missing content-type defaults to no compression for safety.
+ * Determine compression eligibility based on content characteristics.
  *
  * @param {string|null} contentType - Content-Type header value (can include charset)
  * @param {number} contentLength - Response size in bytes
@@ -169,6 +165,9 @@ export function selectBestEncoding(acceptedEncodings, availableAlgorithms) {
  * @param {number} options.threshold - Minimum byte size for compression consideration
  * @param {string[]} options.compressibleTypes - MIME type prefixes eligible for compression
  * @returns {boolean} True if response meets compression criteria
+ *
+ * @example
+ * // Check if response should be compressed based on size and type
  */
 export function shouldCompress(contentType, contentLength, options) {
 	// Don't compress if below threshold
@@ -201,15 +200,15 @@ export function shouldCompress(contentType, contentLength, options) {
 }
 
 /**
- * Generate algorithm-specific compression options
- *
- * **Performance Tuning:** Level 1=fastest/largest, Level 9/11=slowest/smallest.
- * **Critical Bounds:** Invalid levels are clamped to algorithm-safe ranges.
+ * Generate algorithm-specific compression options.
  *
  * @param {string} algorithm - Compression algorithm name ('gzip'|'deflate'|'brotli')
  * @param {number} level - Compression level (1-9 for gzip/deflate, 1-11 for brotli)
  * @returns {Object} Algorithm-specific options object for Node.js zlib streams
  * @throws {Error} Unsupported algorithm names
+ *
+ * @example
+ * // Get compression options for algorithm with level tuning
  */
 export function getCompressionOptions(algorithm, level) {
 	switch (algorithm) {
@@ -232,15 +231,15 @@ export function getCompressionOptions(algorithm, level) {
 }
 
 /**
- * Create Node.js compression transform stream
- *
- * **Performance:** Streaming compression minimizes memory usage for large responses.
- * **Critical Error:** Invalid algorithms throw immediately (fail-fast design).
+ * Create Node.js compression transform stream.
  *
  * @param {string} algorithm - Algorithm name ('gzip'|'deflate'|'brotli')
  * @param {Object} options - Algorithm-specific compression options
  * @returns {import('stream').Transform} Node.js zlib compression stream
  * @throws {Error} Unsupported algorithm names
+ *
+ * @example
+ * // Create streaming compressor for large responses
  */
 export function createCompressionStream(algorithm, options) {
 	switch (algorithm) {
@@ -256,16 +255,15 @@ export function createCompressionStream(algorithm, options) {
 }
 
 /**
- * Compress response data asynchronously
- *
- * **Performance Alert:** Large responses block event loop during compression - consider streaming for >1MB.
- * **Critical Error:** Stream errors reject promise immediately (no partial compression).
- * **Memory Usage:** Accumulates entire compressed output in memory before resolving.
+ * Compress response data asynchronously.
  *
  * @param {string|Buffer} data - Response data to compress
  * @param {string} algorithm - Compression algorithm name
  * @param {Object} options - Algorithm-specific compression options
  * @returns {Promise<Buffer>} Promise resolving to compressed data buffer
+ *
+ * @example
+ * // Compress response data with chosen algorithm
  */
 export async function compressData(data, algorithm, options) {
 	return new Promise((resolve, reject) => {

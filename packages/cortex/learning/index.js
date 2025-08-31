@@ -7,12 +7,10 @@
  */
 
 /**
- * @file Machine Learning algorithms for the Cortex neural network
+ * @file Machine learning algorithms using platform-native JavaScript implementations.
  *
- * Zero-dependency implementations of core ML algorithms using platform-native JavaScript.
- * All models are isomorphic, serializable, and built for production use.
- *
- * The murder's learning algorithms: adaptive, efficient, immortal.
+ * Exports neural networks, linear regression, and base model classes for classification
+ * and regression tasks. All models support serialization and incremental training.
  */
 
 export { LinearRegression } from "./linear-regression.js";

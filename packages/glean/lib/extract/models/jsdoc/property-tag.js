@@ -16,20 +16,14 @@
 import { JSDocTagBase } from "./base.js";
 
 /**
- * JSDoc property tag implementation
+ * JSDoc property tag implementation for object property documentation.
  *
- * **Official JSDoc Tag:** Documents properties of objects.
- * **Alias:** prop tag (both `property` and `prop` are valid)
+ * Parses property tag content with structured data extraction.
  *
- * **Syntax:**
- * - Full: `{Type} propertyName Description of property`
- * - No type: `propertyName Description`
- * - Minimal: `propertyName`
- *
- * **Raven Design:**
- * - Complex nested type handling
- * - Clean name/description separation
- * - Essential for object documentation
+ * @example
+ * // Basic usage
+ * const tag = new JSDocPropertyTag('{string} name Object name property');
+ * // Access parsed properties
  */
 export class JSDocPropertyTag extends JSDocTagBase {
 	/**

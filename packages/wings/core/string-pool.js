@@ -7,26 +7,25 @@
  */
 
 /**
- * **String Pool** - Interned string constants for GC pressure reduction.
+ * @file Interned string constants and caching for MIME types, HTTP headers, status codes, and mathematical constants.
  *
- * This module provides pre-allocated string constants that are frequently used
- * across the Wings framework. By interning these strings, we eliminate repeated
- * string allocations and reduce garbage collection pressure.
- *
- * **Performance Impact**: Eliminates repeated string allocations for hot paths
- * containing repeated MIME types, header names, and content types.
- *
- * **Memory Strategy**: All strings are allocated once at module load time and
- * reused throughout the application lifecycle.
+ * Provides pre-allocated string constants used across Wings to reduce repeated allocations.
+ * Includes dynamic string caching with LRU eviction for runtime-generated strings.
  */
 
 /**
- * Frequently used MIME type strings to eliminate repeated allocations.
- *
- * These constants are used extensively in Context response methods and
- * MIME type detection. String internment reduces GC pressure in hot paths.
+ * MIME type constants for Content-Type headers and response generation.
  *
  * @type {Object<string, string>}
+ *
+ * @example
+ * // Common MIME types
+ * const htmlType = MIME_TYPES.TEXT_HTML; // 'text/html'
+ * const jsonType = MIME_TYPES.APPLICATION_JSON; // 'application/json'
+ *
+ * @example
+ * // Setting response headers
+ * ctx.responseHeaders.set('Content-Type', MIME_TYPES.TEXT_PLAIN);
  */
 export const MIME_TYPES = {
 	// Web content types (highest frequency)
@@ -48,12 +47,18 @@ export const MIME_TYPES = {
 };
 
 /**
- * Frequently used HTTP header names to eliminate repeated allocations.
- *
- * These constants are used in Context request/response header operations.
- * String internment provides consistent header key references.
+ * HTTP header name constants for request/response header operations.
  *
  * @type {Object<string, string>}
+ *
+ * @example
+ * // Common header names
+ * const contentType = HEADER_NAMES.CONTENT_TYPE; // 'content-type'
+ * const auth = HEADER_NAMES.AUTHORIZATION; // 'authorization'
+ *
+ * @example
+ * // Using with headers
+ * const value = ctx.requestHeaders.get(HEADER_NAMES.CONTENT_TYPE);
  */
 export const HEADER_NAMES = {
 	CONTENT_TYPE: "content-type",
@@ -69,12 +74,18 @@ export const HEADER_NAMES = {
 };
 
 /**
- * Frequently used error and status messages to eliminate repeated allocations.
- *
- * These constants are used in Context error response methods and
- * provide consistent messaging across the framework.
+ * Standard error and status message constants for consistent responses.
  *
  * @type {Object<string, string>}
+ *
+ * @example
+ * // Error messages
+ * const notFoundMsg = MESSAGES.NOT_FOUND; // 'Not Found'
+ * const serverErrorMsg = MESSAGES.INTERNAL_SERVER_ERROR;
+ *
+ * @example
+ * // Using in error responses
+ * ctx.text(MESSAGES.NOT_FOUND);
  */
 export const MESSAGES = {
 	NOT_FOUND: "Not Found",
@@ -84,15 +95,18 @@ export const MESSAGES = {
 };
 
 /**
- * Frequently used HTTP status codes to eliminate magic numbers.
- *
- * These constants provide semantic meaning to status codes and eliminate
- * repeated numeric literals throughout the codebase.
- *
- * **Performance**: Eliminates repeated status code lookups and improves readability.
- * **Maintenance**: Centralized status code definitions for consistency.
+ * HTTP status code constants providing semantic names for numeric codes.
  *
  * @type {Object<string, number>}
+ *
+ * @example
+ * // Common status codes
+ * const ok = STATUS_CODES.OK; // 200
+ * const notFound = STATUS_CODES.NOT_FOUND; // 404
+ *
+ * @example
+ * // Setting response status
+ * ctx.responseStatusCode = STATUS_CODES.CREATED; // 201
  */
 export const STATUS_CODES = {
 	// Success codes
@@ -119,14 +133,20 @@ export const STATUS_CODES = {
 };
 
 /**
- * Mathematical constants for performance optimizations.
- *
- * These constants eliminate repeated calculations and magic numbers
- * throughout the framework for better performance and readability.
- *
- * **Performance**: Precomputed values vs runtime calculations.
+ * Numerical constants for cache limits, path processing, and status code validation.
  *
  * @type {Object<string, number>}
+ *
+ * @example
+ * // Cache limits
+ * const maxMime = MATH_CONSTANTS.MIME_CACHE_LIMIT; // 200
+ * const maxString = MATH_CONSTANTS.STRING_CACHE_LIMIT; // 500
+ *
+ * @example
+ * // Path processing
+ * if (segments.length > MATH_CONSTANTS.MAX_PATH_SEGMENTS) {
+ *   throw new Error('Path too complex');
+ * }
  */
 export const MATH_CONSTANTS = {
 	// Cache size limits
@@ -144,47 +164,30 @@ export const MATH_CONSTANTS = {
 };
 
 /**
- * Performance-optimized string internment cache for dynamic strings.
- *
- * This Map provides O(1) lookup for dynamically generated strings that
- * may be repeated during request processing (e.g., computed MIME types,
- * dynamic header values).
- *
- * **Memory Management**: Limited to 500 entries with LRU eviction to prevent
- * memory leaks during long-running applications.
+ * String internment cache for dynamically generated strings with LRU eviction.
  *
  * @type {Map<string, string>}
  */
 const dynamicStringCache = new Map();
 
 /**
- * Interns a string to reduce allocation overhead for repeated usage.
+ * Caches strings to return the same reference for identical values, reducing allocation overhead.
  *
- * This function implements string internment by caching frequently used
- * strings and returning the same reference for identical string values.
- *
- * **Use Cases**:
- * - MIME type strings computed at runtime
- * - Dynamic header values used multiple times
- * - Computed error messages with variable content
- *
- * **Performance**: O(1) lookup with bounded memory usage via LRU eviction.
+ * Uses Map-based caching with LRU eviction when the cache reaches its size limit.
+ * Useful for MIME types, header values, and error messages computed at runtime.
  *
  * @param {string} str - The string to intern
  * @returns {string} The interned string reference
  *
  * @example
- * ```javascript
- * // Intern dynamic content type
+ * // Dynamic content type caching
  * const contentType = internString(`application/json; charset=${encoding}`);
- *
- * // Intern computed file extension
- * const mimeType = internString(`application/${computedType}`);
- *
- * // Subsequent calls return the same reference
  * const sameRef = internString(`application/json; charset=${encoding}`);
  * console.log(contentType === sameRef); // true (same reference)
- * ```
+ *
+ * @example
+ * // MIME type computation
+ * const mimeType = internString(`application/${computedType}`);
  */
 export function internString(str) {
 	// Return cached reference if already interned
@@ -204,25 +207,15 @@ export function internString(str) {
 }
 
 /**
- * Clears the dynamic string cache to free memory.
- *
- * This function should typically only be used in testing scenarios
- * or during application shutdown to ensure clean memory state.
- *
- * **Warning**: Clearing the cache will eliminate the performance benefits
- * of string internment until the cache is rebuilt through usage.
+ * Clears the dynamic string cache, primarily for testing and shutdown scenarios.
  *
  * @example
- * ```javascript
- * // Clear cache during test cleanup
+ * // Test cleanup
  * clearStringCache();
  *
- * // Or clear during graceful shutdown
- * process.on('SIGTERM', () => {
- *   clearStringCache();
- *   process.exit(0);
- * });
- * ```
+ * @example
+ * // Graceful shutdown
+ * process.on('SIGTERM', () => { clearStringCache(); process.exit(0); });
  */
 export function clearStringCache() {
 	dynamicStringCache.clear();

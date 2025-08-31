@@ -47,6 +47,7 @@ export async function generateStaticSite(
 	const server = createDocumentationServer(packagePath, { domain });
 	const packageInstance = /** @type {any} */ (server).packageInstance;
 	const router = /** @type {any} */ (server).router;
+	const assetRegistry = /** @type {any} */ (server).assetRegistry;
 
 	// Extract all URLs from sitemap
 	const baseUrl = domain ? `https://${domain}` : "https://docs.example.com";
@@ -110,6 +111,11 @@ export async function generateStaticSite(
 	totalFiles += assetsStats.files;
 	totalBytes += assetsStats.bytes;
 
+	// Copy image assets from asset registry
+	const imageAssetsStats = await copyImageAssets(assetRegistry, outputPath);
+	totalFiles += imageAssetsStats.files;
+	totalBytes += imageAssetsStats.bytes;
+
 	return {
 		totalFiles,
 		totalBytes,
@@ -134,6 +140,54 @@ function urlPathToFilePath(urlPath, outputPath) {
 
 	// Create nested directory structure with index.html
 	return path.join(outputPath, cleanPath, "index.html");
+}
+
+/**
+ * Copy image assets from asset registry to output directory
+ * @param {import('./assets/registry.js').AssetRegistry} assetRegistry - Asset registry
+ * @param {string} outputPath - Destination directory
+ * @returns {Promise<{files: number, bytes: number}>} Copy statistics
+ */
+async function copyImageAssets(assetRegistry, outputPath) {
+	let files = 0;
+	let bytes = 0;
+
+	if (!assetRegistry || assetRegistry.size === 0) {
+		return { files, bytes };
+	}
+
+	try {
+		// Ensure assets directory exists
+		const assetsDir = path.join(outputPath, "assets");
+		await fs.promises.mkdir(assetsDir, { recursive: true });
+
+		// Copy all registered assets
+		const assets = assetRegistry.getAllAssets();
+
+		for (const asset of assets) {
+			const destPath = path.join(outputPath, asset.assetUrl.substring(1)); // Remove leading /
+
+			try {
+				// Copy file from resolved path to destination
+				await fs.promises.copyFile(asset.resolvedPath, destPath);
+
+				// Get file size for statistics
+				const stats = await fs.promises.stat(destPath);
+				files++;
+				bytes += stats.size;
+			} catch (copyError) {
+				console.warn(
+					`Warning: Could not copy image asset ${asset.originalPath}: ${copyError.message}`,
+				);
+			}
+		}
+	} catch (error) {
+		console.warn(
+			`Warning: Could not create assets directory: ${error.message}`,
+		);
+	}
+
+	return { files, bytes };
 }
 
 /**

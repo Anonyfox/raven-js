@@ -8,7 +8,9 @@ _This is a private package for internal development tooling. It's not published 
 [![Private Package](https://img.shields.io/badge/Private-Package-red.svg)](https://github.com/Anonyfox/raven-js)
 [![Node.js](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
 
-## Overview
+<div align="center">
+  <img src="media/logo.webp" alt="Nest Logo" width="200" height="200" />
+</div>
 
 Nest is Raven's command center - the place where all the development tools and automation scripts come together. Like a raven's nest, it's where everything is built, maintained, and prepared for flight.
 

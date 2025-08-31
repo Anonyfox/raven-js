@@ -35,24 +35,35 @@ import { absoluteUrl } from "./utils.js";
  * @returns {string} The generated LinkedIn meta tags as an HTML string
  *
  * @example
- * import { linkedin } from '@raven-js/beak/seo';
- *
- * const tags = linkedin({
- *   title: 'My Professional Article',
- *   description: 'A detailed analysis of industry trends',
+ * // Basic usage
+ * linkedin({
+ *   title: 'Professional Article',
+ *   description: 'Industry analysis',
  *   domain: 'example.com',
- *   path: '/article',
- *   imageUrl: '/article-image.jpg',
- *   owner: 'linkedin.com/in/johndoe',
- *   company: 'linkedin.com/company/mycompany'
+ *   path: '/article'
  * });
- * // Output:
- * // <meta name="linkedin:title" property="linkedin:title" content="My Professional Article" />
- * // <meta name="linkedin:description" property="linkedin:description" content="A detailed analysis of industry trends" />
- * // <meta name="linkedin:url" property="linkedin:url" content="https://example.com/article" />
- * // <meta name="linkedin:image" property="linkedin:image" content="https://example.com/article-image.jpg" />
- * // <meta name="linkedin:owner" property="linkedin:owner" content="linkedin.com/in/johndoe" />
- * // <meta name="linkedin:company" property="linkedin:company" content="linkedin.com/company/mycompany" />
+ * // → '<meta name="linkedin:title" property="linkedin:title" content="Professional Article" />'
+ *
+ * @example
+ * // Edge case: with image and owner
+ * linkedin({
+ *   title: 'Company Update',
+ *   description: 'Latest news',
+ *   imageUrl: '/news.jpg',
+ *   owner: 'linkedin.com/in/johndoe'
+ * });
+ *
+ * @example
+ * // Complex configuration with all options
+ * linkedin({
+ *   title: 'Full Article',
+ *   description: 'Complete description',
+ *   domain: 'site.com',
+ *   path: '/post',
+ *   imageUrl: '/image.jpg',
+ *   owner: 'linkedin.com/in/author',
+ *   company: 'linkedin.com/company/brand'
+ * });
  */
 export const linkedin = ({
 	title,

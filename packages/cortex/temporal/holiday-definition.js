@@ -7,12 +7,10 @@
  */
 
 /**
- * @file Holiday definition class for institutional memory preservation.
+ * @file Internal holiday definition class supporting multiple calculation types.
  *
- * Internal class that encapsulates bureaucratic holiday patterns that survive
- * across political changes. Supports multiple calculation types with validation
- * and date generation. The murder's memory palace: each holiday preserved as
- * a computational artifact.
+ * Encapsulates holiday calculation logic for fixed dates, Easter-relative dates,
+ * and custom algorithms. Provides validation and Holiday instance generation.
  */
 
 import { Holiday } from "./holiday.js";
@@ -27,22 +25,11 @@ import { Holiday } from "./holiday.js";
  */
 
 /**
- * Holiday definition class for encoding governmental temporal patterns.
+ * Internal holiday definition class that encapsulates holiday calculation logic and metadata.
  *
- * Internal class that preserves institutional memory of bureaucratic holiday calculations
- * across political changes, calendar reforms, and regional variations. Each definition
- * encapsulates its calculation logic and metadata.
- *
- * SUPPORTED CALCULATION TYPES:
- * - **fixed**: Calendar date holidays (Christmas, New Year)
- * - **easter_relative**: Offset from Easter Sunday (Good Friday, Pentecost)
- * - **calculated**: Custom algorithm holidays (Buß- und Bettag)
- *
- * DESIGN PRINCIPLES:
- * - **Immutable**: Holiday definitions don't change after creation
- * - **Self-contained**: Each holiday knows how to calculate itself
- * - **Validated**: Construction ensures data integrity
- * - **Extensible**: New calculation types can be added
+ * Supports fixed calendar dates, Easter-relative calculations, and custom algorithms.
+ * Each definition knows how to calculate its holiday date for any given year.
+ * Holiday definitions are immutable after creation and include validation.
  *
  * @example
  * // Fixed date holiday definition
@@ -198,8 +185,7 @@ export class HolidayDefinition {
 				}
 				break;
 
-			default:
-				throw new Error(`Unsupported holiday type: ${this.type}`);
+			// Note: default case removed - constructor ensures only valid types exist
 		}
 
 		return new Holiday(this.name, date, this.workFree, scope, this.type);

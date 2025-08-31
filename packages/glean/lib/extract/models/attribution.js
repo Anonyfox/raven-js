@@ -7,28 +7,28 @@
  */
 
 /**
- * @file Attribution context - surgical authorship and reference intelligence
+ * @file Attribution context for authorship and reference composition.
  *
- * Ravens track authorship territories with predatory precision. Composes
- * file-level @author and @see tag intelligence with package metadata for
- * comprehensive attribution rendering. Optional intelligence - renders
- * nothing when data absent, full context when available.
+ * Composes JSDoc @author and @see tags with package metadata for
+ * documentation attribution. Optional rendering - no data, no output.
  */
 
 /**
- * Attribution context composer for entities and modules
+ * Attribution context composer for entities and modules with optional rendering.
  *
- * Surgically extracts authorship intelligence from JSDoc tags and package
- * metadata. Provides optional rendering data - when authors exist,
- * renders properly; when absent, renders nothing. Maintains separation
- * between primary authors and contributors.
+ * Extracts authorship from JSDoc tags and package metadata. Primary author = first @author tag,
+ * contributors = subsequent @author tags. Optional rendering - no authors, no output.
  *
- * **Design Philosophy:** Optional attribution that enhances without intruding.
- * Primary author = first @author tag, contributors = subsequent @author tags.
- * Package metadata enriches context when available.
+ * @example
+ * // Basic entity attribution
+ * const context = createEntityAttribution(entity, packageMeta);
+ * const primary = context.getPrimaryAuthor();
+ * const links = context.getSeeLinks();
  *
- * **Zero Dependencies:** Pure V8 JavaScript, no external packages
- * **Renderer Agnostic:** Data composition only, no HTML output
+ * @example
+ * // Module attribution aggregation
+ * const context = createModuleAttribution(entities, packageMeta);
+ * console.log(context.hasAttribution);
  */
 export class AttributionContext {
 	/**

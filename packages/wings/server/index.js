@@ -7,7 +7,10 @@
  */
 
 /**
+ * @file Wings server exports - adapters, middlewares, and utilities.
  *
+ * Provides clean re-exports of server-side Wings components for HTTP servers,
+ * middleware stack, and SSL generation utilities.
  */
 
 export { ClusteredServer } from "./adapters/clustered-server.js";

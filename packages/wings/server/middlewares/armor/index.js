@@ -152,19 +152,38 @@ export {
  * - `SecurityHeaderError`: Header setting failure (non-blocking)
  * - `ArmorError`: General security processing failure
  */
+
+/**
+ * Comprehensive security middleware with layered protection architecture.
+ *
+ * @example
+ * // Basic armor protection with defaults
+ * const armor = new Armor();
+ * router.use(armor);
+ *
+ * @example
+ * // Production armor with rate limiting and IP control
+ * const armor = new Armor({
+ *   rateLimiting: { enabled: true, global: { max: 1000, windowMs: 3600000 } },
+ *   ipAccess: { mode: 'whitelist', whitelist: ['192.168.0.0/16'] }
+ * });
+ * router.use(armor);
+ */
 export class Armor extends Middleware {
 	/**
 	 * Create a new Armor middleware instance with validated configuration.
-	 * Merges user configuration with secure defaults and validates all settings.
-	 *
-	 * **Configuration Validation**: Comprehensive validation prevents runtime security failures
-	 * **Default Security**: Conservative defaults provide immediate protection
-	 * **Memory Initialization**: Rate limiting store created only when enabled
-	 * **Error Prevention**: Invalid configurations rejected at construction time
 	 *
 	 * @param {Partial<import('./config.js').ArmorConfig>} [userConfig={}] - Security configuration overrides
 	 * @param {string} [identifier='@raven-js/wings/armor'] - Middleware identifier for debugging
 	 * @throws {import('./config.js').ConfigValidationError} When configuration validation fails
+	 *
+	 * @example
+	 * // Create armor with default security settings
+	 * const armor = new Armor();
+	 *
+	 * @example
+	 * // Create armor with custom rate limiting
+	 * const armor = new Armor({ rateLimiting: { enabled: true } });
 	 */
 	constructor(userConfig = {}, identifier = "@raven-js/wings/armor") {
 		super(async (/** @type {any} */ ctx) => {

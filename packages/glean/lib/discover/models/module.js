@@ -9,6 +9,23 @@
 import { File } from "./file.js";
 import { Package } from "./package.js";
 
+/**
+ * Module container for files under a specific import path with dependency tracking.
+ *
+ * Groups files that are exported together under a single import path, tracking
+ * included files and their dependencies for module graph construction.
+ *
+ * @example
+ * // Basic module creation
+ * const module = new Module(package, './src/utils.js', 'my-package/utils');
+ * module.addFile(file);
+ * console.log(module.includedFilePaths());
+ *
+ * @example
+ * // Dependency tracking
+ * const imported = module.importedFilePaths(allFiles);
+ * const unvisited = module.unvisitedFilePaths(allFiles);
+ */
 export class Module {
 	/** @type {Package} */
 	package = null;
@@ -38,8 +55,13 @@ export class Module {
 	files = [];
 
 	/**
-	 * a module is the container of all entities ultimately exported together under
-	 * a specific import path.
+	 * @type {Array<Object>}
+	 * Image assets found in module README.
+	 */
+	imageAssets = [];
+
+	/**
+	 * Create a module for entities exported under a specific import path
 	 *
 	 * @param {Package} pkg - the package instance this module belongs to
 	 * @param {string} filePath - the (relative) path to the file within the package

@@ -10,10 +10,6 @@ import { html } from "../html/index.js";
 import { absoluteUrl } from "./utils.js";
 
 /**
- *
- */
-
-/**
  * @typedef {Object} GeneralConfig
  * @property {string} title - Page title
  * @property {string} description - Page description
@@ -25,25 +21,32 @@ import { absoluteUrl } from "./utils.js";
  */
 
 /**
- * Generates general SEO meta tags for the HTML head section.
+ * Generates essential SEO meta tags for page identity and search optimization.
+ *
+ * Creates fundamental SEO elements: title with optional suffix, description with
+ * dual name/property attributes, and canonical URL when domain provided.
+ * Core foundation for search engine optimization.
  *
  * @param {GeneralConfig} config - Configuration object for general SEO tags
- * @returns {string} The generated meta tags as an HTML string
+ * @returns {string} Generated meta tags as HTML string
  *
  * @example
- * import { general } from '@raven-js/beak/seo';
- *
- * const tags = general({
+ * // Basic usage
+ * general({
  *   title: 'My Page',
- *   description: 'This is my page description',
+ *   description: 'Page description',
  *   domain: 'example.com',
- *   path: '/my-page',
- *   suffix: 'My Site'
+ *   path: '/page'
  * });
- * // Output:
- * // <title>My Page | My Site</title>
- * // <meta name="description" property="description" content="This is my page description" />
- * // <link rel="canonical" href="https://example.com/my-page" />
+ *
+ * @example
+ * // Edge case: with title suffix
+ * general({ title: 'Article', description: 'Content', suffix: 'Blog' });
+ * // → '<title>Article | Blog</title>...'
+ *
+ * @example
+ * // Edge case: minimal configuration
+ * general({ title: 'Simple', description: 'Basic page' });
  */
 export const general = ({ title, description, domain, path, suffix }) => {
 	const fullTitle = suffix ? `${title} | ${suffix}` : title;

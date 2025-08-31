@@ -7,11 +7,10 @@
  */
 
 /**
- * Entity page template for /modules/{moduleName}/{entityName}/ route
+ * Entity page template for /modules/{moduleName}/{entityName}/ route.
  *
  * Renders individual entity documentation with comprehensive JSDoc processing,
  * code examples, cross-references, and navigation context using Bootstrap 5.
- * Follows WEBAPP.md specification for detailed API documentation pages.
  */
 
 import { html, markdownToHTML, safeHtml } from "@raven-js/beak";
@@ -29,44 +28,19 @@ import {
 import { baseTemplate } from "./base.js";
 
 /**
- * Generate entity documentation HTML page
- * @param {Object} data - Entity page data from extractor
- * @param {Object} data.entity - Core entity information
- * @param {string} data.entity.name - Entity name
- * @param {string} data.entity.type - Entity type
- * @param {string} data.entity.description - Entity description
-
- * @param {string} data.entity.importPath - Module import path
- * @param {string} data.entity.importStatement - Generated import statement
- * @param {boolean} data.entity.isDefault - Whether from default module
- * @param {Object} data.documentation - JSDoc documentation
- * @param {Array<Object>} data.documentation.parameters - Parameter documentation
- * @param {Array<Object>} data.documentation.properties - Property documentation
- * @param {Array<Object>} data.documentation.methods - Method documentation
- * @param {Object} data.documentation.returns - Return documentation
- * @param {Array<Object>} data.documentation.examples - Code examples
- * @param {string} data.documentation.since - Since version
- * @param {Object} data.documentation.deprecated - Deprecation info
- * @param {Array<string>} data.documentation.author - Author information
- * @param {Array<Object>} data.documentation.throws - Exception documentation
- * @param {Object} data.documentation.typeInfo - TypeScript type information
- * @param {Object} data.relatedEntities - Cross-reference information
- * @param {Array<Object>} data.relatedEntities.sameModule - Same module entities
- * @param {Array<Object>} data.relatedEntities.similar - Similar entities
- * @param {Object} data.navigation - Navigation context
- * @param {Array<Object>} data.navigation.allModules - All modules
- * @param {Array<Object>} data.navigation.moduleEntities - Module entities
- * @param {string} data.packageName - Package name
- * @param {string} data.moduleName - Module name
- * @param {boolean} data.hasParameters - Whether entity has parameters
- * @param {boolean} data.hasProperties - Whether entity has properties (for typedefs)
- * @param {boolean} data.hasMethods - Whether entity has methods (for classes)
- * @param {boolean} data.hasReturns - Whether entity has return documentation
- * @param {boolean} data.hasExamples - Whether entity has examples
- * @param {boolean} data.hasRelatedEntities - Whether entity has related entities
- * @param {boolean} data.hasTypeInfo - Whether entity has TypeScript info
- * @param {boolean} data.isDeprecated - Whether entity is deprecated
+ * Generate entity documentation HTML page with comprehensive JSDoc sections.
+ *
+ * @param {any} data - Entity page data from extractor with comprehensive structure
  * @returns {string} Complete HTML page
+ *
+ * @example
+ * // Basic function entity page
+ * entityPageTemplate({
+ *   entity: { name: 'myFunction', type: 'function', description: '...' },
+ *   documentation: { parameters: [...], returns: {...}, examples: [...] },
+ *   packageName: 'my-package',
+ *   moduleName: 'utils'
+ * });
  */
 export function entityPageTemplate(data) {
 	const {

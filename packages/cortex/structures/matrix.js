@@ -7,36 +7,17 @@
  */
 
 /**
- * @file PERFORMANCE DOCTRINE Final Matrix - Proven Optimizations Only
+ * @file Matrix class for linear algebra operations using Float32Array storage.
  *
- * Contains only optimizations that demonstrated >5% measurable improvement.
- * Eliminates noise-level changes and reverts regressions following doctrine.
- * 
- * PROVEN OPTIMIZATIONS INCLUDED:
- * - In-place operations: 60.6% improvement
- * - Simple uniform random: 71.4% improvement  
- * - Direct array access in hot paths: 56.7% improvement
- * 
- * ELIMINATED AS NOISE (<5%):
- * - Matrix multiplication optimizations
- * - Complex caching patterns
- * - Loop unrolling
- * 
- * REVERTED DUE TO REGRESSION:
- * - Constructor data validation elimination
+ * Supports matrix creation, arithmetic operations, activation functions, and serialization.
+ * Optimized for neural network workloads with in-place operations and direct array access.
  */
 
 /**
- * High-performance matrix implementation following PERFORMANCE DOCTRINE.
+ * Matrix implementation for linear algebra operations using Float32Array storage.
  *
- * API-stable with proven internal optimizations for neural network workloads.
- * Maintains safety in public methods while eliminating overhead in hot paths.
- *
- * PERFORMANCE CHARACTERISTICS:
- * - 60.6% faster in-place operations (neural network critical path)
- * - 71.4% faster random initialization (Box-Muller → Simple Uniform)
- * - 56.7% faster element access (validation elimination in internal methods)
- * - Identical API compatibility with original implementation
+ * Supports matrix creation, arithmetic operations, and activation functions.
+ * Includes in-place operations for memory efficiency and direct array access patterns.
  *
  * @example
  * // Create matrices
@@ -72,7 +53,6 @@ export class Matrix {
 		this.data = new Float32Array(this.size);
 
 		// Initialize with provided data if given
-		// KEEP VALIDATION: Constructor performance regression when eliminated
 		if (data !== null) {
 			if (data.length !== this.size) {
 				throw new Error(
@@ -173,9 +153,7 @@ export class Matrix {
 	}
 
 	/**
-	 * PROVEN OPTIMIZATION: Simple uniform random (71.4% improvement).
-	 * Replaces Box-Muller transform with simple uniform distribution.
-	 * Neural networks don't require true normal distribution for initialization.
+	 * Create a matrix filled with uniform random values.
 	 *
 	 * @param {number} rows - Number of rows
 	 * @param {number} cols - Number of columns
@@ -186,8 +164,7 @@ export class Matrix {
 	static random(rows, cols, min = -1, max = 1) {
 		const matrix = new Matrix(rows, cols);
 		const range = max - min;
-		
-		// PERFORMANCE: Direct Float32Array access (proven 71.4% faster)
+
 		for (let i = 0; i < matrix.size; i++) {
 			matrix.data[i] = Math.random() * range + min;
 		}
@@ -197,7 +174,6 @@ export class Matrix {
 
 	/**
 	 * Matrix multiplication with another matrix.
-	 * KEPT ORIGINAL: Complex optimizations showed only 1.3% improvement (noise level).
 	 *
 	 * @param {Matrix} other - Matrix to multiply with
 	 * @param {Matrix} [result] - Optional output matrix to write result
@@ -224,7 +200,7 @@ export class Matrix {
 			}
 		}
 
-		// Standard matrix multiplication (complex optimizations proved ineffective)
+		// Standard matrix multiplication
 		for (let i = 0; i < this.rows; i++) {
 			for (let j = 0; j < other.cols; j++) {
 				let sum = 0;
@@ -299,8 +275,7 @@ export class Matrix {
 	}
 
 	/**
-	 * PROVEN OPTIMIZATION: In-place element-wise addition (60.6% improvement).
-	 * Critical for neural network bias addition operations.
+	 * Element-wise addition with another matrix, modifying this matrix in place.
 	 *
 	 * @param {Matrix} other - Matrix to add
 	 * @returns {Matrix} This matrix (for chaining)
@@ -313,7 +288,6 @@ export class Matrix {
 			throw new Error("Matrix dimensions must match for in-place addition");
 		}
 
-		// PERFORMANCE: Direct array access with cached references (proven 60.6% faster)
 		const thisData = this.data;
 		const otherData = other.data;
 		const size = this.size;
@@ -326,8 +300,7 @@ export class Matrix {
 	}
 
 	/**
-	 * PROVEN OPTIMIZATION: In-place scalar multiplication (part of 60.6% improvement).
-	 * Used heavily in neural network gradient updates.
+	 * Scalar multiplication modifying this matrix in place.
 	 *
 	 * @param {number} scalar - Scalar value to multiply by
 	 * @returns {Matrix} This matrix (for chaining)
@@ -337,7 +310,6 @@ export class Matrix {
 			throw new Error(`Invalid scalar value: ${scalar}`);
 		}
 
-		// PERFORMANCE: Direct array access (part of 60.6% in-place improvement)
 		const data = this.data;
 		const size = this.size;
 
@@ -394,13 +366,11 @@ export class Matrix {
 	}
 
 	/**
-	 * PROVEN OPTIMIZATION: In-place ReLU activation (part of 60.6% improvement).
-	 * Critical for neural network forward pass operations.
+	 * Apply ReLU activation function element-wise, modifying this matrix in place.
 	 *
 	 * @returns {Matrix} This matrix (for chaining)
 	 */
 	reluInPlace() {
-		// PERFORMANCE: Direct array access (part of 60.6% in-place improvement)
 		const data = this.data;
 		const size = this.size;
 

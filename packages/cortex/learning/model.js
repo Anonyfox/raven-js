@@ -7,22 +7,21 @@
  */
 
 /**
- * @file Base Model class for machine learning algorithms
+ * @file Base Model class providing serialization and lifecycle management for ML algorithms.
  *
- * Provides universal serialization/deserialization capabilities for all ML models.
- * Ensures isomorphic operation across browser and Node.js environments.
- * Foundation for the murder's learning algorithms.
+ * Abstract foundation class that all machine learning models inherit from.
+ * Handles model state tracking, JSON serialization, and validation patterns.
  */
 
 /**
- * Base class for all machine learning models in the Cortex neural network.
- * Provides standardized serialization, validation, and lifecycle management.
+ * Abstract base class for machine learning models providing serialization and state management.
  *
- * All learning algorithms inherit from this foundation to ensure consistent
- * behavior across different environments and use cases.
+ * All Cortex learning algorithms inherit from this class to ensure consistent
+ * serialization behavior and lifecycle validation across different environments.
  *
  * @abstract
  * @example
+ * // Custom model implementation
  * class CustomModel extends Model {
  *   constructor() {
  *     super();
@@ -30,11 +29,13 @@
  *   }
  *
  *   train(data) {
- *     // Training logic
+ *     // Implementation required
+ *     this._markTrained();
  *   }
  *
  *   predict(input) {
- *     // Prediction logic
+ *     this._validateTrained();
+ *     // Implementation required
  *   }
  * }
  */

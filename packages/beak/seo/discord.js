@@ -35,22 +35,23 @@ import { absoluteUrl } from "./utils.js";
  * @returns {string} The generated Discord meta tags as an HTML string
  *
  * @example
- * import { discord } from '@raven-js/beak/seo';
- *
- * const tags = discord({
- *   title: 'Join Our Community',
- *   description: 'Connect with like-minded developers',
+ * // Basic usage
+ * discord({
+ *   title: 'Join Community',
+ *   description: 'Connect with developers',
  *   domain: 'example.com',
- *   path: '/community',
- *   imageUrl: '/discord-banner.jpg',
+ *   path: '/community'
+ * });
+ * // → '<meta name="discord:title" property="discord:title" content="Join Community" />'
+ *
+ * @example
+ * // Edge case: with invite and image
+ * discord({
+ *   title: 'Game Server',
+ *   description: 'Play together',
+ *   imageUrl: '/banner.jpg',
  *   invite: 'abc123'
  * });
- * // Output:
- * // <meta name="discord:title" property="discord:title" content="Join Our Community" />
- * // <meta name="discord:description" property="discord:description" content="Connect with like-minded developers" />
- * // <meta name="discord:url" property="discord:url" content="https://example.com/community" />
- * // <meta name="discord:image" property="discord:image" content="https://example.com/discord-banner.jpg" />
- * // <meta name="discord:invite" property="discord:invite" content="abc123" />
  */
 export const discord = ({
 	title,

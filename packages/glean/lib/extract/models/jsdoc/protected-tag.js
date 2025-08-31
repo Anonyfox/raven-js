@@ -16,18 +16,14 @@
 import { JSDocTagBase } from "./base.js";
 
 /**
- * JSDoc protected tag implementation
+ * JSDoc protected tag implementation for protected member access documentation.
  *
- * **Official JSDoc Tag:** Marks a symbol as protected (accessible to subclasses).
+ * Parses protected tag content with structured data extraction.
  *
- * **Syntax:**
- * - Standalone: `@protected`
- * - With description: `@protected Intended for subclass use only`
- *
- * **Raven Design:**
- * - Simple access level marker
- * - Optional description support
- * - Critical for inheritance boundaries
+ * @example
+ * // Basic usage
+ * const tag = new JSDocProtectedTag('tag content');
+ * // Access parsed properties
  */
 export class JSDocProtectedTag extends JSDocTagBase {
 	/**

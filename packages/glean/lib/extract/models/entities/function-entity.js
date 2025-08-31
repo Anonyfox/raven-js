@@ -1,43 +1,38 @@
 /**
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
- * @see https://github.com/Anonyfox/ravenjs
- * @see https://ravenjs.dev
- * @see https://anonyfox.com
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
  */
 
 /**
- * @file Function entity model - surgical function documentation
+ * @file Function entity model for JavaScript function documentation.
  *
- * Ravens dissect function constructs with predatory precision.
- * Handles all JavaScript function variants: regular, arrow, async,
- * generators with comprehensive parameter and return type analysis.
- * Zero external dependencies, pure extraction.
+ * Parses function constructs with JSDoc tag composition and validation.
+ * Pure data extraction with zero external dependencies.
  */
 
 import { EntityBase } from "./base.js";
 
 /**
- * JavaScript function entity implementation
+ * JavaScript function entity with JSDoc tag composition and parsing.
  *
- * **Supported Function Types:**
- * - Regular functions: `function name() {}`
- * - Arrow functions: `const name = () => {}`
- * - Async functions: `async function name() {}`
- * - Generator functions: `function* name() {}`
- * - Async generators: `async function* name() {}`
- * - Method functions: object methods and class methods
+ * Handles function construct analysis, parameter extraction, and validation
+ * with support for standard JSDoc documentation patterns.
  *
- * **Valid JSDoc Tags:**
- * - `@param` - Parameter documentation
- * - `@returns/@return` - Return value documentation
- * - `@throws/@exception` - Exception documentation
- * - `@example` - Usage examples
- * - `@since` - Version information
- * - `@deprecated` - Deprecation notices
- * - `@see` - Related references
- * - `@author` - Authorship information
- * - `@override` - Method override indicator
+ * @example
+ * // Basic usage
+ * const entity = new FunctionEntity('functionName', {
+ *   file: 'app.js', line: 10, column: 5
+ * });
+ * entity.parseContent(sourceCode);
+ *
+ * @example
+ * // With JSDoc tags
+ * entity.addJSDocTag(paramTag);
+ * entity.setDescription('Function description');
+ * console.log(entity.jsdocTags);
  */
 export class FunctionEntity extends EntityBase {
 	/**

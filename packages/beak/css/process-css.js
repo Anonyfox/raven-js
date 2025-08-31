@@ -27,17 +27,8 @@ const CLOSE_BRACE_SPACE = "} ";
 /**
  * Normalizes CSS to single-line output with minimal whitespace.
  *
- * **Performance:** O(n) single-pass via pre-compiled regex patterns.
- * Fast-path empty string detection. Processes 300KB+ in ~7ms.
- *
- * **Pathological Protection:** Linear patterns prevent catastrophic backtracking.
- *
  * @param {string} css - Raw CSS string requiring normalization
  * @returns {string} Minified CSS with normalized whitespace
- *
- * @example
- * processCSS('.button { color: white; }');
- * // Returns: ".button{ color:white; }"
  */
 export const processCSS = (/** @type {string} */ css) => {
 	// Fast path for empty or whitespace-only strings

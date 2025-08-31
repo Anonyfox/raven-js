@@ -21,12 +21,13 @@
 
 /**
  * SQL injection detection patterns targeting common attack vectors.
- * Patterns ordered by frequency to optimize performance in production.
- *
- * **Coverage**: Classic injection, boolean-based blind, union-based, time-based
- * **Limitations**: Does not detect second-order SQL injection or advanced obfuscation
  *
  * @type {RegExp[]}
+ *
+ * @example
+ * // Test input against SQL injection patterns
+ * const input = "' OR 1=1--";
+ * const isMatch = SQL_INJECTION_PATTERNS.some(pattern => pattern.test(input));
  */
 export const SQL_INJECTION_PATTERNS = [
 	// Classic SQL injection keywords (with optional spaces)
@@ -49,12 +50,13 @@ export const SQL_INJECTION_PATTERNS = [
 
 /**
  * XSS (Cross-Site Scripting) detection patterns for reflected and stored XSS.
- * Focuses on script execution vectors and event handlers.
- *
- * **Coverage**: Script tags, event handlers, javascript: protocol, data URLs
- * **Limitations**: Does not detect DOM-based XSS or advanced encoding bypasses
  *
  * @type {RegExp[]}
+ *
+ * @example
+ * // Test input against XSS patterns
+ * const input = "<script>alert('xss')</script>";
+ * const isMatch = XSS_PATTERNS.some(pattern => pattern.test(input));
  */
 export const XSS_PATTERNS = [
 	// Script tags
@@ -71,12 +73,13 @@ export const XSS_PATTERNS = [
 
 /**
  * Path traversal detection patterns for directory traversal attacks.
- * Detects encoded and double-encoded traversal sequences.
- *
- * **Coverage**: ../ sequences, URL encoding, double encoding, mixed encodings
- * **Performance**: Case-insensitive matching for encoded variants
  *
  * @type {RegExp[]}
+ *
+ * @example
+ * // Test input against path traversal patterns
+ * const input = "../../../etc/passwd";
+ * const isMatch = PATH_TRAVERSAL_PATTERNS.some(pattern => pattern.test(input));
  */
 export const PATH_TRAVERSAL_PATTERNS = [
 	// Directory traversal (more permissive)
@@ -91,12 +94,13 @@ export const PATH_TRAVERSAL_PATTERNS = [
 
 /**
  * Miscellaneous attack patterns for command injection and template exploits.
- * Broad pattern matching for less common but dangerous attack vectors.
- *
- * **Coverage**: Command injection, LDAP injection, XML injection, template injection
- * **Trade-off**: Higher false positive rate for broader attack detection
  *
  * @type {RegExp[]}
+ *
+ * @example
+ * // Test input against suspicious patterns
+ * const input = "${7*7}";
+ * const isMatch = SUSPICIOUS_PATTERNS.some(pattern => pattern.test(input));
  */
 export const SUSPICIOUS_PATTERNS = [
 	// Command injection attempts
@@ -111,14 +115,14 @@ export const SUSPICIOUS_PATTERNS = [
 
 /**
  * Detect SQL injection patterns in request path, query parameters, and headers.
- * Tests critical request components against compiled regex patterns.
- *
- * **Test Scope**: URL path, all query parameters, suspicious headers (User-Agent, Referer, X-Forwarded-For)
- * **Error Handling**: Gracefully handles malformed request data without failing
- * **Performance**: Early exit on first pattern match
  *
  * @param {import('../../../core/context.js').Context} ctx - Request context with parsed data
  * @returns {string|null} Attack description if detected, null if clean
+ *
+ * @example
+ * // Check for SQL injection in request
+ * const result = checkSQLInjection(ctx);
+ * if (result) console.log('SQL injection detected:', result);
  */
 export function checkSQLInjection(ctx) {
 	const testStrings = [];
@@ -170,14 +174,14 @@ export function checkSQLInjection(ctx) {
 
 /**
  * Detect XSS attack patterns in request data.
- * Focuses on script execution and event handler injection vectors.
- *
- * **Test Scope**: URL path and all query parameters
- * **Detection Strategy**: Pattern matching for common XSS payloads
- * **Limitations**: Cannot detect context-aware XSS or sophisticated encoding
  *
  * @param {import('../../../core/context.js').Context} ctx - Request context with parsed data
  * @returns {string|null} Attack description if detected, null if clean
+ *
+ * @example
+ * // Check for XSS in request
+ * const result = checkXSSAttempt(ctx);
+ * if (result) console.log('XSS attack detected:', result);
  */
 export function checkXSSAttempt(ctx) {
 	const testStrings = [];
@@ -214,14 +218,14 @@ export function checkXSSAttempt(ctx) {
 
 /**
  * Detect path traversal attacks targeting file system access.
- * Scans path and query parameters for directory traversal sequences.
- *
- * **Primary Target**: URL path (most common attack vector)
- * **Secondary**: Query parameters containing file paths
- * **Encoding Detection**: Handles URL encoding and double encoding
  *
  * @param {import('../../../core/context.js').Context} ctx - Request context with parsed data
  * @returns {string|null} Attack description if detected, null if clean
+ *
+ * @example
+ * // Check for path traversal in request
+ * const result = checkPathTraversal(ctx);
+ * if (result) console.log('Path traversal detected:', result);
  */
 export function checkPathTraversal(ctx) {
 	const testStrings = [];
@@ -258,14 +262,14 @@ export function checkPathTraversal(ctx) {
 
 /**
  * Detect miscellaneous attack patterns including command injection and template exploits.
- * Broader pattern matching for less common but dangerous attack vectors.
- *
- * **Trade-off**: Higher false positive rate for comprehensive coverage
- * **Use Case**: Detection of sophisticated attacks that bypass specific pattern matching
- * **Logging**: All detections logged for security monitoring and pattern refinement
  *
  * @param {import('../../../core/context.js').Context} ctx - Request context with parsed data
  * @returns {string|null} Attack description if detected, null if clean
+ *
+ * @example
+ * // Check for suspicious patterns in request
+ * const result = checkSuspiciousPatterns(ctx);
+ * if (result) console.log('Suspicious pattern detected:', result);
  */
 export function checkSuspiciousPatterns(ctx) {
 	const testStrings = [];
@@ -302,16 +306,15 @@ export function checkSuspiciousPatterns(ctx) {
 
 /**
  * Execute comprehensive attack detection across all enabled pattern types.
- * Runs detection checks in order of severity and likelihood.
- *
- * **Execution Order**: SQL injection → XSS → Path traversal → Suspicious patterns
- * **Early Exit**: Returns immediately on first detection (optimization for clean requests)
- * **Configuration**: Individual detection types can be disabled via config
- * **Non-blocking**: Detection failures do not interrupt request processing
  *
  * @param {import('../../../core/context.js').Context} ctx - Request context with parsed data
  * @param {Partial<import('./config.js').AttackDetectionConfig>} [config={}] - Detection type configuration
  * @returns {string|null} First attack detected (with description) or null if clean
+ *
+ * @example
+ * // Run comprehensive attack detection
+ * const result = detectAttacks(ctx, { sqlInjection: true, xss: true });
+ * if (result) console.log('Attack detected:', result);
  */
 export function detectAttacks(ctx, config = {}) {
 	const {

@@ -53,20 +53,27 @@ const COLORS = {
 };
 
 /**
- * Generate unique request ID for distributed tracing
- *
- * **Performance:** Uses timestamp + Math.random() for collision resistance without crypto overhead.
+ * Generate unique request ID for distributed tracing.
  *
  * @returns {string} Timestamp-prefixed unique identifier (format: "1705356869123-abc123def")
+ *
+ * @example
+ * // Generate unique ID for request tracking
+ * const id = generateRequestId(); // "1705356869123-abc123def"
  */
 export function generateRequestId() {
 	return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
 /**
- * Get status code color with background for terminal output
+ * Get status code color with background for terminal output.
+ *
  * @param {number} statusCode - HTTP status code
  * @returns {string} ANSI color code with background
+ *
+ * @example
+ * // Get color for HTTP status codes
+ * const color = getStatusColor(200); // Green for success
  */
 export function getStatusColor(statusCode) {
 	if (statusCode >= 200 && statusCode < 300) return COLORS.statusSuccess;
@@ -77,9 +84,14 @@ export function getStatusColor(statusCode) {
 }
 
 /**
- * Get HTTP method color with background for terminal output
+ * Get HTTP method color with background for terminal output.
+ *
  * @param {string} method - HTTP method
  * @returns {string} ANSI color code with background
+ *
+ * @example
+ * // Get color for HTTP methods
+ * const color = getMethodColor('POST'); // Blue for POST
  */
 export function getMethodColor(method) {
 	switch (method.toUpperCase()) {
@@ -99,9 +111,14 @@ export function getMethodColor(method) {
 }
 
 /**
- * Format duration with performance indicators that POP visually
+ * Format duration with performance indicators that POP visually.
+ *
  * @param {number} duration - Duration in milliseconds
  * @returns {string} High-contrast duration string with performance indicator
+ *
+ * @example
+ * // Format request duration with visual performance indicators
+ * const formatted = formatDuration(150); // Shows colored duration with indicator
  */
 export function formatDuration(duration) {
 	let value, unit, icon, color;
@@ -237,6 +254,9 @@ export function collectLogData(ctx, startTime, requestId, timestamp) {
  *   errors?: Array<{index: number, message: string, stack: string, name: string}>,
  *   errorCount?: number
  * }} Audit-ready structured log entry
+ *
+ * @example
+ * // Create structured log for compliance audit trails
  */
 export function createStructuredLog({
 	method,
@@ -336,25 +356,36 @@ export function createStructuredLog({
 }
 
 /**
- * Format timestamp for development log output
+ * Format timestamp for development log output.
+ *
  * @param {Date} timestamp - Timestamp to format
  * @returns {string} Formatted time string (HH:MM:SS)
+ *
+ * @example
+ * // Format timestamp for development logs
+ * const timeStr = formatTimestamp(new Date()); // "14:30:25"
  */
 export function formatTimestamp(timestamp) {
 	return timestamp.toISOString().split("T")[1].split(".")[0];
 }
 
 /**
- * Format request ID for development log output
+ * Format request ID for development log output.
+ *
  * @param {string} requestId - Full request ID
  * @returns {string} Clean, short request ID
+ *
+ * @example
+ * // Format request ID for readability
+ * const id = formatRequestId('1705356869123-abc123def'); // "abc123def"
  */
 export function formatRequestId(requestId) {
 	return requestId.split("-")[1];
 }
 
 /**
- * Create clean development log line with RavenJS styling
+ * Create clean development log line with RavenJS styling.
+ *
  * @param {Object} logData - Log data object
  * @param {string} logData.method - HTTP method
  * @param {string} logData.path - Request path
@@ -363,6 +394,9 @@ export function formatRequestId(requestId) {
  * @param {string} logData.requestId - Request ID
  * @param {Date} logData.timestamp - Request timestamp
  * @returns {string} Clean, readable log line
+ *
+ * @example
+ * // Create formatted development log line with colors
  */
 export function createDevelopmentLogLine(logData) {
 	const methodColor = getMethodColor(logData.method);
@@ -384,7 +418,8 @@ export function createDevelopmentLogLine(logData) {
 }
 
 /**
- * Log production JSON output
+ * Log production JSON output.
+ *
  * @param {Object} logData - Log data object
  * @param {string} logData.method - HTTP method
  * @param {string} logData.path - Request path
@@ -397,6 +432,9 @@ export function createDevelopmentLogLine(logData) {
  * @param {string} logData.ip - Client IP address
  * @param {string|null} logData.userIdentity - User identity
  * @param {Error[]} [errors] - Array of errors that occurred during request processing
+ *
+ * @example
+ * // Output structured production logs to stdout
  */
 export function logProduction(logData, errors = []) {
 	const logEntry = createStructuredLog({ ...logData, errors });
@@ -593,7 +631,8 @@ export function formatErrorForDevelopment(error, index, total) {
 }
 
 /**
- * Log clean development output (no clutter)
+ * Log clean development output (no clutter).
+ *
  * @param {Object} logData - Log data object
  * @param {string} logData.method - HTTP method
  * @param {string} logData.path - Request path
@@ -607,6 +646,9 @@ export function formatErrorForDevelopment(error, index, total) {
  * @param {string|null} logData.userIdentity - User identity
  * @param {boolean} _includeHeaders - Whether to include header information (unused - keeping for compatibility)
  * @param {Error[]} [errors] - Array of errors that occurred during request processing
+ *
+ * @example
+ * // Output clean development logs with colors and error details
  */
 export function logDevelopment(logData, _includeHeaders, errors = []) {
 	const logLine = createDevelopmentLogLine(logData);

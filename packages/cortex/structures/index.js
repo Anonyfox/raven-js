@@ -7,13 +7,10 @@
  */
 
 /**
- * @file Structural primitives for the Cortex brain center
+ * @file Data structures and validation primitives for computational operations.
  *
- * High-performance building blocks for data structures and neural computation.
- * Memory patterns, computational matrices, and validation schemas.
- * Optimized for V8 engine with zero external dependencies.
- *
- * The murder's structural arsenal: matrices, schemas, data patterns.
+ * Exports Matrix class for linear algebra operations and Schema class for
+ * data structure validation. Used by learning algorithms and application code.
  */
 
 export { Matrix } from "./matrix.js";

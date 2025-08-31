@@ -6,6 +6,10 @@
  * @see {@link https://anonyfox.com}
  */
 
+/**
+ * @file Server-side rendering with component-scoped hydration, automatic fetch caching, and multi-pass stability for complex async templates.
+ */
+
 import {
 	__getWriteVersion,
 	afterFlush,
@@ -22,12 +26,7 @@ const contextStack =
 
 /* ---------------- base URL + cache key ---------------- */
 
-/**
- * Resolve the origin for absolute URL resolution.
- * Uses RAVENJS_ORIGIN environment variable set by Wings server.
- * @returns {string}
- * @throws {Error} When RAVENJS_ORIGIN is not set (server) or location unavailable (client)
- */
+/** Resolve the origin for absolute URL resolution using RAVENJS_ORIGIN or browser location. */
 function getBaseURL() {
 	// Server: RAVENJS_ORIGIN is the single source of truth
 	if (typeof globalThis.window === "undefined") {
@@ -48,7 +47,24 @@ function getBaseURL() {
 }
 
 /**
- * Canonical cache key so server and client match.
+ * Generate canonical cache key ensuring server-client cache coherence.
+ *
+ * Normalizes URLs to absolute form, sorts headers, and includes method and body hash
+ * for deterministic caching across server and client hydration phases.
+ *
+ * @example
+ * // Basic usage
+ * createCacheKey('/api/data');
+ * // → '{"url":"https://example.com/api/data","method":"GET","headers":{},"bodyHash":null}'
+ *
+ * @example
+ * // With request options
+ * createCacheKey('/api/users', {
+ *   method: 'POST',
+ *   headers: { 'Content-Type': 'application/json' },
+ *   body: '{"name":"Alice"}'
+ * });
+ *
  * @param {string|URL|Request} url
  * @param {RequestInit} [opts]
  * @returns {string}
@@ -87,7 +103,7 @@ export function createCacheKey(url, opts = {}) {
 /* ---------------- helpers ---------------- */
 
 /**
- * Escape JSON for safe inline script embedding.
+ * Escape JSON for safe inline script embedding with XSS protection.
  * @param {any} data
  * @returns {string}
  */
@@ -100,7 +116,7 @@ function escapeJson(data) {
 }
 
 /**
- * Inline component-scoped SSR data right after component HTML.
+ * Inline component-scoped SSR data right after component HTML with size limits.
  * @param {string} html
  * @param {{fetch:Record<string, any>}} ssrData
  * @param {string} cid
@@ -117,7 +133,7 @@ function injectSSRData(html, ssrData, cid) {
 }
 
 /**
- * Wait for all tracked promises to settle with timeouts.
+ * Wait for all tracked promises to settle with exponential backoff and per-promise timeouts.
  * @param {{promises:Set<Promise<any>>}} ctx
  * @param {number} timeoutTotal
  * @param {number} maxAttempts
@@ -158,8 +174,40 @@ async function settleAllPromises(ctx, timeoutTotal, maxAttempts) {
 /* ---------------- ssr(fn) ---------------- */
 
 /**
- * Wrap a function for SSR + component-scoped hydration.
- * Works seamlessly with `effect(async () => fetch(...))`.
+ * Wrap a function for SSR with component-scoped hydration and automatic fetch caching.
+ *
+ * Server runs multi-pass rendering until output stabilizes, caches GET requests per component,
+ * and injects component-scoped data inline with HTML. Client hydrates using cached responses
+ * then restores normal fetch behavior after effects complete.
+ *
+ * @example
+ * // Basic usage
+ * const UserWidget = ssr(async () => {
+ *   const response = await fetch('/api/user');
+ *   const user = await response.json();
+ *   return `<span>Hello ${user.name}!</span>`;
+ * });
+ *
+ * @example
+ * // Complex reactive template
+ * const TodoApp = ssr(async () => {
+ *   const todos = signal([]);
+ *   const response = await fetch('/api/todos');
+ *   todos.set(await response.json());
+ *
+ *   return withTemplateContext(() => `
+ *     <div>
+ *       <h1>Todos (${todos().length})</h1>
+ *       <ul>${todos().map(t => `<li>${t.title}</li>`).join('')}</ul>
+ *     </div>
+ *   `);
+ * });
+ *
+ * @example
+ * // Custom timeout and passes
+ * const HeavyWidget = ssr(async () => {
+ *   // Complex async logic
+ * }, { timeout: 15000, maxPasses: 12 });
  *
  * @template T
  * @param {(...a:any) => T|Promise<T>} fn

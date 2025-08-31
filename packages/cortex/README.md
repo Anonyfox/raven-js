@@ -1,27 +1,21 @@
-# Cortex: The Raven's Neural Intelligence
-
-<div align="center">
-
-<img src="../../media/raven-logo-cortex.png" alt="Cortex Logo" width="200" height="200" />
+# Cortex
 
 [![Website](https://img.shields.io/badge/ravenjs.dev-000000?style=flat&logo=firefox&logoColor=white)](https://ravenjs.dev)
 [![Zero Dependencies](https://img.shields.io/badge/Zero-Dependencies-brightgreen.svg)](https://github.com/Anonyfox/ravenjs)
 [![ESM Only](https://img.shields.io/badge/ESM-Only-purple.svg)](https://nodejs.org/api/esm.html)
 [![Node.js 22.5+](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
 
-**The raven's brain: AI, machine learning, and data processing without dependencies.**
-
+<div align="center">
+  <img src="media/logo.webp" alt="Cortex Logo" width="200" height="200" />
 </div>
 
-## Why Cortex Thinks Differently
+Machine learning, data structures, and temporal computation without dependencies.
 
-**Zero-dependency intelligence.** Platform-native algorithms using Math APIs, TextEncoder/TextDecoder, and Node.js built-ins. No external neural network libraries that become obsolete with model evolution.
+## Purpose
 
-**Adaptive interfaces.** Build structured LLM output parsers that work with GPT-6, Claude-5, or whatever emerges from the next intelligence revolution. Intelligence over coupling.
+Platform-native algorithms using Math APIs and Node.js built-ins. Build neural networks, matrix operations, schema validation, and holiday calculations using pure JavaScript primitives.
 
-**Cognitive primitives.** Statistical analysis, vector calculations, pattern recognition, and data transformations using pure JavaScript. The murder's collective intelligence distilled into code.
-
-**Memory palace architecture.** Native Node 22.5+ SQLite integration for persistent learning without external drivers. Your data, your control, your neural pathways.
+Structured learning that adapts rather than couples to AI service evolution. Matrix operations optimized for V8 engine performance. Temporal computation with governmental precision across 30+ countries.
 
 ## Install
 
@@ -29,107 +23,100 @@
 npm install @raven-js/cortex
 ```
 
-## Intelligence That Just Works
+## Usage
 
 ```javascript
-import { hello } from "@raven-js/cortex";
+// Neural networks and machine learning
+import { NeuralNetwork, LinearRegression } from "@raven-js/cortex";
 
-// The neural nexus awakens
-const greeting = hello("World");
-console.log(greeting); // "Hello, World! The raven's mind awakens."
+const nn = new NeuralNetwork([2, 4, 1]); // 2 inputs, 4 hidden, 1 output
+nn.trainBatch(
+  [
+    [0, 0],
+    [0, 1],
+    [1, 0],
+    [1, 1],
+  ],
+  [[0], [1], [1], [0]]
+);
+console.log(nn.predict([1, 0])); // XOR classification
 
-// Future cognitive capabilities:
-// import {
-//   parseStructuredOutput,
-//   calculateVectors,
-//   analyzeTimeSeries,
-//   buildMemoryPalace
-// } from "@raven-js/cortex";
-
-// // Parse LLM responses with validation
-// const result = parseStructuredOutput(llmResponse, schema);
-
-// // Vector similarity calculations
-// const similarity = calculateVectors(vectorA, vectorB);
-
-// // Statistical pattern recognition
-// const patterns = analyzeTimeSeries(dataPoints);
-
-// // Persistent learning with SQLite
-// const memory = buildMemoryPalace("neural_networks");
+const regression = new LinearRegression();
+regression.trainBatch([
+  { x: 1, y: 2 },
+  { x: 2, y: 4 },
+  { x: 3, y: 6 },
+]);
+console.log(regression.predict({ x: 4 })); // 8
 ```
-
-## The Murder's Neural Architecture
-
-### 🧠 **Planned Cognitive Modules**
-
-- **AI Interfaces** - Structured LLM output parsing, prompt engineering utilities
-- **Statistical Engine** - Pure Math API calculations, linear algebra, data analysis
-- **Vector Processing** - Similarity calculations, clustering algorithms, embeddings
-- **Memory Palace** - Native SQLite helpers for persistent learning and caching
-- **Pattern Recognition** - Time series analysis, anomaly detection, trend extraction
-- **Data Transforms** - Format conversions, normalization, validation pipelines
-
-### 🔬 **Platform-Native Intelligence**
-
-- `Math` object for statistical calculations
-- `TextEncoder/TextDecoder` for data processing
-- `crypto.randomUUID()` for tracking and identification
-- Native `Array` methods for data transformation
-- Node.js built-in `sqlite` for zero-dependency persistence
-
-## Apex Predator Advantages
-
-**Adaptation over abstraction.** Ravens survive framework wars by building interfaces that adapt rather than couple. When PyTorch becomes obsolete, Cortex adapts.
-
-**Intelligence over dependencies.** Every external ML library represents a supply chain attack vector and maintainer abandonment risk. Pure platform primitives outlast tool evolution.
-
-**Institutional memory.** The murder remembers every AI hype cycle. We build cognitive foundations that strengthen with each intelligence revolution, not tools that require constant migration.
-
-## Development Status
-
-**Status:** 🚧 **Early Development** - Neural foundations being laid
-
-Currently implements basic hello world functionality. The raven's mind is awakening, preparing for cognitive module construction.
-
-## Examples
 
 ```javascript
-import { hello } from "@raven-js/cortex";
+// Matrix operations and data structures
+import { Matrix, Schema } from "@raven-js/cortex";
 
-// Basic neural interface
-const response = hello("Developer");
-console.log(response);
-// → "Hello, Developer! The raven's mind awakens."
+const matrix = Matrix.random(3, 3);
+const result = matrix.multiply(Matrix.identity(3));
+console.log(result.toString());
 
-// Future capabilities will include:
-// - LLM response parsing and validation
-// - Vector similarity calculations
-// - Statistical analysis and machine learning
-// - Data transformation pipelines
-// - SQLite-based memory management
+class User extends Schema {
+  name = Schema.field("", { description: "User name" });
+  age = Schema.field(0, { description: "User age" });
+}
+const user = new User();
+user.validate({ name: "Alice", age: 25 });
 ```
 
-## Contributing
+```javascript
+// Temporal computation with governmental precision
+import {
+  calculateEasterSunday,
+  calculateHolidaysOfYear,
+} from "@raven-js/cortex";
 
-The murder evolves through collective intelligence. Contribute cognitive modules that:
+const easter2024 = calculateEasterSunday(2024);
+console.log(easter2024); // 2024-03-31
 
-- Use zero external dependencies
-- Leverage platform-native APIs
-- Adapt rather than couple to AI services
-- Include comprehensive test coverage
-- Follow institutional memory patterns
+const usHolidays = calculateHolidaysOfYear({
+  year: 2024,
+  country: "US",
+  region: "CA",
+});
+console.log(usHolidays.length); // Federal + California state holidays
+```
 
-## License
+## Module Architecture
 
-MIT © [Anonyfox](https://anonyfox.com)
+Cortex organizes intelligence into three specialized modules:
+
+- **Learning** - Neural networks, linear regression, and base model classes for machine learning tasks
+- **Structures** - Matrix operations and schema validation for data manipulation and type safety
+- **Temporal** - Holiday calculations and date utilities covering 30+ countries with governmental precision
+
+Each module can be imported individually for tree-shaking optimization:
+
+```javascript
+import { NeuralNetwork } from "@raven-js/cortex/learning";
+import { Matrix } from "@raven-js/cortex/structures";
+import { calculateEasterSunday } from "@raven-js/cortex/temporal";
+```
+
+## Requirements
+
+- Node.js 22.5+
+- ESM module support
+
+## The Raven's Cortex
+
+Ravens process information through distributed neural networks, sharing learning across the murder. Cortex mirrors this collective intelligence—adaptive algorithms that strengthen through usage, not coupling to external frameworks.
+
+## 🦅 Support RavenJS Development
+
+If you find RavenJS helpful, consider supporting its development:
+
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor%20on%20GitHub-%23EA4AAA?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sponsors/Anonyfox)
+
+Your sponsorship helps keep RavenJS **zero-dependency**, **modern**, and **developer-friendly**.
 
 ---
 
-<div align="center">
-
-**Built with predatory precision by the RavenJS murder**
-
-_"Intelligence over dependencies. Adaptation over abstraction. The brain that outlasts its tools."_
-
-</div>
+**Built with ❤️ by [Anonyfox](https://anonyfox.com)**

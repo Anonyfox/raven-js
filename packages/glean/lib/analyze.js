@@ -7,11 +7,10 @@
  */
 
 /**
- * @file Drop-in CLI replacement using lib2 validation - predatory precision
+ * @file CLI analyze command using lib2 validation as drop-in replacement.
  *
- * Ravens adapt their hunting methods while maintaining the same territory.
- * This module provides a CLI-compatible interface wrapping lib2's validate
- * function, enabling seamless replacement of lib1's analyze command.
+ * Provides CLI-compatible interface wrapping validate function for
+ * seamless replacement of analyze command functionality.
  */
 
 import { validate } from "./validate.js";

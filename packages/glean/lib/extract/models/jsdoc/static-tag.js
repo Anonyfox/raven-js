@@ -16,18 +16,14 @@
 import { JSDocTagBase } from "./base.js";
 
 /**
- * JSDoc static tag implementation
+ * JSDoc static tag implementation for static member documentation.
  *
- * **Official JSDoc Tag:** Marks a symbol as static (belongs to class, not instance).
+ * Parses static tag content with structured data extraction.
  *
- * **Syntax:**
- * - Standalone: `@static`
- * - With description: `@static Utility method available on class itself`
- *
- * **Raven Design:**
- * - Simple static marker
- * - Optional description support
- * - Critical for class architecture intelligence
+ * @example
+ * // Basic usage
+ * const tag = new JSDocStaticTag('tag content');
+ * // Access parsed properties
  */
 export class JSDocStaticTag extends JSDocTagBase {
 	/**

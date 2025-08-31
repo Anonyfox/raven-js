@@ -15,11 +15,26 @@
  */
 
 /**
- * Extract module overview data for specific module page
+ * Extract module overview data for module page rendering with entities and navigation.
+ *
+ * Locates target module, extracts entities, and builds navigation context for
+ * detailed module documentation pages.
+ *
  * @param {import('../../extract/models/package.js').Package} packageInstance - Package data
  * @param {string} moduleName - Module name from URL parameter
  * @returns {Object} Structured data for module overview template
  * @throws {Error} When module not found or invalid parameters
+ *
+ * @example
+ * // Extract data for utils module
+ * const moduleData = extractModuleOverviewData(packageInstance, 'utils');
+ * console.log(moduleData.organizedEntities, moduleData.stats.totalEntities);
+ *
+ * @example
+ * // Check for module content
+ * const moduleData = extractModuleOverviewData(packageInstance, 'core');
+ * if (moduleData.hasEntities) console.log('Entities available');
+ * if (moduleData.module.hasReadme) console.log('Module README available');
  */
 export function extractModuleOverviewData(packageInstance, moduleName) {
 	if (!packageInstance || typeof packageInstance !== "object") {

@@ -18,9 +18,15 @@ import { extractModuleDirectoryData } from "../data/module-directory.js";
 import { moduleDirectoryTemplate } from "../templates/module-directory.js";
 
 /**
- * Create module directory route handler
+ * Create module directory route handler for /modules/ route with package overview.
+ *
  * @param {import('../../extract/models/package.js').Package} packageInstance - Package data
  * @returns {Function} Wings route handler function
+ *
+ * @example
+ * // Create module directory route handler
+ * const handler = createModuleDirectoryHandler(packageInstance);
+ * app.get('/modules/', handler);
  */
 export function createModuleDirectoryHandler(packageInstance) {
 	/**

@@ -9,26 +9,12 @@
 /**
  * @file Text formatting functions using ANSI escape codes.
  *
- * **Purpose**: Apply visual styling to terminal text output.
- * Pure functions that wrap text with ANSI formatting codes.
- *
- * **Formatting Types**:
- * - Bold text (ESC[1m)
- * - Italic text (ESC[3m)
- * - Dim/faded text (ESC[2m)
- * - Underlined text (ESC[4m)
- *
- * **Compatibility**: Works on most modern terminals. Italic support varies.
- * Automatic reset codes prevent formatting bleed to subsequent output.
- *
- * **Performance**: Zero overhead string concatenation, no external dependencies.
+ * Provides bold, italic, dim, and underline text formatting functions
+ * with automatic reset codes to prevent formatting bleed.
  */
 
 /**
  * ANSI escape sequences for text formatting.
- *
- * **Standard Codes**: Uses widely-supported ANSI SGR (Select Graphic Rendition).
- * **Reset Handling**: All functions automatically append reset sequence.
  *
  * @type {{
  *   reset: string,
@@ -49,12 +35,14 @@ const format = {
 /**
  * Wrap text with bold formatting codes.
  *
- * **ANSI Sequence**: ESC[1m...ESC[0m
- * **Compatibility**: Universal terminal support
- *
  * @param {string} text - Text to format
  * @returns {string} Bold-formatted text with reset codes
  * @throws {TypeError} Text parameter must be string
+ *
+ * @example
+ * // Bold text output
+ * console.log(bold('Important message'));
+ * console.log(bold('Header Text'));
  */
 export function bold(text) {
 	if (typeof text !== "string") {
@@ -66,12 +54,14 @@ export function bold(text) {
 /**
  * Wrap text with italic formatting codes.
  *
- * **ANSI Sequence**: ESC[3m...ESC[0m
- * **Compatibility**: Limited terminal support, graceful fallback
- *
  * @param {string} text - Text to format
  * @returns {string} Italic-formatted text with reset codes
  * @throws {TypeError} Text parameter must be string
+ *
+ * @example
+ * // Italic text output
+ * console.log(italic('Emphasis text'));
+ * console.log(italic('Variable name'));
  */
 export function italic(text) {
 	if (typeof text !== "string") {
@@ -83,12 +73,14 @@ export function italic(text) {
 /**
  * Wrap text with dim/faded formatting codes.
  *
- * **ANSI Sequence**: ESC[2m...ESC[0m
- * **Purpose**: De-emphasize less important information
- *
  * @param {string} text - Text to format
  * @returns {string} Dim-formatted text with reset codes
  * @throws {TypeError} Text parameter must be string
+ *
+ * @example
+ * // Dimmed text output
+ * console.log(dim('Secondary information'));
+ * console.log(dim('Metadata'));
  */
 export function dim(text) {
 	if (typeof text !== "string") {
@@ -100,12 +92,14 @@ export function dim(text) {
 /**
  * Wrap text with underline formatting codes.
  *
- * **ANSI Sequence**: ESC[4m...ESC[0m
- * **Purpose**: Emphasize text or indicate links/actions
- *
  * @param {string} text - Text to format
  * @returns {string} Underlined text with reset codes
  * @throws {TypeError} Text parameter must be string
+ *
+ * @example
+ * // Underlined text output
+ * console.log(underline('Link text'));
+ * console.log(underline('Highlighted term'));
  */
 export function underline(text) {
 	if (typeof text !== "string") {

@@ -13,22 +13,11 @@ const isValidJSValue = (/** @type {any} */ value) =>
 	value === 0 || Boolean(value);
 
 /**
- * @file JavaScript template processor with four execution paths.
- *
- * Execution paths: 0 values (direct return), 1 value (concat), 2-3 values (array build), 4+ values (pre-allocated array).
+ * JavaScript template processor with tiered performance optimization and value filtering.
  *
  * @param {TemplateStringsArray} strings - Static template parts.
  * @param {...any} values - Values to interpolate.
  * @returns {string} Processed JavaScript code, trimmed.
- *
- * @filtering
- * Includes: 0, truthy values
- * Excludes: null, undefined, false, empty string
- *
- * @example
- * processJSTemplate`let ${'count'} = ${10};`  // "let count = 10;"
- * processJSTemplate`${null}${'valid'}`        // "valid"
- * processJSTemplate`${0}${false}`             // "0"
  */
 export const processJSTemplate = (
 	/** @type {TemplateStringsArray} */ strings,

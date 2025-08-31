@@ -18,8 +18,8 @@ describe("JSDocReturnsTag construction and inheritance", () => {
 	test("should inherit from JSDocTagBase correctly", () => {
 		const tag = new JSDocReturnsTag("{string} The result");
 
-		strictEqual(tag.getType(), "returns");
-		strictEqual(tag.getRawContent(), "{string} The result");
+		strictEqual(tag.tagType, "returns");
+		strictEqual(tag.rawContent, "{string} The result");
 		strictEqual(tag.isValid(), true);
 	});
 

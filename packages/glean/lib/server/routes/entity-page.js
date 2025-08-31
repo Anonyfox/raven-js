@@ -7,20 +7,28 @@
  */
 
 /**
- * Entity page route handler for /modules/{moduleName}/{entityName}/ route
+ * Entity page route handler for /modules/{moduleName}/{entityName}/ route.
  *
- * Implements complex dual parameter resolution, comprehensive error handling,
+ * Implements dual parameter resolution, comprehensive validation, error handling,
  * and SEO-optimized responses for individual API entity documentation pages.
- * Follows WEBAPP.md specification for entity-specific documentation routing.
  */
 
 import { extractEntityPageData } from "../data/entity-page.js";
 import { entityPageTemplate } from "../templates/entity-page.js";
 
 /**
- * Creates a handler for the entity documentation page.
+ * Creates entity page handler with security validation and error handling.
+ *
+ * Validates module and entity names, extracts documentation data, and renders
+ * HTML with appropriate security and caching headers.
+ *
  * @param {import('../../extract/models/package.js').Package} packageInstance - The package data instance.
  * @returns {Function} Wings route handler function
+ *
+ * @example
+ * // Create entity route handler
+ * const handler = createEntityPageHandler(packageInstance);
+ * app.get('/modules/:moduleName/:entityName/', handler);
  */
 export function createEntityPageHandler(packageInstance) {
 	/**

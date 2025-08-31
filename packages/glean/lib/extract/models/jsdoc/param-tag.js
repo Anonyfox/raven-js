@@ -17,21 +17,20 @@
 import { JSDocTagBase } from "./base.js";
 
 /**
- * JSDoc param tag implementation
+ * JSDoc param tag implementation for function parameter documentation.
  *
- * **Official JSDoc Tag:** Documents function parameters with comprehensive syntax support.
+ * Parses comprehensive @param syntax including optional parameters, defaults, types, and descriptions.
+ * Single-pass regex parsing with structured data extraction only.
  *
- * **Syntax Variants:**
- * - Basic: `{Type} paramName Description of parameter`
- * - Optional: `{Type} [paramName] Optional parameter`
- * - With default: `{Type} [paramName=defaultValue] Parameter with default`
- * - Type only: `{Type} paramName`
- * - Name only: `paramName Description`
+ * @example
+ * // Basic usage
+ * const tag = new JSDocParamTag('{string} name User name parameter');
+ * console.log(tag.name, tag.type, tag.description);
  *
- * **Raven Design:**
- * - Single-pass parsing with V8-optimized regex
- * - Structured data extraction only
- * - Zero rendering dependencies
+ * @example
+ * // Optional parameter with default
+ * const tag = new JSDocParamTag('{number} [timeout=5000] Request timeout');
+ * console.log(tag.optional, tag.defaultValue);
  */
 export class JSDocParamTag extends JSDocTagBase {
 	/**
@@ -55,87 +54,39 @@ export class JSDocParamTag extends JSDocTagBase {
 		const match = this.rawContent.match(paramRegex);
 
 		if (!match) {
-			/**
-			 * @type {string} Parameter type annotation
-			 */
 			this.type = "";
-			/**
-			 * @type {string} Parameter name
-			 */
 			this.name = "";
-			/**
-			 * @type {boolean} Whether parameter is optional
-			 */
 			this.optional = false;
-			/**
-			 * @type {string} Default value if optional
-			 */
 			this.defaultValue = "";
-			/**
-			 * @type {string} Parameter description
-			 */
 			this.description = "";
 			return;
 		}
 
 		const [, type, bracketedName, simpleName, description] = match;
 
-		/**
-		 * @type {string} Parameter type annotation
-		 */
 		this.type = type || "";
-		/**
-		 * @type {string} Parameter description
-		 */
 		this.description = description ? description.trim() : "";
 
 		// Handle bracketed parameters (optional with possible default)
 		if (bracketedName) {
-			/**
-			 * @type {boolean} Whether parameter is optional
-			 */
 			this.optional = true;
 			const defaultMatch = bracketedName.match(/^([^=]+)(?:=(.*))?$/);
 			if (defaultMatch) {
-				/**
-				 * @type {string} Parameter name
-				 */
 				this.name = defaultMatch[1].trim();
-				/**
-				 * @type {string} Default value if optional
-				 */
 				this.defaultValue = defaultMatch[2] ? defaultMatch[2].trim() : "";
 			} else {
-				/**
-				 * @type {string} Parameter name
-				 */
 				this.name = bracketedName.trim();
-				/**
-				 * @type {string} Default value if optional
-				 */
 				this.defaultValue = "";
 			}
 		} else {
-			/**
-			 * @type {string} Parameter name
-			 */
 			this.name = simpleName || "";
-			/**
-			 * @type {boolean} Whether parameter is optional
-			 */
 			this.optional = false;
-			/**
-			 * @type {string} Default value if optional
-			 */
 			this.defaultValue = "";
 		}
 	}
 
 	/**
-	 * Validate @param tag content
-	 *
-	 * Ravens demand precision: valid @param tags must have
-	 * at minimum a parameter name.
+	 * Validate @param tag content - requires parameter name at minimum
 	 */
 	validate() {
 		this.isValidated = Boolean(this.name && this.name.length > 0);

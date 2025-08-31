@@ -1,281 +1,110 @@
-# Markdown Module
+# Beak Markdown
 
-[![npm version](https://img.shields.io/npm/v/@raven-js/beak)](https://www.npmjs.com/package/@raven-js/beak)
+[![Website](https://img.shields.io/badge/ravenjs.dev-000000?style=flat&logo=firefox&logoColor=white)](https://ravenjs.dev)
+[![Documentation](https://img.shields.io/badge/docs-ravenjs.dev%2Fbeak-blue.svg)](https://docs.ravenjs.dev/beak)
+[![Zero Dependencies](https://img.shields.io/badge/Zero-Dependencies-brightgreen.svg)](https://github.com/Anonyfox/ravenjs)
+[![ESM Only](https://img.shields.io/badge/ESM-Only-purple.svg)](https://nodejs.org/api/esm.html)
+[![Node.js 22.5+](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
 
-**Triple-purpose markdown toolkit: intelligent composition + fast HTML rendering + surgical text extraction**
+**Markdown template literals with intelligent composition and CommonMark-compliant HTML conversion.** Context-aware formatting, GitHub Flavored Markdown support, and surgical text extraction.
 
-## Quick Start
+## Purpose
+
+Markdown generation requires context-aware formatting, proper whitespace handling, and reliable HTML conversion. Manual string concatenation leads to formatting inconsistencies and structural errors. Existing markdown libraries add complexity for simple composition tasks.
+
+Beak Markdown provides intelligent template composition with automatic context detection, GitHub Flavored Markdown parsing, and clean text extraction. Template literals handle indentation, reference links, and structural elements automatically. Single-pass HTML conversion optimizes for performance without sacrificing CommonMark compliance.
+
+Clean separation of concerns: markdown composition, HTML rendering, and text extraction as distinct operations.
+
+## Installation
 
 ```bash
 npm install @raven-js/beak
 ```
 
+## Usage
+
+Import markdown functions and use them for composition and conversion:
+
 ```javascript
-import { md, markdownToHTML, markdownToText } from "@raven-js/beak/md";
+import {
+  md,
+  markdownToHTML,
+  markdownToText,
+  code,
+  ref,
+  table,
+} from "@raven-js/beak/md";
 
-// Compose markdown with context-aware formatting
-const doc = md`# ${title}
-Features: ${features.map((f) => md`- ${f}`)}
-${code("npm install", "bash")}`;
+// Intelligent markdown composition
+const document = md`
+  # ${title}
 
-// Convert to HTML (69K+ ops/sec)
-const html = markdownToHTML(doc);
+  ${description}
 
-// Extract clean plaintext (surgical formatting removal)
-const text = markdownToText(doc);
+  ## Features
+  ${features.map((feature) => md`- ${feature}`)}
+
+  ## Code Example
+  ${code("npm install @raven-js/beak", "bash")}
+
+  ${table({
+    headers: ["Feature", "Support"],
+    rows: features.map((f) => [f.name, f.supported ? "✅" : "❌"]),
+  })}
+`;
+
+// Convert to HTML (GitHub Flavored Markdown)
+const htmlOutput = markdownToHTML(document);
+// → '<h1>Title</h1><p>Description</p><h2>Features</h2>...'
+
+// Extract clean plaintext (formatting removal)
+const textOutput = markdownToText(document);
+// → 'Title\n\nDescription\n\nFeatures\n- Feature 1...'
+
+// Reference links with automatic numbering
+const withRefs = md`
+  See ${ref("RavenJS", "https://ravenjs.dev")} for more info.
+  Also check ${ref("GitHub", "https://github.com/Anonyfox/ravenjs")}.
+`;
+// → 'See [RavenJS][1] for more info.\nAlso check [GitHub][2].\n\n[1]: https://ravenjs.dev\n[2]: https://github.com/Anonyfox/ravenjs'
 ```
 
-## Architecture
+**Features:**
 
-**Clean separation of concerns:**
-
-- `md()` tagged template → markdown composition (markdown → markdown)
-- `markdownToHTML()` function → HTML rendering (markdown → HTML)
-- `markdownToText()` function → text extraction (markdown → plaintext)
-
-## Markdown Composition
-
-### Tagged Template Literal
-
-Context-aware markdown generation with automatic formatting:
-
-```javascript
-import { md, ref, code, table } from "@raven-js/beak/md";
-
-const features = ["Zero deps", "Fast parsing", "100% coverage"];
-const benchmark = table(
-  ["Parser", "Ops/sec"],
-  [
-    ["Beak", "69,247"],
-    ["Marked", "31,054"],
-  ]
-);
-
-const readme = md`# ${projectName}
-
-## Features
-${features.map((f) => md`- **${f}**`)}
+- **Context-aware composition**: Automatic indentation and formatting
+- **GitHub Flavored Markdown**: Full CommonMark compliance with extensions
+- **Template caching**: WeakMap-cached compilation for performance
+- **Reference management**: Automatic link numbering and collection
+- **Table generation**: Clean table syntax with automatic alignment
 
 ## Performance
-${benchmark}
 
-## Installation
-${code("npm install @raven-js/beak", "bash")}
+Optimized processing paths for real-world usage:
 
-See ${ref("documentation", "docs")} for details.
+- **Template composition**: Context-aware with intelligent formatting
+- **HTML conversion**: Single-pass AST construction (69K+ ops/sec)
+- **Text extraction**: Surgical formatting removal without parsing overhead
+- **Memory efficient**: Minimal object allocation, streaming-friendly design
 
-[docs]: https://ravenjs.dev/beak
-`;
-```
+## Requirements
 
-**Output** (clean markdown):
+- **Node.js:** 22.5+ (leverages latest platform primitives)
+- **Browsers:** ES2020+ (modern baseline, no legacy compromise)
+- **Dependencies:** Absolutely zero
 
-````markdown
-# My Project
+## The Raven's Markdown
 
-## Features
+Like a raven that weaves complex narrative structures from scattered information, Beak Markdown intelligently assembles content with contextual awareness. Automatic formatting and reference management without sacrificing compositional flexibility.
 
-- **Zero deps**
-- **Fast parsing**
-- **100% coverage**
+## 🦅 Support RavenJS Development
 
-## Installation
+If you find RavenJS helpful, consider supporting its development:
 
-```bash
-npm install @raven-js/beak
-```
-````
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor%20on%20GitHub-%23EA4AAA?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sponsors/Anonyfox)
 
-See [documentation][docs] for details.
-
-[docs]: https://docs.ravenjs.dev/beak
-
-````
-
-### Helper Functions
-
-```javascript
-// Reference links
-ref('text', 'ref-id')        // → [text][ref-id]
-
-// Code blocks
-code('console.log()', 'js')  // → ```js\nconsole.log()\n```
-
-// Tables
-table(['A', 'B'], [['1', '2'], ['3', '4']])
-// → | A | B |\n|---|---|\n| 1 | 2 |\n| 3 | 4 |
-````
-
-### Context Intelligence
-
-**Automatic formatting based on surrounding context:**
-
-```javascript
-// Root context → paragraph breaks
-md`${title}\n\n${content}`;
-
-// List context → newline separation
-md`${items.map((i) => md`- ${i}`)}`; // Clean list formatting
-
-// Array handling
-md`Features:\n${["Fast", "Lean"].map((f) => md`- ${f}`)}`;
-```
-
-## HTML Conversion
-
-### Fast Markdown Parser
-
-**CommonMark-compliant, two-pass AST architecture:**
-
-```javascript
-import { markdownToHTML } from "@raven-js/beak";
-
-const markdown = `# Heading
-**Bold** and *italic* text with [links](url).
-
-- List item 1
-- List item 2
-
-\`\`\`javascript
-console.log('code');
-\`\`\``;
-
-const html = markdownToHTML(markdown);
-// → <h1>Heading</h1>\n<p><strong>Bold</strong>...
-```
-
-### Supported Features
-
-| Feature           | Support | Example                                                  |
-| ----------------- | ------- | -------------------------------------------------------- |
-| **Headings**      | ✅      | `# H1` → `<h1>H1</h1>`                                   |
-| **Emphasis**      | ✅      | `**bold**` → `<strong>bold</strong>`                     |
-| **Links**         | ✅      | `[text](url)` → `<a href="url">text</a>`                 |
-| **Code**          | ✅      | `` `code` `` → `<code>code</code>`                       |
-| **Fenced blocks** | ✅      | ` ```js\ncode\n``` ` → `<pre><code class="language-js">` |
-| **Lists**         | ✅      | `- item` → `<ul><li>item</li></ul>`                      |
-| **Tables**        | ✅      | `\| A \| B \|` → `<table><thead>...`                     |
-| **Blockquotes**   | ✅      | `> quote` → `<blockquote>quote</blockquote>`             |
-| **HTML blocks**   | ✅      | `<div>content</div>` (preserved)                         |
-| **References**    | ✅      | `[text][ref]` + `[ref]: url`                             |
-| **Escaping**      | ✅      | `\*literal\*` → `*literal*`                              |
-| **Autolinks**     | ✅      | `<https://url>` → `<a href="https://url">`               |
-
-```javascript
-// Performance test
-import { markdownToHTML } from "@raven-js/beak";
-
-const iterations = 10000;
-const markdown = "# Test\n**Bold** text with [link](url)\n- List item";
-
-console.time("parse");
-for (let i = 0; i < iterations; i++) {
-  markdownToHTML(markdown);
-}
-console.timeEnd("parse"); // ~144ms for 10K iterations
-```
-
-## Text Conversion
-
-### Surgical Plaintext Extraction
-
-**Zero formatting artifacts, maximum content preservation:**
-
-```javascript
-import { markdownToText } from "@raven-js/beak/md";
-
-const markdown = `# Project Overview
-
-This is a **bold** statement with *emphasis* and [links](url).
-
-- Feature 1: Fast parsing
-- Feature 2: Zero dependencies
-- Feature 3: 100% test coverage
-
-\`\`\`javascript
-console.log('code example');
-\`\`\`
-
-| Component | Status |
-|-----------|--------|
-| Parser | ✅ Ready |
-| Renderer | ✅ Ready |
-
-> Important: Always test your implementation.`;
-
-const plaintext = markdownToText(markdown);
-console.log(plaintext);
-```
-
-**Output** (clean plaintext):
-
-```
-Project Overview
-
-This is a bold statement with emphasis and links.
-
-- Feature 1: Fast parsing
-- Feature 2: Zero dependencies
-- Feature 3: 100% test coverage
-
-console.log('code example');
-
-Component: Parser, Status: Ready
-Component: Renderer, Status: Ready
-
-Important: Always test your implementation.
-```
-
-### Text Extraction Features
-
-**Surgical formatting removal:**
-
-- **Preserves**: Content flow, paragraph breaks, list markers (`- `), meaningful structure
-- **Removes**: All emphasis markers (`**bold**`, `*italic*`), link syntax, image syntax, HTML tags
-- **Converts**: Tables → key-value pairs, blockquotes → plain text, code blocks → raw content
-- **Output**: Arbitrary-width reflowable text optimized for search indexing and accessibility
-
-**Common use cases:**
-
-- Full-text search indexing
-- Content summaries and excerpts
-- Screen reader optimization
-- Plain text email generation
-- Content analysis and processing
-
-## Implementation Notes
-
-**Architecture decisions:**
-
-- **AST-first**: Build complete syntax tree, then transform to HTML
-- **Reference resolution**: Two-pass allows forward reference links
-- **HTML safety**: Automatic escaping prevents XSS
-- **Placeholder strategy**: Protected content during inline processing
-- **V8 optimization**: Monomorphic functions, minimal allocations
-
-**CommonMark compliance:**
-
-- Handles edge cases: nested emphasis, link precedence, table alignment
-- Reference-style links with forward declarations
-- Proper HTML block recognition vs autolinks
-- Escaped character handling
-
-## API Reference
-
-```typescript
-// Markdown composition
-function md(template: TemplateStringsArray, ...values: any[]): string;
-function ref(text: string, ref: string): RefObject;
-function code(code: string, language?: string): CodeObject;
-function table(headers: string[], rows: string[][]): TableObject;
-
-// HTML conversion
-function markdownToHTML(markdown: string): string;
-
-// Text extraction
-function markdownToText(markdown: string): string;
-```
+Your sponsorship helps keep RavenJS **zero-dependency**, **modern**, and **developer-friendly**.
 
 ---
 
-_Part of the [RavenJS](https://ravenjs.dev) toolkit_
+**Built with ❤️ by [Anonyfox](https://anonyfox.com)**

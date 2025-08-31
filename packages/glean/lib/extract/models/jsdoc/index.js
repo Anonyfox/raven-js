@@ -7,45 +7,42 @@
  */
 
 /**
- * @file JSDoc models index - surgical export aggregation.
+ * @file JSDoc tag classes with registry for dynamic tag creation.
  *
- * Ravens organize their arsenal with predatory efficiency.
- * Clean exports for all JSDoc tag models with zero waste.
+ * Exports all JSDoc tag implementations and provides TAG_REGISTRY for
+ * runtime tag instantiation by tag name.
  */
 
 export { JSDocAliasTag } from "./alias-tag.js";
 export { JSDocAuthorTag } from "./author-tag.js";
-// Base class
+// Base class and core tags
 export { JSDocTagBase } from "./base.js";
 export { JSDocCallbackTag } from "./callback-tag.js";
-// Metadata and lifecycle tags
 export { JSDocDeprecatedTag } from "./deprecated-tag.js";
 export { JSDocEnumTag } from "./enum-tag.js";
 export { JSDocExampleTag } from "./example-tag.js";
-// File and authorship tags
+// Metadata tags
 export { JSDocFileTag } from "./file-tag.js";
 export { JSDocLicenseTag } from "./license-tag.js";
 export { JSDocMemberofTag } from "./memberof-tag.js";
-// Organization and structure tags
+// Organization tags
 export { JSDocNamespaceTag } from "./namespace-tag.js";
-// Essential function documentation tags
 export { JSDocParamTag } from "./param-tag.js";
 // Access and visibility tags
 export { JSDocPrivateTag } from "./private-tag.js";
-
-// Object and type definition tags
 export { JSDocPropertyTag } from "./property-tag.js";
 export { JSDocProtectedTag } from "./protected-tag.js";
 export { JSDocReadonlyTag } from "./readonly-tag.js";
 export { JSDocReturnsTag } from "./returns-tag.js";
-// Cross-reference and navigation tags
 export { JSDocSeeTag } from "./see-tag.js";
 export { JSDocSinceTag } from "./since-tag.js";
 export { JSDocStaticTag } from "./static-tag.js";
 export { JSDocThrowsTag } from "./throws-tag.js";
+// Type and definition tags
 export { JSDocTypeTag } from "./type-tag.js";
 export { JSDocTypedefTag } from "./typedef-tag.js";
 
+// Import classes for registry construction
 import { JSDocAliasTag } from "./alias-tag.js";
 import { JSDocAuthorTag } from "./author-tag.js";
 import { JSDocCallbackTag } from "./callback-tag.js";
@@ -56,7 +53,6 @@ import { JSDocFileTag } from "./file-tag.js";
 import { JSDocLicenseTag } from "./license-tag.js";
 import { JSDocMemberofTag } from "./memberof-tag.js";
 import { JSDocNamespaceTag } from "./namespace-tag.js";
-// Import classes for registry
 import { JSDocParamTag } from "./param-tag.js";
 import { JSDocPrivateTag } from "./private-tag.js";
 import { JSDocPropertyTag } from "./property-tag.js";
@@ -71,9 +67,12 @@ import { JSDocTypeTag } from "./type-tag.js";
 import { JSDocTypedefTag } from "./typedef-tag.js";
 
 /**
- * Tag registry for dynamic tag creation
- * Maps tag names to their corresponding class constructors
- * @type {Record<string, any>}
+ * Tag registry for dynamic tag instantiation by name.
+ *
+ * Maps tag names (including aliases) to their corresponding class constructors
+ * for runtime tag creation from JSDoc comment parsing.
+ *
+ * @type {Record<string, new(content: string) => import('./base.js').JSDocTagBase>}
  */
 export const TAG_REGISTRY = {
 	// Function documentation

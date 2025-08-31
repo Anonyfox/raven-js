@@ -16,8 +16,18 @@
 /**
  * Represents an exported JavaScript identifier with optimal V8 performance characteristics.
  *
- * This class uses a consistent property order and initialization pattern that allows
- * V8 to create optimized hidden classes, improving both memory usage and access speed.
+ * Uses consistent property order and initialization pattern for V8 hidden class optimization,
+ * improving both memory usage and access speed.
+ *
+ * @example
+ * // Local identifier
+ * const id = new Identifier('myFunction', 'myFunction', null);
+ * console.log(id.toString()); // → 'myFunction'
+ *
+ * @example
+ * // Re-exported identifier
+ * const id = new Identifier('utils', 'helper', './src/core.js');
+ * console.log(id.toString()); // → 'utils (helper from ./src/core.js)'
  */
 export class Identifier {
 	/**

@@ -7,10 +7,10 @@
  */
 
 /**
+ * @file Self-signed SSL certificate generation for development servers.
  *
- * Generate a self-signed SSL certificate for development use. Creates a new RSA key pair
- * and self-signed certificate suitable for HTTPS development servers. The certificate will
- * be valid for 1 year from generation and uses SHA-256 signing.
+ * Provides RSA key pair generation and X.509 certificate creation with ASN.1 encoding.
+ * Certificates are valid for development HTTPS servers with customizable parameters.
  */
 
 /**
@@ -24,6 +24,15 @@
  * @property {number} [validityDays] - Certificate validity in days
  */
 
+/**
+ * Generate a self-signed SSL certificate for development use.
+ *
+ * @param {CertOptions} [options] - Certificate configuration options
+ * @returns {Promise<{certificate: string, privateKey: string}>} PEM-encoded certificate and private key
+ *
+ * @example
+ * // Generate certificate for localhost development
+ */
 export async function generateSSLCert(/** @type {CertOptions} */ options = {}) {
 	// Validate options
 	validateOptions(options);
@@ -90,8 +99,14 @@ export async function generateSSLCert(/** @type {CertOptions} */ options = {}) {
 }
 
 /**
+ * Encode Tag-Length-Value (TLV) structure according to ASN.1 DER encoding.
  *
- * Encode Tag-Length-Value (TLV) structure according to ASN.1 DER encoding
+ * @param {number} tag - ASN.1 tag byte
+ * @param {Buffer} value - Value bytes to encode
+ * @returns {ArrayBuffer} DER encoded TLV structure
+ *
+ * @example
+ * // Encode ASN.1 TLV with tag and value bytes
  */
 export function encodeTLV(
 	/** @type {number} */ tag,
@@ -123,9 +138,13 @@ export function encodeTLV(
 }
 
 /**
- * Encode integer according to ASN.1 DER encoding
+ * Encode integer according to ASN.1 DER encoding.
+ *
  * @param {Uint8Array} value - Integer value as bytes
  * @returns {ArrayBuffer} DER encoded integer
+ *
+ * @example
+ * // Encode integer bytes in DER format for ASN.1 structures
  */
 export function encodeInteger(value) {
 	// Handle canonical form for DER encoding
@@ -159,9 +178,13 @@ export function encodeInteger(value) {
 }
 
 /**
- * Encode Object Identifier according to ASN.1 DER encoding
+ * Encode Object Identifier according to ASN.1 DER encoding.
+ *
  * @param {string} oid - Object identifier string (e.g., "1.2.840.113549.1.1.1")
  * @returns {ArrayBuffer} DER encoded object identifier
+ *
+ * @example
+ * // Encode OID string into DER format for X.509 certificates
  */
 export function encodeObjectIdentifier(oid) {
 	const parts = oid.split(".").map(Number);
@@ -197,9 +220,13 @@ export function encodeObjectIdentifier(oid) {
 }
 
 /**
- * Encode PrintableString according to ASN.1 DER encoding
+ * Encode PrintableString according to ASN.1 DER encoding.
+ *
  * @param {string} value - String value
  * @returns {ArrayBuffer} DER encoded printable string
+ *
+ * @example
+ * // Encode text strings for certificate distinguished names
  */
 export function encodePrintableString(value) {
 	const bytes = new TextEncoder().encode(value);
@@ -207,9 +234,13 @@ export function encodePrintableString(value) {
 }
 
 /**
- * Encode UTCTime according to ASN.1 DER encoding
+ * Encode UTCTime according to ASN.1 DER encoding.
+ *
  * @param {Date} date - Date to encode
  * @returns {ArrayBuffer} DER encoded UTCTime
+ *
+ * @example
+ * // Encode Date objects for certificate validity periods
  */
 export function encodeUTCTime(date) {
 	// UTCTime format: YYMMDDHHMMSSZ
@@ -226,17 +257,25 @@ export function encodeUTCTime(date) {
 }
 
 /**
- * Encode NULL according to ASN.1 DER encoding
+ * Encode NULL according to ASN.1 DER encoding.
+ *
  * @returns {ArrayBuffer} DER encoded NULL
+ *
+ * @example
+ * // Encode NULL values for ASN.1 algorithm parameters
  */
 export function encodeNull() {
 	return encodeTLV(0x05, Buffer.from(new Uint8Array(0))); // NULL tag
 }
 
 /**
- * Encode BIT STRING according to ASN.1 DER encoding
+ * Encode BIT STRING according to ASN.1 DER encoding.
+ *
  * @param {ArrayBuffer} data - Data to encode
  * @returns {ArrayBuffer} DER encoded bit string
+ *
+ * @example
+ * // Encode binary data like public keys in certificates
  */
 export function encodeBitString(data) {
 	const bytes = new Uint8Array(data);
@@ -247,9 +286,13 @@ export function encodeBitString(data) {
 }
 
 /**
- * Encode SEQUENCE according to ASN.1 DER encoding
+ * Encode SEQUENCE according to ASN.1 DER encoding.
+ *
  * @param {ArrayBuffer[]} components - Array of DER encoded components
  * @returns {ArrayBuffer} DER encoded sequence
+ *
+ * @example
+ * // Combine multiple ASN.1 elements into ordered sequences
  */
 export function encodeSequence(components) {
 	const content = new Uint8Array(
@@ -264,9 +307,13 @@ export function encodeSequence(components) {
 }
 
 /**
- * Encode SET according to ASN.1 DER encoding
+ * Encode SET according to ASN.1 DER encoding.
+ *
  * @param {ArrayBuffer[]} components - Array of DER encoded components
  * @returns {ArrayBuffer} DER encoded set
+ *
+ * @example
+ * // Encode unordered collections of ASN.1 elements
  */
 export function encodeSet(components) {
 	const content = new Uint8Array(
@@ -281,8 +328,12 @@ export function encodeSet(components) {
 }
 
 /**
- * Encode certificate version (v3 = version 2)
+ * Encode certificate version (v3 = version 2).
+ *
  * @returns {ArrayBuffer} DER encoded version
+ *
+ * @example
+ * // Encode X.509 v3 certificate version for ASN.1 structure
  */
 export function encodeVersion() {
 	// X.509 v3 = version 2 (0-based)
@@ -292,7 +343,8 @@ export function encodeVersion() {
 }
 
 /**
- * Encode certificate name (subject/issuer)
+ * Encode certificate name (subject/issuer).
+ *
  * @param {Object} name - Name fields
  * @param {string} name.commonName - Common name
  * @param {string} name.organization - Organization
@@ -300,6 +352,9 @@ export function encodeVersion() {
  * @param {string} name.state - State
  * @param {string} name.locality - Locality
  * @returns {ArrayBuffer} DER encoded name
+ *
+ * @example
+ * // Encode distinguished name for certificate subject or issuer
  */
 export function encodeName(name) {
 	// X.500 name components should be in reverse order (most specific to least specific)
@@ -341,19 +396,27 @@ function getOidForType(type) {
 }
 
 /**
- * Encode validity period
+ * Encode validity period.
+ *
  * @param {Date} notBefore - Start date
  * @param {Date} notAfter - End date
  * @returns {ArrayBuffer} DER encoded validity
+ *
+ * @example
+ * // Encode certificate validity date range
  */
 export function encodeValidity(notBefore, notAfter) {
 	return encodeSequence([encodeUTCTime(notBefore), encodeUTCTime(notAfter)]);
 }
 
 /**
- * Encode subject public key info
+ * Encode subject public key info.
+ *
  * @param {ArrayBuffer} publicKey - Public key in SPKI format
  * @returns {ArrayBuffer} DER encoded subject public key info
+ *
+ * @example
+ * // Encode RSA public key for certificate structure
  */
 export function encodeSubjectPublicKeyInfo(publicKey) {
 	// For mock data, create a simple structure
@@ -401,7 +464,8 @@ export function encodeSubjectPublicKeyInfo(publicKey) {
 }
 
 /**
- * Create TBS (To-Be-Signed) certificate structure
+ * Create TBS (To-Be-Signed) certificate structure.
+ *
  * @param {Uint8Array} serialNumber - Certificate serial number
  * @param {Object} subject - Subject fields
  * @param {string} subject.commonName - Common name
@@ -419,6 +483,9 @@ export function encodeSubjectPublicKeyInfo(publicKey) {
  * @param {Date} notAfter - Validity end date
  * @param {ArrayBuffer} publicKey - Public key in SPKI format
  * @returns {ArrayBuffer} DER encoded TBS certificate
+ *
+ * @example
+ * // Create TBS certificate structure for X.509 signing
  */
 export function createTBSCertificate(
 	serialNumber,
@@ -455,10 +522,14 @@ export function createTBSCertificate(
 }
 
 /**
- * Create final certificate structure
+ * Create final certificate structure.
+ *
  * @param {ArrayBuffer} tbs - TBS certificate
  * @param {ArrayBuffer} signature - Signature value
  * @returns {ArrayBuffer} DER encoded certificate
+ *
+ * @example
+ * // Combine TBS certificate with signature into final X.509 structure
  */
 export function createCertificateStructure(tbs, signature) {
 	const signatureAlgorithm = encodeSequence([
@@ -477,9 +548,13 @@ export function createCertificateStructure(tbs, signature) {
 }
 
 /**
- * Generate RSA key pair using WebCrypto
+ * Generate RSA key pair using WebCrypto.
+ *
  * @param {number} keySize - RSA key size in bits
  * @returns {Promise<CryptoKeyPair>} RSA key pair
+ *
+ * @example
+ * // Generate 2048-bit RSA key pair for certificate signing
  */
 export function generateRSAKeyPair(keySize) {
 	return crypto.subtle.generateKey(
@@ -495,9 +570,13 @@ export function generateRSAKeyPair(keySize) {
 }
 
 /**
- * Export private key to PEM format
+ * Export private key to PEM format.
+ *
  * @param {CryptoKey} privateKey - Private key
  * @returns {Promise<string>} PEM formatted private key
+ *
+ * @example
+ * // Convert WebCrypto private key to PEM format
  */
 export function exportPrivateKeyPEM(privateKey) {
 	return crypto.subtle
@@ -521,10 +600,14 @@ function derToPem(der, type) {
 }
 
 /**
- * Sign the TBS certificate with private key
+ * Sign the TBS certificate with private key.
+ *
  * @param {CryptoKey} privateKey - Private key
  * @param {ArrayBuffer} tbs - TBS certificate
  * @returns {Promise<ArrayBuffer>} Signature
+ *
+ * @example
+ * // Sign TBS certificate with RSA-SHA256 signature
  */
 export function signTBSCertificate(privateKey, tbs) {
 	return crypto.subtle.sign(
@@ -535,7 +618,8 @@ export function signTBSCertificate(privateKey, tbs) {
 }
 
 /**
- * Validate input options
+ * Validate input options.
+ *
  * @param {Object} options - Options to validate
  * @param {string} [options.commonName] - Common name for the certificate
  * @param {string} [options.organization] - Organization name
@@ -546,6 +630,9 @@ export function signTBSCertificate(privateKey, tbs) {
  * @param {number} [options.validityDays] - Certificate validity in days
  * @returns {void}
  * @throws {TypeError} When options are invalid
+ *
+ * @example
+ * // Validate certificate generation parameters
  */
 export function validateOptions(options) {
 	// Validate inputs first, before destructuring
@@ -597,10 +684,14 @@ export function validateOptions(options) {
 }
 
 /**
- * Validate generated certificate using Node.js built-ins
+ * Validate generated certificate using Node.js built-ins.
+ *
  * @param {string} certificate - PEM formatted certificate
  * @param {string} privateKey - PEM formatted private key
  * @returns {Promise<boolean>} True if certificate is valid
+ *
+ * @example
+ * // Verify certificate and private key match using Node.js TLS
  */
 export function validateCertificate(certificate, privateKey) {
 	// Validate input parameters

@@ -1,16 +1,14 @@
 # Reflex DOM: Automatic Signal Tracking
 
 [![Website](https://img.shields.io/badge/website-ravenjs.dev-blue.svg)](https://ravenjs.dev)
-[![Zero Dependencies](https://img.shields.io/badge/Zero-Dependencies-brightgreen.svg)](https://github.com/Anonyfox/raven-js)
-[![Isomorphic](https://img.shields.io/badge/Isomorphic-SSR+Browser-blue.svg)](https://nodejs.org/api/esm.html)
+[![Documentation](https://img.shields.io/badge/docs-docs.ravenjs.dev/reflex-blue.svg)](https://docs.ravenjs.dev/reflex)
+[![Zero Dependencies](https://img.shields.io/badge/Zero-Dependencies-brightgreen.svg)](https://github.com/Anonyfox/ravenjs)
+[![ESM Only](https://img.shields.io/badge/ESM-Only-blue.svg)](https://nodejs.org/api/esm.html)
+[![Node.js 22.5+](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
 
-Mount reactive templates. Signal changes automatically update DOM.
+Mount reactive templates with automatic signal tracking and efficient DOM updates.
 
-**One function. Zero complexity. Zero manual cleanup.**
-
-_Optimized with CSS containment, priority scheduling, and automatic memory management._
-
-## Install
+## Installation
 
 ```bash
 npm install @raven-js/reflex
@@ -39,18 +37,12 @@ count.set(5); // DOM shows "Count: 5"
 
 ### mount(templateFn, target, options)
 
-Mount reactive template to DOM element. Signal reads inside `templateFn` automatically trigger DOM updates.
-
-**Parameters:**
+Mount reactive template to DOM element with automatic signal tracking.
 
 - `templateFn: () => string` - Function returning HTML string
 - `target: string | Element` - CSS selector or DOM element
-- `options: Object` - Optional mount configuration
-  - `replace: boolean` - If true, replace target content instead of preserving (default: false)
-
-**Returns:** Mount instance with optional `unmount()` method
-
-_Cleanup happens automatically when elements are removed from DOM._
+- `options: Object` - Optional configuration
+- Returns: Mount instance with `unmount()` method
 
 ```javascript
 // CSS selector (browser only)
@@ -68,18 +60,14 @@ app.unmount();
 
 ## Server Rendering
 
-Server-side: call template directly (no mounting needed)
+Server: call template function directly. Client: mount for reactivity.
 
 ```javascript
 // Server route
-const html = App(); // Just call the function
-```
+const html = App();
 
-Client-side: mount for reactivity
-
-```javascript
 // Browser script
-mount(App, "#app"); // Creates reactive DOM
+mount(App, "#app");
 ```
 
 ## Signal Integration
@@ -108,20 +96,6 @@ mount(TodoApp, "#app");
 // These automatically update DOM
 todos.set([{ text: "Learn RavenJS", status: "active" }]);
 filter.set("active");
-```
-
-## Isomorphic Support
-
-Same code works in Node.js and browsers:
-
-```javascript
-import { mount } from "@raven-js/reflex/dom";
-
-// Browser: real DOM
-mount(App, "#app");
-
-// Server: virtual DOM (internal implementation)
-// Use regular template function calls instead
 ```
 
 ## Integration
@@ -165,13 +139,9 @@ router.get("/app", (ctx) => {
 
 ## Performance
 
-- **Zero overhead** when signals unused
-- **Single DOM operation** per signal change
-- **Automatic cleanup** prevents memory leaks
-- **Platform primitives** - no framework bloat
-- **CSS containment** optimizes layout performance
-- **Priority scheduling** via `scheduler.postTask()` when available
-- **WeakRef tracking** for garbage collection assistance
+- requestAnimationFrame scheduling for paint alignment
+- Automatic cleanup prevents memory leaks
+- WeakRef tracking assists garbage collection
 
 ## Error Handling
 
@@ -188,10 +158,22 @@ mount(App, "#app"); // Error: CSS selectors only work in browser. Use DOM/virtua
 
 ## Requirements
 
-- **Node.js:** 22.5+ (server-side)
+- **Node.js:** 22.5+
 - **Browsers:** ES2020+ support
 - **Dependencies:** Zero
 
-## License
+## The Raven's Perch
 
-MIT - Copyright (c) 2025 Anonyfox e.K.
+Like a raven perched high above, watching the territory below and reacting instantly to changes, Reflex DOM observes signal changes and updates the DOM with surgical precision - no wasted motion, maximum awareness.
+
+## 🦅 Support RavenJS Development
+
+If you find RavenJS helpful, consider supporting its development:
+
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor%20on%20GitHub-%23EA4AAA?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sponsors/Anonyfox)
+
+Your sponsorship helps keep RavenJS **zero-dependency**, **modern**, and **developer-friendly**.
+
+---
+
+**Built with ❤️ by [Anonyfox](https://anonyfox.com)**

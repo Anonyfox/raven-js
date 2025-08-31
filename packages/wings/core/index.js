@@ -10,8 +10,8 @@
  * @file Core routing engine - isomorphic HTTP router with zero dependencies.
  *
  * Wings core provides surgical routing primitives for modern JavaScript applications.
- * Built for performance-critical environments where every millisecond matters:
- * serverless functions, single-page applications, and high-throughput servers.
+ * Built for performance-critical environments: serverless functions, single-page applications,
+ * and high-throughput servers.
  *
  * Exports foundation classes for building complete routing solutions.
  */

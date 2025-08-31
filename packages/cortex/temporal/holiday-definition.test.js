@@ -316,6 +316,21 @@ describe("HolidayDefinition class", () => {
 			);
 		});
 
+		it("should format easter relative with positive offset to hit line 205 branch", () => {
+			const holidayDef = new HolidayDefinition({
+				name: "Easter Monday",
+				type: "easter_relative",
+				offset: 1,
+				workFree: true,
+			});
+
+			const result = holidayDef.toString();
+			assert.strictEqual(
+				result,
+				"Easter Monday (easter_relative) - Easter+1 [work-free]",
+			);
+		});
+
 		it("should format calculated holiday definition", () => {
 			const holidayDef = new HolidayDefinition({
 				name: "Custom Day",

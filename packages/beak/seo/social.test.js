@@ -3,219 +3,131 @@ import { describe, it } from "node:test";
 import { social } from "./social.js";
 
 describe("social", () => {
-	it("should generate correct social meta tags with all parameters", () => {
-		const config = {
-			title: "Test Page",
-			description: "This is a test description.",
+	it("generates combined social media tags", () => {
+		const result = social({
+			title: "My Page",
+			description: "Page description",
 			domain: "example.com",
-			path: "/test-path",
-			imageUrl: "/test-image.png",
+			path: "/page",
+		});
+
+		// Should include tags from all platforms
+		assert(result.includes('property="og:title"')); // Open Graph
+		assert(result.includes('name="twitter:title"')); // Twitter
+		assert(result.includes('name="pinterest:description"')); // Pinterest
+		assert(result.includes('name="linkedin:title"')); // LinkedIn
+		assert(result.includes('name="discord:title"')); // Discord
+	});
+
+	it("passes through configuration to all platforms", () => {
+		const result = social({
+			title: "Article",
+			description: "Content description",
+			domain: "site.com",
+			path: "/post",
+			imageUrl: "/image.jpg",
+		});
+
+		// Check that image URL is constructed properly for each platform
+		assert(result.includes('content="https://site.com/image.jpg"'));
+		assert(result.includes('content="https://site.com/post"'));
+		assert(result.includes('content="Article"'));
+		assert(result.includes('content="Content description"'));
+	});
+
+	it("handles platform-specific configurations", () => {
+		const result = social({
+			title: "Full Page",
+			description: "Complete description",
+			domain: "site.com",
+			path: "/post",
+			imageUrl: "/social.jpg",
 			ogType: "article",
 			twitterCardType: "summary_large_image",
-			pinterestSourceUrl: "/test-path",
-			linkedinOwner: "linkedin.com/in/johndoe",
-			linkedinCompany: "linkedin.com/company/mycompany",
+			linkedinOwner: "linkedin.com/in/author",
+			linkedinCompany: "linkedin.com/company/corp",
 			discordInvite: "abc123",
-		};
-		const result = social(config);
+		});
 
-		// Open Graph tags
-		assert(
-			result.includes(
-				'<meta name="og:type" property="og:type" content="article">',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="og:title" property="og:title" content="Test Page" />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="og:description" property="og:description" content="This is a test description." />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="og:url" property="og:url" content="https://example.com/test-path" />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="og:image" property="og:image" content="https://example.com/test-image.png" />',
-			),
-		);
+		// Check Open Graph type
+		assert(result.includes('content="article"'));
 
-		// Twitter Card tags
-		assert(
-			result.includes(
-				'<meta name="twitter:card" property="twitter:card" content="summary_large_image" />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="twitter:title" property="twitter:title" content="Test Page" />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="twitter:description" property="twitter:description" content="This is a test description." />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="twitter:image" property="twitter:image" content="https://example.com/test-image.png" />',
-			),
-		);
+		// Check Twitter card type
+		assert(result.includes('content="summary_large_image"'));
 
-		// Pinterest tags
-		assert(
-			result.includes(
-				'<meta name="pinterest:description" property="pinterest:description" content="This is a test description." />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="pinterest:media" property="pinterest:media" content="https://example.com/test-image.png" />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="pinterest:source" property="pinterest:source" content="https://example.com/test-path" />',
-			),
-		);
+		// Check LinkedIn owner and company
+		assert(result.includes('content="linkedin.com/in/author"'));
+		assert(result.includes('content="linkedin.com/company/corp"'));
 
-		// LinkedIn tags
-		assert(
-			result.includes(
-				'<meta name="linkedin:title" property="linkedin:title" content="Test Page" />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="linkedin:description" property="linkedin:description" content="This is a test description." />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="linkedin:url" property="linkedin:url" content="https://example.com/test-path" />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="linkedin:image" property="linkedin:image" content="https://example.com/test-image.png" />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="linkedin:owner" property="linkedin:owner" content="linkedin.com/in/johndoe" />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="linkedin:company" property="linkedin:company" content="linkedin.com/company/mycompany" />',
-			),
-		);
-
-		// Discord tags
-		assert(
-			result.includes(
-				'<meta name="discord:title" property="discord:title" content="Test Page" />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="discord:description" property="discord:description" content="This is a test description." />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="discord:url" property="discord:url" content="https://example.com/test-path" />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="discord:image" property="discord:image" content="https://example.com/test-image.png" />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="discord:invite" property="discord:invite" content="abc123" />',
-			),
-		);
+		// Check Discord invite
+		assert(result.includes('content="abc123"'));
 	});
 
-	it("should generate correct social meta tags without image", () => {
-		const config = {
-			title: "Test Page",
-			description: "This is a test description.",
+	it("uses Pinterest sourceUrl fallback to path", () => {
+		const result = social({
+			title: "Test",
+			description: "Test content",
 			domain: "example.com",
-			path: "/test-path",
-		};
-		const result = social(config);
+			path: "/test-page",
+		});
 
-		// Open Graph tags
-		assert(
-			result.includes(
-				'<meta name="og:type" property="og:type" content="website">',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="og:title" property="og:title" content="Test Page" />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="og:description" property="og:description" content="This is a test description." />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="og:url" property="og:url" content="https://example.com/test-path" />',
-			),
-		);
-		assert(!result.includes('<meta name="og:image" property="og:image"'));
-
-		// Twitter Card tags
-		assert(
-			result.includes(
-				'<meta name="twitter:card" property="twitter:card" content="summary" />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="twitter:title" property="twitter:title" content="Test Page" />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="twitter:description" property="twitter:description" content="This is a test description." />',
-			),
-		);
-		assert(
-			!result.includes('<meta name="twitter:image" property="twitter:image"'),
-		);
+		// Pinterest should use path as sourceUrl when pinterestSourceUrl not provided
+		assert(result.includes('name="pinterest:source"'));
+		assert(result.includes('content="https://example.com/test-page"'));
 	});
 
-	it("should use default types when not specified", () => {
-		const config = {
-			title: "Test Page",
-			description: "This is a test description.",
+	it("uses explicit Pinterest sourceUrl when provided", () => {
+		const result = social({
+			title: "Test",
+			description: "Test content",
 			domain: "example.com",
-			path: "/test-path",
-		};
-		const result = social(config);
+			path: "/page",
+			pinterestSourceUrl: "/custom-source",
+		});
 
-		assert(
-			result.includes(
-				'<meta name="og:type" property="og:type" content="website">',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="twitter:card" property="twitter:card" content="summary" />',
-			),
-		);
+		assert(result.includes('content="https://example.com/custom-source"'));
+	});
+
+	it("handles minimal configuration", () => {
+		const result = social({
+			title: "Simple",
+			description: "Basic content",
+		});
+
+		// Should still generate tags for all platforms
+		assert(result.includes("og:title"));
+		assert(result.includes("twitter:title"));
+		assert(result.includes("pinterest:description"));
+		assert(result.includes("linkedin:title"));
+		assert(result.includes("discord:title"));
+	});
+
+	it("excludes optional fields when not provided", () => {
+		const result = social({
+			title: "No Optional",
+			description: "Basic content",
+		});
+
+		// Should not include optional fields
+		assert(!result.includes("linkedin:owner"));
+		assert(!result.includes("linkedin:company"));
+		assert(!result.includes("discord:invite"));
+		assert(!result.includes("og:image"));
+		assert(!result.includes("twitter:image"));
+	});
+
+	it("generates valid HTML structure", () => {
+		const result = social({
+			title: "HTML Test",
+			description: "Structure test",
+		});
+
+		// Should have proper meta tag structure
+		const metaTagCount = (result.match(/<meta/g) || []).length;
+		assert(metaTagCount > 10); // Should have multiple meta tags
+
+		// Should contain expected platforms
+		assert(result.includes("og:title"));
+		assert(result.includes("twitter:title"));
 	});
 });

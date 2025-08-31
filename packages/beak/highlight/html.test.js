@@ -417,5 +417,29 @@ describe("HTML Syntax Highlighter", () => {
 			assert.ok(result.includes("var x = 5;"));
 			assert.ok(result.includes("div { color: red; }"));
 		});
+
+		it("should handle invalid characters in tag attributes (surgical coverage)", () => {
+			// Test invalid characters that trigger "skip invalid characters" path (lines 325-327)
+			const html = '<div @ # $ invalid="test">content</div>';
+			const result = highlightHTML(html);
+			assert.ok(typeof result === "string");
+			assert.ok(result.length > 0);
+			// Should still process the valid parts
+			assert.ok(result.includes("div"));
+			assert.ok(result.includes("content"));
+		});
+
+		it("should handle single characters as text content (surgical coverage)", () => {
+			// Test single characters that trigger the else branch (lines 375-382)
+			// This happens when a character doesn't accumulate with others
+			const html = "@ # $ % ^ * ( )"; // Single characters separated by spaces
+			const result = highlightHTML(html);
+			assert.ok(typeof result === "string");
+			assert.ok(result.length > 0);
+			// Should process all characters including special ones
+			assert.ok(result.includes("@"));
+			assert.ok(result.includes("#"));
+			assert.ok(result.includes("$"));
+		});
 	});
 });

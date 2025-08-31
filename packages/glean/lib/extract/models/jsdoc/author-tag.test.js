@@ -18,8 +18,8 @@ describe("JSDocAuthorTag construction and inheritance", () => {
 	test("should inherit from JSDocTagBase correctly", () => {
 		const tag = new JSDocAuthorTag("John Doe");
 
-		strictEqual(tag.getType(), "author");
-		strictEqual(tag.getRawContent(), "John Doe");
+		strictEqual(tag.tagType, "author");
+		strictEqual(tag.rawContent, "John Doe");
 		strictEqual(tag.isValid(), true);
 	});
 

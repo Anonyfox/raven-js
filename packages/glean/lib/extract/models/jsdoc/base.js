@@ -15,17 +15,21 @@
  */
 
 /**
- * Base class for all JSDoc tag implementations
+ * Base class for all JSDoc tag implementations with validation foundation.
  *
- * Provides common validation and core functionality for JSDoc tags.
- * Child classes must implement tag-specific parsing and validation
- * logic through the required abstract methods.
+ * Child classes implement tag-specific parsing and validation through abstract methods.
+ * Parse-once design with zero rendering logic - data extraction only.
  *
- * **Raven Design Philosophy:**
- * - Parse once, validate once, use many times
- * - Zero rendering logic (belongs in separate layer)
- * - Surgical data extraction over framework bloat
- * - Platform primitives over abstraction taxes
+ * @example
+ * // Custom tag implementation
+ * class ParamTag extends JSDocTagBase {
+ *   parseContent() {
+ *     // extract param data
+ *   }
+ *   validate() {
+ *     // validate param syntax
+ *   }
+ * }
  *
  * @abstract
  */
@@ -97,21 +101,5 @@ export class JSDocTagBase {
 	 */
 	isValid() {
 		return this.isValidated;
-	}
-
-	/**
-	 * Get tag type identifier
-	 * @returns {string} Tag type
-	 */
-	getType() {
-		return this.tagType;
-	}
-
-	/**
-	 * Get raw content
-	 * @returns {string} Raw content
-	 */
-	getRawContent() {
-		return this.rawContent;
 	}
 }

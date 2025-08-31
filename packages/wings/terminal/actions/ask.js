@@ -9,29 +9,23 @@
 /**
  * @file User input gathering functions for interactive CLI applications.
  *
- * **Purpose**: Collect user input through platform-native readline interface.
- * Pure functions with controlled side effects (terminal I/O only).
- *
- * **Key Features**:
- * - Text input with trimmed responses
- * - Yes/no confirmation with flexible input formats
- * - Default value support for confirmations
- * - Input validation and retry loops
- * - Automatic readline cleanup
- *
- * **Performance**: Async operations block until user input received.
- * Uses Node.js built-in readline for cross-platform compatibility.
- *
- * **Testing**: Provider abstraction enables readline mocking in tests.
+ * Provides text input and yes/no confirmation functions using Node.js readline interface.
+ * Includes provider abstraction for testing with deterministic input mocking.
  */
 
 /**
  * Readline module provider for test mocking.
  *
- * **Purpose**: Enable deterministic testing while preserving source simplicity.
- * Replace getReadline function in tests to mock user input behavior.
- *
  * @type {{ getReadline: () => Promise<typeof import('node:readline')> }}
+ *
+ * @example
+ * // Access readline module
+ * const readline = await readlineProvider.getReadline();
+ * const rl = readline.createInterface({ input: process.stdin });
+ *
+ * @example
+ * // Mock for testing
+ * readlineProvider.getReadline = () => mockReadline;
  */
 export const readlineProvider = {
 	getReadline: async () => await import("node:readline"),
@@ -40,22 +34,16 @@ export const readlineProvider = {
 /**
  * Prompt user for text input with automatic cleanup.
  *
- * **Behavior**: Create readline interface, display prompt, await input,
- * trim whitespace, cleanup interface. Blocks until user responds.
- *
- * **Error Handling**: Throws TypeError for non-string prompts.
- * Readline errors propagated to caller.
+ * Creates readline interface, displays prompt, and returns trimmed input.
  *
  * @param {string} question - Prompt text displayed to user
  * @returns {Promise<string>} Trimmed user input
  * @throws {TypeError} Question parameter must be string
  *
  * @example
- * ```javascript
+ * // Basic usage
  * const name = await ask('Name: ');
  * const email = await ask('Email: ');
- * if (!email.includes('@')) throw new Error('Invalid email');
- * ```
  */
 export async function ask(/** @type {string} */ question) {
 	if (typeof question !== "string") {
@@ -82,12 +70,8 @@ export async function ask(/** @type {string} */ question) {
 /**
  * Prompt user for yes/no confirmation with input validation.
  *
- * **Behavior**: Display question with [Y/n] or [y/N] suffix based on default.
- * Accept y/yes/n/no (case insensitive), empty input uses default.
- * Retry loop until valid input received.
- *
- * **Validation**: Rejects invalid input with instruction message.
- * Empty input resolves to defaultValue immediately.
+ * Displays question with [Y/n] or [y/N] suffix based on default value.
+ * Accepts y/yes/n/no (case insensitive), retries on invalid input.
  *
  * @param {string} question - Confirmation prompt text
  * @param {boolean} [defaultValue=false] - Value returned for empty input
@@ -95,11 +79,9 @@ export async function ask(/** @type {string} */ question) {
  * @throws {TypeError} Question parameter must be string
  *
  * @example
- * ```javascript
+ * // Basic usage
  * const deploy = await confirm('Deploy? '); // [y/N]
  * const force = await confirm('Force? ', true); // [Y/n]
- * if (deploy && !force) console.log('Safe deployment');
- * ```
  */
 export async function confirm(question, defaultValue = false) {
 	if (typeof question !== "string") {

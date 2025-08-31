@@ -6,6 +6,13 @@
  * @see {@link https://anonyfox.com}
  */
 
+/**
+ * @file High-performance HTTP request router using Trie data structure for optimal route matching.
+ *
+ * Provides the Router class for handling HTTP requests with middleware support, path parameters,
+ * and method chaining. Works in Node.js, browser, and serverless environments.
+ */
+
 import {
 	getHttpMethods,
 	HTTP_METHODS,
@@ -16,71 +23,18 @@ import { Route } from "./route.js";
 import { Trie } from "./trie.js";
 
 /**
+ * HTTP request router with Trie-based route matching and middleware support.
  *
- * **Router** - High-performance HTTP request router for the Wings framework.
- * The Router class provides a lean, fast, and isomorphic HTTP router that can handle
- * requests in both Node.js and browser environments. It uses a Trie data structure
- * for optimal performance and supports middleware, path parameters, and complex
- * routing patterns.
- * ## Key Features
- * - **High Performance**: O(1) route matching using Trie data structure
- * - **Isomorphic**: Works in Node.js, browser, and serverless environments
- * - **Middleware Support**: Before/after middleware execution pipeline
- * - **Path Parameters**: Dynamic route parameters with validation
- * - **Method Chaining**: Fluent API for building routes
- * - **Error Handling**: Built-in error handling and recovery
- * - **Zero Dependencies**: Pure JavaScript with no external dependencies
- * ## Performance Characteristics
- * **Route Registration**: O(n) where n is the number of path segments
- * **Route Matching**: O(m) where m is the number of segments in the request path
- * **Memory Usage**: Minimal overhead (~1KB for typical applications)
- * The router is optimized for scenarios where both route registration and matching
- * performance matter, such as serverless functions and browser SPAs.
- * ## Design Philosophy
- * The Router prioritizes:
- * - **Speed**: Fast route matching and registration
- * - **Simplicity**: Clean, intuitive API
- * - **Flexibility**: Support for various deployment scenarios
- * - **Reliability**: Robust error handling and edge case management
- * **Note**: This router is designed to be environment-agnostic. As long as you can
- * create a Context instance from your request, you can use this router anywhere.
- * ```javascript
- * import { Router } from './router.js';
- * import { Context } from './context.js';
- * // Create router instance
+ * @example
+ * // Basic router setup
  * const router = new Router();
- * // Add routes with method chaining
- * router
- * .get('/users', (ctx) => {
- * ctx.json({ users: [] });
- * })
- * .get('/users/:id', (ctx) => {
- * const userId = ctx.pathParams.id;
- * ctx.json({ id: userId, name: 'John Doe' });
- * })
- * .post('/users', async (ctx) => {
- * const userData = ctx.requestBody();
- * const newUser = await createUser(userData);
- * ctx.json(newUser);
- * });
- * // Add middleware
- * router.use(authMiddleware);
- * // Handle request
- * const url = new URL('http://localhost/users/123');
- * const ctx = new Context('GET', url, new Headers());
- * await router.handleRequest(ctx);
- * ```
- * ## Performance Trade-offs
- * **Advantages**:
- * - Extremely fast route matching
- * - Minimal memory footprint
- * - No external dependencies
- * - Works in any JavaScript environment
- * **Limitations**:
- * - No WebSocket support
- * - Requires modern JavaScript (ES6+)
- * - ESM-only (no CommonJS support)
- * - Limited to HTTP request/response patterns
+ * router.get('/users', async (ctx) => ctx.json(users));
+ * router.post('/users', async (ctx) => ctx.json(newUser));
+ *
+ * @example
+ * // Router with middleware
+ * const router = new Router();
+ * router.get('/admin/*', adminHandler).before(auth);
  */
 export class Router {
 	/**
@@ -140,42 +94,23 @@ export class Router {
 	#middlewareIdentifiers = new Set();
 
 	/**
-	 * Cache for normalized path segments to avoid repeated string operations.
-	 *
-	 * This Map caches the result of path normalization and splitting to eliminate
-	 * repeated regex operations and array creation for commonly accessed paths.
-	 *
-	 * **Performance**: O(1) lookup vs O(n) string operations for repeated paths.
-	 * **Memory**: Limited to 100 entries to prevent memory leaks.
+	 * Cache for normalized path segments.
 	 *
 	 * @type {Map<string, string[]>}
 	 */
 	#pathSegmentsCache = new Map();
 
 	/**
-	 * Creates a new Router instance with all HTTP method tries pre-initialized.
-	 *
-	 * The constructor initializes separate Trie data structures for each
-	 * supported HTTP method, ensuring optimal performance for route matching.
-	 * This upfront initialization prevents runtime overhead during route
-	 * registration and request handling.
-	 *
-	 * **Initialization**: Creates Trie instances for GET, POST, PUT, DELETE,
-	 * PATCH, HEAD, and OPTIONS methods.
+	 * Creates a new Router instance with HTTP method tries pre-initialized.
 	 *
 	 * @example
-	 * ```javascript
-	 * // Create a new router instance
+	 * // Basic router creation
 	 * const router = new Router();
 	 *
-	 * // All HTTP method tries are ready for use
-	 * router.get('/users', handler);
-	 * router.post('/users', handler);
-	 * router.put('/users/:id', handler);
-	 *
-	 * // Router is immediately ready to handle requests
-	 * await router.handleRequest(ctx);
-	 * ```
+	 * @example
+	 * // Router with immediate route registration
+	 * const router = new Router();
+	 * router.get('/api/users', handleUsers);
 	 */
 	constructor() {
 		// Initialize all HTTP method tries upfront for better performance

@@ -19,13 +19,13 @@ import { HEADER_NAMES, MIME_TYPES } from "../../../core/string-pool.js";
 /**
  * Injects import map script tag into HTML responses.
  *
- * Detects HTML content type and modifies response body to include
- * import map script tag before closing head tag. Handles various
- * HTML structures gracefully including malformed HTML.
- *
  * @param {import('../../../core/context.js').Context} ctx - Wings context instance
  * @param {string} importMapPath - URL path to import map endpoint
  * @returns {boolean} True if injection was performed, false otherwise
+ *
+ * @example
+ * // Inject import map into HTML response
+ * injectImportMap(ctx, "/modules.json"); // true if injected
  */
 export function injectImportMap(ctx, importMapPath = "/importmap.json") {
 	// Only process HTML responses

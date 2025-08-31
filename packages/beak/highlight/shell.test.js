@@ -590,5 +590,49 @@ EOF`;
 			assert.ok(result.includes('<span class="text-warning">$$</span>'));
 			assert.ok(result.includes('<span class="text-warning">$?</span>'));
 		});
+
+		it("should handle advanced shell operators and syntax (surgical coverage)", () => {
+			// Test special variables that trigger lines 351-352
+			const specialVars = "echo $* $@ $# $! $-";
+			const result1 = highlightShell(specialVars);
+			assert.ok(result1.includes("$*"));
+			assert.ok(result1.includes("$@"));
+			assert.ok(result1.includes("$#"));
+
+			// Test escaped characters in backticks (lines 409-411)
+			const escapedBacktick = 'result=`echo \\"hello\\" world`';
+			const result2 = highlightShell(escapedBacktick);
+			assert.ok(result2.includes("hello"));
+
+			// Test double redirection operators (lines 485-486)
+			const doubleRedirect = "echo hello >> file.txt << EOF";
+			const result3 = highlightShell(doubleRedirect);
+			assert.ok(result3.includes("&gt;&gt;"));
+			assert.ok(result3.includes("&lt;&lt;"));
+
+			// Test file descriptor redirection (lines 530-531)
+			const fdRedirect = "command >& file.txt <& input.txt";
+			const result4 = highlightShell(fdRedirect);
+			assert.ok(result4.includes("&gt;&amp;"));
+			assert.ok(result4.includes("&lt;&amp;"));
+
+			// Test here-string operator (line 533)
+			const hereString = 'command <<< "input string"';
+			const result5 = highlightShell(hereString);
+			assert.ok(result5.includes("&lt;&lt;&lt;"));
+
+			// Surgical coverage for special variables (lines 351-352)
+			const specialVars2 = "echo $? $* $@ $# $$ $! $-";
+			const result6 = highlightShell(specialVars2);
+			assert.ok(result6.includes("$?"));
+			assert.ok(result6.includes("$*"));
+			assert.ok(result6.includes("$@"));
+
+			// Surgical coverage for double redirects same char comparison (lines 485-486)
+			const exactDoubleRedirect = "echo test>>out.txt && cat<<EOF";
+			const result7 = highlightShell(exactDoubleRedirect);
+			assert.ok(result7.includes("&gt;&gt;"));
+			assert.ok(result7.includes("&lt;&lt;"));
+		});
 	});
 });

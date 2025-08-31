@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/npm/l/@raven-js/wings?style=flat-square)](LICENSE)
 [![Node](https://img.shields.io/node/v/@raven-js/wings?style=flat-square)](package.json)
 
-**Zero-dependency isomorphic HTTP router.** Trie-based O(1) matching for serverless, browser, Node.js.
+**Zero-dependency isomorphic HTTP router.** Trie-based route matching for serverless, browser, Node.js.
 
 ```bash
 npm install @raven-js/wings
@@ -75,9 +75,9 @@ Route.GET("/profile", handler, { middleware: [auth] });
 
 ## Performance
 
-- **String pooling** - MIME types, headers, status codes interned
-- **Bit flags** - HTTP method operations via bitwise math
-- **Caching** - parsed bodies, MIME detection, route matching
+- **String pooling** - MIME types, headers, status codes interned for memory efficiency
+- **Bit flags** - HTTP method operations using bitwise operations
+- **Caching** - parsed bodies, MIME detection, route matching for repeated requests
 
 ```javascript
 import {

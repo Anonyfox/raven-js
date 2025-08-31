@@ -7,22 +7,28 @@
  */
 
 /**
- * Package overview route handler for documentation homepage
+ * Package overview route handler for documentation homepage.
  *
- * Wings route handler that processes Package data through the
- * extraction layer and renders the complete HTML page.
- * Follows surgical request-response pattern with zero side effects.
+ * Wings route handler that processes Package data through the extraction layer
+ * and renders the complete HTML page with caching headers.
  */
 
 import { extractPackageOverviewData } from "../data/package-overview.js";
 import { packageOverviewTemplate } from "../templates/package-overview.js";
 
 /**
- * Create package overview route handler
+ * Create package overview route handler with data extraction and HTML rendering.
+ *
  * @param {import('../../extract/models/package.js').Package} packageInstance - Package data
+ * @param {import('../../assets/registry.js').AssetRegistry} [assetRegistry] - Asset registry for path rewriting
  * @returns {Function} Wings route handler function
+ *
+ * @example
+ * // Create homepage route handler
+ * const handler = createPackageOverviewHandler(packageInstance, assetRegistry);
+ * app.get('/', handler);
  */
-export function createPackageOverviewHandler(packageInstance) {
+export function createPackageOverviewHandler(packageInstance, assetRegistry) {
 	/**
 	 * Package overview route handler
 	 * @param {import('@raven-js/wings').Context} ctx - Wings request context
@@ -33,7 +39,10 @@ export function createPackageOverviewHandler(packageInstance) {
 			const data = extractPackageOverviewData(packageInstance);
 
 			// Generate complete HTML page
-			const html = packageOverviewTemplate(/** @type {any} */ (data));
+			const html = packageOverviewTemplate(
+				/** @type {any} */ (data),
+				assetRegistry,
+			);
 
 			// Send HTML response with caching
 			await ctx.html(html);

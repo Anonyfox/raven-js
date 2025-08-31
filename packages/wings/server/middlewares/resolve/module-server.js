@@ -21,14 +21,16 @@ import { join, normalize, resolve } from "node:path";
 /**
  * Serves JavaScript module from the configured source folder.
  *
- * Validates file path for security, checks file existence, and serves
- * content using Wings ctx.js() response helper with proper MIME type.
- *
  * @param {import('../../../core/context.js').Context} ctx - Wings context instance
  * @param {string} filePath - Requested file path relative to source folder
  * @param {string} sourceFolder - Root folder to serve files from
  * @returns {Promise<boolean>} True if file was served, false if not found
  * @throws {Error} For malformed requests or security violations
+ *
+ * @example
+ * // Serve module file with security validation
+ * const served = await serveModule(ctx, "utils/helper.js", "./src");
+ * // true if served, false if not found
  */
 export async function serveModule(ctx, filePath, sourceFolder) {
 	// Validate file path for security

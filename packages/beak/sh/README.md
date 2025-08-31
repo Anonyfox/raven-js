@@ -1,10 +1,22 @@
-# beak/sh
+# Beak Shell
 
 [![Website](https://img.shields.io/badge/ravenjs.dev-000000?style=flat&logo=firefox&logoColor=white)](https://ravenjs.dev)
+[![Documentation](https://img.shields.io/badge/docs-ravenjs.dev%2Fbeak-blue.svg)](https://docs.ravenjs.dev/beak)
+[![Zero Dependencies](https://img.shields.io/badge/Zero-Dependencies-brightgreen.svg)](https://github.com/Anonyfox/ravenjs)
+[![ESM Only](https://img.shields.io/badge/ESM-Only-purple.svg)](https://nodejs.org/api/esm.html)
+[![Node.js 22.5+](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
 
-**Shell command assembly without surprises** - Array joining with transparent whitespace normalization.
+**Shell command assembly with array joining and whitespace normalization.** Transparent flag handling, conditional argument filtering, and template formatting cleanup.
 
-## Install
+## Purpose
+
+Shell command construction requires tedious array joining, conditional flag handling, and whitespace management. Manual string building leads to spacing errors and complex conditional logic. Existing command builders add complexity for simple operations.
+
+Beak Shell eliminates manual concatenation through intelligent template processing. Arrays become space-separated arguments, falsy values filter automatically, and whitespace normalizes consistently. No escaping applied - developer maintains full control over security considerations.
+
+Template caching ensures consistent performance regardless of command complexity.
+
+## Installation
 
 ```bash
 npm install @raven-js/beak
@@ -12,10 +24,12 @@ npm install @raven-js/beak
 
 ## Usage
 
-```js
-import { sh } from "@raven-js/beak";
+Import shell functions and use them as tagged template literals:
 
-// Array flag handling
+```javascript
+import { sh } from "@raven-js/beak/sh";
+
+// Array flag handling with automatic joining
 const flags = ["-la", "--color=always"];
 const files = ["src/", "test/"];
 const cmd = sh`ls ${flags} ${files}`;
@@ -25,121 +39,43 @@ const cmd = sh`ls ${flags} ${files}`;
 const verbose = true;
 const quiet = false;
 const flags = ["-v", verbose && "--debug", quiet && "--quiet"];
-const cmd = sh`npm install ${flags}`;
+const result = sh`npm install ${flags}`;
 // → "npm install -v --debug"
-```
 
-## Functions
-
-### `sh(strings, ...values)`
-
-Minimal shell command builder focused on array-to-arguments conversion and clean formatting.
-
-```js
-const dockerFlags = ["-it", "--rm", "--name", "myapp"];
-const volumes = ["-v", "/host:/container"];
-const cmd = sh`docker run ${dockerFlags} ${volumes} nginx:alpine`;
-// → "docker run -it --rm --name myapp -v /host:/container nginx:alpine"
-```
-
-**What it does:**
-
-- Arrays become space-separated values
-- Filters `null`, `undefined`, `false`, and `""` from arrays
-- Collapses multiple spaces to single space
-- Trims leading/trailing whitespace
-- Template formatting cleanup
-
-**What it doesn't do:**
-
-- Any security escaping (developer's responsibility)
-- Command validation or existence checking
-- Cross-platform shell compatibility
-- Execution or process management
-
-## Value Processing
-
-| Input Type                         | Output                | Notes                     |
-| ---------------------------------- | --------------------- | ------------------------- |
-| Arrays                             | Space-separated       | Falsy values filtered     |
-| Strings                            | Direct pass-through   | No escaping applied       |
-| Numbers                            | String conversion     | `3000` → `"3000"`         |
-| `null`, `undefined`, `false`, `""` | Empty string          | Filtered out              |
-| `true`                             | `"true"`              | Literal string            |
-| Objects                            | `String()` conversion | Uses `.toString()` method |
-
-## Real-World Examples
-
-### Docker Commands
-
-```js
+// Docker command assembly
 const env = ["NODE_ENV=production", "PORT=3000"];
 const mounts = ["-v", "/data:/app/data", "-v", "/logs:/app/logs"];
-const cmd = sh`docker run ${env} ${mounts} -p 3000:3000 myapp:latest`;
+const dockerCmd = sh`docker run ${env} ${mounts} -p 3000:3000 myapp:latest`;
 // → "docker run NODE_ENV=production PORT=3000 -v /data:/app/data -v /logs:/app/logs -p 3000:3000 myapp:latest"
 ```
 
-### Git Operations
+**Value processing:**
 
-```js
-const files = ["src/", "test/", "*.md"];
-const message = "feat: add new functionality";
-const commitCmd = sh`git add ${files} && git commit -m "${message}"`;
-// → `git add src/ test/ *.md && git commit -m "feat: add new functionality"`
-```
+- **Arrays**: Space-separated with recursive flattening
+- **Falsy filtering**: `null`, `undefined`, `false`, `""` become empty
+- **Whitespace cleanup**: Multiple spaces collapse, edges trimmed
+- **No escaping**: Developer responsible for security
 
-### Build Scripts
-
-```js
-const nodeFlags = ["--max-old-space-size=4096", "--enable-source-maps"];
-const production = process.env.NODE_ENV === "production";
-const flags = [production && "--minify", "--bundle"];
-const cmd = sh`node ${nodeFlags} build.js ${flags}`;
-// → "node --max-old-space-size=4096 --enable-source-maps build.js --minify --bundle"
-```
-
-### SSH and Remote Commands
-
-```js
-const sshFlags = ["-o", "StrictHostKeyChecking=no", "-i", keyFile];
-const remoteCmd = "systemctl restart nginx";
-const cmd = sh`ssh ${sshFlags} user@server "${remoteCmd}"`;
-// → `ssh -o StrictHostKeyChecking=no -i /path/to/key user@server "systemctl restart nginx"`
-```
-
-## Security Notice
-
-⚠️ **No escaping is performed.** This is a convenience tool for command assembly, not a security tool.
-
-For shell command security:
-
-- Use dedicated escaping libraries for user input
-- Validate all dynamic values before using
-- Consider using `child_process` with array arguments instead of shell strings
-
-```js
-// ❌ Dangerous with user input
-const userFile = getUserInput(); // Could be "; rm -rf /"
-const bad = sh`cat ${userFile}`;
-
-// ✅ Safe approach
-import { spawn } from "child_process";
-const safe = spawn("cat", [userFile]); // Array arguments are safe
-```
-
-## Performance
-
-- **Template caching:** Identical templates compile once via WeakMap
-- **Whitespace optimization:** Single regex pass for normalization
-- **Fast path:** Static templates (no interpolations) optimized
-- **Memory efficient:** No intermediate string allocations
+⚠️ **Security Notice**: No escaping applied. Validate inputs before use with untrusted data.
 
 ## Requirements
 
-- **Node.js:** 22.5+ (leverages modern JavaScript features)
-- **Import:** ESM only, no CommonJS support
-- **Types:** JSDoc annotations for TypeScript intellisense
+- **Node.js:** 22.5+ (leverages latest platform primitives)
+- **Browsers:** ES2020+ (modern baseline, no legacy compromise)
+- **Dependencies:** Absolutely zero
 
-## License
+## The Raven's Shell
 
-MIT
+Like a raven that efficiently assembles complex structures from scattered materials, Beak Shell transforms arrays and conditions into clean command strings. Automatic filtering and normalization without sacrificing developer control.
+
+## 🦅 Support RavenJS Development
+
+If you find RavenJS helpful, consider supporting its development:
+
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor%20on%20GitHub-%23EA4AAA?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sponsors/Anonyfox)
+
+Your sponsorship helps keep RavenJS **zero-dependency**, **modern**, and **developer-friendly**.
+
+---
+
+**Built with ❤️ by [Anonyfox](https://anonyfox.com)**

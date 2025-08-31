@@ -16,12 +16,25 @@
 import { html } from "@raven-js/beak";
 
 /**
- * Generate module navigation sidebar
+ * Generate module navigation sidebar with list group styling and active state highlighting.
+ *
  * @param {Object} options - Navigation configuration
  * @param {Array<Object>} options.modules - Module list
  * @param {string} [options.currentModule] - Current module name
  * @param {string} [options.title] - Sidebar title
  * @returns {string} Module navigation HTML
+ *
+ * @example
+ * // Basic module navigation
+ * moduleNavigation({ modules: moduleList });
+ *
+ * @example
+ * // With current module highlighted
+ * moduleNavigation({
+ *   modules: moduleList,
+ *   currentModule: 'utils',
+ *   title: 'Package Modules'
+ * });
  */
 export function moduleNavigation({
 	modules,

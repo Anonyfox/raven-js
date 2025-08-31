@@ -14,8 +14,8 @@ describe("JSDocThrowsTag core functionality", () => {
 	test("should inherit from JSDocTagBase", () => {
 		const tag = new JSDocThrowsTag("{Error} When validation fails");
 
-		strictEqual(tag.getType(), "throws");
-		strictEqual(tag.getRawContent(), "{Error} When validation fails");
+		strictEqual(tag.tagType, "throws");
+		strictEqual(tag.rawContent, "{Error} When validation fails");
 		strictEqual(tag.isValid(), true);
 	});
 

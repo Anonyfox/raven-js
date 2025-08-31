@@ -7,28 +7,27 @@
  */
 
 /**
- * @file Documentation module container - surgical entity organization
+ * @file Module container for organizing JavaScript entities within documentation scope.
  *
- * Ravens group entities by module boundaries with predatory precision.
- * Organizes JavaScript entities within module context for documentation
- * renderers. Provides computed groupings and filtering for HTML docs,
- * JSON APIs, and SSG generation. Zero external dependencies.
+ * Groups entities by module boundaries with computed groupings and filtering
+ * for HTML docs, JSON APIs, and SSG generation.
  */
 
 /**
- * Documentation module container
+ * Module container organizing entities for documentation generation.
  *
- * Organizes entities within a module boundary for documentation generation.
- * Provides renderer-optimized computed properties for entity grouping,
- * filtering, and organization. Maintains module identity through import path
- * while providing flexible entity access patterns.
+ * Provides computed entity grouping, filtering, and organization through import path
+ * identity. Computed views without data duplication - filtering and grouping on demand.
  *
- * **Design Philosophy:** Module as organizational unit that groups related
- * entities for documentation purposes. Provides computed views of entities
- * without duplicating data - filtering and grouping on demand.
+ * @example
+ * // Basic module creation
+ * const module = new Module('package/utils', false, readme, entities);
+ * console.log(module.getFunctions(), module.getClasses());
  *
- * **Zero Dependencies:** Pure V8 JavaScript, no external packages
- * **Renderer Agnostic:** Data organization only, no output generation
+ * @example
+ * // Module statistics and grouping
+ * console.log(module.stats.totalEntities);
+ * console.log(module.hasPrivateEntities, module.hasPublicEntities);
  */
 export class Module {
 	/**

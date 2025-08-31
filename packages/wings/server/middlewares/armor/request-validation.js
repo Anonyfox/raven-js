@@ -21,14 +21,12 @@
 
 /**
  * Production-ready validation limits balancing security with usability.
- * Sized for typical web applications while preventing common DoS vectors.
- *
- * **Path Length**: 2KB handles complex SPAs with deep routing
- * **Query Params**: 100 params accommodates complex forms and analytics
- * **Header Size**: 8KB total allows for auth tokens and modern header usage
- * **Body Size**: 1MB suitable for form uploads, adjust for file uploads
  *
  * @type {import('./config.js').RequestValidationConfig}
+ *
+ * @example
+ * // Use default validation limits
+ * const limits = { ...DEFAULT_VALIDATION, maxBodySize: 5 * 1024 * 1024 }; // 5MB
  */
 export const DEFAULT_VALIDATION = {
 	enabled: true,
@@ -42,17 +40,15 @@ export const DEFAULT_VALIDATION = {
 
 /**
  * Validate request structure against size and count limits to prevent DoS attacks.
- * Performs comprehensive validation across path, parameters, headers, and body.
- *
- * **Validation Order**: Path → Query params → Headers → Body (ordered by attack frequency)
- * **Early Exit**: Continues validation even after errors to provide complete feedback
- * **Error Collection**: Returns all validation failures for comprehensive logging
- * **Performance**: O(n) scan of request components, optimized for typical requests
- * **Memory Safety**: No allocation for valid requests, minimal allocation for errors
  *
  * @param {import('../../../core/context.js').Context} ctx - Request context with parsed data
  * @param {import('./config.js').RequestValidationConfig} config - Validation limits configuration
  * @returns {string[]} Array of validation error descriptions (empty if valid)
+ *
+ * @example
+ * // Validate request against size limits
+ * const errors = validateRequest(ctx, DEFAULT_VALIDATION);
+ * if (errors.length > 0) console.log('Validation failed:', errors);
  */
 export function validateRequest(ctx, config) {
 	/** @type {string[]} */

@@ -1,8 +1,20 @@
-# JavaScript Template Processor
+# Beak JavaScript
 
-JavaScript template literal processor with value filtering and array flattening.
+[![Website](https://img.shields.io/badge/ravenjs.dev-000000?style=flat&logo=firefox&logoColor=white)](https://ravenjs.dev)
+[![Documentation](https://img.shields.io/badge/docs-ravenjs.dev%2Fbeak-blue.svg)](https://docs.ravenjs.dev/beak)
+[![Zero Dependencies](https://img.shields.io/badge/Zero-Dependencies-brightgreen.svg)](https://github.com/Anonyfox/ravenjs)
+[![ESM Only](https://img.shields.io/badge/ESM-Only-purple.svg)](https://nodejs.org/api/esm.html)
+[![Node.js 22.5+](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
 
-## Install
+**JavaScript template literals with value filtering and script tag variants.** Array flattening, falsy value filtering, and automatic script wrapper generation.
+
+## Purpose
+
+JavaScript code generation requires consistent value processing, array handling, and proper script tag formatting. Manual string concatenation leads to inconsistent spacing and type coercion issues. Script tags need proper attributes for loading behavior.
+
+Beak JavaScript provides intelligent value processing with automatic array flattening and falsy value filtering. Script tag variants handle defer, async, and standard loading patterns consistently. Template processing ensures reliable JavaScript output without manual formatting concerns.
+
+## Installation
 
 ```bash
 npm install @raven-js/beak
@@ -10,96 +22,63 @@ npm install @raven-js/beak
 
 ## Usage
 
-```javascript
-import { js, script, scriptDefer, scriptAsync } from "@raven-js/beak";
-
-// Basic template processing
-js`const ${varName} = ${count};`; // "const userCount = 42;"
-js`${[1, 2, 3]}`; // "123" (arrays flatten)
-js`${null}valid${false}`; // "valid" (falsy filtered except 0)
-
-// Script tag wrappers
-script`console.log(${message});`;
-// '<script type="text/javascript">console.log("hello");</script>'
-
-scriptDefer`document.getElementById('${id}').focus();`;
-// '<script type="text/javascript" defer>...</script>'
-
-scriptAsync`fetch('/api', { data: ${payload} });`;
-// '<script type="text/javascript" async>...</script>'
-```
-
-## Value Filtering
-
-- **Included**: `0`, truthy values
-- **Excluded**: `null`, `undefined`, `false`, empty string `""`
+Import JavaScript functions and use them as tagged template literals:
 
 ```javascript
-js`${null}${0}${false}${true}${""}`; // "0true"
+import { js, script, scriptDefer, scriptAsync } from "@raven-js/beak/js";
+
+// Basic JavaScript template processing
+const code = js`
+  const ${varName} = ${count};
+  const items = [${values}];
+`;
+// → "const userCount = 42; const items = [1,2,3];"
+
+// Script tag wrappers with automatic type attributes
+const embedded = script`
+  console.log(${message});
+  document.addEventListener('load', ${handler});
+`;
+// → '<script type="text/javascript">console.log("hello"); document.addEventListener('load', handleLoad);</script>'
+
+// Deferred script loading
+const deferred = scriptDefer`
+  document.getElementById('${elementId}').focus();
+`;
+// → '<script type="text/javascript" defer>document.getElementById("app").focus();</script>'
+
+// Async script loading
+const async = scriptAsync`
+  fetch('/api', { data: ${JSON.stringify(payload)} });
+`;
+// → '<script type="text/javascript" async>fetch('/api', { data: {"key":"value"} });</script>'
 ```
 
-## Array Handling
+**Value processing features:**
 
-Arrays flatten using `join("")`:
+- **Arrays**: Automatic flattening with recursive processing
+- **Falsy filtering**: `null`, `undefined`, `false`, `""` become empty (except `0`)
+- **Whitespace**: Leading/trailing whitespace trimmed automatically
+- **Type safety**: Consistent string conversion for all value types
 
-```javascript
-js`${["a", "b", "c"]}`; // "abc"
-js`${[1, [2, 3], 4]}`; // "12,34"
-js`${[]}`; // ""
-```
+## Requirements
 
-## Edge Cases
+- **Node.js:** 22.5+ (leverages latest platform primitives)
+- **Browsers:** ES2020+ (modern baseline, no legacy compromise)
+- **Dependencies:** Absolutely zero
 
-**Objects stringify as `[object Object]`:**
+## The Raven's JavaScript
 
-```javascript
-js`${obj}`; // "[object Object]"
-```
+Like a raven that methodically processes complex materials into usable forms, Beak JavaScript transforms diverse value types into consistent code output. Automatic filtering and formatting without sacrificing flexibility or control.
 
-**Functions include full source:**
+## 🦅 Support RavenJS Development
 
-```javascript
-js`${() => "test"}`; // "() => 'test'"
-```
+If you find RavenJS helpful, consider supporting its development:
 
-**Whitespace trimming:**
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor%20on%20GitHub-%23EA4AAA?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sponsors/Anonyfox)
 
-```javascript
-js`  content  `; // "content"
-js`content`; // "content"
-```
+Your sponsorship helps keep RavenJS **zero-dependency**, **modern**, and **developer-friendly**.
 
-## Script Execution Context
+---
 
-- `script`: Executes immediately when parsed
-- `scriptDefer`: Executes after HTML parsing completes
-- `scriptAsync`: Executes without blocking HTML parsing
-
-## API
-
-### `js(strings, ...values)`
-
-- `strings` {TemplateStringsArray} - Static template parts
-- `values` {...any} - Values to interpolate
-- Returns {string} - Processed JavaScript code
-
-### `script(strings, ...values)`
-
-- Returns {string} - JavaScript wrapped in `<script type="text/javascript">` tags
-
-### `scriptDefer(strings, ...values)`
-
-- Returns {string} - JavaScript wrapped in `<script type="text/javascript" defer>` tags
-
-### `scriptAsync(strings, ...values)`
-
-- Returns {string} - JavaScript wrapped in `<script type="text/javascript" async>` tags
-
-## Integration Notes
-
-All script functions use the same value filtering and array flattening as `js()`.
-
-For HTML injection, ensure script tag placement matches execution requirements:
-
-- `defer` scripts execute in document order after parsing
-- `async` scripts execute when downloaded, potentially out of order
+**Built with ❤️ by [Anonyfox](https://anonyfox.com)**

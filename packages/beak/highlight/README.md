@@ -1,133 +1,119 @@
 # Beak Highlight
 
-**Zero-dependency syntax highlighting for generated code documentation.** Transform raw source code into semantically-colored HTML using Bootstrap classes for consistent theming. Built for documentation generators that need fast, reliable syntax highlighting without dependency hell or custom CSS maintenance. Returns clean HTML spans with Bootstrap color classes that inherit from user themes automatically.
+[![Website](https://img.shields.io/badge/ravenjs.dev-000000?style=flat&logo=firefox&logoColor=white)](https://ravenjs.dev)
+[![Documentation](https://img.shields.io/badge/docs-ravenjs.dev%2Fbeak-blue.svg)](https://docs.ravenjs.dev/beak)
+[![Zero Dependencies](https://img.shields.io/badge/Zero-Dependencies-brightgreen.svg)](https://github.com/Anonyfox/ravenjs)
+[![ESM Only](https://img.shields.io/badge/ESM-Only-purple.svg)](https://nodejs.org/api/esm.html)
+[![Node.js 22.5+](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
 
-**Supported languages:** HTML, CSS, JavaScript, SQL, Shell/Bash, XML, and JSON with full Bootstrap semantic mapping.
+**Zero-dependency syntax highlighting for code documentation generation.** Bootstrap-semantic HTML output with consistent color mapping across JavaScript, HTML, CSS, SQL, XML, JSON, and Shell.
 
-## Color Semantic Mapping
+## Purpose
 
-Bootstrap class assignments follow semantic consistency across all supported languages:
+Syntax highlighting for documentation requires consistent theming, reliable parsing, and minimal dependencies. Existing highlighters add build complexity, require custom CSS maintenance, or introduce security vulnerabilities through complex parsing logic.
 
-| Token Type                | Bootstrap Class  | Semantic Meaning         | Example                                |
-| ------------------------- | ---------------- | ------------------------ | -------------------------------------- |
-| **Keywords/Reserved**     | `text-primary`   | Language control flow    | `function`, `if`, `SELECT`, `<div>`    |
-| **Strings/Literals**      | `text-success`   | Data literals            | `"hello"`, `'world'`, `42`             |
-| **Functions/Built-ins**   | `text-info`      | Callable identifiers     | `console.log`, `getElementById`        |
-| **Numbers/Constants**     | `text-warning`   | Numeric/boolean literals | `42`, `true`, `false`, `NULL`          |
-| **Comments**              | `text-muted`     | Documentation/notes      | `// comment`, `/* block */`, `# shell` |
-| **Operators/Punctuation** | `text-secondary` | Syntax structure         | `{}`, `()`, `;`, `+`, `-`, `=`         |
-| **Identifiers/Variables** | `text-body`      | User-defined names       | `myVar`, `userName`, `customFunction`  |
+Beak Highlight provides semantic HTML output using Bootstrap color classes that inherit from user themes automatically. Fast token-based parsing without AST construction eliminates security risks while maintaining parsing accuracy. Bootstrap semantic mapping ensures consistent color meaning across all supported languages.
 
-## Language Implementations
+Clean HTML spans with semantic class names integrate seamlessly with existing documentation toolchains without custom CSS requirements.
 
-### JavaScript (`js.js`)
+## Installation
 
-- **Keywords:** `function`, `const`, `let`, `var`, `if`, `else`, `for`, `while`, `return`, `class`, `import`, `export`, `async`, `await`, `try`, `catch`, `finally`
-- **Built-ins:** `console`, `Object`, `Array`, `Promise`, `document`, `window`, `JSON`
-- **Literals:** String (`"..."`, `'...'`, `` `...` ``), numbers, booleans (`true`, `false`), `null`, `undefined`
-- **Edge cases:** Template literals with interpolation, regex literals, arrow functions, destructuring
-
-### HTML (`html.js`)
-
-- **Keywords:** Tag names (`<div>`, `<span>`, `<html>`, `<head>`, `<body>`)
-- **Built-ins:** Attribute names (`class`, `id`, `src`, `href`, `data-*`)
-- **Literals:** Attribute values, text content between tags
-- **Edge cases:** Self-closing tags, comments (`<!-- -->`), DOCTYPE declarations
-
-### CSS (`css.js`)
-
-- **Keywords:** Selectors (`.class`, `#id`, `element`, `:pseudo`, `@media`)
-- **Built-ins:** Property names (`color`, `background`, `margin`, `padding`, `display`)
-- **Literals:** Property values (`red`, `#fff`, `1px`, `solid`, `center`)
-- **Edge cases:** CSS custom properties (`--variable`), media queries, keyframes
-
-### SQL (`sql.js`)
-
-- **Keywords:** `SELECT`, `FROM`, `WHERE`, `INSERT`, `UPDATE`, `DELETE`, `CREATE`, `DROP`, `ALTER`, `JOIN`, `GROUP BY`, `ORDER BY`
-- **Built-ins:** Data types (`VARCHAR`, `INT`, `BOOLEAN`), functions (`COUNT`, `SUM`, `MAX`)
-- **Literals:** String values, numeric values, `NULL`, `TRUE`, `FALSE`
-- **Edge cases:** Quoted identifiers, nested queries, comments (`--`, `/* */`)
-
-### Shell (`shell.js`)
-
-- **Keywords:** Commands (`ls`, `cd`, `mkdir`, `rm`, `cp`, `mv`, `grep`, `find`, `npm`, `node`)
-- **Built-ins:** Flags (`-l`, `-a`, `--help`, `--version`), operators (`|`, `>`, `>>`, `&&`, `||`)
-- **Literals:** File paths, quoted strings, environment variables (`$VAR`, `${VAR}`)
-- **Edge cases:** Command substitution (`` `command` ``, `$(command)`), heredoc
-
-### XML (`xml.js`)
-
-- **Keywords:** Tag names (`<root>`, `<element>`, `<ns:tag>`)
-- **Built-ins:** Attribute names (`id`, `class`, `xmlns`, `type`, custom attributes)
-- **Literals:** Attribute values (`"value"`, `'value'`), text content, CDATA sections
-- **Constants:** Processing instructions (`<?xml?>`, `<?xml-stylesheet?>`), entities (`&lt;`, `&#65;`, `&custom;`)
-- **Edge cases:** Namespaces, self-closing tags, mixed content, malformed XML
-
-### JSON (`json.js`)
-
-- **Keywords:** Object property keys (`"name"`, `"id"`, `"config"`)
-- **Literals:** String values (`"hello world"`, `"path/to/file"`), arrays, objects
-- **Constants:** Numbers (`42`, `3.14`, `1e10`), booleans (`true`, `false`), `null`
-- **Edge cases:** Escaped strings, scientific notation, JSON5/JSONC comments (`//`, `/* */`)
-
-## CSS Backfill Support
-
-For environments without Bootstrap, the module provides complete CSS definitions replicating Bootstrap's default color scheme:
-
-### Text Colors
-
-```css
-.text-primary {
-  color: #0d6efd;
-}
-.text-secondary {
-  color: #6c757d;
-}
-.text-success {
-  color: #198754;
-}
-.text-info {
-  color: #0dcaf0;
-}
-.text-warning {
-  color: #ffc107;
-}
-.text-danger {
-  color: #dc3545;
-}
-.text-muted {
-  color: #6c757d;
-}
-.text-body {
-  color: #212529;
-}
+```bash
+npm install @raven-js/beak
 ```
 
-### Code Widget Styling
+## Usage
 
-```css
-.bg-light {
-  background-color: #f8f9fa;
+Import language-specific highlighters and process source code:
+
+```javascript
+import {
+  highlightJS,
+  highlightHTML,
+  highlightCSS,
+  highlightSQL,
+} from "@raven-js/beak/highlight";
+
+// JavaScript syntax highlighting
+const jsCode = `
+function greet(name) {
+  console.log(\`Hello, \${name}!\`);
+  return true;
 }
-.bg-dark {
-  background-color: #212529;
+`;
+const highlighted = highlightJS(jsCode);
+// → '<span class="text-primary">function</span> <span class="text-body">greet</span>(<span class="text-body">name</span>) { ... }'
+
+// CSS highlighting with semantic color mapping
+const cssCode = `
+.button {
+  background-color: #007bff;
+  padding: 10px 20px;
 }
-.border {
-  border: 1px solid #dee2e6;
-}
-.rounded {
-  border-radius: 0.375rem;
-}
-.p-3 {
-  padding: 1rem;
-}
-.font-monospace {
-  font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-}
+`;
+const styledCSS = highlightCSS(cssCode);
+
+// SQL highlighting with keyword detection
+const sqlCode = `
+SELECT u.name, u.email FROM users u
+WHERE u.active = true
+ORDER BY u.created_at DESC;
+`;
+const styledSQL = highlightSQL(sqlCode);
+
+// HTML highlighting with attribute processing
+const htmlCode = `
+<div class="container" id="main">
+  <h1>Welcome</h1>
+</div>
+`;
+const styledHTML = highlightHTML(htmlCode);
 ```
 
-Export function `getHighlightCSS()` returns complete CSS string for inline styles or style injection when Bootstrap unavailable.
+**Bootstrap semantic mapping:**
+
+| Token Type | Bootstrap Class  | Purpose               | Examples                        |
+| ---------- | ---------------- | --------------------- | ------------------------------- |
+| Keywords   | `text-primary`   | Language control flow | `function`, `SELECT`, `<div>`   |
+| Strings    | `text-success`   | Data literals         | `"hello"`, `'world'`            |
+| Functions  | `text-info`      | Callable identifiers  | `console.log`, `getElementById` |
+| Numbers    | `text-warning`   | Numeric literals      | `42`, `true`, `false`           |
+| Comments   | `text-muted`     | Documentation         | `// comment`, `/* block */`     |
+| Operators  | `text-secondary` | Syntax structure      | `{}`, `()`, `=`, `+`            |
+| Variables  | `text-body`      | User-defined names    | `myVar`, `userName`             |
+
+## Language Support
+
+**Comprehensive coverage for web technologies:**
+
+- **JavaScript**: ES2020+ syntax, template literals, arrow functions, async/await
+- **HTML**: Elements, attributes, entities, DOCTYPE declarations
+- **CSS**: Selectors, properties, values, at-rules, media queries
+- **SQL**: DML/DDL keywords, functions, operators, string literals
+- **XML**: Elements, attributes, CDATA sections, processing instructions
+- **JSON**: Objects, arrays, primitives, proper value detection
+- **Shell**: Commands, flags, variables, pipes, redirections
+
+Each language implementation optimized for documentation use cases with semantic consistency.
+
+## Requirements
+
+- **Node.js:** 22.5+ (leverages latest platform primitives)
+- **Browsers:** ES2020+ (modern baseline, no legacy compromise)
+- **Dependencies:** Absolutely zero
+
+## The Raven's Highlight
+
+Like a raven that identifies and categorizes distinct elements within complex environments, Beak Highlight recognizes code structures with precision. Semantic classification without the overhead of complex parsing engines.
+
+## 🦅 Support RavenJS Development
+
+If you find RavenJS helpful, consider supporting its development:
+
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor%20on%20GitHub-%23EA4AAA?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sponsors/Anonyfox)
+
+Your sponsorship helps keep RavenJS **zero-dependency**, **modern**, and **developer-friendly**.
 
 ---
 
-**Mandate: 100% test coverage (lines + branches + functions).** Every tokenization pattern, edge case, and Bootstrap class mapping must be verified through comprehensive test suites. Code must be minimal, lean, and performant—targeting modern JavaScript environments with zero legacy compromises. Perfect ESM tree-shakability ensures users import only required language highlighters without dead code. Each language implementation runs independently with no shared state or cross-dependencies.
+**Built with ❤️ by [Anonyfox](https://anonyfox.com)**

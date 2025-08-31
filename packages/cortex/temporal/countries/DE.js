@@ -7,37 +7,16 @@
  */
 
 /**
- * @file German holiday definitions - institutional memory of German bureaucracy
+ * @file German holiday definitions with federal and state-specific variations.
  *
- * Encodes the complex federal holiday system of Germany's 16 Länder (states).
- * Each holiday preserved as a Holiday class instance with precise calculation logic.
- *
- * GERMAN FEDERAL COMPLEXITY:
- * - 9 federal holidays observed nationwide
- * - 16 states with different regional holiday patterns
- * - Catholic vs Protestant denominational differences
- * - East/West reunification historical artifacts
- *
- * Ravens remember: bureaucratic patterns that outlive governments.
+ * Encodes Germany's complex federal holiday system across 16 Länder with
+ * Catholic/Protestant denominational differences and reunification patterns.
  */
 
 import { HolidayDefinition } from "../holiday-definition.js";
 
 /**
- * Calculate Buß- und Bettag (Day of Prayer and Repentance).
- * Falls on the Wednesday before November 23.
- * Only observed as work-free holiday in Sachsen (Saxony).
- *
- * ALGORITHM:
- * 1. Find November 23 of the given year
- * 2. Determine its day of week
- * 3. Calculate the Wednesday before (may be in previous week)
- *
- * INSTITUTIONAL MEMORY:
- * This holiday was abolished as a federal holiday in 1995 to finance
- * long-term care insurance, but Saxony chose to maintain it as a state holiday.
- * A perfect example of political compromise encoded as algorithmic complexity.
- *
+ * Calculate Buß- und Bettag (Day of Prayer and Repentance) as Wednesday before November 23.
  * @param {number} year - Year to calculate for
  * @returns {Date} Date of Buß- und Bettag
  */

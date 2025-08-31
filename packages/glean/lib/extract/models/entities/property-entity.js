@@ -1,9 +1,9 @@
 /**
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
- * @see https://github.com/Anonyfox/ravenjs
- * @see https://ravenjs.dev
- * @see https://anonyfox.com
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
  */
 
 /**

@@ -9,28 +9,12 @@
 /**
  * @file Colored message output functions for terminal applications.
  *
- * **Purpose**: Display semantic messages with colors and symbols.
- * Pure functions using ANSI escape codes for cross-platform color support.
- *
- * **Message Types**:
- * - Plain text output (stdout)
- * - Success messages (green + ✅)
- * - Error messages (red + ❌, stderr)
- * - Warning messages (yellow + ⚠️)
- * - Info messages (blue + ℹ️)
- *
- * **Performance**: Synchronous stdout/stderr writes, minimal overhead.
- * Uses platform-native ANSI codes, no external dependencies.
- *
- * **Color Support**: Works on most modern terminals. Graceful fallback
- * to text-only on unsupported terminals (symbols remain visible).
+ * Provides semantic message functions with ANSI colors and Unicode symbols.
+ * Includes plain text, success, error, warning, and info output functions.
  */
 
 /**
  * ANSI color codes and reset sequences.
- *
- * **Standard Colors**: Basic 16-color palette for maximum compatibility.
- * **Formatting**: Bright/dim modifiers, reset sequence for cleanup.
  *
  * @type {{
  *   reset: string,
@@ -58,9 +42,6 @@ const colors = {
 /**
  * Unicode symbols for semantic message types.
  *
- * **Cross-Platform**: UTF-8 emoji symbols with universal support.
- * **Visual Distinction**: Clear semantic meaning at a glance.
- *
  * @type {{
  *   success: string,
  *   error: string,
@@ -78,11 +59,13 @@ const symbols = {
 /**
  * Output plain text to stdout without formatting.
  *
- * **Base Function**: Foundation for all other output functions.
- * **Behavior**: Direct stdout write with newline appended.
- *
  * @param {string} message - Text to output
  * @throws {TypeError} Message parameter must be string
+ *
+ * @example
+ * // Basic text output
+ * print('Hello, world!');
+ * print('Processing complete.');
  */
 export function print(message) {
 	if (typeof message !== "string") {
@@ -94,11 +77,13 @@ export function print(message) {
 /**
  * Output success message with green color and checkmark symbol.
  *
- * **Format**: ✅ {message} in green
- * **Target**: stdout
- *
  * @param {string} message - Success message text
  * @throws {TypeError} Message parameter must be string
+ *
+ * @example
+ * // Success notifications
+ * success('Task completed successfully!');
+ * success('All tests passed!');
  */
 export function success(message) {
 	if (typeof message !== "string") {
@@ -109,13 +94,15 @@ export function success(message) {
 }
 
 /**
- * Output error message with red color and X symbol.
- *
- * **Format**: ❌ {message} in red
- * **Target**: stderr (proper error stream)
+ * Output error message with red color and X symbol to stderr.
  *
  * @param {string} message - Error message text
  * @throws {TypeError} Message parameter must be string
+ *
+ * @example
+ * // Error notifications
+ * error('Connection failed!');
+ * error('Invalid configuration detected.');
  */
 export function error(message) {
 	if (typeof message !== "string") {
@@ -128,11 +115,13 @@ export function error(message) {
 /**
  * Output warning message with yellow color and warning symbol.
  *
- * **Format**: ⚠️ {message} in yellow
- * **Target**: stdout
- *
  * @param {string} message - Warning message text
  * @throws {TypeError} Message parameter must be string
+ *
+ * @example
+ * // Warning notifications
+ * warning('Deprecated feature in use.');
+ * warning('Resource limit approaching.');
  */
 export function warning(message) {
 	if (typeof message !== "string") {
@@ -145,11 +134,13 @@ export function warning(message) {
 /**
  * Output info message with blue color and info symbol.
  *
- * **Format**: ℹ️ {message} in blue
- * **Target**: stdout
- *
  * @param {string} message - Info message text
  * @throws {TypeError} Message parameter must be string
+ *
+ * @example
+ * // Information notifications
+ * info('Processing 100 files...');
+ * info('Server started on port 3000.');
  */
 export function info(message) {
 	if (typeof message !== "string") {

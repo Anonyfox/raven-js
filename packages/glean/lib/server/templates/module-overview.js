@@ -27,6 +27,19 @@ import {
 import { baseTemplate } from "./base.js";
 
 /**
+ * Apply asset path rewriting to HTML content if asset registry is available
+ * @param {string} html - HTML content to process
+ * @param {import('../../assets/registry.js').AssetRegistry} [assetRegistry] - Asset registry
+ * @returns {string} HTML with rewritten asset paths
+ */
+function applyAssetPathRewriting(html, assetRegistry) {
+	if (!assetRegistry || typeof html !== "string") {
+		return html;
+	}
+	return assetRegistry.rewriteImagePaths(html);
+}
+
+/**
  * Properly pluralize entity type names
  * @param {string} type - Entity type
  * @param {number} count - Entity count
@@ -68,17 +81,31 @@ function getTypeVariant(entityType) {
 }
 
 /**
- * Generate module overview HTML page
- * @param {Object} data - Module overview data from extractor
+ * Generate module overview HTML page with entity listings and module documentation.
+ *
+ * @param {any} data - Module overview data from extractor
+ * @param {any} assetRegistry - Asset registry for path rewriting
  * @returns {string} Complete HTML page
+ *
+ * @example
+ * // Basic module overview
+ * moduleOverviewTemplate({
+ *   module: { name: 'utils', fullName: 'my-package/utils' },
+ *   organizedEntities: { function: [...] },
+ *   stats: { totalEntities: 5 },
+ *   packageName: 'my-package'
+ * });
  */
-export function moduleOverviewTemplate(data) {
+export function moduleOverviewTemplate(data, assetRegistry) {
 	const { module, organizedEntities, stats, packageName, hasEntities } =
 		/** @type {any} */ (data);
 
 	// Process README content through beak markdown processor and apply syntax highlighting
 	const readmeHTML = module.hasReadme
-		? applySyntaxHighlighting(markdownToHTML(module.readme))
+		? applyAssetPathRewriting(
+				applySyntaxHighlighting(markdownToHTML(module.readme)),
+				assetRegistry,
+			)
 		: "";
 
 	// Generate breadcrumbs

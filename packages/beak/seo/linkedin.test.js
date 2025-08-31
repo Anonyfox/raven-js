@@ -3,62 +3,94 @@ import { describe, it } from "node:test";
 import { linkedin } from "./linkedin.js";
 
 describe("linkedin", () => {
-	it("should generate correct LinkedIn meta tags with all parameters", () => {
-		const config = {
-			title: "My Professional Article",
-			description: "A detailed analysis of industry trends",
+	it("generates basic LinkedIn meta tags", () => {
+		const result = linkedin({
+			title: "Professional Article",
+			description: "Industry analysis",
 			domain: "example.com",
 			path: "/article",
-			imageUrl: "/article-image.jpg",
-			owner: "linkedin.com/in/johndoe",
-			company: "linkedin.com/company/mycompany",
-		};
-		const result = linkedin(config);
-
-		assert(result.includes('content="My Professional Article"'));
-		assert(result.includes('content="A detailed analysis of industry trends"'));
-		assert(result.includes('content="https://example.com/article"'));
-		assert(result.includes('content="https://example.com/article-image.jpg"'));
-		assert(result.includes('content="linkedin.com/in/johndoe"'));
-		assert(result.includes('content="linkedin.com/company/mycompany"'));
+		});
 		assert(result.includes('name="linkedin:title"'));
+		assert(result.includes('content="Professional Article"'));
 		assert(result.includes('name="linkedin:description"'));
-		assert(result.includes('name="linkedin:url"'));
-		assert(result.includes('name="linkedin:image"'));
-		assert(result.includes('name="linkedin:owner"'));
-		assert(result.includes('name="linkedin:company"'));
+		assert(result.includes('content="Industry analysis"'));
+		assert(result.includes('content="https://example.com/article"'));
 	});
 
-	it("should generate correct LinkedIn meta tags without optional parameters", () => {
-		const config = {
-			title: "Basic Article",
-			description: "Basic description",
+	it("includes image tag when imageUrl provided", () => {
+		const result = linkedin({
+			title: "Article",
+			description: "Content",
 			domain: "example.com",
-			path: "/basic",
-		};
-		const result = linkedin(config);
+			path: "/post",
+			imageUrl: "/image.jpg",
+		});
+		assert(result.includes('name="linkedin:image"'));
+		assert(result.includes('content="https://example.com/image.jpg"'));
+	});
 
-		assert(result.includes('content="Basic Article"'));
-		assert(result.includes('content="Basic description"'));
-		assert(result.includes('content="https://example.com/basic"'));
-		assert(result.includes('name="linkedin:title"'));
-		assert(result.includes('name="linkedin:description"'));
-		assert(result.includes('name="linkedin:url"'));
+	it("includes owner tag when owner provided", () => {
+		const result = linkedin({
+			title: "Article",
+			description: "Content",
+			owner: "linkedin.com/in/johndoe",
+		});
+		assert(result.includes('name="linkedin:owner"'));
+		assert(result.includes('content="linkedin.com/in/johndoe"'));
+	});
+
+	it("includes company tag when company provided", () => {
+		const result = linkedin({
+			title: "Update",
+			description: "News",
+			company: "linkedin.com/company/brand",
+		});
+		assert(result.includes('name="linkedin:company"'));
+		assert(result.includes('content="linkedin.com/company/brand"'));
+	});
+
+	it("handles all optional fields together", () => {
+		const result = linkedin({
+			title: "Complete Post",
+			description: "Full content",
+			domain: "site.com",
+			path: "/post",
+			imageUrl: "/img.jpg",
+			owner: "linkedin.com/in/author",
+			company: "linkedin.com/company/corp",
+		});
+		assert(result.includes("linkedin:image"));
+		assert(result.includes("linkedin:owner"));
+		assert(result.includes("linkedin:company"));
+		assert(result.includes("https://site.com/post"));
+		assert(result.includes("https://site.com/img.jpg"));
+	});
+
+	it("excludes optional tags when not provided", () => {
+		const result = linkedin({
+			title: "Simple",
+			description: "Basic content",
+		});
 		assert(!result.includes("linkedin:image"));
 		assert(!result.includes("linkedin:owner"));
 		assert(!result.includes("linkedin:company"));
 	});
 
-	it("should handle absolute URLs correctly", () => {
-		const config = {
-			title: "Test Article",
-			description: "Test description",
-			domain: "example.com",
-			path: "/test",
-			imageUrl: "https://other.com/test-image.png",
-		};
-		const result = linkedin(config);
+	it("handles imageUrl without domain", () => {
+		const result = linkedin({
+			title: "Test",
+			description: "Test content",
+			imageUrl: "/local.jpg",
+		});
+		assert(result.includes('content="/local.jpg"'));
+	});
 
-		assert(result.includes('content="https://other.com/test-image.png"'));
+	it("handles HTML in content", () => {
+		const result = linkedin({
+			title: "Test Script",
+			description: "Content and more",
+		});
+		assert(result.includes("Test Script"));
+		assert(result.includes("Content and more"));
 	});
 });

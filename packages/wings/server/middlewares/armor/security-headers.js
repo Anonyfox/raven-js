@@ -21,14 +21,12 @@
 
 /**
  * Restrictive CSP directives providing strong baseline security.
- * Designed to work with most applications while blocking common attack vectors.
- *
- * **Philosophy**: Deny by default, explicitly allow trusted sources
- * **Inline CSS**: Allowed via 'unsafe-inline' for styling compatibility
- * **Images**: Supports data: URIs and HTTPS sources for modern applications
- * **Scripts**: Self-only policy prevents XSS via external script injection
  *
  * @type {Record<string, string[]>}
+ *
+ * @example
+ * // Use default CSP directives
+ * const csp = formatCSP(DEFAULT_CSP_DIRECTIVES);
  */
 export const DEFAULT_CSP_DIRECTIVES = {
 	"default-src": ["'self'"],
@@ -45,14 +43,12 @@ export const DEFAULT_CSP_DIRECTIVES = {
 
 /**
  * Enterprise-grade security headers optimized for production deployments.
- * Balanced configuration providing strong security without breaking applications.
- *
- * **HSTS**: 1-year max-age with subdomain inclusion, preload optional
- * **CSP**: Restrictive policy with practical allowances for common patterns
- * **COEP/COOP**: Cross-origin isolation for enhanced security (when enabled)
- * **Permissions Policy**: Restrictive by default, explicit allowlists only
  *
  * @type {import('./config.js').SecurityHeadersConfig}
+ *
+ * @example
+ * // Use default security headers configuration
+ * const headers = { ...DEFAULT_HEADERS, frameOptions: 'SAMEORIGIN' };
  */
 export const DEFAULT_HEADERS = {
 	enabled: true,
@@ -82,15 +78,13 @@ export const DEFAULT_HEADERS = {
 
 /**
  * Format CSP directives object into compliant header value string.
- * Handles arrays and strings, skips empty/invalid directives.
- *
- * **Format**: "directive sources; directive sources" semicolon-separated
- * **Source Handling**: Array values joined with spaces, strings used directly
- * **Validation**: Empty or invalid directives excluded from output
- * **Standards**: Compliant with CSP Level 3 specification
  *
  * @param {Record<string, string[]|string>} directives - CSP directive configuration
  * @returns {string} Formatted CSP header value
+ *
+ * @example
+ * // Format CSP directives for header
+ * const csp = formatCSP({ 'default-src': ["'self'"], 'script-src': ["'self'", "'unsafe-inline'"] });
  */
 export function formatCSP(directives) {
 	const formatted = [];
@@ -108,15 +102,13 @@ export function formatCSP(directives) {
 
 /**
  * Format Permissions Policy object into compliant header value string.
- * Converts feature allowlists to proper policy syntax with origin quoting.
- *
- * **Format**: "feature=(origin1 origin2), feature=()" comma-separated
- * **Empty Lists**: Rendered as feature=() to deny all origins
- * **Origin Quoting**: All origins wrapped in quotes for spec compliance
- * **Standards**: Compliant with Permissions Policy W3C specification
  *
  * @param {Record<string, string[]>} permissions - Feature to allowlist mapping
  * @returns {string} Formatted Permissions-Policy header value
+ *
+ * @example
+ * // Format permissions policy for header
+ * const policy = formatPermissionsPolicy({ geolocation: [], camera: ['self'] });
  */
 export function formatPermissionsPolicy(permissions) {
 	const formatted = [];
@@ -137,16 +129,15 @@ export function formatPermissionsPolicy(permissions) {
 
 /**
  * Apply security headers to response with graceful error handling.
- * Sets headers only if not already present, respects existing middleware.
- *
- * **Header Precedence**: Existing headers preserved (first-wins policy)
- * **Error Handling**: Individual header failures logged, others continue
- * **Response Safety**: Skips header setting if response already ended
- * **Configuration**: Only enabled headers processed, disabled ones skipped
  *
  * @param {import('../../../core/context.js').Context} ctx - Request context with response headers
  * @param {import('./config.js').SecurityHeadersConfig} headersConfig - Security headers configuration
  * @returns {Error[]} Array of errors encountered (empty if successful)
+ *
+ * @example
+ * // Apply security headers to response
+ * const errors = setSecurityHeaders(ctx, DEFAULT_HEADERS);
+ * if (errors.length > 0) console.log('Header errors:', errors);
  */
 export function setSecurityHeaders(ctx, headersConfig) {
 	/** @type {Error[]} */

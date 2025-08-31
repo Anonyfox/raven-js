@@ -14,8 +14,8 @@ describe("JSDocReadonlyTag functionality", () => {
 	test("should inherit from JSDocTagBase", () => {
 		const tag = new JSDocReadonlyTag("Immutable property");
 
-		strictEqual(tag.getType(), "readonly");
-		strictEqual(tag.getRawContent(), "Immutable property");
+		strictEqual(tag.tagType, "readonly");
+		strictEqual(tag.rawContent, "Immutable property");
 		strictEqual(tag.isValid(), true);
 	});
 

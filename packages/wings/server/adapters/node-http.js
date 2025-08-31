@@ -15,11 +15,13 @@ import { readBody } from "../read-body.js";
 import "../server-options.js";
 
 /**
- *
  * Base HTTP server class for Wings - NOT meant for direct use.
- * This is a lightweight, fast base class with zero dependencies and strong test coverage.
- * For development, use DevServer. For production, use ClusteredServer.
- * Only extend this class when building custom server implementations.
+ *
+ * @example
+ * // Extend for custom server implementations
+ * class CustomServer extends NodeHttp {
+ *   // Custom implementation
+ * }
  */
 export class NodeHttp {
 	/**
@@ -56,6 +58,10 @@ export class NodeHttp {
 	 * @param {Router} router - Wings router to handle requests
 	 * @param {import('../server-options.js').ServerOptions} [options] - Server options
 	 * @throws {TypeError} When router is invalid
+	 *
+	 * @example
+	 * // Create base HTTP server (extend for production use)
+	 * const server = new NodeHttp(router, { timeout: 30000 });
 	 */
 	constructor(router, options = {}) {
 		this.#router = router;
@@ -162,13 +168,16 @@ export class NodeHttp {
 
 	/**
 	 * Start server listening on port.
-	 * Automatically sets RAVENJS_ORIGIN environment variable for SSR components.
 	 *
 	 * @param {number} port - Port to listen on (0 for auto-assign)
 	 * @param {string} [host] - Host to bind to (default: 'localhost')
 	 * @param {() => void} [callback] - Optional callback
 	 * @returns {Promise<void>} Resolves when listening
 	 * @throws {Error} When port is in use or requires privileges
+	 *
+	 * @example
+	 * // Start server on port 3000
+	 * await server.listen(3000);
 	 */
 	async listen(port, host = "localhost", callback = () => {}) {
 		return new Promise((resolve) => {
@@ -197,6 +206,10 @@ export class NodeHttp {
 	 *
 	 * @returns {Promise<void>} Resolves when closed
 	 * @throws {Error} When already closed or network errors occur
+	 *
+	 * @example
+	 * // Gracefully shutdown server
+	 * await server.close();
 	 */
 	async close() {
 		return new Promise((resolve, reject) => {
@@ -214,6 +227,10 @@ export class NodeHttp {
 	 * Get underlying HTTP server instance.
 	 *
 	 * @returns {import('node:http').Server} Node.js HTTP server
+	 *
+	 * @example
+	 * // Access Node.js server instance
+	 * const nodeServer = server.server;
 	 */
 	get server() {
 		return this.#server;
@@ -223,6 +240,10 @@ export class NodeHttp {
 	 * Get Wings router instance.
 	 *
 	 * @returns {Router} Wings router
+	 *
+	 * @example
+	 * // Access Wings router
+	 * const router = server.router;
 	 */
 	get router() {
 		return this.#router;
@@ -232,6 +253,10 @@ export class NodeHttp {
 	 * Get current configuration options.
 	 *
 	 * @returns {import("../server-options.js").ServerOptions} Configuration options
+	 *
+	 * @example
+	 * // Get server configuration
+	 * const config = server.options;
 	 */
 	get options() {
 		return { ...this.#options };
@@ -241,6 +266,10 @@ export class NodeHttp {
 	 * Check if SSL/HTTPS mode is enabled.
 	 *
 	 * @returns {boolean} True if server is running in HTTPS mode
+	 *
+	 * @example
+	 * // Check SSL status
+	 * if (server.isSSL) console.log('HTTPS enabled');
 	 */
 	get isSSL() {
 		return this.#isSSL;

@@ -7,10 +7,11 @@
  */
 
 /**
- * @file HTML tagged template literal engine - apex performance through platform primitives
+ * @file HTML tagged template literals with XSS protection, event binding, and performance-optimized rendering.
  *
- * Apex performance through platform primitives: 0.337μs per operation measured.
- * Uses += concatenation, monomorphic value processing, character-level escaping.
+ * Template engine for trusted and untrusted HTML generation with automatic XSS escaping, transparent
+ * event handler binding, and tiered performance optimization. Provides both fast unsafe html() and
+ * secure safeHtml() functions with intelligent value processing and array flattening.
  */
 
 // Template cache for memoized code generation
@@ -26,6 +27,20 @@ const DANGEROUS = /(?:javascript|vbscript|data):|on[a-z]+=/i;
  *
  * @param {string} str - String to escape
  * @returns {string} HTML-escaped string
+ *
+ * @example
+ * // Basic usage
+ * escapeHtml('<script>alert("xss")</script>');
+ * // → '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;'
+ *
+ * @example
+ * // Edge case: clean content fast path
+ * escapeHtml('safe content without entities');
+ * // → 'safe content without entities'
+ *
+ * @example
+ * // Template integration
+ * html`<p>${escapeHtml(userInput)}</p>`;
  */
 export function escapeHtml(str) {
 	const stringValue = `${str}`;
@@ -179,6 +194,22 @@ function processValueSafe(value, seen) {
  * @param {readonly string[]} strings - Template literal static parts
  * @param {...any} values - Template literal interpolated values
  * @returns {string} Rendered HTML string
+ *
+ * @example
+ * // Basic usage
+ * html`<div class="${className}">${content}</div>`;
+ * // → '<div class="active">Welcome</div>'
+ *
+ * @example
+ * // Event binding with automatic registration
+ * html`<button onclick=${handleClick}>Click me</button>`;
+ * // → '<button onclick="handleClick(event)">Click me</button>'
+ *
+ * @example
+ * // Array composition with nested templates
+ * const items = ['apple', 'banana'];
+ * html`<ul>${items.map(item => html`<li>${item}</li>`)}</ul>`;
+ * // → '<ul><li>apple</li><li>banana</li></ul>'
  */
 export function html(strings, ...values) {
 	// Check cache for compiled template
@@ -249,6 +280,23 @@ export function html(strings, ...values) {
  * @param {readonly string[]} strings - Template literal static parts
  * @param {...any} values - Template literal interpolated values
  * @returns {string} Rendered HTML string with escaped values
+ *
+ * @example
+ * // Basic usage with user input
+ * safeHtml`<div class="comment">${userComment}</div>`;
+ * // → '<div class="comment">&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;</div>'
+ *
+ * @example
+ * // Edge case: protocol blocking
+ * safeHtml`<a href="${userUrl}">Link</a>`;
+ * // → '<a href="blocked:alert(1)">Link</a>' (javascript: protocol blocked)
+ *
+ * @example
+ * // Circular reference protection
+ * const circular = { self: null };
+ * circular.self = circular;
+ * safeHtml`<p>${circular}</p>`;
+ * // → '<p>[Circular]</p>'
  */
 export function safeHtml(strings, ...values) {
 	const seen = new WeakSet();

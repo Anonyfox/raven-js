@@ -16,19 +16,14 @@
 import { JSDocTagBase } from "./base.js";
 
 /**
- * JSDoc alias tag implementation
+ * JSDoc alias tag implementation for symbol alias documentation.
  *
- * **Official JSDoc Tag:** Creates an alias to another symbol.
+ * Parses alias tag content with structured data extraction.
  *
- * **Syntax:**
- * - Symbol reference: `OriginalSymbol`
- * - Namespaced: `Namespace.OriginalSymbol`
- * - Module reference: `module:moduleName.SymbolName`
- *
- * **Raven Design:**
- * - Clean symbol reference extraction
- * - Zero validation complexity
- * - Essential for refactoring intelligence
+ * @example
+ * // Basic usage
+ * const tag = new JSDocAliasTag('myAlias');
+ * // Access parsed properties
  */
 export class JSDocAliasTag extends JSDocTagBase {
 	/**

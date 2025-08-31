@@ -19,7 +19,8 @@ import { cardGrid, moduleCard, pageHeader } from "../components/index.js";
 import { baseTemplate } from "./base.js";
 
 /**
- * Generate module directory HTML page
+ * Generate module directory HTML page with responsive grid layout and statistics.
+ *
  * @param {Object} data - Module directory data from extractor
  * @param {Array<Object>} data.moduleList - Array of module information
  * @param {Object} data.directoryStats - Directory statistics
@@ -31,6 +32,14 @@ import { baseTemplate } from "./base.js";
  * @param {boolean} data.hasModules - Whether modules exist
  * @param {boolean} data.hasPublicEntities - Whether public entities exist
  * @returns {string} Complete HTML page
+ *
+ * @example
+ * // Basic module directory
+ * moduleDirectoryTemplate({
+ *   moduleList: [{ importPath: 'utils', publicEntityCount: 5 }],
+ *   directoryStats: { totalModules: 1, totalPublicEntities: 5 },
+ *   packageName: 'my-package'
+ * });
  */
 export function moduleDirectoryTemplate(data) {
 	const {

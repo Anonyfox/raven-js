@@ -7,16 +7,17 @@
  */
 
 /**
- * Base HTML template with Bootstrap 5, SEO, and responsive design
+ * Base HTML template with Bootstrap 5, SEO, and responsive design.
  *
- * Foundation template providing consistent structure for all documentation pages.
- * Surgical design optimized for documentation presentation and developer UX.
+ * Foundation template providing consistent structure for all documentation pages
+ * with navigation, footer, and optimized developer UX.
  */
 
 import { html } from "@raven-js/beak";
 
 /**
- * Generate base HTML template with Bootstrap 5 layout
+ * Generate base HTML template with Bootstrap 5 layout, SEO, and navigation.
+ *
  * @param {Object} options - Template configuration
  * @param {string} options.title - Page title
  * @param {string} options.description - Meta description
@@ -40,6 +41,15 @@ import { html } from "@raven-js/beak";
  * @param {string} [options.packageMetadata.funding.url] - Funding URL
  * @param {string} [options.generationTimestamp] - Generation timestamp
  * @returns {string} Complete HTML document
+ *
+ * @example
+ * // Basic page template
+ * baseTemplate({
+ *   title: 'My Package',
+ *   description: 'Package documentation',
+ *   packageName: 'my-package',
+ *   content: '<h1>Content</h1>'
+ * });
  */
 export function baseTemplate({
 	title,

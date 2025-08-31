@@ -14,8 +14,8 @@ describe("JSDocTypeTag core functionality", () => {
 	test("should inherit from JSDocTagBase", () => {
 		const tag = new JSDocTypeTag("{string}");
 
-		strictEqual(tag.getType(), "type");
-		strictEqual(tag.getRawContent(), "{string}");
+		strictEqual(tag.tagType, "type");
+		strictEqual(tag.rawContent, "{string}");
 		strictEqual(tag.isValid(), true);
 	});
 

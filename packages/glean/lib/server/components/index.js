@@ -7,10 +7,10 @@
  */
 
 /**
- * @file Component library exports for Glean documentation templates
+ * @file Component library exports for Glean documentation templates.
  *
- * Clean component architecture eliminating custom CSS through
- * Bootstrap utility classes and semantic markup patterns.
+ * Clean component architecture using Bootstrap utility classes and semantic markup patterns.
+ * Organized by functional groups: alerts, attribution, content, navigation, page structure.
  */
 
 // Alert components

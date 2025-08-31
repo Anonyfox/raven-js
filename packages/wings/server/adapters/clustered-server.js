@@ -11,16 +11,12 @@ import { availableParallelism } from "node:os";
 import { NodeHttp } from "./node-http.js";
 
 /**
- *
  * Production-ready clustered HTTP server with automatic scaling and crash recovery.
- * Features:
- * - Horizontal scaling across all CPU cores
- * - Automatic worker restart on crashes
- * - Zero external dependencies (no PM2 needed)
- * - Pure event-driven architecture (zero timeouts)
- * - Helper getters for process identification (isMainProcess, isWorkerProcess)
- * - Memory leak prevention with proper event cleanup
- * - Instant crash recovery without coordination delays
+ *
+ * @example
+ * // Production server with automatic clustering
+ * const server = new ClusteredServer(router);
+ * await server.listen(3000);
  */
 export class ClusteredServer extends NodeHttp {
 	/** @type {boolean} */
@@ -41,6 +37,10 @@ export class ClusteredServer extends NodeHttp {
 	 *
 	 * @param {import('../../core/index.js').Router} router - Wings router to handle requests
 	 * @param {import('../server-options.js').ServerOptions} [options] - Server options
+	 *
+	 * @example
+	 * // Production clustered server
+	 * const server = new ClusteredServer(router, { timeout: 30000 });
 	 */
 	constructor(router, options = {}) {
 		super(router, options);
@@ -48,7 +48,12 @@ export class ClusteredServer extends NodeHttp {
 	}
 	/**
 	 * Check if current process is the cluster primary (main process).
+	 *
 	 * @returns {boolean} True if this is the primary process
+	 *
+	 * @example
+	 * // Check if running as primary process
+	 * if (server.isMainProcess) console.log('Main process');
 	 */
 	get isMainProcess() {
 		return cluster.isPrimary;
@@ -56,18 +61,26 @@ export class ClusteredServer extends NodeHttp {
 
 	/**
 	 * Check if current process is a worker process (child process).
+	 *
 	 * @returns {boolean} True if this is a worker process
+	 *
+	 * @example
+	 * // Check if running as worker process
+	 * if (server.isWorkerProcess) console.log('Worker process');
 	 */
 	get isWorkerProcess() {
 		return !cluster.isPrimary;
 	}
 	/**
 	 * Start clustered server with automatic worker management.
-	 * Automatically sets RAVENJS_ORIGIN environment variable for SSR components.
 	 *
 	 * @param {number} port - Port to listen on
 	 * @param {string} [host="0.0.0.0"] - Host to bind to
 	 * @returns {Promise<void>}
+	 *
+	 * @example
+	 * // Start production server across all CPU cores
+	 * await server.listen(3000, '0.0.0.0');
 	 */
 	async listen(port, host = "0.0.0.0") {
 		if (cluster.isPrimary) {

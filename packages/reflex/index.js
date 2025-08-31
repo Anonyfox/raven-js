@@ -41,9 +41,27 @@ let deferredEffects = [];
 let currentRenderScope = null;
 
 /**
- * Runs `fn` in a template context.
- * If `fn` returns a Promise, the context stays active until it settles,
- * then deferred effects are executed exactly once.
+ * Run function in template rendering context with deferred effect execution.
+ *
+ * Template context preserves component instances via render slots and defers effect
+ * execution until template completion. Supports async templates by keeping context
+ * active until Promise settles.
+ *
+ * @example
+ * // Basic template context
+ * const html = withTemplateContext(() => {
+ *   const count = signal(0); // preserved across renders
+ *   effect(() => console.log('deferred until template done'));
+ *   return `<div>Count: ${count()}</div>`;
+ * });
+ *
+ * @example
+ * // Async template
+ * const html = await withTemplateContext(async () => {
+ *   const data = await fetch('/api/data');
+ *   return `<div>${await data.text()}</div>`;
+ * });
+ *
  * @template T
  * @param {() => T | Promise<T>} fn
  * @param {{slots:any,cursor:number}} [scope]
@@ -111,6 +129,7 @@ export function withTemplateContext(fn, scope) {
 }
 
 /**
+ * Use render slot for component instance preservation during template renders.
  * @template T
  * @param {() => T} factory
  * @returns {T}
@@ -135,12 +154,25 @@ let flushing = false;
 /** @type {Array<(v?:any)=>void>} */
 let _afterFlushWaiters = [];
 
-/** small helper */
+/** Increment global write version to track reactive state changes. */
 function __bumpWriteVersion() {
 	__g.__REFLEX_WRITE_VERSION__++;
 }
 
-/** @returns {Promise<void>} resolves after a full flush cycle */
+/**
+ * Wait for the next flush cycle to complete.
+ *
+ * Returns a Promise that resolves after all pending computed updates and effects
+ * have executed. Useful for ensuring DOM updates are complete before proceeding.
+ *
+ * @example
+ * // Wait for updates
+ * const count = signal(0);
+ * await count.set(5);
+ * await afterFlush(); // All effects have run
+ *
+ * @returns {Promise<void>} resolves after a full flush cycle
+ */
 export function afterFlush() {
 	return new Promise((res) => {
 		_afterFlushWaiters.push(res);
@@ -148,6 +180,7 @@ export function afterFlush() {
 	});
 }
 
+/** Schedule microtask flush if not already scheduled. */
 function scheduleFlush() {
 	if (!scheduled) {
 		scheduled = true;
@@ -155,6 +188,7 @@ function scheduleFlush() {
 	}
 }
 
+/** Execute computed updates first, then effects, with error isolation. */
 function flush() {
 	if (flushing) return;
 	flushing = true;
@@ -192,6 +226,7 @@ function flush() {
 	}
 }
 
+/** Handle reactive system errors with custom hook and console fallback. */
 function onError(/** @type {any} */ err, /** @type {string} */ where) {
 	try {
 		/** @type {any} */ (globalThis).__REFLEX_ON_ERROR__?.(err, where);
@@ -208,6 +243,32 @@ export function __getWriteVersion() {
 /* ---------------- signal / computed / effect ---------------- */
 
 /**
+ * Create reactive signal with automatic dependency tracking and change notifications.
+ *
+ * Signal values are read by calling the signal as a function. Dependencies are tracked
+ * automatically when read inside computed values or effects. Updates trigger scheduled
+ * flushes to maintain consistent state across the reactive graph.
+ *
+ * @example
+ * // Basic usage
+ * const count = signal(0);
+ * console.log(count()); // 0
+ * await count.set(5);
+ * console.log(count()); // 5
+ *
+ * @example
+ * // Update with function
+ * const items = signal(['apple', 'banana']);
+ * await items.update(list => [...list, 'cherry']);
+ *
+ * @example
+ * // Manual subscription
+ * const name = signal('Alice');
+ * const unsubscribe = name.subscribe(value => {
+ *   console.log('Name changed:', value);
+ * });
+ * // Later: unsubscribe()
+ *
  * @template T
  * @param {T} initial
  * @returns {{
@@ -276,6 +337,37 @@ export function signal(initial) {
 }
 
 /**
+ * Create computed value that automatically updates when dependencies change.
+ *
+ * Computed values cache their result and only recompute when their signal dependencies
+ * change. They update during the computed phase before effects run, ensuring consistent
+ * state. Circular dependencies are detected and throw errors.
+ *
+ * @example
+ * // Basic derived state
+ * const count = signal(0);
+ * const doubled = computed(() => count() * 2);
+ * console.log(doubled()); // 0
+ * await count.set(5);
+ * console.log(doubled()); // 10
+ *
+ * @example
+ * // Complex computation
+ * const todos = signal([]);
+ * const completedTodos = computed(() =>
+ *   todos().filter(todo => todo.completed)
+ * );
+ * const progress = computed(() =>
+ *   completedTodos().length / todos().length
+ * );
+ *
+ * @example
+ * // Conditional dependencies
+ * const mode = signal('light');
+ * const theme = computed(() =>
+ *   mode() === 'dark' ? getDarkTheme() : getLightTheme()
+ * );
+ *
  * @template T
  * @param {() => T} fn
  * @returns {{():T, peek():T, _unsubscribe(fn:any):void, _isComputed:true}}
@@ -346,6 +438,41 @@ export function computed(fn) {
 }
 
 /**
+ * Create side effect that runs when its signal dependencies change.
+ *
+ * Effects run after computed values have updated, ensuring consistent state.
+ * They automatically track signal dependencies and re-run when those signals change.
+ * Returns a disposer function to stop the effect and clean up dependencies.
+ *
+ * @example
+ * // Basic side effect
+ * const count = signal(0);
+ * const dispose = effect(() => {
+ *   console.log('Count is:', count());
+ * });
+ * // Logs: "Count is: 0"
+ *
+ * await count.set(5);
+ * // Logs: "Count is: 5"
+ *
+ * @example
+ * // DOM synchronization
+ * const title = signal('Welcome');
+ * effect(() => {
+ *   document.title = title();
+ * });
+ *
+ * @example
+ * // Async effects (promises tracked in SSR contexts)
+ * const userId = signal(null);
+ * effect(async () => {
+ *   if (userId()) {
+ *     const response = await fetch(`/api/users/${userId()}`);
+ *     const user = await response.json();
+ *     console.log('User loaded:', user);
+ *   }
+ * });
+ *
  * @param {() => any} fn
  * @returns {() => void} disposer
  */
@@ -406,7 +533,21 @@ export function effect(fn) {
 }
 
 /**
- * Runs `fn` without dependency tracking.
+ * Run function without automatic dependency tracking.
+ *
+ * Prevents signals read inside the function from being tracked as dependencies
+ * by the current computed or effect. Useful for accessing signals without
+ * creating reactive relationships.
+ *
+ * @example
+ * // Read signal without tracking
+ * const count = signal(0);
+ * const doubled = computed(() => {
+ *   const debug = untrack(() => count()); // not tracked
+ *   console.log('Debug:', debug);
+ *   return count() * 2; // this IS tracked
+ * });
+ *
  * @template T
  * @param {() => T} fn
  * @returns {T}

@@ -18,10 +18,11 @@ import { listFilesRecursive } from "./file-operations.js";
 /**
  * Magic filename for SEA asset manifests.
  *
- * Standard location for embedded asset lists in Single Executable Applications.
- * Must contain JSON array of public asset paths for security compliance.
- *
  * @constant {string}
+ *
+ * @example
+ * // Standard SEA manifest filename
+ * console.log(SEA_ASSETS_MANIFEST); // "@raven-js/assets.json"
  */
 export const SEA_ASSETS_MANIFEST = "@raven-js/assets.json";
 

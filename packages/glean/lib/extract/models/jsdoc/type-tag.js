@@ -16,23 +16,21 @@
 import { JSDocTagBase } from "./base.js";
 
 /**
- * JSDoc type tag implementation
+ * JSDoc type tag implementation for type annotation documentation.
  *
- * **Official JSDoc Tag:** Documents the type of a variable, constant, or property.
+ * Parses type tag content with structured data extraction.
  *
- * **Syntax:**
- * - Simple: `@type {string}`
- * - Union: `@type {string|number|null}`
- * - Array: `@type {Array<User>}` or `@type {User[]}`
- * - Object: `@type {Object<string, number>}`
- * - Function: `@type {function(string, boolean): number}`
- *
- * **Raven Design:**
- * - Pure type extraction
- * - Zero type validation complexity
- * - Platform primitive focus
+ * @example
+ * // Basic usage
+ * const tag = new JSDocTypeTag('{string}');
+ * // Access parsed properties
  */
 export class JSDocTypeTag extends JSDocTagBase {
+	/**
+	 * @type {string} Parsed tag content
+	 */
+	content = "";
+
 	/**
 	 * Create type tag instance
 	 * @param {string} rawContent - Raw type tag content
@@ -46,9 +44,6 @@ export class JSDocTypeTag extends JSDocTagBase {
 	 */
 	parseContent() {
 		if (!this.rawContent?.trim()) {
-			/**
-			 * @type {string} The type annotation
-			 */
 			this.type = "";
 			return;
 		}

@@ -33,6 +33,11 @@ import { JSDocTagBase } from "./base.js";
  */
 export class JSDocThrowsTag extends JSDocTagBase {
 	/**
+	 * @type {string} Parsed tag content
+	 */
+	content = "";
+
+	/**
 	 * Create throws tag instance
 	 * @param {string} rawContent - Raw throws tag content
 	 */
@@ -51,13 +56,7 @@ export class JSDocThrowsTag extends JSDocTagBase {
 		const match = this.rawContent.match(throwsRegex);
 
 		if (!match) {
-			/**
-			 * @type {string} Exception/error type
-			 */
 			this.type = "";
-			/**
-			 * @type {string} Description of when exception is thrown
-			 */
 			this.description = "";
 			return;
 		}
@@ -68,11 +67,8 @@ export class JSDocThrowsTag extends JSDocTagBase {
 		this.description = description ? description.trim() : "";
 	}
 
-	/**
-	 * Validate throws tag content
-	 *
-	 * Ravens require meaningful exception documentation:
-	 * either type or description must be present.
+		/**
+	 * Validate throws tag content - requires error description
 	 */
 	validate() {
 		this.isValidated = Boolean(

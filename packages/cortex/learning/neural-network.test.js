@@ -426,4 +426,57 @@ describe("NeuralNetwork", () => {
 		const output2 = nn.predict([1]);
 		assert.strictEqual(output2[0], 0.5); // ReLU should pass through
 	});
+
+	it("should validate trainBatch inputs are arrays (lines 378-379)", () => {
+		const nn = new NeuralNetwork(2, 3, 1);
+
+		// Test non-array inputs
+		assert.throws(
+			() => nn.trainBatch("not array", [[1]]),
+			/Inputs and targets must be arrays/,
+		);
+
+		// Test non-array targets
+		assert.throws(
+			() => nn.trainBatch([[1, 2]], "not array"),
+			/Inputs and targets must be arrays/,
+		);
+
+		// Test both non-array
+		assert.throws(
+			() => nn.trainBatch("not array", "not array"),
+			/Inputs and targets must be arrays/,
+		);
+	});
+
+	it("should validate calculateLoss input and target lengths match (lines 448-449)", () => {
+		const nn = new NeuralNetwork(2, 3, 1);
+
+		// Train the network first so calculateLoss can be called
+		nn.trainBatch(
+			[
+				[1, 2],
+				[3, 4],
+			],
+			[[0.5], [0.8]],
+		);
+
+		// Test mismatched lengths
+		assert.throws(
+			() =>
+				nn.calculateLoss(
+					[
+						[1, 2],
+						[3, 4],
+					],
+					[[0.5]],
+				), // 2 inputs, 1 target
+			/Inputs and targets must have the same length/,
+		);
+
+		assert.throws(
+			() => nn.calculateLoss([[1, 2]], [[0.5], [0.8]]), // 1 input, 2 targets
+			/Inputs and targets must have the same length/,
+		);
+	});
 });

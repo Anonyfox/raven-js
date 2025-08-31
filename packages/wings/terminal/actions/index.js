@@ -9,16 +9,8 @@
 /**
  * @file Terminal UI action functions for interactive CLI applications.
  *
- * **Function Categories**: Organized by purpose for clean import patterns.
- * All functions are pure (side effects limited to terminal I/O only).
- *
- * **Input Functions**: User interaction and data gathering.
- * **Format Functions**: Text styling with ANSI escape codes.
- * **Output Functions**: Colored messages with semantic symbols.
- * **Table Function**: Structured data display with Unicode box drawing.
- *
- * **Performance**: Synchronous formatting/output, async input gathering.
- * No external dependencies, platform-native ANSI codes.
+ * Exports input functions (ask, confirm), formatting functions (bold, italic, etc.),
+ * output functions (success, error, etc.), and table display functionality.
  */
 
 // Input functions (async)

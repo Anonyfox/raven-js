@@ -14,11 +14,25 @@
  */
 
 /**
- * Tests if a path matches a glob pattern.
+ * Tests if a path matches a glob pattern with basic wildcard support.
+ *
+ * Supports * (any characters except /) and ? (single character except /) patterns.
+ * Handles leading "./" normalization for both pattern and path.
  *
  * @param {string} pattern - Glob pattern (e.g., "./lib/*.js", "*.md")
  * @param {string} path - File path to test
  * @returns {boolean} True if path matches pattern
+ *
+ * @example
+ * // Basic wildcard matching
+ * glob("*.js", "app.js"); // → true
+ * glob("lib/*.js", "lib/utils.js"); // → true
+ * glob("*.md", "app.js"); // → false
+ *
+ * @example
+ * // Path normalization
+ * glob("./src/*.js", "src/index.js"); // → true
+ * glob("src/*.js", "./src/index.js"); // → true
  */
 export function glob(pattern, path) {
 	if (typeof pattern !== "string" || typeof path !== "string") {

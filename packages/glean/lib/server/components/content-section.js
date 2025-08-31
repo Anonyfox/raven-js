@@ -128,7 +128,8 @@ export function applySyntaxHighlighting(html) {
 }
 
 /**
- * Generate content section with card wrapper
+ * Generate content section with card wrapper and customizable header styling.
+ *
  * @param {Object} options - Section configuration
  * @param {string} [options.title] - Section title
  * @param {string} [options.icon] - Section icon
@@ -136,6 +137,14 @@ export function applySyntaxHighlighting(html) {
  * @param {boolean} [options.noPadding] - Remove card body padding
  * @param {string} [options.headerVariant] - Header background variant
  * @returns {string} Content section HTML
+ *
+ * @example
+ * // Basic content section
+ * contentSection({
+ *   title: 'API Reference',
+ *   icon: '📖',
+ *   content: '<p>Documentation content</p>'
+ * });
  */
 export function contentSection({
 	title,

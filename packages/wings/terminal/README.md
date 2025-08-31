@@ -95,7 +95,9 @@ if (ctx.method === "COMMAND") {
 
 **Context Mapping**: CLI args become URL paths/query params, responseBody becomes stdout, HTTP status codes become exit codes.
 
-**Performance**: Zero overhead abstraction—direct Node.js I/O primitives, async stdin support, O(1) route matching.
+**Performance**: Direct Node.js I/O primitives, async stdin support, efficient route matching.
+
+**TypeScript**: Full intellisense via JSDoc annotations. Works with TypeScript projects without additional setup.
 
 **Node.js** 22.5.0+ **|** **Zero Dependencies**
 

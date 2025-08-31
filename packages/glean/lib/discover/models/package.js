@@ -11,7 +11,21 @@ import { File } from "./file.js";
 import { Module } from "./module.js";
 
 /**
- * Aggregation of relevant project information from the package root directory.
+ * Package aggregation with validated entry points and module organization.
+ *
+ * Aggregates project information from package.json with file discovery and
+ * entry point validation for module graph construction.
+ *
+ * @example
+ * // Basic package creation
+ * const files = new Set(['./src/index.js', './src/utils.js']);
+ * const pkg = new Package(jsonString, files);
+ * console.log(pkg.name, pkg.entryPoints);
+ *
+ * @example
+ * // File management
+ * const file = pkg.getExistingFile('./src/index.js');
+ * pkg.modules.forEach(module => console.log(module.importPath));
  */
 export class Package {
 	/** @type {string} the package name from package.json */
@@ -34,6 +48,9 @@ export class Package {
 
 	/** @type {Array<File>} the files in the package */
 	files = [];
+
+	/** @type {Array<Object>} image assets found in package README */
+	imageAssets = [];
 
 	/**
 	 * @param {string} jsonString - the package.json content as a string

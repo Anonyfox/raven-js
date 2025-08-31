@@ -16,18 +16,14 @@
 import { JSDocTagBase } from "./base.js";
 
 /**
- * JSDoc private tag implementation
+ * JSDoc private tag implementation for private member access documentation.
  *
- * **Official JSDoc Tag:** Marks a symbol as private (internal use only).
+ * Parses private tag content with structured data extraction.
  *
- * **Syntax:**
- * - Standalone: `@private`
- * - With description: `@private Internal helper function`
- *
- * **Raven Design:**
- * - Simple marker tag
- * - Optional description support
- * - Critical for API boundary enforcement
+ * @example
+ * // Basic usage
+ * const tag = new JSDocPrivateTag('tag content');
+ * // Access parsed properties
  */
 export class JSDocPrivateTag extends JSDocTagBase {
 	/**

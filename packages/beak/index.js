@@ -7,31 +7,11 @@
  */
 
 /**
- * @file Zero-dependency template literal engine for modern JavaScript
+ * @file Core template literal functions for HTML, CSS, Markdown, and JavaScript generation with automatic escaping and minification.
  *
- * Tagged template literals for HTML, CSS, JavaScript, SQL, XML, and Markdown generation.
- * Near string-concatenation performance with intelligent value processing,
- * array flattening, and whitespace optimization.
- *
- * **VSCode Integration:** Syntax highlighting and autocompletion via RavenJS plugin.
- * **Performance:** Optimized execution paths based on interpolation count.
- * **Security:** Optional XSS protection for untrusted content.
- *
- * @example
- * // Conditional rendering with ternary operators
- * const greeting = html`<div>
- *   ${isLoggedIn ? html`<p>Welcome back!</p>` : html`<p>Please log in.</p>`}
- * </div>`;
- *
- * @example
- * // Array mapping for list generation
- * const colors = ['red', 'green', 'blue'];
- * const list = html`<ul>${colors.map(color => html`<li>${color}</li>`)}</ul>`;
- *
- * @example
- * // Component pattern with function factories
- * const Button = ({ text }) => html`<button>${text}</button>`;
- * const button = Button({ text: 'Click me' }); // "<button>Click me</button>"
+ * Zero-dependency template engine providing tagged template literals for all major web content types.
+ * Combines performance-optimized processing with intelligent value handling, security features, and
+ * comprehensive SEO utilities. Main entry point for complete beak functionality.
  */
 
 export { css, style } from "./css/index.js";

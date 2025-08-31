@@ -16,7 +16,11 @@
 import { html } from "@raven-js/beak";
 
 /**
- * Generate page header with breadcrumbs and title
+ * Generate page header with breadcrumbs, title, badges, and description.
+ *
+ * Bootstrap-based header component with responsive layout and flexible content areas.
+ * Includes optional breadcrumb navigation and title badge support.
+ *
  * @param {Object} options - Header configuration
  * @param {string} options.title - Page title
  * @param {string} [options.subtitle] - Optional subtitle
@@ -24,6 +28,23 @@ import { html } from "@raven-js/beak";
  * @param {Array<{text: string, variant: string}>} [options.badges] - Title badges
  * @param {string} [options.description] - Page description
  * @returns {string} Header HTML
+ *
+ * @example
+ * // Basic page header
+ * pageHeader({ title: 'API Documentation' });
+ *
+ * @example
+ * // Full header with all features
+ * pageHeader({
+ *   title: 'myFunction',
+ *   subtitle: 'Utility Function',
+ *   breadcrumbs: [
+ *     { href: '/', text: 'Home' },
+ *     { text: 'API', active: true }
+ *   ],
+ *   badges: [{ text: 'function', variant: 'primary' }],
+ *   description: 'A utility function description'
+ * });
  */
 export function pageHeader({
 	title,

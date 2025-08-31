@@ -16,21 +16,21 @@
 import { JSDocTagBase } from "./base.js";
 
 /**
- * JSDoc enum tag implementation
+ * JSDoc enum tag implementation for enumeration value documentation.
  *
- * **Official JSDoc Tag:** Documents an enumeration of values.
+ * Parses enum tag content with structured data extraction.
  *
- * **Syntax:**
- * - Type only: `{Type}`
- * - With description: `{Type} Description of enumeration`
- * - Untyped: `Description of values`
- *
- * **Raven Design:**
- * - Clean type extraction
- * - Optional description support
- * - Essential for value set intelligence
+ * @example
+ * // Basic usage
+ * const tag = new JSDocEnumTag('{string} STATUS');
+ * // Access parsed properties
  */
 export class JSDocEnumTag extends JSDocTagBase {
+	/**
+	 * @type {string} Parsed tag content
+	 */
+	content = "";
+
 	/**
 	 * Create enum tag instance
 	 * @param {string} rawContent - Raw enum tag content
@@ -46,13 +46,7 @@ export class JSDocEnumTag extends JSDocTagBase {
 		const content = this.rawContent?.trim() || "";
 
 		if (!content) {
-			/**
-			 * @type {string} Enumeration type
-			 */
 			this.type = "";
-			/**
-			 * @type {string} Enumeration description
-			 */
 			this.description = "";
 			return;
 		}
@@ -60,22 +54,10 @@ export class JSDocEnumTag extends JSDocTagBase {
 		// Check for type in braces
 		const typeMatch = content.match(/^\{([^}]+)\}\s*(.*)$/);
 		if (typeMatch) {
-			/**
-			 * @type {string} Enumeration type
-			 */
 			this.type = typeMatch[1].trim();
-			/**
-			 * @type {string} Enumeration description
-			 */
 			this.description = typeMatch[2].trim();
 		} else {
-			/**
-			 * @type {string} Enumeration type
-			 */
 			this.type = "";
-			/**
-			 * @type {string} Enumeration description
-			 */
 			this.description = content;
 		}
 	}

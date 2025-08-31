@@ -6,6 +6,14 @@
  * @see {@link https://anonyfox.com}
  */
 
+/**
+ * @file SQL tagged template literals with automatic escaping and injection protection for secure database query construction.
+ *
+ * Template tag that builds SQL queries with automatic character escaping for string literals. Implements
+ * tiered performance optimizations and provides security against character-based injection attacks while
+ * maintaining readable query composition patterns.
+ */
+
 import { processSQLTemplate } from "./template-processor.js";
 
 /**

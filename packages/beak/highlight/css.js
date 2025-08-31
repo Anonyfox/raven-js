@@ -307,9 +307,28 @@ const tokenizeCSS = (sourceText) => {
 };
 
 /**
- * Highlight CSS source code with Bootstrap semantic classes
+ * Highlight CSS source code with Bootstrap semantic classes.
+ *
+ * Transforms CSS source into semantically highlighted markup using Bootstrap
+ * color classes. Handles selectors, properties, values, and at-rules.
+ *
  * @param {string} sourceText - Raw CSS source code
  * @returns {string} HTML with syntax highlighting
+ *
+ * @example
+ * // Basic usage
+ * highlightCSS('.button { color: red; padding: 10px; }');
+ * // → '<span class="text-info">.button</span> <span class="text-secondary">{</span>...'
+ *
+ * @example
+ * // Edge case: media queries and at-rules
+ * highlightCSS('@media (max-width: 768px) { .responsive { display: none; } }');
+ * // → Highlighted with at-rules, conditions, and nested selectors
+ *
+ * @example
+ * // Edge case: empty input
+ * highlightCSS('');
+ * // → ''
  */
 export const highlightCSS = (sourceText) => {
 	if (typeof sourceText !== "string") {

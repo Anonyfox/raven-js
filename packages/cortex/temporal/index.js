@@ -7,14 +7,10 @@
  */
 
 /**
- * @file Temporal processing for the Cortex brain center
+ * @file Temporal computation functions for holiday calculations and date manipulation.
  *
- * Time perception, chronological computation, and temporal pattern recognition.
- * Neural oscillations, circadian rhythms, and precise calendar calculations.
- * Optimized for V8 engine with zero external dependencies.
- *
- * The murder's temporal arsenal: chronological algorithms, date computations,
- * governmental holiday patterns with bureaucratic precision.
+ * Exports Easter calculation, holiday computation for 30+ countries, and date classes.
+ * Handles fixed dates, Easter-relative holidays, and government-specific regional variations.
  */
 
 export { calculateEasterSunday } from "./calculate-easter-sunday.js";

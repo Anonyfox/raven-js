@@ -81,14 +81,12 @@
 
 /**
  * Production-ready security defaults optimized for modern web applications.
- * Conservative settings prevent common attacks while maintaining compatibility.
- *
- * **Rate Limiting**: Disabled by default - enable with production values
- * **IP Access**: Disabled by default - configure whitelist/blacklist as needed
- * **CSP**: Restrictive policy allows self + common safe sources
- * **HSTS**: 1-year max-age without preload (prevents HTTPS requirement removal)
  *
  * @type {ArmorConfig}
+ *
+ * @example
+ * // Use default security configuration
+ * const config = { ...DEFAULT_CONFIG, rateLimiting: { enabled: true } };
  */
 export const DEFAULT_CONFIG = {
 	enabled: true,
@@ -164,7 +162,11 @@ export const DEFAULT_CONFIG = {
 };
 
 /**
- * Validation error class for configuration errors
+ * Validation error class for configuration errors.
+ *
+ * @example
+ * // Throw configuration validation error
+ * throw new ConfigValidationError('Invalid rate limit', 'rateLimiting.max');
  */
 export class ConfigValidationError extends Error {
 	/**
@@ -488,10 +490,14 @@ function validateSecurityHeaders(config, path = "securityHeaders") {
 }
 
 /**
- * Validate complete armor configuration
+ * Validate complete armor configuration.
  *
  * @param {any} config - Configuration to validate
  * @throws {ConfigValidationError} If configuration is invalid
+ *
+ * @example
+ * // Validate armor configuration
+ * validateConfig({ enabled: true, rateLimiting: { enabled: true } });
  */
 export function validateConfig(config) {
 	if (!config || typeof config !== "object") {
@@ -522,11 +528,15 @@ export function validateConfig(config) {
 }
 
 /**
- * Deep merge two configuration objects
+ * Deep merge two configuration objects.
  *
  * @param {any} target - Target configuration object
  * @param {any} source - Source configuration object to merge
  * @returns {any} Merged configuration object
+ *
+ * @example
+ * // Merge user config with defaults
+ * const merged = mergeConfig(DEFAULT_CONFIG, { rateLimiting: { enabled: true } });
  */
 export function mergeConfig(target, source) {
 	/** @type {any} */
@@ -553,11 +563,15 @@ export function mergeConfig(target, source) {
 }
 
 /**
- * Create a validated configuration by merging user config with defaults
+ * Create a validated configuration by merging user config with defaults.
  *
  * @param {Object} userConfig - User-provided configuration
  * @returns {Object} Validated and merged configuration
  * @throws {ConfigValidationError} If configuration is invalid
+ *
+ * @example
+ * // Create validated config with user customizations
+ * const config = createConfig({ rateLimiting: { enabled: true } });
  */
 export function createConfig(userConfig = {}) {
 	// Validate user config first

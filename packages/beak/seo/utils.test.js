@@ -3,45 +3,44 @@ import { describe, it } from "node:test";
 import { absoluteUrl } from "./utils.js";
 
 describe("absoluteUrl", () => {
-	it("should convert relative URLs to absolute URLs", () => {
-		assert.strictEqual(
-			absoluteUrl("/test-path", "example.com"),
-			"https://example.com/test-path",
-		);
-		assert.strictEqual(absoluteUrl("/", "example.com"), "https://example.com/");
-		assert.strictEqual(
-			absoluteUrl("/path/to/resource", "subdomain.example.com"),
-			"https://subdomain.example.com/path/to/resource",
-		);
+	it("returns full URLs unchanged", () => {
+		const url = "https://example.com/page";
+		assert.equal(absoluteUrl(url, "other.com"), url);
+
+		const httpUrl = "http://example.com/page";
+		assert.equal(absoluteUrl(httpUrl, "other.com"), httpUrl);
 	});
 
-	it("should return absolute URLs unchanged", () => {
-		assert.strictEqual(
-			absoluteUrl("https://example.com/test-path", "example.com"),
-			"https://example.com/test-path",
-		);
-		assert.strictEqual(
-			absoluteUrl("http://other.com/path", "example.com"),
-			"http://other.com/path",
-		);
-		assert.strictEqual(
-			absoluteUrl("https://subdomain.example.com/resource", "example.com"),
-			"https://subdomain.example.com/resource",
-		);
+	it("constructs absolute URL from relative path", () => {
+		const result = absoluteUrl("/path/to/page", "example.com");
+		assert.equal(result, "https://example.com/path/to/page");
 	});
 
-	it("should handle URLs without leading slash", () => {
-		assert.strictEqual(
-			absoluteUrl("test-path", "example.com"),
-			"https://example.com/test-path",
-		);
-		assert.strictEqual(
-			absoluteUrl("path/to/resource", "example.com"),
-			"https://example.com/path/to/resource",
-		);
+	it("constructs absolute URL from path without leading slash", () => {
+		const result = absoluteUrl("page", "example.com");
+		assert.equal(result, "https://example.com/page");
 	});
 
-	it("should handle empty paths", () => {
-		assert.strictEqual(absoluteUrl("", "example.com"), "https://example.com");
+	it("handles empty path", () => {
+		const result = absoluteUrl("", "example.com");
+		assert.equal(result, "https://example.com");
+	});
+
+	it("handles null or undefined path", () => {
+		const result1 = absoluteUrl(null, "example.com");
+		assert.equal(result1, "https://example.com");
+
+		const result2 = absoluteUrl(undefined, "example.com");
+		assert.equal(result2, "https://example.com");
+	});
+
+	it("handles complex paths", () => {
+		const result = absoluteUrl("/api/v1/users?active=true", "api.example.com");
+		assert.equal(result, "https://api.example.com/api/v1/users?active=true");
+	});
+
+	it("handles path with fragment", () => {
+		const result = absoluteUrl("/page#section", "example.com");
+		assert.equal(result, "https://example.com/page#section");
 	});
 });

@@ -17,11 +17,19 @@ import { extractSitemapData } from "../data/sitemap.js";
 import { sitemapTemplate } from "../templates/sitemap.js";
 
 /**
- * Create sitemap route handler
+ * Create sitemap route handler generating XML sitemaps with proper SEO headers.
+ *
  * @param {{name: string, modules: Array<{importPath: string, isDefault: boolean, publicEntities: Array<{name: string}>}>}} packageInstance - Package instance with modules and entities
  * @param {Object} options - Configuration options
  * @param {string} [options.baseUrl] - Base URL for the documentation site
  * @returns {Function} Wings route handler for sitemap.xml
+ *
+ * @example
+ * // Create sitemap route handler
+ * const handler = createSitemapHandler(packageInstance, {
+ *   baseUrl: 'https://docs.mypackage.com'
+ * });
+ * app.get('/sitemap.xml', handler);
  */
 export function createSitemapHandler(packageInstance, options = {}) {
 	const { baseUrl = "https://docs.example.com" } = options;

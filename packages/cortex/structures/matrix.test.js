@@ -277,6 +277,39 @@ describe("Matrix", () => {
 			assert.strictEqual(result.get(1, 1), 1);
 		});
 
+		it("should subtract matrices with result parameter for branch coverage", () => {
+			const a = new Matrix(2, 2, [5, 3, 8, 2]);
+			const b = new Matrix(2, 2, [2, 1, 3, 1]);
+			const result = new Matrix(2, 2);
+
+			const returnedResult = a.subtract(b, result);
+
+			assert.strictEqual(returnedResult, result);
+			assert.strictEqual(result.get(0, 0), 3);
+			assert.strictEqual(result.get(0, 1), 2);
+			assert.strictEqual(result.get(1, 0), 5);
+			assert.strictEqual(result.get(1, 1), 1);
+		});
+
+		it("should validate add result matrix dimensions to hit line 238", () => {
+			const a = new Matrix(2, 2, [1, 2, 3, 4]);
+			const b = new Matrix(2, 2, [1, 1, 1, 1]);
+
+			// Test wrong rows dimension
+			const wrongRowsResult = new Matrix(3, 2);
+			assert.throws(
+				() => a.add(b, wrongRowsResult),
+				/Result matrix dimensions do not match/,
+			);
+
+			// Test wrong columns dimension
+			const wrongColsResult = new Matrix(2, 3);
+			assert.throws(
+				() => a.add(b, wrongColsResult),
+				/Result matrix dimensions do not match/,
+			);
+		});
+
 		it("should validate addition/subtraction dimensions", () => {
 			const a = new Matrix(2, 3);
 			const b = new Matrix(3, 2);
@@ -288,6 +321,39 @@ describe("Matrix", () => {
 			assert.throws(
 				() => a.subtract(b),
 				/Cannot subtract matrices of different dimensions/,
+			);
+		});
+
+		it("should validate Matrix instances in arithmetic operations (lines 227-228, 260-261, 285-286)", () => {
+			const a = new Matrix(2, 2, [1, 2, 3, 4]);
+
+			// Test add with non-Matrix (lines 227-228)
+			assert.throws(() => a.add("not a matrix"), /Expected Matrix instance/);
+			assert.throws(() => a.add(null), /Expected Matrix instance/);
+
+			// Test subtract with non-Matrix (lines 260-261)
+			assert.throws(
+				() => a.subtract("not a matrix"),
+				/Expected Matrix instance/,
+			);
+			assert.throws(() => a.subtract({}), /Expected Matrix instance/);
+
+			// Test addInPlace with non-Matrix (lines 285-286)
+			assert.throws(
+				() => a.addInPlace("not a matrix"),
+				/Expected Matrix instance/,
+			);
+			assert.throws(() => a.addInPlace([1, 2, 3]), /Expected Matrix instance/);
+		});
+
+		it("should validate result matrix dimensions in add operation (lines 238-241)", () => {
+			const a = new Matrix(2, 2, [1, 2, 3, 4]);
+			const b = new Matrix(2, 2, [1, 1, 1, 1]);
+			const wrongSizeResult = new Matrix(3, 3); // Wrong dimensions
+
+			assert.throws(
+				() => a.add(b, wrongSizeResult),
+				/Result matrix dimensions do not match/,
 			);
 		});
 

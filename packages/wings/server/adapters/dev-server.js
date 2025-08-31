@@ -12,11 +12,12 @@ import { Router } from "../../core/index.js";
 import { NodeHttp } from "./node-http.js";
 
 /**
- *
  * Development server with live-reload for Wings.
- * Extends NodeHttp to inject WebSocket-based reload scripts into HTML responses.
- * For file watching, use Node.js CLI flags: `node --watch-path=./src boot.js`
- * This restarts the server instantly, triggering browser reload via WebSocket.
+ *
+ * @example
+ * // Create dev server with live-reload
+ * const server = new DevServer(router);
+ * await server.listen(3000);
  */
 export class DevServer extends NodeHttp {
 	/**
@@ -46,6 +47,10 @@ export class DevServer extends NodeHttp {
 	 * @param {import('../server-options.js').ServerOptions} [options] - Server options
 	 * @throws {TypeError} When router is invalid
 	 * @throws {RangeError} When websocketPort is invalid
+	 *
+	 * @example
+	 * // Development server with custom WebSocket port
+	 * const server = new DevServer(router, { websocketPort: 3456 });
 	 */
 	constructor(router, options = {}) {
 		super(router, options);
@@ -174,6 +179,10 @@ export class DevServer extends NodeHttp {
 	 * @param {() => void} [callback] - Optional callback
 	 * @returns {Promise<void>} Resolves when listening
 	 * @throws {Error} When port is in use or invalid
+	 *
+	 * @example
+	 * // Start dev server with live-reload
+	 * await server.listen(3000);
 	 */
 	async listen(port, host = "localhost", callback = () => {}) {
 		// Activate WebSocket server when starting the main server
@@ -194,6 +203,10 @@ export class DevServer extends NodeHttp {
 	 * Close both HTTP and WebSocket servers.
 	 *
 	 * @returns {Promise<void>} Resolves when both servers are closed
+	 *
+	 * @example
+	 * // Shutdown dev server and WebSocket connections
+	 * await server.close();
 	 */
 	async close() {
 		// Close WebSocket server and connections

@@ -16,11 +16,11 @@
  */
 
 /**
- * Parse a single block element (extracted from markdown-to-html.js)
+ * Parses single block element from markdown lines with reference tracking.
  * @param {string[]} lines - Array of markdown lines
- * @param {number} startIndex - Starting line index
- * @param {Map<string, {url: string, title: string}>} references - Reference definitions
- * @returns {{node: ASTNode|null, nextIndex: number}} Parse result
+ * @param {number} startIndex - Starting index in lines array
+ * @param {Map<string, {url: string, title: string}>} references - Reference definitions map
+ * @returns {{node: ASTNode | null, nextIndex: number}} Parse result with next index
  */
 const parseBlockElement = (lines, startIndex, references) => {
 	// Skip empty lines
@@ -237,9 +237,28 @@ const parseToAST = (lines) => {
 };
 
 /**
- * Convert markdown text to plain text
+ * Convert markdown text to plain text with surgical formatting removal.
+ *
+ * Single-pass text extraction optimized for search indexing and accessibility.
+ * Strips all visual formatting while preserving semantic content and list structure.
+ *
  * @param {string} markdown - Markdown source text
  * @returns {string} Plain text output
+ *
+ * @example
+ * // Basic usage
+ * markdownToText('# Hello\n\nThis is **bold** text.');
+ * // → 'Hello\n\nThis is bold text.'
+ *
+ * @example
+ * // Complex formatting removal
+ * markdownToText('- Item `code` with [link](url)\n- *Emphasis* text');
+ * // → '- Item code with link\n- Emphasis text'
+ *
+ * @example
+ * // Edge case: empty input
+ * markdownToText('');
+ * // → ''
  */
 export const markdownToText = (markdown) => {
 	if (typeof markdown !== "string" || !markdown.trim()) {

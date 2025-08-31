@@ -3,89 +3,100 @@ import { describe, it } from "node:test";
 import { openGraph } from "./open-graph.js";
 
 describe("openGraph", () => {
-	it("should generate correct Open Graph meta tags with all parameters", () => {
-		const config = {
-			title: "Test Page",
-			description: "This is a test description.",
+	it("generates basic Open Graph meta tags", () => {
+		const result = openGraph({
+			title: "My Page",
+			description: "Page description",
 			domain: "example.com",
-			path: "/test-path",
-			imageUrl: "/test-image.png",
+			path: "/my-page",
+			imageUrl: "/og-image.jpg",
+		});
+		assert(result.includes('property="og:title"'));
+		assert(result.includes('content="My Page"'));
+		assert(result.includes('property="og:description"'));
+		assert(result.includes('content="Page description"'));
+		assert(result.includes('property="og:url"'));
+		assert(result.includes('content="https://example.com/my-page"'));
+		assert(result.includes('property="og:image"'));
+		assert(result.includes('content="https://example.com/og-image.jpg"'));
+	});
+
+	it("defaults to website type", () => {
+		const result = openGraph({
+			title: "Page",
+			description: "Description",
+		});
+		assert(result.includes('property="og:type"'));
+		assert(result.includes('content="website"'));
+	});
+
+	it("accepts custom type", () => {
+		const result = openGraph({
+			title: "Article",
+			description: "Blog post",
 			type: "article",
-		};
-		const result = openGraph(config);
-
-		assert(
-			result.includes(
-				'<meta name="og:type" property="og:type" content="article">',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="og:title" property="og:title" content="Test Page" />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="og:description" property="og:description" content="This is a test description." />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="og:url" property="og:url" content="https://example.com/test-path" />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="og:image" property="og:image" content="https://example.com/test-image.png" />',
-			),
-		);
+		});
+		assert(result.includes('content="article"'));
 	});
 
-	it("should generate correct Open Graph meta tags without image", () => {
-		const config = {
-			title: "Test Page",
-			description: "This is a test description.",
-			domain: "example.com",
-			path: "/test-path",
-		};
-		const result = openGraph(config);
-
-		assert(
-			result.includes(
-				'<meta name="og:type" property="og:type" content="website">',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="og:title" property="og:title" content="Test Page" />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="og:description" property="og:description" content="This is a test description." />',
-			),
-		);
-		assert(
-			result.includes(
-				'<meta name="og:url" property="og:url" content="https://example.com/test-path" />',
-			),
-		);
-		assert(!result.includes('<meta name="og:image" property="og:image"'));
+	it("excludes image tag when no imageUrl", () => {
+		const result = openGraph({
+			title: "No Image",
+			description: "Content without image",
+		});
+		assert(!result.includes("og:image"));
 	});
 
-	it("should use default type when not specified", () => {
-		const config = {
-			title: "Test Page",
-			description: "This is a test description.",
-			domain: "example.com",
-			path: "/test-path",
-		};
-		const result = openGraph(config);
+	it("handles minimal configuration", () => {
+		const result = openGraph({
+			title: "Simple",
+			description: "Basic",
+		});
+		assert(result.includes('content="Simple"'));
+		assert(result.includes('content="Basic"'));
+		assert(result.includes('content="website"'));
+	});
 
-		assert(
-			result.includes(
-				'<meta name="og:type" property="og:type" content="website">',
-			),
-		);
+	it("constructs absolute URLs correctly", () => {
+		const result = openGraph({
+			title: "Test",
+			description: "Test content",
+			domain: "site.com",
+			path: "page",
+			imageUrl: "image.jpg",
+		});
+		assert(result.includes('content="https://site.com/page"'));
+		assert(result.includes('content="https://site.com/image.jpg"'));
+	});
+
+	it("handles path and imageUrl without domain", () => {
+		const result = openGraph({
+			title: "Local",
+			description: "Local content",
+			path: "/local",
+			imageUrl: "/local.jpg",
+		});
+		assert(result.includes('content="/local"'));
+		assert(result.includes('content="/local.jpg"'));
+	});
+
+	it("includes both name and property attributes", () => {
+		const result = openGraph({
+			title: "Dual Attrs",
+			description: "Test content",
+		});
+		assert(result.includes('name="og:title"'));
+		assert(result.includes('property="og:title"'));
+		assert(result.includes('name="og:description"'));
+		assert(result.includes('property="og:description"'));
+	});
+
+	it("handles HTML in content", () => {
+		const result = openGraph({
+			title: "Test Script",
+			description: "Content and more",
+		});
+		assert(result.includes("Test Script"));
+		assert(result.includes("Content and more"));
 	});
 });

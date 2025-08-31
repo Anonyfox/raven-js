@@ -14,8 +14,8 @@ describe("JSDocStaticTag functionality", () => {
 	test("should inherit from JSDocTagBase", () => {
 		const tag = new JSDocStaticTag("Class-level method");
 
-		strictEqual(tag.getType(), "static");
-		strictEqual(tag.getRawContent(), "Class-level method");
+		strictEqual(tag.tagType, "static");
+		strictEqual(tag.rawContent, "Class-level method");
 		strictEqual(tag.isValid(), true);
 	});
 

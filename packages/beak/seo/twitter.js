@@ -10,10 +10,6 @@ import { html } from "../html/index.js";
 import { absoluteUrl } from "./utils.js";
 
 /**
- *
- */
-
-/**
  * @typedef {Object} TwitterConfig
  * @property {string} title - Page title for Twitter
  * @property {string} description - Page description for Twitter
@@ -25,30 +21,40 @@ import { absoluteUrl } from "./utils.js";
  */
 
 /**
- * Generates Twitter Card meta tags for the HTML head section.
+ * Generates Twitter Card meta tags for enhanced tweet sharing presentation.
  *
- * Since various social media platforms parse these tags differently,
- * every tag uses both `name` and `property` attributes for maximum compatibility.
+ * Creates Twitter Card meta tags with dual name/property attributes for
+ * platform compatibility. Automatically constructs absolute image URLs
+ * when domain provided, includes alt text generation.
  *
  * @param {TwitterConfig} config - Configuration object for Twitter Card tags
- * @returns {string} The generated Twitter Card meta tags as an HTML string
+ * @returns {string} Generated Twitter Card meta tags as HTML string
  *
  * @example
- * import { twitter } from '@raven-js/beak/seo';
- *
- * const tags = twitter({
+ * // Basic usage
+ * twitter({
  *   title: 'My Page',
- *   description: 'This is my page description',
- *   imageUrl: '/my-image.jpg',
+ *   description: 'Page description',
+ *   imageUrl: '/image.jpg',
  *   cardType: 'summary_large_image'
  * });
- * // Output:
- * // <meta name="twitter:card" property="twitter:card" content="summary_large_image" />
- * // <meta name="twitter:title" property="twitter:title" content="My Page" />
- * // <meta name="twitter:description" property="twitter:description" content="This is my page description" />
- * // <meta name="twitter:image" property="twitter:image" content="https://example.com/my-image.jpg" />
- * // <meta name="twitter:image:src" property="twitter:image:src" content="https://example.com/my-image.jpg">
- * // <meta name="twitter:image:alt" property="twitter:image:alt" content="Illustration of My Page">
+ *
+ * @example
+ * // Edge case: with domain for absolute URLs
+ * twitter({
+ *   title: 'Blog Post',
+ *   description: 'Detailed article',
+ *   domain: 'blog.com',
+ *   imageUrl: '/images/post.jpg',
+ *   cardType: 'summary'
+ * });
+ *
+ * @example
+ * // Edge case: minimal configuration
+ * twitter({
+ *   title: 'Simple Tweet',
+ *   description: 'Basic description'
+ * });
  */
 export const twitter = ({
 	title,

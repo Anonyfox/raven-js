@@ -18,8 +18,8 @@ describe("JSDocAliasTag construction and inheritance", () => {
 	test("should inherit from JSDocTagBase correctly", () => {
 		const tag = new JSDocAliasTag("MySymbol");
 
-		strictEqual(tag.getType(), "alias");
-		strictEqual(tag.getRawContent(), "MySymbol");
+		strictEqual(tag.tagType, "alias");
+		strictEqual(tag.rawContent, "MySymbol");
 		strictEqual(tag.isValid(), true);
 	});
 

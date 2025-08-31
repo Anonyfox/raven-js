@@ -7,32 +7,39 @@
  */
 
 /**
- * @file Discover the package and its modules.
+ * @file Package and module discovery with dependency tracking.
  *
- * intended as a single pass over the package folder to collect all files and
- * modules and their dependencies - so the files to be processed later on are
- * already known, as well as basic package informations we care about.
+ * Single pass over the package folder to collect files, modules, and dependencies
+ * for downstream JSDoc extraction processing.
  */
 
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { extractImageAssets } from "../assets/extractor.js";
 import { listFiles } from "./fsutils/list-files.js";
 import { File } from "./models/file.js";
 import { Module } from "./models/module.js";
 import { Package } from "./models/package.js";
 
 /**
- * Discover the package and its modules.
+ * Discover package and modules with dependency tracking for JSDoc extraction.
  *
- * intended as a single pass over the package folder to collect all files and
- * modules and their dependencies - so the files to be processed later on are
- * already known, as well as basic package informations we care about.
- *
- * minimizes actual disk access as good as possible and is the input for the
- * actual JSDoc extraction in the next phase.
+ * Single pass collection of files, modules, and dependencies from package folder,
+ * minimizing disk access for downstream processing.
  *
  * @param {string} packagePath - the path to the package root directory
- * @returns {Package} the package abstraction
+ * @returns {Package} the package abstraction with modules and dependency graph
+ *
+ * @example
+ * // Basic package discovery
+ * const pkg = discover('./my-package');
+ * console.log(pkg.name, pkg.modules.length);
+ *
+ * @example
+ * // Module inspection
+ * pkg.modules.forEach(module => {
+ *   console.log(module.importPath, module.files.length);
+ * });
  */
 export const discover = (packagePath) => {
 	// start with a single pass of listing all files in the package folder recursively
@@ -51,6 +58,8 @@ export const discover = (packagePath) => {
 	const packageReadmePath = join(packagePath, "README.md");
 	if (existsSync(packageReadmePath)) {
 		pkg.readme = readFileSync(packageReadmePath, "utf-8");
+		// extract image assets from package README
+		pkg.imageAssets = extractImageAssets(pkg.readme, packagePath);
 	}
 
 	// for every entrypoint there will be a module in this package
@@ -65,6 +74,8 @@ export const discover = (packagePath) => {
 		const moduleReadmePath = join(moduleDir, "README.md");
 		if (existsSync(moduleReadmePath)) {
 			module.readme = readFileSync(moduleReadmePath, "utf-8");
+			// extract image assets from module README
+			module.imageAssets = extractImageAssets(module.readme, moduleDir);
 		}
 
 		// add the initial file as a starting point for the module

@@ -1,193 +1,99 @@
 # Beak CSS
 
-CSS template literals with intelligent value handling and aggressive minification.
+[![Website](https://img.shields.io/badge/ravenjs.dev-000000?style=flat&logo=firefox&logoColor=white)](https://ravenjs.dev)
+[![Documentation](https://img.shields.io/badge/docs-ravenjs.dev%2Fbeak-blue.svg)](https://docs.ravenjs.dev/beak)
+[![Zero Dependencies](https://img.shields.io/badge/Zero-Dependencies-brightgreen.svg)](https://github.com/Anonyfox/ravenjs)
+[![ESM Only](https://img.shields.io/badge/ESM-Only-purple.svg)](https://nodejs.org/api/esm.html)
+[![Node.js 22.5+](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
 
-## Performance
+**CSS template literals with intelligent value processing and minification.** Automatic camelCase-to-kebab-case conversion, array flattening, and single-line output optimization.
 
-- **Single-pass normalization**: Pre-compiled regex patterns, O(n) processing
-- **Scales excellently**: 300KB+ CSS bundles in ~7ms
-- **V8 optimized**: Pre-computed constants, fast-path empty string detection
-- **Memory efficient**: Minimal object allocation, inline string operations
+## Purpose
 
-## API
+Writing CSS programmatically requires tedious string concatenation, manual property conversion, and whitespace management. Existing CSS-in-JS solutions add runtime overhead, require transpilation, or force architectural decisions.
 
-### `css`
+Beak CSS eliminates preprocessing complexity through native template literals. Write CSS naturally with JavaScript values, get automatic property conversion and minification, deploy without build tools. Arrays become space-separated values, objects become CSS properties, and camelCase converts to kebab-case automatically.
 
-Template literal for CSS generation with intelligent value interpolation.
+Templates compile to optimized functions for consistent performance, regardless of dynamic content complexity.
+
+## Installation
+
+```bash
+npm install @raven-js/beak
+```
+
+## Usage
+
+Import CSS functions and use them as tagged template literals:
 
 ```javascript
-import { css } from "@raven-js/beak";
+import { css, style } from "@raven-js/beak/css";
 
-const styles = css`
-  .button {
-    color: ${["red", "bold"]};
-    margin: ${[10, 20]}px;
-  }
-`;
-// Returns: ".button{ color:red bold; margin:10 20px; }"
-
+// Basic CSS generation with value interpolation
 const theme = css`
-  .theme {
-    ${{ backgroundColor: "#007bff", fontSize: "16px" }}
+  .button {
+    color: ${isPrimary ? "#007bff" : "#6c757d"};
+    margin: ${[10, 20]}px;
+    ${isLarge && { fontSize: "18px", padding: "12px 24px" }}
   }
 `;
-// Returns: ".theme{ background-color:#007bff; font-size:16px; }"
-```
+// → ".button{ color:#007bff; margin:10 20px; font-size:18px; padding:12px 24px; }"
 
-**Value Handling:**
-
-- **Primitives**: Direct string conversion
-- **Arrays**: Space-separated flattening (recursive)
-- **Objects**: CSS key-value pairs with camelCase→kebab-case conversion
-- **Filters**: null/undefined values excluded
-
-### `style`
-
-CSS wrapped in `<style>` tags for direct HTML insertion.
-
-```javascript
-import { style } from "@raven-js/beak";
-
-const wrapped = style`.theme {
-  color: ${isDark ? "#fff" : "#000"};
-}`;
-// Returns: "<style>.theme{ color:#fff; }</style>"
-```
-
-**Use Cases:**
-
-- SSR styling
-- Dynamic stylesheets
-- Component-scoped CSS
-- Critical CSS injection
-
-## Value Processing
-
-### Arrays
-
-```javascript
-css`
-  margin: ${[10, 20, 30]}px;
-`; // "margin:10 20 30px;"
-css`
-  colors: ${["red", ["blue"]]};
-`; // "colors:red blue;"
-css`
-  list: ${[null, "valid", undefined]};
-`; // "list:valid;"
-```
-
-**Sparse Array Support**: Holes skipped via `in` operator optimization.
-
-### Objects
-
-```javascript
-css`
-  .btn {
+// Object-to-CSS transformation
+const styles = css`
+  .card {
     ${{
-      backgroundColor: "#007bff",
-      fontSize: "16px",
+      backgroundColor: "#ffffff",
+      borderRadius: [4, 8],
       WebkitTransform: "scale(1.02)",
     }}
   }
 `;
-// ".btn{ background-color:#007bff; font-size:16px; -webkit-transform:scale(1.02); }"
-```
+// → ".card{ background-color:#ffffff; border-radius:4 8; -webkit-transform:scale(1.02); }"
 
-**camelCase Conversion**: `backgroundColor` → `background-color`
-**Vendor Prefixes**: `WebkitTransform` → `-webkit-transform`
-
-### Conditional Styling
-
-```javascript
-const isDark = true;
-css`
-  .theme {
-    color: ${isDark ? "#fff" : "#000"};
-    background: ${isDark && "#333"};
-  }
+// Style tag wrapper for HTML insertion
+const inlineCSS = style`
+  .theme { color: ${darkMode ? "#fff" : "#000"}; }
 `;
+// → "<style>.theme{ color:#fff; }</style>"
 ```
 
-**Boolean Handling**: `false` → empty string for conditional patterns.
+**Value processing features:**
 
-## Normalization
+- **Arrays**: Space-separated values with recursive flattening
+- **Objects**: CSS properties with camelCase→kebab-case conversion
+- **Conditionals**: Boolean values filter naturally
+- **Vendor prefixes**: WebkitTransform → -webkit-transform
 
-Single-line CSS output with minimal whitespace:
+## Performance
 
-```javascript
-css`
-  .button {
-    color: white;
-    margin: 10px;
-  }
-`;
-// ".button{ color:white; margin:10px; }"
-```
+Template processing optimized for real-world usage patterns:
 
-**Processing Pipeline:**
+- **300KB+ bundles**: Process in ~7ms
+- **Single-pass normalization**: Pre-compiled regex patterns
+- **V8 optimized**: Monomorphic value processing paths
+- **Memory efficient**: Minimal object allocation
 
-1. Whitespace collapse to single spaces
-2. Remove spaces around `:`, `;`, `{`, `}`
-3. Add spaces after `;` and `}` when needed
-4. Trim result
+Template caching eliminates redundant compilation for repeated usage.
 
-## Edge Cases
+## Requirements
 
-**Circular References**: Stack overflow protection via RangeError.
+- **Node.js:** 22.5+ (leverages latest platform primitives)
+- **Browsers:** ES2020+ (modern baseline, no legacy compromise)
+- **Dependencies:** Absolutely zero
 
-**Empty Values**: Template literals with null/undefined handle whitespace intelligently.
+## The Raven's CSS
 
-**Performance Pathological Cases**: Linear regex patterns prevent catastrophic backtracking.
+Like a raven that efficiently transforms scattered materials into structured constructions, Beak CSS converts diverse JavaScript values into optimized CSS output. Surgical precision in property conversion, automatic cleanup of formatting artifacts.
 
-## Integration Patterns
+## 🦅 Support RavenJS Development
 
-### Component Styling
+If you find RavenJS helpful, consider supporting its development:
 
-```javascript
-const Button = ({ variant = "primary" }) => {
-  const styles = css`
-    .btn-${variant} {
-      ${variant === "primary" && { backgroundColor: "#007bff" }}
-      ${variant === "danger" && { backgroundColor: "#dc3545" }}
-    padding: 10px 20px;
-    }
-  `;
-  return { styles, html: `<button class="btn-${variant}">Click</button>` };
-};
-```
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor%20on%20GitHub-%23EA4AAA?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sponsors/Anonyfox)
 
-### Responsive Design
-
-```javascript
-const responsive = css`
-  .container {
-    padding: 10px;
-  }
-  @media (min-width: ${768}px) {
-    .container {
-      padding: ${[15, 20]}px;
-    }
-  }
-`;
-```
-
-### CSS Variables
-
-```javascript
-const theme = css`
-  :root {
-    ${Object.entries(colors)
-      .map(([name, value]) => `--color-${name}: ${value};`)
-      .join(" ")}
-  }
-`;
-```
-
-## Types
-
-Full JSDoc type annotations for IDE integration. TemplateStringsArray enforcement prevents manual array construction.
+Your sponsorship helps keep RavenJS **zero-dependency**, **modern**, and **developer-friendly**.
 
 ---
 
-**Surgical CSS generation. Predatory performance.**
+**Built with ❤️ by [Anonyfox](https://anonyfox.com)**

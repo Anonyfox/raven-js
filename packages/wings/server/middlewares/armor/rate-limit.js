@@ -22,21 +22,21 @@
 
 /**
  * Rate limiting store implementing sliding window algorithm with memory optimization.
- * Tracks request timestamps per key with automatic cleanup of expired data.
  *
- * **Sub-second Batching**: Groups requests within same second to reduce memory usage
- * **Sliding Window**: Removes expired requests on each operation for accurate limits
- * **Memory Safety**: Periodic cleanup prevents accumulation of empty key entries
+ * @example
+ * // Create rate limit store with custom cleanup interval
+ * const store = new RateLimitStore(60000); // 1 minute cleanup
+ * const allowed = store.isAllowed('user123', 100, 60000); // 100 req/min
  */
 export class RateLimitStore {
 	/**
 	 * Create a new rate limit store with configurable cleanup interval.
 	 *
-	 * **Cleanup Strategy**: Remove expired entries periodically to prevent memory bloat
-	 * **Default Interval**: 5 minutes balances memory efficiency with CPU overhead
-	 * **Memory Growth**: Without cleanup, memory usage grows linearly with unique request keys
-	 *
 	 * @param {number} [cleanupInterval=300000] - Cleanup interval in milliseconds (default: 5 minutes)
+	 *
+	 * @example
+	 * // Create store with default 5-minute cleanup
+	 * const store = new RateLimitStore();
 	 */
 	constructor(cleanupInterval = 5 * 60 * 1000) {
 		/** @type {Map<string, Array<{timestamp: number, count: number}>>} */

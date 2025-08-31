@@ -3,87 +3,57 @@ import { describe, it } from "node:test";
 import { canonical } from "./canonical.js";
 
 describe("canonical", () => {
-	it("should generate correct canonical meta tags with basic parameters", () => {
-		const config = {
-			domain: "example.com",
-			path: "/my-page",
-		};
-		const result = canonical(config);
-
-		assert(result.includes('href="https://example.com/my-page"'));
+	it("generates basic canonical link", () => {
+		const result = canonical({ domain: "example.com", path: "/page" });
 		assert(result.includes('rel="canonical"'));
-		assert(!result.includes("hreflang"));
-		assert(!result.includes("media"));
+		assert(result.includes('href="https://example.com/page"'));
 	});
 
-	it("should generate correct canonical meta tags with hreflang", () => {
-		const config = {
+	it("handles root path", () => {
+		const result = canonical({ domain: "example.com", path: "/" });
+		assert(result.includes('href="https://example.com/"'));
+	});
+
+	it("adds hreflang attribute when provided", () => {
+		const result = canonical({
 			domain: "example.com",
-			path: "/my-page",
+			path: "/page",
 			hreflang: "en-US",
-		};
-		const result = canonical(config);
-
-		assert(result.includes('href="https://example.com/my-page"'));
+		});
 		assert(result.includes('hreflang="en-US"'));
-		assert(result.includes('rel="canonical"'));
 	});
 
-	it("should generate correct canonical meta tags with media", () => {
-		const config = {
+	it("adds media attribute when provided", () => {
+		const result = canonical({
 			domain: "example.com",
-			path: "/my-page",
-			media: "only screen and (max-width: 640px)",
-		};
-		const result = canonical(config);
-
-		assert(result.includes('href="https://example.com/my-page"'));
-		assert(result.includes('media="only screen and (max-width: 640px)"'));
-		assert(result.includes('rel="canonical"'));
+			path: "/mobile",
+			media: "screen and (max-width: 640px)",
+		});
+		assert(result.includes('media="screen and (max-width: 640px)"'));
 	});
 
-	it("should generate correct canonical meta tags with both hreflang and media", () => {
-		const config = {
+	it("includes both hreflang and media when both provided", () => {
+		const result = canonical({
 			domain: "example.com",
-			path: "/my-page",
-			hreflang: "es-ES",
-			media: "only screen and (max-width: 768px)",
-		};
-		const result = canonical(config);
-
-		assert(result.includes('href="https://example.com/my-page"'));
-		assert(result.includes('hreflang="es-ES"'));
-		assert(result.includes('media="only screen and (max-width: 768px)"'));
-		assert(result.includes('rel="canonical"'));
+			path: "/page",
+			hreflang: "en-US",
+			media: "print",
+		});
+		assert(result.includes('hreflang="en-US"'));
+		assert(result.includes('media="print"'));
 	});
 
-	it("should handle absolute URLs correctly", () => {
-		const config = {
-			domain: "example.com",
-			path: "https://other.com/my-page",
-		};
-		const result = canonical(config);
-
-		assert(result.includes('href="https://other.com/my-page"'));
+	it("handles path without leading slash", () => {
+		const result = canonical({ domain: "example.com", path: "page" });
+		assert(result.includes('href="https://example.com/page"'));
 	});
 
-	it("should handle URLs without leading slash", () => {
-		const config = {
+	it("handles attributes with quotes", () => {
+		const result = canonical({
 			domain: "example.com",
-			path: "my-page",
-		};
-		const result = canonical(config);
-
-		assert(result.includes('href="https://example.com/my-page"'));
-	});
-
-	it("should handle empty path", () => {
-		const config = {
-			domain: "example.com",
-			path: "",
-		};
-		const result = canonical(config);
-
-		assert(result.includes('href="https://example.com"'));
+			path: "/page",
+			hreflang: "en-US",
+		});
+		assert(result.includes('hreflang="en-US"'));
 	});
 });

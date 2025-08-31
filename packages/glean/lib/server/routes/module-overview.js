@@ -18,11 +18,18 @@ import { extractModuleOverviewData } from "../data/module-overview.js";
 import { moduleOverviewTemplate } from "../templates/module-overview.js";
 
 /**
- * Create route handler for module overview page
+ * Create module overview route handler with entity listings and navigation.
+ *
  * @param {import('../../extract/models/package.js').Package} packageInstance - Package data
+ * @param {import('../../assets/registry.js').AssetRegistry} [assetRegistry] - Asset registry for path rewriting
  * @returns {Function} Wings route handler function
+ *
+ * @example
+ * // Create module overview route handler
+ * const handler = createModuleOverviewHandler(packageInstance, assetRegistry);
+ * app.get('/modules/:moduleName/', handler);
  */
-export function createModuleOverviewHandler(packageInstance) {
+export function createModuleOverviewHandler(packageInstance, assetRegistry) {
 	/**
 	 * Handle module overview page requests
 	 * @param {import('@raven-js/wings').Context} ctx - Wings request context
@@ -48,7 +55,10 @@ export function createModuleOverviewHandler(packageInstance) {
 			const data = extractModuleOverviewData(packageInstance, moduleName);
 
 			// Generate HTML using template
-			const html = moduleOverviewTemplate(/** @type {any} */ (data));
+			const html = moduleOverviewTemplate(
+				/** @type {any} */ (data),
+				assetRegistry,
+			);
 
 			// Send HTML response with caching
 			await ctx.html(html);

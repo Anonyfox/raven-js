@@ -173,15 +173,15 @@ describe("JSDocTagBase public methods", () => {
 	test("getType() should return tagType", () => {
 		const tag = new TestChildTag("content");
 
-		strictEqual(tag.getType(), "test");
+		strictEqual(tag.tagType, "test");
 	});
 
 	test("getRawContent() should return rawContent", () => {
 		const tag1 = new TestChildTag("some content");
 		const tag2 = new TestChildTag("");
 
-		strictEqual(tag1.getRawContent(), "some content");
-		strictEqual(tag2.getRawContent(), "");
+		strictEqual(tag1.rawContent, "some content");
+		strictEqual(tag2.rawContent, "");
 	});
 });
 

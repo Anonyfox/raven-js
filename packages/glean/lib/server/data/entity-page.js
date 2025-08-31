@@ -15,11 +15,25 @@
  */
 
 /**
- * Extract entity page data for documentation rendering
+ * Extract entity page data for documentation rendering with comprehensive JSDoc processing.
+ *
+ * Implements full entity documentation extraction including parameters, examples,
+ * cross-references, and navigation context for detailed API pages.
+ *
  * @param {import('../../extract/models/package.js').Package} packageInstance - Package data
  * @param {string} moduleName - Module name from URL parameter
  * @param {string} entityName - Entity name from URL parameter
  * @returns {Object} Complete entity page data structure
+ *
+ * @example
+ * // Extract data for a function entity
+ * const pageData = extractEntityPageData(package, 'utils', 'myFunction');
+ * console.log(pageData.documentation.parameters);
+ *
+ * @example
+ * // Extract data for a class entity
+ * const pageData = extractEntityPageData(package, 'core', 'MyClass');
+ * console.log(pageData.documentation.methods);
  */
 export function extractEntityPageData(packageInstance, moduleName, entityName) {
 	/** @type {any} */

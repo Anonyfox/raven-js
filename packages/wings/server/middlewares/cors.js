@@ -25,10 +25,7 @@ const DEFAULT_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"];
 const DEFAULT_ALLOWED_HEADERS = ["Content-Type", "Authorization"];
 
 /**
- * Validate CORS configuration options
- *
- * **Critical Validation Error:** Wildcard origins with credentials enabled create security vulnerabilities
- * per CORS specification. This function enforces the RFC 6454 security constraint.
+ * Validate CORS configuration options.
  *
  * @param {Object} options - Configuration options to validate
  * @param {string|string[]|RegExp|((origin: string|null) => boolean)|boolean} options.origin - Origin configuration
@@ -38,6 +35,9 @@ const DEFAULT_ALLOWED_HEADERS = ["Content-Type", "Authorization"];
  * @param {boolean} options.credentials - Whether credentials (cookies/auth headers) allowed
  * @param {number} options.maxAge - Preflight cache time in seconds
  * @throws {Error} Configuration validation failures requiring immediate fix
+ *
+ * @example
+ * // Validate CORS configuration before middleware creation
  */
 function validateCorsOptions(options) {
 	// Validate methods array

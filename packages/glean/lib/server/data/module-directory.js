@@ -15,9 +15,23 @@
  */
 
 /**
- * Extract module directory data for module overview page
+ * Extract module directory data for overview page with statistics and navigation.
+ *
+ * Transforms package modules into directory format with entity counts, descriptions,
+ * and navigation links for the modules overview page.
+ *
  * @param {import('../../extract/models/package.js').Package} packageInstance - Package data
  * @returns {Object} Structured data for module directory template
+ *
+ * @example
+ * // Basic module directory extraction
+ * const directory = extractModuleDirectoryData(packageInstance);
+ * console.log(directory.moduleList.length, directory.directoryStats.totalPublicEntities);
+ *
+ * @example
+ * // Check directory contents
+ * const directory = extractModuleDirectoryData(packageInstance);
+ * directory.moduleList.forEach(module => console.log(module.importPath, module.entityCount));
  */
 export function extractModuleDirectoryData(packageInstance) {
 	if (!packageInstance || typeof packageInstance !== "object") {

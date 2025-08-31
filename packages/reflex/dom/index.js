@@ -6,10 +6,14 @@
  * @see {@link https://anonyfox.com}
  */
 
+/**
+ * @file Browser DOM mounting with reactive templates, SSR hydration awareness, and scroll preservation during updates.
+ */
+
 import { __getWriteVersion, effect, withTemplateContext } from "../index.js";
 
 /**
- * Replace element HTML efficiently (preserves scroll if applicable).
+ * Replace element HTML efficiently with scroll position preservation.
  * @param {Element} el
  * @param {string} html
  */
@@ -42,7 +46,7 @@ function setHTML(el, html) {
 }
 
 /**
- * Resolve a selector or element.
+ * Resolve a selector string or return element directly with error handling.
  * @param {string|Element} target
  * @returns {Element}
  */
@@ -56,7 +60,7 @@ function resolveTarget(target) {
 }
 
 /**
- * rAF-aligned update scheduling.
+ * Schedule callback with requestAnimationFrame alignment and microtask fallback.
  * @template T
  * @param {() => T} cb
  * @returns {Promise<T>}
@@ -73,8 +77,32 @@ function schedule(cb) {
 }
 
 /**
- * Mounts a reactive template into a DOM element.
- * Accepts sync or async templates: () => string | Promise<string>
+ * Mount reactive template into DOM element with automatic signal tracking and SSR hydration awareness.
+ *
+ * Signal reads inside template function automatically trigger DOM updates. Prevents downgrade
+ * from server-rendered content during initial hydration when no reactive writes have occurred.
+ * Schedules DOM updates via requestAnimationFrame for optimal rendering performance.
+ *
+ * @example
+ * // Basic usage
+ * import { mount } from '@raven-js/reflex/dom';
+ * import { signal } from '@raven-js/reflex';
+ *
+ * const count = signal(0);
+ * const app = mount(() => `<h1>Count: ${count()}</h1>`, '#app');
+ *
+ * @example
+ * // Async templates
+ * const AsyncWidget = mount(async () => {
+ *   const data = await fetch('/api/data');
+ *   return `<div>${await data.text()}</div>`;
+ * }, document.querySelector('#widget'));
+ *
+ * @example
+ * // Manual cleanup
+ * const app = mount(() => template(), '#app');
+ * // Later...
+ * app.unmount(); // Optional - cleanup happens automatically
  *
  * @param {() => (string|Promise<string>)} templateFn
  * @param {string|Element} target

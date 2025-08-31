@@ -386,9 +386,28 @@ const tokenizeHTML = (sourceText) => {
 };
 
 /**
- * Highlight HTML source code with Bootstrap semantic classes
+ * Highlight HTML source code with Bootstrap semantic classes.
+ *
+ * Transforms HTML source into semantically highlighted markup using Bootstrap
+ * color classes for consistent theming across documentation systems.
+ *
  * @param {string} sourceText - Raw HTML source code
  * @returns {string} HTML with syntax highlighting
+ *
+ * @example
+ * // Basic usage
+ * highlightHTML('<div class="container">Hello</div>');
+ * // → '<span class="text-secondary">&lt;</span><span class="text-primary">div</span>...'
+ *
+ * @example
+ * // Edge case: complex HTML with attributes
+ * highlightHTML('<input type="text" value="test" disabled>');
+ * // → Highlighted HTML with attribute names in text-info and values in text-success
+ *
+ * @example
+ * // Edge case: empty input
+ * highlightHTML('');
+ * // → ''
  */
 export const highlightHTML = (sourceText) => {
 	if (typeof sourceText !== "string") {

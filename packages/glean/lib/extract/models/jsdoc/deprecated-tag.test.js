@@ -14,8 +14,8 @@ describe("JSDocDeprecatedTag functionality", () => {
 	test("should inherit from JSDocTagBase", () => {
 		const tag = new JSDocDeprecatedTag("This is deprecated");
 
-		strictEqual(tag.getType(), "deprecated");
-		strictEqual(tag.getRawContent(), "This is deprecated");
+		strictEqual(tag.tagType, "deprecated");
+		strictEqual(tag.rawContent, "This is deprecated");
 		strictEqual(tag.isValid(), true);
 	});
 

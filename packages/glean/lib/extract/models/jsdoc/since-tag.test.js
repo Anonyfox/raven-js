@@ -14,8 +14,8 @@ describe("JSDocSinceTag core functionality", () => {
 	test("should inherit from JSDocTagBase", () => {
 		const tag = new JSDocSinceTag("1.2.0 Added new feature");
 
-		strictEqual(tag.getType(), "since");
-		strictEqual(tag.getRawContent(), "1.2.0 Added new feature");
+		strictEqual(tag.tagType, "since");
+		strictEqual(tag.rawContent, "1.2.0 Added new feature");
 		strictEqual(tag.isValid(), true);
 	});
 

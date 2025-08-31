@@ -35,6 +35,63 @@ describe("core functionality", () => {
 		);
 	});
 
+	test("html template handles event attributes and function processing", () => {
+		// Named function event handler
+		function namedHandler() {
+			return "clicked";
+		}
+		const namedResult = html`<button onclick=${namedHandler}>Click</button>`;
+		strictEqual(
+			namedResult,
+			`<button onclick=namedHandler(event)>Click</button>`,
+		);
+
+		// Anonymous function event handler (gets auto-generated name)
+		const anonymousHandler = () => "anonymous";
+		const anonResult = html`<button onclick=${anonymousHandler}>Click</button>`;
+		strictEqual(
+			anonResult,
+			`<button onclick=anonymousHandler(event)>Click</button>`,
+		);
+
+		// Function with invalid name (gets auto-generated name)
+		const invalidNameHandler = () => "invalid";
+		Object.defineProperty(invalidNameHandler, "name", { value: "123invalid" });
+		const invalidResult = html`<button onclick=${invalidNameHandler}>Click</button>`;
+		strictEqual(invalidResult, `<button onclick=__h1(event)>Click</button>`);
+
+		// Non-event function (processed as regular value)
+		const regularFunc = () => "regular";
+		const regularResult = html`<span data-func="${regularFunc}">Content</span>`;
+		strictEqual(
+			regularResult,
+			`<span data-func="() => "regular"">Content</span>`,
+		);
+
+		// Non-function event attribute (surgical coverage for line 136)
+		const nonFunctionEvent = html`<button onclick=${"alert('test')"}> Click</button>`;
+		strictEqual(
+			nonFunctionEvent,
+			`<button onclick=alert('test')> Click</button>`,
+		);
+	});
+
+	test("html template uses array-indexed optimization for long templates", () => {
+		// Template with 9+ values triggers array-indexed optimization (lines 243-260, 269-270)
+		const values = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9"];
+		const longResult = html`<div>${values[0]}${values[1]}${values[2]}${values[3]}${values[4]}${values[5]}${values[6]}${values[7]}${values[8]}</div>`;
+		strictEqual(longResult, `<div>v1v2v3v4v5v6v7v8v9</div>`);
+
+		// Long template with event attribute context
+		function handler1() {}
+		function handler2() {}
+		const eventResult = html`<div onclick=${handler1} onload=${handler2} data-a="${"a"}" data-b="${"b"}" data-c="${"c"}" data-d="${"d"}" data-e="${"e"}" data-f="${"f"}" data-g="${"g"}">Long</div>`;
+		strictEqual(
+			eventResult,
+			`<div onclick=handler1(event) onload=handler2(event) data-a="a" data-b="b" data-c="c" data-d="d" data-e="e" data-f="f" data-g="g">Long</div>`,
+		);
+	});
+
 	test("safeHtml template applies escaping with identical type processing and whitespace handling", () => {
 		// XSS protection through escaping (hits line 82: string with shouldEscape=true)
 		strictEqual(
@@ -123,6 +180,42 @@ describe("security and edge cases", () => {
 		strictEqual(
 			safeHtml`<span>${obj}</span>`,
 			"<span>&lt;dangerous&gt;</span>",
+		);
+	});
+
+	test("safeHtml blocks dangerous protocols in final concatenated result", () => {
+		// Dangerous protocols in final result get blocked (lines 310-315)
+		const jsProtocol = "javascript:alert(1)";
+		const vbProtocol = "vbscript:msgbox(1)";
+		const dataProtocol = "data:text/html,<script>";
+		strictEqual(
+			safeHtml`<a href="${jsProtocol}" data-vb="${vbProtocol}" data-data="${dataProtocol}">Link</a>`,
+			'<a href="blocked:alert(1)" data-vb="blocked:msgbox(1)" data-data="blocked:text/html,&lt;script&gt;">Link</a>',
+		);
+
+		// Event handlers in final result get blocked
+		const eventHandler = 'onclick="alert()"';
+		strictEqual(
+			safeHtml`<div ${eventHandler}>Content</div>`,
+			"<div blocked-click=&quot;alert()&quot;>Content</div>",
+		);
+
+		// Surgical coverage for lines 310-315: dangerous protocols through concatenation
+		const proto1 = "java";
+		const proto2 = "script:";
+		const action = "alert(1)";
+		strictEqual(
+			safeHtml`<a href="${proto1}${proto2}${action}">Test</a>`,
+			'<a href="blocked:alert(1)">Test</a>',
+		);
+
+		// Event handler through concatenation
+		const event1 = "on";
+		const event2 = "click";
+		const handler = '="alert()"';
+		strictEqual(
+			safeHtml`<div ${event1}${event2}${handler}>Test</div>`,
+			"<div blocked-click=&quot;alert()&quot;>Test</div>",
 		);
 	});
 

@@ -7,32 +7,22 @@
  */
 
 /**
- * @file Matrix-optimized Neural Network implementation for the Cortex neural center
+ * @file Feedforward neural network with single hidden layer using Matrix operations.
  *
- * Lightweight feedforward neural network with one hidden layer using Matrix primitives.
- * Designed for small/medium classification and regression tasks.
- * Uses ReLU activation and Xavier weight initialization.
- * Fully serializable and isomorphic across all JavaScript environments.
+ * Single hidden layer neural network for classification and regression tasks.
+ * Uses ReLU activation, Xavier weight initialization, and backpropagation training.
+ * Supports serialization and configurable layer sizes.
  */
 
 import { Matrix } from "../structures/matrix.js";
 import { Model } from "./model.js";
 
 /**
- * A lightweight neural network implementation with one hidden layer using Matrix operations.
+ * Single hidden layer neural network implementation using Matrix operations.
  *
- * Perfect for classification, regression, and pattern recognition tasks
- * where you need more complexity than linear models but want to avoid
- * the overhead of deep learning frameworks.
- *
- * FEATURES:
- * - Single hidden layer with ReLU activation
- * - Matrix-optimized operations for better performance
- * - Configurable layer sizes
- * - Xavier weight initialization for stable training
- * - Efficient backpropagation training
- * - Complete serialization support
- * - Zero external dependencies
+ * Feedforward neural network with configurable layer sizes for classification
+ * and regression tasks. Uses ReLU activation, Xavier weight initialization,
+ * and backpropagation training with Matrix-based operations.
  *
  * @example
  * // XOR problem - classic neural network test

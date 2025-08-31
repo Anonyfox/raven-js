@@ -16,19 +16,14 @@
 import { JSDocTagBase } from "./base.js";
 
 /**
- * JSDoc file tag implementation
+ * JSDoc file tag implementation for file-level documentation.
  *
- * **Official JSDoc Tag:** Documents the purpose/overview of an entire file.
- * **Alias:** fileoverview, overview
+ * Parses file tag content with structured data extraction.
  *
- * **Syntax:**
- * - Description: `Brief description of file purpose and contents`
- * - Multi-line: Can span multiple lines for comprehensive overview
- *
- * **Raven Design:**
- * - Simple file description capture
- * - Multi-line content support
- * - Essential for module intelligence
+ * @example
+ * // Basic usage
+ * const tag = new JSDocFileTag('Module description');
+ * // Access parsed properties
  */
 export class JSDocFileTag extends JSDocTagBase {
 

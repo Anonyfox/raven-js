@@ -18,8 +18,8 @@ describe("JSDocPrivateTag construction and inheritance", () => {
 	test("should inherit from JSDocTagBase correctly", () => {
 		const tag = new JSDocPrivateTag("Internal use only");
 
-		strictEqual(tag.getType(), "private");
-		strictEqual(tag.getRawContent(), "Internal use only");
+		strictEqual(tag.tagType, "private");
+		strictEqual(tag.rawContent, "Internal use only");
 		strictEqual(tag.isValid(), true);
 	});
 

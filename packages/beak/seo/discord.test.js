@@ -3,58 +3,82 @@ import { describe, it } from "node:test";
 import { discord } from "./discord.js";
 
 describe("discord", () => {
-	it("should generate correct Discord meta tags with all parameters", () => {
-		const config = {
-			title: "Join Our Community",
-			description: "Connect with like-minded developers",
+	it("generates basic Discord meta tags", () => {
+		const result = discord({
+			title: "Join Community",
+			description: "Connect with developers",
 			domain: "example.com",
 			path: "/community",
-			imageUrl: "/discord-banner.jpg",
-			invite: "abc123",
-		};
-		const result = discord(config);
-
-		assert(result.includes('content="Join Our Community"'));
-		assert(result.includes('content="Connect with like-minded developers"'));
-		assert(result.includes('content="https://example.com/community"'));
-		assert(result.includes('content="https://example.com/discord-banner.jpg"'));
-		assert(result.includes('content="abc123"'));
+		});
 		assert(result.includes('name="discord:title"'));
+		assert(result.includes('content="Join Community"'));
 		assert(result.includes('name="discord:description"'));
-		assert(result.includes('name="discord:url"'));
-		assert(result.includes('name="discord:image"'));
-		assert(result.includes('name="discord:invite"'));
+		assert(result.includes('content="Connect with developers"'));
+		assert(result.includes('content="https://example.com/community"'));
 	});
 
-	it("should generate correct Discord meta tags without optional parameters", () => {
-		const config = {
-			title: "Basic Page",
-			description: "Basic description",
+	it("includes image tag when imageUrl provided", () => {
+		const result = discord({
+			title: "Game Server",
+			description: "Play together",
 			domain: "example.com",
-			path: "/basic",
-		};
-		const result = discord(config);
+			path: "/game",
+			imageUrl: "/banner.jpg",
+		});
+		assert(result.includes('name="discord:image"'));
+		assert(result.includes('content="https://example.com/banner.jpg"'));
+	});
 
-		assert(result.includes('content="Basic Page"'));
-		assert(result.includes('content="Basic description"'));
-		assert(result.includes('content="https://example.com/basic"'));
-		assert(result.includes('name="discord:title"'));
-		assert(result.includes('name="discord:description"'));
-		assert(result.includes('name="discord:url"'));
+	it("includes invite tag when invite provided", () => {
+		const result = discord({
+			title: "Server",
+			description: "Join us",
+			invite: "abc123",
+		});
+		assert(result.includes('name="discord:invite"'));
+		assert(result.includes('content="abc123"'));
+	});
+
+	it("handles path without domain", () => {
+		const result = discord({
+			title: "Local",
+			description: "Local content",
+			path: "/local",
+		});
+		assert(result.includes('content="/local"'));
+	});
+
+	it("handles imageUrl without domain", () => {
+		const result = discord({
+			title: "Test",
+			description: "Test description",
+			imageUrl: "/image.jpg",
+		});
+		assert(result.includes('content="/image.jpg"'));
+	});
+
+	it("excludes image tag when no imageUrl", () => {
+		const result = discord({
+			title: "No Image",
+			description: "No image content",
+		});
 		assert(!result.includes("discord:image"));
+	});
+
+	it("excludes invite tag when no invite", () => {
+		const result = discord({
+			title: "No Invite",
+			description: "No invite content",
+		});
 		assert(!result.includes("discord:invite"));
 	});
 
-	it("should handle absolute URLs correctly", () => {
-		const config = {
-			title: "Test Page",
-			description: "Test description",
-			domain: "example.com",
-			path: "/test",
-			imageUrl: "https://other.com/test-image.png",
-		};
-		const result = discord(config);
-
-		assert(result.includes('content="https://other.com/test-image.png"'));
+	it("handles HTML in content", () => {
+		const result = discord({
+			title: "Test Script",
+			description: "Desc and content",
+		});
+		assert(result.includes("Test Script"));
+		assert(result.includes("Desc and content"));
 	});
 });

@@ -1,31 +1,40 @@
 /**
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
- * @see https://github.com/Anonyfox/ravenjs
- * @see https://ravenjs.dev
- * @see https://anonyfox.com
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
  */
 
 /**
- * @file Lean entity base class - predatory foundation for JavaScript construct models
+ * @file Abstract base class for JavaScript entity models (functions, classes, variables).
  *
- * Ravens hunt JavaScript constructs with surgical precision. This abstract base
- * provides unified JSDoc tag composition, description management, and validation
- * contracts for all language entities. Zero external dependencies, pure extraction.
+ * Provides unified JSDoc tag composition, description management, and validation
+ * for all JavaScript language constructs with zero external dependencies.
  */
 
 /**
- * Abstract base class for all JavaScript entity types
+ * Abstract base class for JavaScript entity types with JSDoc tag composition.
  *
- * Provides lean functionality for entity composition, JSDoc tag management,
- * and description handling. Child classes implement entity-specific parsing
- * and validation logic.
+ * Child classes implement entity-specific parsing and validation logic for functions,
+ * classes, variables, and other JavaScript constructs. Pure data extraction only.
  *
- * **Core Philosophy:** Entities "have" JSDoc tags and descriptions through composition.
- * Each entity type declares which JSDoc tags are valid and handles its own parsing.
+ * @example
+ * // Custom entity implementation
+ * class FunctionEntity extends EntityBase {
+ *   constructor(name, location) {
+ *     super('function', name, location);
+ *   }
+ *   parseContent(source) {
+ *     // parse function signature
+ *   }
+ * }
  *
- * **Zero External Dependencies:** Pure V8 JavaScript only
- * **No Rendering:** Data extraction layer only, no HTML/Markdown output
+ * @example
+ * // Usage with JSDoc tags
+ * const entity = new FunctionEntity('myFunc', {file: 'app.js', line: 10});
+ * entity.addJSDocTag(paramTag);
+ * entity.setDescription('Function description');
  *
  * @abstract
  */
@@ -68,14 +77,6 @@ export class EntityBase {
 	}
 
 	/**
-	 * Get unique entity identifier
-	 * @returns {string} Unique ID in format moduleId/entityName
-	 */
-	getId() {
-		return `${this.moduleId}/${this.name}`;
-	}
-
-	/**
 	 * Add JSDoc tag to entity
 	 * @param {{tagType: string, toObject?: Function}} tag - JSDoc tag instance
 	 */
@@ -83,14 +84,6 @@ export class EntityBase {
 		if (tag && typeof tag === "object" && "tagType" in tag) {
 			this.jsdocTags.push(tag);
 		}
-	}
-
-	/**
-	 * Get all JSDoc tags
-	 * @returns {Array<{tagType: string, toObject?: Function}>} All JSDoc tags
-	 */
-	getAllJSDocTags() {
-		return this.jsdocTags;
 	}
 
 	/**
@@ -118,6 +111,22 @@ export class EntityBase {
 	 */
 	hasJSDocTag(tagType) {
 		return this.jsdocTags.some((tag) => tag.tagType === tagType);
+	}
+
+	/**
+	 * Get all JSDoc tags for this entity
+	 * @returns {Array<{tagType: string, toObject?: Function}>} All JSDoc tags
+	 */
+	getAllJSDocTags() {
+		return this.jsdocTags;
+	}
+
+	/**
+	 * Generate unique identifier for this entity
+	 * @returns {string} Entity identifier in format "moduleId/entityName"
+	 */
+	getId() {
+		return this.moduleId ? `${this.moduleId}/${this.name}` : this.name;
 	}
 
 	/**

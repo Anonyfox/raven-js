@@ -9,21 +9,9 @@
 /**
  * @file CLI command execution runtime for Wings routing system.
  *
- * **Purpose**: Execute CLI commands through unified HTTP-like abstractions.
- * Transform command-line arguments into Context objects, route through Wings
- * middleware pipeline, interpret results for terminal output.
- *
- * **Key Architecture**: Reuses HTTP Context/Router abstractions for CLI.
- * - CLI args → URL patterns via ArgsToUrl transformation
- * - COMMAND method enables route reuse between HTTP/CLI
- * - responseBody → stdout, responseStatusCode → exit code
- * - stdin pipe support for Unix-style data processing
- *
- * **Integration**: Same routes handle web requests and terminal commands.
- * Middleware pipeline works identically. Zero external dependencies.
- *
- * **Performance**: Minimal overhead—direct Node.js primitives for I/O.
- * Async operations support interactive CLI patterns without blocking.
+ * Executes CLI commands through HTTP-like Context abstractions, enabling route reuse
+ * between web requests and terminal commands. Transforms CLI args to URL patterns
+ * and routes through the Wings middleware pipeline.
  */
 
 import { Context } from "../core/index.js";
@@ -31,15 +19,6 @@ import { ArgsToUrl } from "./transform-pattern.js";
 
 /**
  * Process abstraction layer for testability.
- *
- * **Purpose**: Enable test mocking while preserving source simplicity.
- * Replace entire object in tests for deterministic I/O behavior.
- *
- * **Platform Integration**: Direct Node.js process bindings.
- * - stdin: TTY detection and event handling
- * - stdout: Direct write operations
- * - exit: Process termination with codes
- * - error: stderr output for failures
  *
  * @type {{
  *   stdin: {
@@ -52,6 +31,16 @@ import { ArgsToUrl } from "./transform-pattern.js";
  *   exit: (code: number) => void,
  *   error: (message: string) => void
  * }}
+ *
+ * @example
+ * // Standard usage
+ * processProvider.stdout.write('Hello World!\n');
+ * processProvider.exit(0);
+ *
+ * @example
+ * // Test mocking
+ * processProvider.stdout.write = mockWrite;
+ * processProvider.exit = mockExit;
  */
 export const processProvider = {
 	stdin: {
@@ -74,35 +63,20 @@ export const processProvider = {
 /**
  * CLI command execution runtime using Wings routing system.
  *
- * **Architecture**: Transform CLI args → Context → Router → terminal output.
- * Same routes handle HTTP requests and CLI commands through unified abstractions.
- *
- * **Context Mapping**:
- * - CLI args → URL via ArgsToUrl transformation
- * - stdin data → requestBody (Unix pipe support)
- * - responseBody → stdout content
- * - responseStatusCode → exit code (200-299=0, else=1)
- * - COMMAND method enables route reuse
- *
- * **Performance**: Zero overhead abstraction—direct Node.js I/O primitives.
- * Async stdin reading supports interactive patterns without blocking.
+ * @example
+ * // Basic Terminal usage
+ * const router = new Router();
+ * router.cmd('build', async (ctx) => ctx.text('Built successfully!'));
+ * const terminal = new Terminal(router);
+ * await terminal.handleRequest(['build']);
  *
  * @example
- * ```javascript
- * import { Router } from '@raven-js/wings/core';
- * import { Terminal } from '@raven-js/wings/terminal';
- *
- * const router = new Router();
- * router.cmd('/git/status', (ctx) => ctx.text('Clean working tree'));
- * router.cmd('/git/commit', async (ctx) => {
- *   const msg = ctx.queryParams.get('message');
- *   if (!msg) return ctx.status(400).text('Missing message');
- *   await performCommit(msg);
- *   ctx.text('✅ Committed');
+ * // Terminal with parameters
+ * router.cmd('deploy :env', async (ctx) => {
+ *   const env = ctx.params.env;
+ *   ctx.text(`Deployed to ${env}`);
  * });
- *
- * await new Terminal(router).run(process.argv.slice(2));
- * ```
+ * await terminal.handleRequest(['deploy', 'production']);
  */
 export class Terminal {
 	/**

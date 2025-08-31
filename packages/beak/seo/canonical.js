@@ -10,10 +10,6 @@ import { html } from "../html/index.js";
 import { absoluteUrl } from "./utils.js";
 
 /**
- *
- */
-
-/**
  * @typedef {Object} CanonicalConfig
  * @property {string} url - Canonical URL for the page
  * @property {boolean} [hreflang] - Whether to include hreflang attributes
@@ -23,43 +19,27 @@ import { absoluteUrl } from "./utils.js";
  */
 
 /**
- * Generates canonical URL meta tags for the HTML head section.
+ * Generates canonical URL links to prevent duplicate content penalties.
  *
- * Canonical URLs help prevent duplicate content issues by telling search engines
- * which URL is the "official" version of a page. Also supports hreflang for
- * international SEO.
+ * Creates canonical link tags to indicate the preferred URL version for search engines.
+ * Prevents SEO penalties from duplicate content across multiple URL variations.
+ * Optional support for hreflang and media attributes.
  *
  * @param {CanonicalConfig} config - Configuration object for canonical tags
- * @returns {string} The generated canonical meta tags as an HTML string
+ * @returns {string} Generated canonical link tags as HTML string
  *
  * @example
- * import { canonical } from '@raven-js/beak/seo';
+ * // Basic usage
+ * canonical({ domain: 'example.com', path: '/my-page' });
+ * // → '<link rel="canonical" href="https://example.com/my-page" />'
  *
- * // Basic canonical URL
- * const tags = canonical({
- *   domain: 'example.com',
- *   path: '/my-page'
- * });
- * // Output:
- * // <link rel="canonical" href="https://example.com/my-page" />
+ * @example
+ * // Edge case: with hreflang attribute
+ * canonical({ domain: 'example.com', path: '/page', hreflang: 'en-US' });
  *
- * // Canonical with hreflang
- * const hreflangTags = canonical({
- *   domain: 'example.com',
- *   path: '/my-page',
- *   hreflang: 'en-US'
- * });
- * // Output:
- * // <link rel="canonical" href="https://example.com/my-page" hreflang="en-US" />
- *
- * // Canonical for mobile
- * const mobileTags = canonical({
- *   domain: 'example.com',
- *   path: '/my-page',
- *   media: 'only screen and (max-width: 640px)'
- * });
- * // Output:
- * // <link rel="canonical" href="https://example.com/my-page" media="only screen and (max-width: 640px)" />
+ * @example
+ * // Edge case: with media query
+ * canonical({ domain: 'example.com', path: '/mobile', media: 'screen and (max-width: 640px)' });
  */
 export const canonical = ({ domain, path, hreflang, media }) => {
 	const url = absoluteUrl(path, domain);

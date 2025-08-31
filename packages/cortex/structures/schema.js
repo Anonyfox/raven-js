@@ -7,13 +7,10 @@
  */
 
 /**
- * @file Type-safe JSON Schema implementation for data structure validation
+ * @file JSON Schema implementation for data structure validation and type safety.
  *
- * Memory patterns for structured information - how the brain remembers and validates
- * data organization. Zero-dependency schema definition, validation, and serialization
- * using vanilla JavaScript classes with metadata support.
- *
- * Ravens remember data structure patterns across generations of development.
+ * Provides schema definition, validation, and serialization using vanilla JavaScript classes.
+ * Supports primitive types, nested schemas, arrays, and field metadata with optional fields.
  */
 
 /**
@@ -29,17 +26,11 @@
  */
 
 /**
- * Type-safe JSON schema base class for data structure validation.
+ * Abstract base class for type-safe JSON schema validation and data structure definition.
  *
- * Institutional memory for data patterns - enables compile-time safety in vanilla JS
- * through JSDoc typing and runtime validation. Supports primitive types, nested schemas,
- * arrays, and field metadata (descriptions, optional fields).
- *
- * PERFORMANCE CHARACTERISTICS:
- * - Zero external dependencies - pure V8 optimization
- * - Lazy validation - only validates when explicitly called
- * - Memory-efficient field metadata storage
- * - Direct JSON serialization without intermediate objects
+ * Enables compile-time safety through JSDoc typing and runtime validation.
+ * Supports primitive types, nested schemas, arrays, and field metadata with optional fields.
+ * Provides lazy validation and direct JSON serialization capabilities.
  *
  * @example
  * // Define nested schema structures
@@ -292,7 +283,7 @@ export class Schema {
 					: item,
 			);
 		}
-		return value !== undefined ? value : field;
+		return value;
 	}
 
 	/**

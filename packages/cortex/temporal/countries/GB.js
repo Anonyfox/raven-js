@@ -7,11 +7,10 @@
  */
 
 /**
- * @file United Kingdom holiday definitions - bank holidays and regional variations.
+ * @file United Kingdom holiday definitions with regional variations across constituent countries.
  *
- * The UK's complex holiday system with different bank holidays across England,
- * Wales, Scotland, and Northern Ireland. The murder remembers centuries of
- * Royal proclamations and Parliamentary acts shaping modern bank holidays.
+ * Different bank holiday patterns for England/Wales, Scotland, and Northern Ireland
+ * based on Royal proclamations and Parliamentary acts.
  */
 
 import { HolidayDefinition } from "../holiday-definition.js";

@@ -7,7 +7,11 @@
  */
 
 /**
+ * @file SEO meta tag generators for social media platforms and search engines with platform-specific optimization.
  *
+ * Comprehensive SEO utilities including Open Graph, Twitter Cards, canonical URLs, robots directives,
+ * and structured data generation. Each function produces platform-optimized HTML meta tags with
+ * dual name/property attributes for maximum compatibility across social platforms and search engines.
  */
 
 export { author } from "./author.js";

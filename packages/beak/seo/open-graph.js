@@ -10,10 +10,6 @@ import { html } from "../html/index.js";
 import { absoluteUrl } from "./utils.js";
 
 /**
- *
- */
-
-/**
  * @typedef {Object} OpenGraphConfig
  * @property {string} title - Page title
  * @property {string} description - Page description
@@ -26,31 +22,42 @@ import { absoluteUrl } from "./utils.js";
  */
 
 /**
- * Generates Open Graph meta tags for the HTML head section.
+ * Generates Open Graph meta tags for social media sharing optimization.
  *
- * Since various social media platforms parse these tags differently,
- * every tag uses both `name` and `property` attributes for maximum compatibility.
+ * Creates comprehensive Open Graph meta tags with dual name/property attributes
+ * for maximum platform compatibility. Automatically constructs absolute URLs
+ * when domain provided.
  *
  * @param {OpenGraphConfig} config - Configuration object for Open Graph tags
- * @returns {string} The generated Open Graph meta tags as an HTML string
+ * @returns {string} Generated Open Graph meta tags as HTML string
  *
  * @example
- * import { openGraph } from '@raven-js/beak/seo';
- *
- * const tags = openGraph({
+ * // Basic usage
+ * openGraph({
  *   title: 'My Page',
- *   description: 'This is my page description',
+ *   description: 'Page description',
  *   domain: 'example.com',
  *   path: '/my-page',
- *   imageUrl: '/my-image.jpg',
- *   type: 'article'
+ *   imageUrl: '/og-image.jpg'
  * });
- * // Output:
- * // <meta name="og:type" property="og:type" content="article">
- * // <meta name="og:title" property="og:title" content="My Page" />
- * // <meta name="og:description" property="og:description" content="This is my page description" />
- * // <meta name="og:url" property="og:url" content="https://example.com/my-page" />
- * // <meta name="og:image" property="og:image" content="https://example.com/my-image.jpg" />
+ *
+ * @example
+ * // Edge case: article type with full configuration
+ * openGraph({
+ *   title: 'Blog Post',
+ *   description: 'Detailed article',
+ *   type: 'article',
+ *   domain: 'blog.com',
+ *   path: '/posts/123',
+ *   imageUrl: '/images/post.jpg'
+ * });
+ *
+ * @example
+ * // Edge case: minimal configuration
+ * openGraph({
+ *   title: 'Simple Page',
+ *   description: 'Basic description'
+ * });
  */
 export const openGraph = ({
 	title,

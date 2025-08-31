@@ -16,20 +16,20 @@
 import { JSDocTagBase } from "./base.js";
 
 /**
- * JSDoc return value tag implementation
+ * JSDoc returns tag implementation for function return value documentation.
  *
- * **Official JSDoc Tag:** Documents function return values with type and description.
- * **Aliases:** return tag (both `returns` and `return` are valid)
+ * Parses return value types and descriptions from @returns/@return tags.
+ * Single-regex parsing with clean type/description separation.
  *
- * **Syntax Variants:**
- * - Full: `{Type} Description of return value`
- * - Type only: `{Type}`
- * - Description only: `Description of what is returned`
+ * @example
+ * // Basic usage with type and description
+ * const tag = new JSDocReturnsTag('{Promise<string>} Resolved user data');
+ * console.log(tag.type, tag.description);
  *
- * **Raven Design:**
- * - V8-optimized single regex parse
- * - Clean type/description separation
- * - Zero dependencies on rendering layers
+ * @example
+ * // Type only
+ * const tag = new JSDocReturnsTag('{boolean}');
+ * console.log(tag.type); // 'boolean'
  */
 export class JSDocReturnsTag extends JSDocTagBase {
 	/**
@@ -52,13 +52,7 @@ export class JSDocReturnsTag extends JSDocTagBase {
 		const match = this.rawContent.match(returnsRegex);
 
 		if (!match) {
-			/**
-			 * @type {string} Return value type annotation
-			 */
 			this.type = "";
-			/**
-			 * @type {string} Return value description
-			 */
 			this.description = "";
 			return;
 		}
@@ -71,10 +65,7 @@ export class JSDocReturnsTag extends JSDocTagBase {
 	}
 
 	/**
-	 * Validate returns tag content
-	 *
-	 * Ravens accept minimal return documentation: either type or description
-	 * must be present for valid returns tag.
+	 * Validate returns tag content - requires type or description
 	 */
 	validate() {
 		this.isValidated = Boolean(

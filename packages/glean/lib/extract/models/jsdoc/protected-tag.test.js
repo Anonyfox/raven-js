@@ -18,8 +18,8 @@ describe("JSDocProtectedTag functionality", () => {
 	test("should inherit from JSDocTagBase", () => {
 		const tag = new JSDocProtectedTag("Subclass access only");
 
-		strictEqual(tag.getType(), "protected");
-		strictEqual(tag.getRawContent(), "Subclass access only");
+		strictEqual(tag.tagType, "protected");
+		strictEqual(tag.rawContent, "Subclass access only");
 		strictEqual(tag.isValid(), true);
 	});
 

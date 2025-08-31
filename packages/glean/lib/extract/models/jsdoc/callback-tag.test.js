@@ -18,8 +18,8 @@ describe("JSDocCallbackTag core functionality", () => {
 	test("should inherit from JSDocTagBase correctly", () => {
 		const tag = new JSDocCallbackTag("MyCallback");
 
-		strictEqual(tag.getType(), "callback");
-		strictEqual(tag.getRawContent(), "MyCallback");
+		strictEqual(tag.tagType, "callback");
+		strictEqual(tag.rawContent, "MyCallback");
 		strictEqual(tag.isValid(), true);
 	});
 

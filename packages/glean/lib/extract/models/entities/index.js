@@ -1,18 +1,16 @@
 /**
  * @author Anonyfox <max@anonyfox.com>
  * @license MIT
- * @see https://github.com/Anonyfox/ravenjs
- * @see https://ravenjs.dev
- * @see https://anonyfox.com
+ * @see {@link https://github.com/Anonyfox/ravenjs}
+ * @see {@link https://ravenjs.dev}
+ * @see {@link https://anonyfox.com}
  */
 
 /**
- * @file Entity models index - surgical JavaScript construct intelligence
+ * @file Entity classes with registry for dynamic JavaScript construct creation.
  *
- * Ravens organize entity classes with predatory precision.
- * Provides centralized access to all entity types, registry system,
- * and factory functions for dynamic entity creation.
- * Zero external dependencies, pure extraction intelligence.
+ * Exports all entity implementations and provides ENTITY_REGISTRY for
+ * runtime entity instantiation by type name with factory functions.
  */
 
 // Export base class
@@ -39,9 +37,12 @@ import { TypedefEntity } from "./typedef-entity.js";
 import { VariableEntity } from "./variable-entity.js";
 
 /**
- * Entity registry for dynamic entity creation
- * Maps entity types to their corresponding class constructors
- * @type {Record<string, any>}
+ * Entity registry for dynamic entity instantiation by type.
+ *
+ * Maps entity type names to their corresponding class constructors
+ * for runtime entity creation from code analysis results.
+ *
+ * @type {Record<string, new(name: string, location: object) => import('./base.js').EntityBase>}
  */
 export const ENTITY_REGISTRY = {
 	// Core JavaScript constructs

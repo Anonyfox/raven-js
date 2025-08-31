@@ -14,8 +14,8 @@ describe("JSDocFileTag functionality", () => {
 	test("should inherit from JSDocTagBase", () => {
 		const tag = new JSDocFileTag("Main application file");
 
-		strictEqual(tag.getType(), "file");
-		strictEqual(tag.getRawContent(), "Main application file");
+		strictEqual(tag.tagType, "file");
+		strictEqual(tag.rawContent, "Main application file");
 		strictEqual(tag.isValid(), true);
 	});
 

@@ -16,12 +16,23 @@
 import { html } from "@raven-js/beak";
 
 /**
- * Generate statistics card grid
+ * Generate statistics card grid with responsive columns and variant styling.
+ *
  * @param {Object} options - Stats configuration
  * @param {Array<{value: string|number, label: string, variant?: string}>} options.stats - Statistics array
  * @param {string} [options.title] - Optional card title
  * @param {string} [options.variant] - Card background variant (light, primary, etc.)
  * @returns {string} Statistics card HTML
+ *
+ * @example
+ * // Basic stats card
+ * statsCard({
+ *   stats: [
+ *     { value: 42, label: 'Functions' },
+ *     { value: 15, label: 'Classes', variant: 'success' }
+ *   ],
+ *   title: 'API Overview'
+ * });
  */
 export function statsCard({ stats, title, variant = "light" }) {
 	const isLightVariant = variant === "light";

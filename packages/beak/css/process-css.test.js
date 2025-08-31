@@ -2,315 +2,242 @@ import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 import { processCSS } from "./process-css.js";
 
-describe("processCSS", () => {
-	describe("core functionality", () => {
-		it("should normalize whitespace sequences", () => {
-			const input = "  .button  {  color:  white;  }  ";
-			const result = processCSS(input);
-			assert.equal(result, ".button{ color:white; }");
-		});
+describe("core functionality", () => {
+	it("should apply all CSS minification and normalization rules", () => {
+		// Comprehensive whitespace normalization
+		const whitespaceInput =
+			"  .button  {  color :  white ;  background : #007bff  ; }  ";
+		assert.equal(
+			processCSS(whitespaceInput),
+			".button{ color:white; background:#007bff; }",
+		);
 
-		it("should remove spaces around colons", () => {
-			const input = "color : white; background : #007bff;";
-			const result = processCSS(input);
-			assert.equal(result, "color:white; background:#007bff;");
-		});
+		// Space addition rules (semicolons and braces)
+		const spacingInput =
+			"color:white;background:#007bff;.container{max-width:1200px;}.text{font-size:16px;}";
+		assert.equal(
+			processCSS(spacingInput),
+			"color:white; background:#007bff; .container{max-width:1200px; } .text{font-size:16px; }",
+		);
 
-		it("should remove spaces before semicolons", () => {
-			const input = "color: white ; background: #007bff ;";
-			const result = processCSS(input);
-			assert.equal(result, "color:white; background:#007bff;");
-		});
+		// Complex property value preservation
+		const complexInput =
+			"font-family: Arial, sans-serif; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);";
+		assert.equal(
+			processCSS(complexInput),
+			"font-family:Arial, sans-serif; box-shadow:0 1px 2px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);",
+		);
 
-		it("should remove spaces before opening braces", () => {
-			const input = ".button { color: white; }";
-			const result = processCSS(input);
-			assert.equal(result, ".button{ color:white; }");
-		});
-
-		it("should remove spaces before closing braces", () => {
-			const input = ".button { color: white; } ";
-			const result = processCSS(input);
-			assert.equal(result, ".button{ color:white; }");
-		});
-
-		it("should add spaces after semicolons when needed", () => {
-			const input = "color:white;background:#007bff;";
-			const result = processCSS(input);
-			assert.equal(result, "color:white; background:#007bff;");
-		});
-
-		it("should add spaces after closing braces when needed", () => {
-			const input = ".button{color:white;}.container{max-width:1200px;}";
-			const result = processCSS(input);
-			assert.equal(
-				result,
-				".button{color:white; } .container{max-width:1200px; }",
-			);
-		});
-
-		// Complex CSS structures
-		it("should handle nested selectors", () => {
-			const input = `
-				.container {
-					max-width: 1200px;
-					margin: 0 auto;
-				}
-				.container .button {
-					color: white;
-					background: #007bff;
-				}
-			`;
-			const result = processCSS(input);
-			assert.equal(
-				result,
-				".container{ max-width:1200px; margin:0 auto; } .container .button{ color:white; background:#007bff; }",
-			);
-		});
-
-		it("should handle pseudo-selectors", () => {
-			const input = `
-				.button:hover {
-					background: #0056b3;
-				}
-				.button:active {
-					background: #004085;
-				}
-			`;
-			const result = processCSS(input);
-			assert.equal(
-				result,
-				".button:hover{ background:#0056b3; } .button:active{ background:#004085; }",
-			);
-		});
-
-		it("should handle media queries", () => {
-			const input = `
-				@media (max-width: 768px) {
-					.container {
-						padding: 10px;
-					}
-				}
-			`;
-			const result = processCSS(input);
-			assert.equal(
-				result,
-				"@media (max-width:768px){ .container{ padding:10px; } }",
-			);
-		});
-
-		it("should handle keyframes", () => {
-			const input = `
-				@keyframes fadeIn {
-					from {
-						opacity: 0;
-					}
-					to {
-						opacity: 1;
-					}
-				}
-			`;
-			const result = processCSS(input);
-			assert.equal(
-				result,
-				"@keyframes fadeIn{ from{ opacity:0; } to{ opacity:1; } }",
-			);
-		});
-
-		// Property value handling
-		it("should preserve spaces in property values", () => {
-			const input = "font-family: Arial, sans-serif; margin: 10px 20px;";
-			const result = processCSS(input);
-			assert.equal(result, "font-family:Arial, sans-serif; margin:10px 20px;");
-		});
-
-		it("should handle complex property values", () => {
-			const input =
-				"box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);";
-			const result = processCSS(input);
-			assert.equal(
-				result,
-				"box-shadow:0 1px 2px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);",
-			);
-		});
-
-		it("should handle vendor prefixes", () => {
-			const input =
-				"-webkit-transform: rotate(45deg); -moz-transform: rotate(45deg); transform: rotate(45deg);";
-			const result = processCSS(input);
-			assert.equal(
-				result,
-				"-webkit-transform:rotate(45deg); -moz-transform:rotate(45deg); transform:rotate(45deg);",
-			);
-		});
-
-		it("should handle calc() functions", () => {
-			const input = "width: calc(100% - 20px); height: calc(50vh + 10px);";
-			const result = processCSS(input);
-			assert.equal(
-				result,
-				"width:calc(100% - 20px); height:calc(50vh + 10px);",
-			);
-		});
-
-		it("should handle url() functions", () => {
-			const input =
-				"background-image: url('image.jpg'); background-size: cover;";
-			const result = processCSS(input);
-			assert.equal(
-				result,
-				"background-image:url('image.jpg'); background-size:cover;",
-			);
-		});
+		// CSS functions and vendor prefixes
+		const functionsInput =
+			"width: calc(100% - 20px); background: url('image.jpg'); -webkit-transform: rotate(45deg); transform: rotate(45deg);";
+		assert.equal(
+			processCSS(functionsInput),
+			"width:calc(100% - 20px); background:url('image.jpg'); -webkit-transform:rotate(45deg); transform:rotate(45deg);",
+		);
 	});
 
-	describe("edge cases and errors", () => {
-		// Basic edge cases
-		it("should handle empty string", () => {
-			const result = processCSS("");
-			assert.equal(result, "");
-		});
+	it("should handle advanced CSS structures with proper formatting", () => {
+		// Nested selectors and pseudo-classes
+		const nestedInput = `
+			.container { max-width: 1200px; margin: 0 auto; }
+			.container .button:hover { color: white; background: #0056b3; }
+			.button:active { background: #004085; }
+		`;
+		const nestedExpected =
+			".container{ max-width:1200px; margin:0 auto; } .container .button:hover{ color:white; background:#0056b3; } .button:active{ background:#004085; }";
+		assert.equal(processCSS(nestedInput), nestedExpected);
 
-		it("should handle whitespace-only string", () => {
-			const result = processCSS("   \n\t  ");
-			assert.equal(result, "");
-		});
+		// At-rules (media queries, keyframes)
+		const atRulesInput = `
+			@media (max-width: 768px) { .container { padding: 10px; } }
+			@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+		`;
+		const atRulesExpected =
+			"@media (max-width:768px){ .container{ padding:10px; } } @keyframes fadeIn{ from{ opacity:0; } to{ opacity:1; } }";
+		assert.equal(processCSS(atRulesInput), atRulesExpected);
 
-		it("should handle single character", () => {
-			const result = processCSS("a");
-			assert.equal(result, "a");
-		});
+		// Complete real-world button component
+		const componentInput = `
+			.button {
+				display: inline-block; padding: 10px 20px; font-size: 16px;
+				color: white; background-color: #007bff; border: 1px solid #007bff;
+				border-radius: 4px; cursor: pointer; transition: all 0.3s ease;
+			}
+		`;
+		const result = processCSS(componentInput);
+		assert.ok(result.includes("display:inline-block"));
+		assert.ok(result.includes("padding:10px 20px"));
+		assert.ok(result.includes("background-color:#007bff"));
+		assert.ok(result.includes("transition:all 0.3s ease"));
+	});
+});
 
-		it("should handle CSS without semicolons", () => {
-			const input = ".button { color: white }";
-			const result = processCSS(input);
-			assert.equal(result, ".button{ color:white}");
-		});
+describe("edge cases and errors", () => {
+	it("should handle empty and malformed CSS gracefully", () => {
+		// Empty input fast path
+		assert.equal(processCSS(""), "");
+		assert.equal(processCSS("   \n\t  "), "");
 
-		it("should handle CSS without braces", () => {
-			const input = "color: white; background: #007bff;";
-			const result = processCSS(input);
-			assert.equal(result, "color:white; background:#007bff;");
-		});
+		// Single characters and minimal input
+		assert.equal(processCSS("a"), "a");
+		assert.equal(processCSS("{}"), "{}");
+		assert.equal(processCSS(";;;"), "; ; ;");
+		assert.equal(processCSS(":::"), ":::");
 
-		it("should handle CSS with only braces", () => {
-			const input = "{}";
-			const result = processCSS(input);
-			assert.equal(result, "{}");
-		});
+		// Incomplete CSS structures
+		assert.equal(
+			processCSS(".button { color: white }"),
+			".button{ color:white}",
+		);
+		assert.equal(
+			processCSS("color: white; background: #007bff;"),
+			"color:white; background:#007bff;",
+		);
 
-		it("should handle CSS with only semicolons", () => {
-			const input = ";;;";
-			const result = processCSS(input);
-			assert.equal(result, "; ; ;");
-		});
-
-		it("should handle CSS with only colons", () => {
-			const input = ":::";
-			const result = processCSS(input);
-			assert.equal(result, ":::");
-		});
-
-		// Special character handling
-		it("should handle CSS with quotes", () => {
-			const input = "content: 'Hello World'; font-family: 'Arial', sans-serif;";
-			const result = processCSS(input);
-			assert.equal(
-				result,
-				"content:'Hello World'; font-family:'Arial', sans-serif;",
-			);
-		});
-
-		it("should handle CSS with double quotes", () => {
-			const input = 'content: "Hello World"; font-family: "Arial", sans-serif;';
-			const result = processCSS(input);
-			assert.equal(
-				result,
-				'content:"Hello World"; font-family:"Arial", sans-serif;',
-			);
-		});
-
-		it("should handle CSS with escaped characters", () => {
-			const input = "content: 'Hello\\'World';";
-			const result = processCSS(input);
-			assert.equal(result, "content:'Hello\\'World';");
-		});
-
-		it("should handle CSS with special selectors", () => {
-			const input = "[data-testid='button'] { color: white; }";
-			const result = processCSS(input);
-			assert.equal(result, "[data-testid='button']{ color:white; }");
-		});
-
-		// Performance edge cases
-		it("should handle very long CSS", () => {
-			const longCSS =
-				".button{color:white;background:#007bff;padding:10px;margin:5px;border:1px solid #ccc;border-radius:4px;font-size:14px;font-weight:bold;text-align:center;cursor:pointer;transition:all 0.3s ease;box-shadow:0 2px 4px rgba(0,0,0,0.1);}".repeat(
-					100,
-				);
-			const result = processCSS(longCSS);
-			assert.ok(result.length > 0);
-			assert.ok(result.includes("color:white"));
-			assert.ok(result.includes("background:#007bff"));
-		});
-
-		it("should handle CSS with many consecutive spaces", () => {
-			const input = "color:        white;    background:    #007bff;";
-			const result = processCSS(input);
-			assert.equal(result, "color:white; background:#007bff;");
-		});
-
-		it("should handle CSS with many consecutive newlines", () => {
-			const input = "color:\n\n\nwhite;\n\n\nbackground:\n\n\n#007bff;";
-			const result = processCSS(input);
-			assert.equal(result, "color:white; background:#007bff;");
-		});
-
-		it("should handle CSS with tabs and newlines", () => {
-			const input = "color:\twhite;\nbackground:\t#007bff;";
-			const result = processCSS(input);
-			assert.equal(result, "color:white; background:#007bff;");
-		});
+		// Special characters and quotes
+		assert.equal(
+			processCSS(
+				"content: 'Hello\\'World'; font-family: \"Arial\", sans-serif;",
+			),
+			"content:'Hello\\'World'; font-family:\"Arial\", sans-serif;",
+		);
+		assert.equal(
+			processCSS("[data-testid='button'] { color: white; }"),
+			"[data-testid='button']{ color:white; }",
+		);
 	});
 
-	describe("integration scenarios", () => {
-		// Real-world scenarios
-		it("should handle a complete CSS rule", () => {
-			const input = `
-				.button {
-					display: inline-block;
-					padding: 10px 20px;
-					font-size: 16px;
-					font-weight: bold;
-					text-align: center;
-					text-decoration: none;
-					color: white;
-					background-color: #007bff;
-					border: 1px solid #007bff;
-					border-radius: 4px;
-					cursor: pointer;
-					transition: all 0.3s ease;
-				}
-			`;
-			const result = processCSS(input);
-			assert.ok(result.includes("display:inline-block"));
-			assert.ok(result.includes("padding:10px 20px"));
-			assert.ok(result.includes("color:white"));
-			assert.ok(result.includes("background-color:#007bff"));
-		});
+	it("should optimize performance edge cases efficiently", () => {
+		// Pathological whitespace patterns
+		const extremeSpaces = "color:        white;    background:    #007bff;";
+		assert.equal(processCSS(extremeSpaces), "color:white; background:#007bff;");
 
-		it("should handle multiple CSS rules", () => {
-			const input = `
-				.button { color: white; background: #007bff; }
-				.container { max-width: 1200px; margin: 0 auto; }
-				.text { font-size: 16px; line-height: 1.5; }
-			`;
-			const result = processCSS(input);
-			assert.ok(result.includes(".button{ color:white; background:#007bff; }"));
-			assert.ok(
-				result.includes(".container{ max-width:1200px; margin:0 auto; }"),
+		const extremeNewlines = "color:\n\n\nwhite;\n\n\nbackground:\n\n\n#007bff;";
+		assert.equal(
+			processCSS(extremeNewlines),
+			"color:white; background:#007bff;",
+		);
+
+		const mixedWhitespace = "color:\twhite;\nbackground:\t#007bff;";
+		assert.equal(
+			processCSS(mixedWhitespace),
+			"color:white; background:#007bff;",
+		);
+
+		// Large CSS processing
+		const largeCSS =
+			".button{color:white;background:#007bff;padding:10px;margin:5px;border:1px solid #ccc;border-radius:4px;}".repeat(
+				50,
 			);
-			assert.ok(result.includes(".text{ font-size:16px; line-height:1.5; }"));
-		});
+		const largeResult = processCSS(largeCSS);
+		assert.ok(largeResult.length > 0);
+		assert.ok(largeResult.includes("color:white"));
+		assert.ok(largeResult.includes("background:#007bff"));
+		assert.ok(largeResult.split(".button{").length === 51); // Original + 50 repeats
+	});
+});
+
+describe("integration scenarios", () => {
+	it("should process complete CSS frameworks and component libraries", () => {
+		// Multi-component CSS framework
+		const frameworkCSS = `
+			/* Base styles */
+			.btn { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+			.btn-primary { background: #007bff; color: white; }
+			.btn-secondary { background: #6c757d; color: white; }
+
+			/* Layout components */
+			.container { max-width: 1200px; margin: 0 auto; padding: 0 15px; }
+			.row { display: flex; flex-wrap: wrap; margin: 0 -15px; }
+			.col { flex: 1; padding: 0 15px; }
+
+			/* Responsive design */
+			@media (max-width: 768px) {
+				.container { padding: 0 10px; }
+				.btn { padding: 8px 12px; }
+			}
+		`;
+
+		const result = processCSS(frameworkCSS);
+
+		// Verify all components are properly minified
+		assert.ok(
+			result.includes(
+				".btn{ padding:10px 15px; border:none; border-radius:4px; cursor:pointer; }",
+			),
+		);
+		assert.ok(
+			result.includes(".btn-primary{ background:#007bff; color:white; }"),
+		);
+		assert.ok(
+			result.includes(
+				".container{ max-width:1200px; margin:0 auto; padding:0 15px; }",
+			),
+		);
+		assert.ok(result.includes("@media (max-width:768px)"));
+		assert.ok(result.includes("flex:1"));
+
+		// Ensure proper spacing between rules
+		assert.ok(result.includes("} .btn-"));
+		assert.ok(result.includes("*/ .container{"));
+		assert.ok(result.includes("*/ @media"));
+	});
+
+	it("should handle production-grade CSS with advanced patterns", () => {
+		// CSS Grid, Flexbox, and animations
+		const advancedCSS = `
+			.grid-layout {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+				grid-gap: 20px;
+				align-items: start;
+			}
+
+			.animated-element {
+				animation: slideIn 0.3s ease-out forwards;
+				transform: translateX(-100%);
+			}
+
+			@keyframes slideIn {
+				0% { transform: translateX(-100%); opacity: 0; }
+				100% { transform: translateX(0); opacity: 1; }
+			}
+
+			.complex-selector[data-state="active"]:not(.disabled):hover::before {
+				content: "→";
+				position: absolute;
+				left: -20px;
+			}
+		`;
+
+		const result = processCSS(advancedCSS);
+
+		// Grid properties
+		assert.ok(result.includes("display:grid"));
+		assert.ok(
+			result.includes(
+				"grid-template-columns:repeat(auto-fit, minmax(300px, 1fr))",
+			),
+		);
+		assert.ok(result.includes("grid-gap:20px"));
+
+		// Animation properties
+		assert.ok(result.includes("animation:slideIn 0.3s ease-out forwards"));
+		assert.ok(result.includes("transform:translateX(-100%)"));
+
+		// Keyframes structure
+		assert.ok(result.includes("@keyframes slideIn{"));
+		assert.ok(result.includes("0%{ transform:translateX(-100%); opacity:0; }"));
+		assert.ok(result.includes("100%{ transform:translateX(0); opacity:1; }"));
+
+		// Complex selector preservation
+		assert.ok(
+			result.includes(
+				'.complex-selector[data-state="active"]:not(.disabled):hover::before{',
+			),
+		);
+		assert.ok(result.includes('content:"→"'));
+		assert.ok(result.includes("left:-20px"));
 	});
 });

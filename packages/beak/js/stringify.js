@@ -7,18 +7,10 @@
  */
 
 /**
- * @file String conversion with array flattening.
- *
- * Arrays join with empty string, other types use String() constructor.
+ * String conversion with array flattening for JavaScript template processing.
  *
  * @param {any} value - Value to convert.
  * @returns {string} String representation. Arrays flatten to concatenated elements.
- * @throws {TypeError} When value cannot be converted (null-prototype objects).
- *
- * @example
- * stringify([1, 2, 3])        // "123"
- * stringify({ key: "value" }) // "[object Object]"
- * stringify(() => "test")     // "() => \"test\""
  */
 export const stringify = (/** @type {any} */ value) =>
 	Array.isArray(value) ? value.join("") : String(value);

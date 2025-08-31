@@ -14,12 +14,21 @@
  */
 
 /**
- * Generate XML sitemap from sitemap data
+ * Generate XML sitemap from sitemap data following sitemaps.org protocol.
+ *
  * @param {Object} data - Sitemap data with URLs and metadata
  * @param {Array<{loc: string, lastmod: string, changefreq: string, priority: string}>} data.urls - Array of URL objects with loc, lastmod, changefreq, priority
  * @param {number} data.totalUrls - Total number of URLs in sitemap
  * @param {string} data.generatedAt - ISO timestamp of generation
  * @returns {string} Complete XML sitemap
+ *
+ * @example
+ * // Basic sitemap generation
+ * sitemapTemplate({
+ *   urls: [{ loc: 'https://example.com/', lastmod: '2023-01-01', changefreq: 'weekly', priority: '1.0' }],
+ *   totalUrls: 1,
+ *   generatedAt: '2023-01-01T00:00:00.000Z'
+ * });
  */
 export function sitemapTemplate(data) {
 	const { urls, totalUrls, generatedAt } = data;

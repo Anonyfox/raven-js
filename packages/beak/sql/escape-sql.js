@@ -44,34 +44,20 @@ const sqlEscapeMap = {
  * @returns {string} SQL-safe string with dangerous characters escaped
  *
  * @example
- * // String literal protection
- * escapeSql("O'Connor") // → "O''Connor"
- * escapeSql("path\\file") // → "path\\\\file"
- * escapeSql("line1\nline2") // → "line1\\nline2"
+ * // Basic usage
+ * escapeSql("O'Connor");
+ * // → "O''Connor"
  *
  * @example
- * // Type coercion handling
- * escapeSql(42) // → "42"
- * escapeSql(null) // → "null"
- * escapeSql(['a','b']) // → "a,b"
+ * // Edge case: type coercion
+ * escapeSql(42);       // → "42"
+ * escapeSql(null);     // → "null"
+ * escapeSql(['a','b']); // → "a,b"
  *
  * @example
- * // Injection attempt neutralization
- * escapeSql("'; DROP TABLE users; --") // → "''; DROP TABLE users; --"
- * // Quotes escaped → string literal remains intact
- *
- * @example
- * // Critical limitation: logical injection still possible
- * escapeSql("admin") // → "admin" (unchanged)
- * // sql`SELECT * FROM users WHERE role = '${userRole}'` still vulnerable to:
- * // userRole = "admin' OR '1'='1" → escaped quotes prevent breakout but logic intact
- *
- * @example
- * // Platform gotchas: database-specific escaping
- * escapeSql("path\\file") // → "path\\\\file"
- * // MySQL: works correctly
- * // PostgreSQL: may need different escaping for some contexts
- * // Always test with your specific database
+ * // Edge case: injection neutralization
+ * escapeSql("'; DROP TABLE users; --");
+ * // → "''; DROP TABLE users; --"
  */
 export const escapeSql = (str) => {
 	// String coercion handles all JavaScript types consistently

@@ -35,7 +35,11 @@ function renderPackageLink(url, label, icon) {
 }
 
 /**
- * Generate global footer for documentation pages
+ * Generate global footer for documentation pages with package attribution and Glean branding.
+ *
+ * Renders responsive footer containing package metadata links, author information,
+ * and generation timestamp. Adapts from desktop two-column to mobile stacked layout.
+ *
  * @param {Object} options - Footer options
  * @param {string} [options.packageName] - Package name
  * @param {Object} [options.packageMetadata] - Package metadata
@@ -49,6 +53,13 @@ function renderPackageLink(url, label, icon) {
  * @param {string} [options.packageMetadata.funding.url] - Funding URL
  * @param {string} [options.generationTimestamp] - Generation timestamp
  * @returns {string} Global footer HTML
+ *
+ * @example
+ * // Basic footer with package info
+ * globalFooter({
+ *   packageName: 'my-package',
+ *   packageMetadata: { author: 'John Doe <john@example.com>' }
+ * });
  */
 export function globalFooter({
 	packageName = "",
