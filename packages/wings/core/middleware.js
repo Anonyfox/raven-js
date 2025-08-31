@@ -13,6 +13,7 @@
  * during the request pipeline. Supports both synchronous and asynchronous handlers with optional identifiers.
  */
 
+import { Context } from "./context.js";
 import { MESSAGES } from "./string-pool.js";
 
 /**
@@ -186,7 +187,7 @@ export class Middleware {
 	 */
 	async execute(ctx) {
 		// Validate context type
-		if (!ctx || typeof ctx !== "object" || ctx.constructor.name !== "Context") {
+		if (!ctx || !(ctx instanceof Context)) {
 			throw new Error("Context must be a Context instance");
 		}
 
