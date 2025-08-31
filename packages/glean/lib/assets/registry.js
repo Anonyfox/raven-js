@@ -95,7 +95,7 @@ export class AssetRegistry {
 
 		/** @type {Map<string, string>} */
 		this.pathToUrl = new Map(); // originalPath -> assetUrl mapping for fast lookups
-		
+
 		/** @type {Object|null} */
 		this.urlBuilder = options.urlBuilder || null;
 	}
@@ -137,7 +137,7 @@ export class AssetRegistry {
 
 		// Generate SEO-friendly filename with word deduplication
 		const filename = generateSeoFilename(originalPath, altText, hash);
-		const assetUrl = this.urlBuilder 
+		const assetUrl = this.urlBuilder
 			? /** @type {any} */ (this.urlBuilder).assetUrl(filename)
 			: `/assets/${filename}`;
 
