@@ -7,7 +7,7 @@
 [![Node.js 22.5+](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
 
 <div align="center">
-  <img src="media/logo.webp" alt="Reflex Logo" width="200" height="200" />
+  <img src="./media/logo.webp" alt="Reflex Logo" width="200" height="200" />
 </div>
 
 Universal reactive signals with automatic SSR, seamless hydration, and zero-dependency DOM updates.

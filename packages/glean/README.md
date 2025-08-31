@@ -7,7 +7,7 @@
 [![Node.js 22.5+](https://img.shields.io/badge/Node.js-22.5+-brightgreen.svg)]()
 
 <div align="center">
-  <img src="media/logo.webp" alt="Glean Logo" width="200" height="200" />
+  <img src="./media/logo.webp" alt="Glean Logo" width="200" height="200" />
 </div>
 
 Glean documentation gold from your codebase - JSDoc parsing, validation, and beautiful doc generation.

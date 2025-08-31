@@ -6,7 +6,7 @@
 [![Node.js 22.5+](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
 
 <div align="center">
-  <img src="media/logo.webp" alt="Cortex Logo" width="200" height="200" />
+  <img src="./media/logo.webp" alt="Cortex Logo" width="200" height="200" />
 </div>
 
 Machine learning, data structures, and temporal computation without dependencies.
