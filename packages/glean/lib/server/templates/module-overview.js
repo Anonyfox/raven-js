@@ -20,7 +20,6 @@ import {
 	applySyntaxHighlighting,
 	attributionBar,
 	contentSection,
-	packageFooter,
 	pageHeader,
 	seeAlsoLinks,
 } from "../components/index.js";
@@ -93,14 +92,7 @@ function getTypeVariant(entityType) {
  * @returns {string} Complete HTML page
  */
 export function moduleOverviewTemplate(data) {
-	const {
-		module,
-		organizedEntities,
-		navigation,
-		stats,
-		packageName,
-		hasEntities,
-	} = data;
+	const { module, organizedEntities, stats, packageName, hasEntities } = data;
 
 	// Process README content through beak markdown processor and apply syntax highlighting
 	const readmeHTML = module.hasReadme
@@ -273,7 +265,7 @@ export function moduleOverviewTemplate(data) {
 				}
 		</div>
 
-		${packageFooter(moduleAttributionContext)}
+
 	`;
 
 	// Return complete HTML page using base template
@@ -285,13 +277,14 @@ export function moduleOverviewTemplate(data) {
 		navigation: {
 			current: "modules",
 			sidebar:
-				navigation.allModules.length > 1
+				/** @type {any} */ (data).navigation.allModules.length > 1
 					? html`
 				<h6 class="fw-bold mb-3">Module Navigation</h6>
 				<ul class="nav nav-pills flex-column">
-					${navigation.allModules.map(
-						/** @param {any} navModule */
-						(navModule) => html`
+					${
+						/** @type {any} */ (data).navigation.allModules.map(
+							/** @param {any} navModule */
+							(navModule) => html`
 					<li class="nav-item">
 						<a
 							href="${navModule.link}"
@@ -301,7 +294,8 @@ export function moduleOverviewTemplate(data) {
 						</a>
 					</li>
 					`,
-					)}
+						)
+					}
 				</ul>
 				`
 					: "",
@@ -309,5 +303,7 @@ export function moduleOverviewTemplate(data) {
 		seo: {
 			url: "", // Will be filled by route handler
 		},
+		packageMetadata: /** @type {any} */ (data).packageMetadata,
+		generationTimestamp: /** @type {any} */ (data).generationTimestamp,
 	});
 }

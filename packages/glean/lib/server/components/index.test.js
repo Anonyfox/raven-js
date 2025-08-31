@@ -19,6 +19,7 @@ import * as components from "./index.js";
 
 describe("component exports", () => {
 	test("exports page structure components", () => {
+		ok(typeof components.globalFooter === "function");
 		ok(typeof components.pageHeader === "function");
 		ok(typeof components.statsCard === "function");
 		ok(typeof components.statsGrid === "function");
@@ -56,7 +57,7 @@ describe("component exports", () => {
 
 	test("all exports are functions", () => {
 		const exportedFunctions = Object.values(components);
-		strictEqual(exportedFunctions.length, 22);
+		strictEqual(exportedFunctions.length, 23);
 
 		exportedFunctions.forEach((fn) => {
 			strictEqual(typeof fn, "function");

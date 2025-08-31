@@ -69,5 +69,29 @@ export function extractPackageOverviewData(packageInstance) {
 		hasReadme: readmeMarkdown.length > 0,
 		hasModules: modules.length > 0,
 		hasPublicEntities: stats.publicEntityCount > 0,
+
+		// Footer data
+		packageMetadata: extractPackageMetadata(packageInstance),
+		generationTimestamp: new Date().toISOString(),
 	};
+}
+
+/**
+ * Extract package metadata for footer attribution
+ * @param {import('../../extract/models/package.js').Package} packageInstance - Package instance
+ * @returns {Object|null} Package metadata for attribution
+ */
+function extractPackageMetadata(packageInstance) {
+	/** @type {any} */
+	const pkg = packageInstance;
+	if (pkg.packageJsonData) {
+		return {
+			author: pkg.packageJsonData.author,
+			homepage: pkg.packageJsonData.homepage,
+			repository: pkg.packageJsonData.repository,
+			bugs: pkg.packageJsonData.bugs,
+			funding: pkg.packageJsonData.funding,
+		};
+	}
+	return null;
 }

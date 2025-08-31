@@ -28,6 +28,8 @@ export {
 } from "./content-section.js";
 // Content components
 export { entityCard, moduleCard } from "./entity-card.js";
+// Page structure components
+export { globalFooter } from "./global-footer.js";
 // Navigation components
 export {
 	entityNavigation,
@@ -36,7 +38,6 @@ export {
 	statsSidebar,
 } from "./navigation-sidebar.js";
 export { inlinePackageLinks, packageFooter } from "./package-footer.js";
-// Page structure components
 export { pageHeader } from "./page-header.js";
 export { seeAlsoLinks } from "./see-links.js";
 export { statsCard, statsGrid } from "./stats-card.js";

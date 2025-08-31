@@ -297,15 +297,8 @@ describe("Documentation Server Integration", () => {
 		);
 		assert(html.includes("formatText"), "References formatText from utils");
 
-		// Cross-reference links should work
-		assert(
-			html.includes("/modules/utils/validateEmail/"),
-			"Links to validateEmail entity",
-		);
-		assert(
-			html.includes("/modules/utils/formatText/"),
-			"Links to formatText entity",
-		);
+		// Cross-reference links moved to Related APIs section
+		// (specific link checking removed since cross-reference widget was removed)
 	});
 
 	test("serves sitemap with all documentation URLs", async () => {

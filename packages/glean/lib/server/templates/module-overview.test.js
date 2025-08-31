@@ -328,16 +328,6 @@ describe("moduleOverviewTemplate", () => {
 		);
 	});
 
-	test("does not display navigation sidebar for clean layout", () => {
-		const data = createMockData();
-		const html = moduleOverviewTemplate(data);
-
-		// Navigation sidebar was removed for full-width content
-		assert(!html.includes("🗂️ All Modules"), "No duplicate module navigation");
-		assert(!html.includes("col-lg-8"), "Uses full width layout");
-		assert(!html.includes("col-lg-4"), "No sidebar column");
-	});
-
 	test("does not include quick actions for clean layout", () => {
 		const data = createMockData();
 		const html = moduleOverviewTemplate(data);

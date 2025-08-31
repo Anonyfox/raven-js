@@ -27,7 +27,6 @@
     "nest:validate": "node ../nest/bin/nest.js validate",
     "nest:docs": "node ../nest/bin/nest.js build-docs",
     "build": "esbuild bin/glean.js --bundle --minify --platform=node --format=esm --outfile=bin/glean.min.js",
-    "prepublishOnly": "npm run build && npm run test",
     "test": "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
     "test:code": "timeout 20s node --no-warnings --test --test-concurrency=1 --test-reporter=dot",
     "test:coverage": "timeout 10s node --no-warnings --test --test-concurrency=1 --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",

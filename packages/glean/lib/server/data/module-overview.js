@@ -208,6 +208,7 @@ export function extractModuleOverviewData(packageInstance, moduleName) {
 		moduleEntities: module.entities || [], // Raw entity instances for attribution
 		packageMetadata: extractPackageMetadata(packageInstance), // Package metadata
 		allModules: packageInstance.modules, // Pass all modules for re-export tracing
+		generationTimestamp: new Date().toISOString(), // Generation timestamp for footer
 
 		// Meta information for template
 		hasEntities: moduleData.entityCount > 0,

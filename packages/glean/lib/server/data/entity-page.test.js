@@ -118,15 +118,7 @@ describe("extractEntityPageData", () => {
 			result.entity.description,
 			"A test function for unit testing",
 		);
-		assert.strictEqual(
-			result.entity.source,
-			"function testFunction() { return 'test'; }",
-		);
-		assert.deepStrictEqual(result.entity.location, {
-			file: "utils.js",
-			line: 10,
-			column: 0,
-		});
+		// Source and location removed from entity data
 
 		// Check import statement generation
 		assert.strictEqual(result.entity.importPath, "test-package/utils");
@@ -138,8 +130,7 @@ describe("extractEntityPageData", () => {
 		// Check metadata flags
 		assert.strictEqual(result.packageName, "test-package");
 		assert.strictEqual(result.moduleName, "utils");
-		assert.strictEqual(result.hasSource, true);
-		assert.strictEqual(result.hasLocation, true);
+		// hasSource and hasLocation removed from entity page data
 	});
 
 	test("extracts JSDoc parameters correctly", () => {
@@ -323,12 +314,7 @@ describe("extractEntityPageData", () => {
 			"John Doe <john@example.com>",
 		);
 
-		// Check see references
-		assert.strictEqual(result.documentation.see.length, 2);
-		assert.strictEqual(result.documentation.see[0].text, "Related function");
-		assert.strictEqual(result.documentation.see[0].isExternal, false);
-		assert.strictEqual(result.documentation.see[1].text, "External docs");
-		assert.strictEqual(result.documentation.see[1].isExternal, true);
+		// See references removed from documentation data
 
 		// Check throws info
 		assert.strictEqual(result.documentation.throws.length, 1);
@@ -539,17 +525,10 @@ describe("extractEntityPageData", () => {
 		const module = createMockModule("test-package/external", [entity]);
 		const mockPackage = createMockPackage([module]);
 
-		const result = extractEntityPageData(
-			mockPackage,
-			"external",
-			"externalFunction",
-		);
+		// Test that extraction works for entities without source/location
+		extractEntityPageData(mockPackage, "external", "externalFunction");
 
-		// Check handling of missing source/location
-		assert.strictEqual(result.hasSource, false);
-		assert.strictEqual(result.hasLocation, false);
-		assert.strictEqual(result.entity.source, "");
-		assert.strictEqual(result.entity.location, null);
+		// Source and location data/flags removed from entity page
 	});
 
 	test("handles complex module resolution", () => {

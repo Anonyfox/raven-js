@@ -84,17 +84,12 @@ export function extractEntityPageData(packageInstance, moduleName, entityName) {
 		name: entity.name,
 		type: entity.entityType || "unknown",
 		description: entity.description || "",
-		source: entity.source || "",
-		location: entity.location || null,
 		moduleId: entity.moduleId || mod.importPath,
 
 		// Import statement generation
 		importPath: mod.importPath,
 		importStatement: `import { ${entity.name} } from '${mod.importPath}';`,
 		isDefault: mod.isDefault || false,
-
-		// Cross-references to other entities
-		crossReferences: entity.crossReferences || [],
 	};
 
 	// STEP 3: JSDoc documentation extraction
@@ -118,7 +113,6 @@ export function extractEntityPageData(packageInstance, moduleName, entityName) {
 		since: extractSinceVersion(entity),
 		deprecated: extractDeprecationInfo(entity),
 		author: extractAuthorInfo(entity),
-		see: extractSeeReferences(entity),
 		throws: extractThrowsInfo(entity),
 
 		// Type information for TypeScript users
@@ -178,6 +172,7 @@ export function extractEntityPageData(packageInstance, moduleName, entityName) {
 		moduleName: moduleName,
 		packageMetadata: extractPackageMetadata(packageInstance), // Add package metadata
 		allModules: packageInstance.modules, // Pass all modules for re-export tracing
+		generationTimestamp: new Date().toISOString(), // Generation timestamp for footer
 
 		// Computed flags for conditional rendering
 		hasParameters: docs.parameters.length > 0,
@@ -191,8 +186,6 @@ export function extractEntityPageData(packageInstance, moduleName, entityName) {
 			relatedEntities.references.length > 0,
 		hasTypeInfo: Boolean(docs.typeInfo.signature),
 		isDeprecated: Boolean(docs.deprecated.isDeprecated),
-		hasSource: Boolean(entityData.source),
-		hasLocation: Boolean(entityData.location),
 	};
 }
 
@@ -543,25 +536,6 @@ function extractAuthorInfo(entity) {
 	return ent
 		.getJSDocTagsByType("author")
 		.map(/** @param {any} tag */ (tag) => tag.description || "");
-}
-
-/**
- * Extract see-also references from JSDoc tags
- * @param {Object} entity - Entity instance
- * @returns {Array<Object>} Reference links
- */
-function extractSeeReferences(entity) {
-	/** @type {any} */
-	const ent = entity;
-	if (!ent.getJSDocTagsByType) return [];
-
-	return ent.getJSDocTagsByType("see").map(
-		/** @param {any} seeTag */ (seeTag) => ({
-			text: seeTag.description || seeTag.text || "",
-			link: seeTag.link || null,
-			isExternal: seeTag.link?.startsWith("http") || false,
-		}),
-	);
 }
 
 /**

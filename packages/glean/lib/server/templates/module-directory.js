@@ -198,5 +198,7 @@ export function moduleDirectoryTemplate(data) {
 		seo: {
 			url: "", // Will be filled by route handler
 		},
+		packageMetadata: /** @type {any} */ (data).packageMetadata,
+		generationTimestamp: /** @type {any} */ (data).generationTimestamp,
 	});
 }

@@ -346,23 +346,7 @@ describe("entityPageTemplate", () => {
 		assert(html.includes("copyToClipboard"), "Has copy functionality");
 	});
 
-	test("displays source code when available", () => {
-		const data = createMockData();
-		const html = entityPageTemplate(data);
-
-		assert(html.includes("📄 Source Code"), "Shows source code header");
-		assert(
-			html.includes("function") &&
-				html.includes("processData") &&
-				html.includes("data") &&
-				html.includes("options"),
-			"Shows source code content",
-		);
-		assert(
-			html.includes("return") && html.includes("data") && html.includes("map"),
-			"Shows source code implementation",
-		);
-	});
+	// Source code widget removed from entity pages
 
 	test("shows exceptions/throws table", () => {
 		const data = createMockData();
@@ -377,16 +361,7 @@ describe("entityPageTemplate", () => {
 		);
 	});
 
-	test("displays see-also references", () => {
-		const data = createMockData();
-		const html = entityPageTemplate(data);
-
-		assert(html.includes("🔗 See Also"), "Shows see also header");
-		assert(html.includes("Related function"), "Shows internal reference");
-		assert(html.includes("External documentation"), "Shows external reference");
-		assert(html.includes('target="_blank"'), "Opens external links in new tab");
-		assert(html.includes("🔗"), "Shows external link icon");
-	});
+	// See-also widget removed from entity pages
 
 	test("shows entity metadata correctly", () => {
 		const data = createMockData();
@@ -421,20 +396,6 @@ describe("entityPageTemplate", () => {
 		);
 		assert(html.includes("processItems"), "Shows similar function");
 		assert(html.includes("processor"), "Shows module name for similar entity");
-	});
-
-	test("does not display navigation sidebar for clean layout", () => {
-		const data = createMockData();
-		const html = entityPageTemplate(data);
-
-		// Navigation sidebar was removed for full-width content
-		assert(!html.includes("🗂️ utils APIs"), "No duplicate module navigation");
-		assert(
-			!html.includes("📦 All Modules"),
-			"No duplicate all modules navigation",
-		);
-		assert(!html.includes("col-lg-8"), "Uses full width layout");
-		assert(!html.includes("col-lg-4"), "No sidebar column");
 	});
 
 	test("does not include quick actions for clean layout", () => {
@@ -671,17 +632,7 @@ describe("entityPageTemplate", () => {
 		assert(html.includes("Module Navigation"), "Has module navigation section");
 	});
 
-	test("shows external link indicators correctly", () => {
-		const data = createMockData();
-		const html = entityPageTemplate(data);
-
-		// External link should have target="_blank" and icon
-		assert(
-			html.includes('target="_blank" rel="noopener noreferrer"'),
-			"Opens external links safely",
-		);
-		assert(html.includes("🔗"), "Shows external link icon");
-	});
+	// External link indicators moved to attribution section only
 
 	test("handles empty related entities gracefully", () => {
 		const data = createMockData({

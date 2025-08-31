@@ -22,7 +22,6 @@ import {
 	contentSection,
 	deprecationAlert,
 	entityCard,
-	packageFooter,
 	pageHeader,
 	seeAlsoLinks,
 	tableSection,
@@ -36,8 +35,7 @@ import { baseTemplate } from "./base.js";
  * @param {string} data.entity.name - Entity name
  * @param {string} data.entity.type - Entity type
  * @param {string} data.entity.description - Entity description
- * @param {string} data.entity.source - Source code
- * @param {Object} data.entity.location - Source location
+
  * @param {string} data.entity.importPath - Module import path
  * @param {string} data.entity.importStatement - Generated import statement
  * @param {boolean} data.entity.isDefault - Whether from default module
@@ -50,7 +48,6 @@ import { baseTemplate } from "./base.js";
  * @param {string} data.documentation.since - Since version
  * @param {Object} data.documentation.deprecated - Deprecation info
  * @param {Array<string>} data.documentation.author - Author information
- * @param {Array<Object>} data.documentation.see - See-also references
  * @param {Array<Object>} data.documentation.throws - Exception documentation
  * @param {Object} data.documentation.typeInfo - TypeScript type information
  * @param {Object} data.relatedEntities - Cross-reference information
@@ -69,8 +66,6 @@ import { baseTemplate } from "./base.js";
  * @param {boolean} data.hasRelatedEntities - Whether entity has related entities
  * @param {boolean} data.hasTypeInfo - Whether entity has TypeScript info
  * @param {boolean} data.isDeprecated - Whether entity is deprecated
- * @param {boolean} data.hasSource - Whether entity has source code
- * @param {boolean} data.hasLocation - Whether entity has location info
  * @returns {string} Complete HTML page
  */
 export function entityPageTemplate(data) {
@@ -78,7 +73,6 @@ export function entityPageTemplate(data) {
 		entity,
 		documentation,
 		relatedEntities,
-		navigation,
 		packageName,
 		moduleName,
 		hasParameters,
@@ -89,7 +83,6 @@ export function entityPageTemplate(data) {
 		hasRelatedEntities,
 		hasTypeInfo,
 		isDeprecated,
-		hasSource,
 	} = data;
 
 	// Type casts for object property access
@@ -212,19 +205,7 @@ export function entityPageTemplate(data) {
 				: ""
 		}
 
-		<!-- Attribution -->
-		${
-			attributionContext?.hasAttribution
-				? html`
-		<div class="card border-info mb-4">
-			<div class="card-body py-2">
-				${attributionBar(attributionContext)}
-				${seeAlsoLinks(attributionContext)}
-			</div>
-		</div>
-		`
-				: ""
-		}
+
 
 		<!-- Import Statement -->
 		<div class="card border-primary mb-4">
@@ -514,71 +495,23 @@ export function entityPageTemplate(data) {
 						: ""
 				}
 
-				<!-- Cross-references -->
-				${
-					ent.crossReferences && ent.crossReferences.length > 0
-						? contentSection({
-								title: "Related Functions",
-								icon: "🔗",
-								noPadding: true,
-								content: tableSection({
-									headers: ["Function", "Type", "Context"],
-									rows: ent.crossReferences.map(
-										/** @param {any} ref */ (ref) => [
-											html`<a href="/modules/utils/${safeHtml`${ref.entityName}`}/" class="text-decoration-none">
-								<code class="bg-light px-2 py-1 rounded">${safeHtml`${ref.entityName}`}</code>
-							</a>`,
-											html`<span class="badge ${ref.type === "see" ? "bg-info" : "bg-secondary"}">${safeHtml`${ref.type}`}</span>`,
-											html`<span class="text-muted small">${safeHtml`${ref.context}`}</span>`,
-										],
-									),
-								}),
-							})
-						: ""
-				}
 
-				<!-- Source Code -->
-				${
-					hasSource
-						? contentSection({
-								title: "Source Code",
-								icon: "📄",
-								content: codeBlock({
-									code: ent.source,
-									language: "javascript",
-								}),
-							})
-						: ""
-				}
 
-				<!-- See Also -->
+
+
+
+
+				<!-- Attribution -->
 				${
-					docs.see.length > 0
-						? contentSection({
-								title: "See Also",
-								icon: "🔗",
-								content: html`
-						<ul class="list-unstyled mb-0">
-							${docs.see.map(
-								/** @param {any} seeRef */ (seeRef) => html`
-							<li class="mb-2">
-								${
-									seeRef.link
-										? html`
-								<a href="${safeHtml`${seeRef.link}`}" class="text-decoration-none ${seeRef.isExternal ? "link-primary" : ""}"
-									${seeRef.isExternal ? 'target="_blank" rel="noopener noreferrer"' : ""}>
-									${safeHtml`${seeRef.text}`}
-									${seeRef.isExternal ? html`<span class="ms-1">🔗</span>` : ""}
-								</a>
-								`
-										: html`<span>${safeHtml`${seeRef.text}`}</span>`
-								}
-							</li>
-							`,
-							)}
-						</ul>
-					`,
-							})
+					attributionContext?.hasAttribution
+						? html`
+				<div class="card border-info mb-4">
+					<div class="card-body py-2">
+						${attributionBar(attributionContext)}
+						${seeAlsoLinks(attributionContext)}
+					</div>
+				</div>
+				`
 						: ""
 				}
 
@@ -647,18 +580,19 @@ export function entityPageTemplate(data) {
 				}
 		</div>
 
-		${packageFooter(attributionContext)}
+
 	`;
 
 	// Generate sidebar navigation (matching module-overview.js exactly)
 	const sidebar =
-		navigation.allModules.length > 1
+		/** @type {any} */ (data).navigation.allModules.length > 1
 			? html`
 		<h6 class="fw-bold mb-3">Module Navigation</h6>
 		<ul class="nav nav-pills flex-column">
-			${navigation.allModules.map(
-				/** @param {any} navModule */
-				(navModule) => html`
+			${
+				/** @type {any} */ (data).navigation.allModules.map(
+					/** @param {any} navModule */
+					(navModule) => html`
 			<li class="nav-item">
 				<a
 					href="${navModule.link}"
@@ -668,7 +602,8 @@ export function entityPageTemplate(data) {
 				</a>
 			</li>
 			`,
-			)}
+				)
+			}
 		</ul>
 		`
 			: "";
@@ -686,5 +621,7 @@ export function entityPageTemplate(data) {
 		seo: {
 			url: "", // Will be filled by route handler
 		},
+		packageMetadata: /** @type {any} */ (data).packageMetadata,
+		generationTimestamp: /** @type {any} */ (data).generationTimestamp,
 	});
 }

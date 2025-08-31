@@ -75,6 +75,10 @@ export function extractModuleDirectoryData(packageInstance) {
 		// Meta information for template
 		hasModules: moduleList.length > 0,
 		hasPublicEntities: directoryStats.totalPublicEntities > 0,
+
+		// Footer data
+		packageMetadata: extractPackageMetadata(packageInstance),
+		generationTimestamp: new Date().toISOString(),
 	};
 }
 
@@ -91,4 +95,24 @@ function getEntityTypeDistribution(packageInstance) {
 		types[type] = (types[type] || 0) + 1;
 	});
 	return types;
+}
+
+/**
+ * Extract package metadata for footer attribution
+ * @param {import('../../extract/models/package.js').Package} packageInstance - Package instance
+ * @returns {Object|null} Package metadata for attribution
+ */
+function extractPackageMetadata(packageInstance) {
+	/** @type {any} */
+	const pkg = packageInstance;
+	if (pkg.packageJsonData) {
+		return {
+			author: pkg.packageJsonData.author,
+			homepage: pkg.packageJsonData.homepage,
+			repository: pkg.packageJsonData.repository,
+			bugs: pkg.packageJsonData.bugs,
+			funding: pkg.packageJsonData.funding,
+		};
+	}
+	return null;
 }
