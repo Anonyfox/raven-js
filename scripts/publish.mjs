@@ -89,6 +89,10 @@ execSync("npm test", { stdio: "inherit" });
 console.log("Running linting...");
 execSync("npm run lint", { stdio: "inherit" });
 
+// Refresh workspace bin links after tests built new binaries
+console.log("Refreshing workspace bin links...");
+execSync("npm install --prefer-offline --no-audit", { stdio: "inherit" });
+
 // Generate complete documentation
 console.log("Generating complete documentation...");
 execSync("npm run nest:docs", { stdio: "inherit" });
