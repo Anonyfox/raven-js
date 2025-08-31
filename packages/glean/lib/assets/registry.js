@@ -86,18 +86,13 @@ function generateSeoFilename(originalPath, altText, hash) {
 export class AssetRegistry {
 	/**
 	 * Create new asset registry
-	 * @param {Object} [options] - Configuration options
-	 * @param {Object} [options.urlBuilder] - URL builder for base path support
 	 */
-	constructor(options = {}) {
+	constructor() {
 		/** @type {Map<string, AssetRegistryEntry>} */
 		this.assets = new Map();
 
 		/** @type {Map<string, string>} */
 		this.pathToUrl = new Map(); // originalPath -> assetUrl mapping for fast lookups
-
-		/** @type {Object|null} */
-		this.urlBuilder = options.urlBuilder || null;
 	}
 
 	/**
@@ -137,9 +132,7 @@ export class AssetRegistry {
 
 		// Generate SEO-friendly filename with word deduplication
 		const filename = generateSeoFilename(originalPath, altText, hash);
-		const assetUrl = this.urlBuilder
-			? /** @type {any} */ (this.urlBuilder).assetUrl(filename)
-			: `/assets/${filename}`;
+		const assetUrl = `/assets/${filename}`;
 
 		// Check if content already exists (deduplication)
 		const existingEntry = Array.from(this.assets.values()).find(

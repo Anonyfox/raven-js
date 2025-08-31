@@ -13,7 +13,7 @@
  * Serves registered assets directly from filesystem with zero memory bloat.
  */
 
-import { createReadStream, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 
 /**
  * @typedef {import('./registry.js').AssetRegistry} AssetRegistry
@@ -45,27 +45,35 @@ import { createReadStream, statSync } from "node:fs";
  * router.get('/assets/:filename', (ctx) => serveAsset(ctx, assetRegistry));
  */
 export async function serveAsset(context, registry) {
-	const { pathname } = context.url;
+	const pathname = context.path;
 
 	// Extract filename from URL path
 	if (!pathname.startsWith("/assets/")) {
-		context.status(404);
-		context.text("Asset not found");
+		context.responseStatusCode = 404;
+		await context.text("Asset not found");
 		return;
 	}
 
 	// Check if registry exists
 	if (!registry) {
-		context.status(404);
-		context.text("Asset not found");
+		context.responseStatusCode = 404;
+		await context.text("Asset not found");
 		return;
 	}
+
+	// Debug: Show what's being looked up vs what's in registry
+	console.log(`[DEBUG] Looking up asset: ${pathname}`);
+	console.log(`[DEBUG] Registry has ${registry.size} assets`);
+	const allAssets = registry.getAllAssets();
+	console.log(
+		`[DEBUG] Registered URLs: ${allAssets.map((a) => a.assetUrl).join(", ")}`,
+	);
 
 	// Get asset from registry
 	const asset = registry.getAsset(pathname);
 	if (!asset) {
-		context.status(404);
-		context.text("Asset not found");
+		context.responseStatusCode = 404;
+		await context.text("Asset not found");
 		return;
 	}
 
@@ -74,26 +82,29 @@ export async function serveAsset(context, registry) {
 		const stats = statSync(asset.resolvedPath);
 
 		// Set response headers
-		context.header("Content-Type", asset.contentType);
-		context.header("Content-Length", stats.size.toString());
-		context.header("Cache-Control", "public, max-age=31536000, immutable"); // 1 year cache
-		context.header("ETag", `"${asset.filename}"`);
+		context.responseHeaders.set("Content-Type", asset.contentType);
+		context.responseHeaders.set("Content-Length", stats.size.toString());
+		context.responseHeaders.set(
+			"Cache-Control",
+			"public, max-age=31536000, immutable",
+		); // 1 year cache
+		context.responseHeaders.set("ETag", `"${asset.filename}"`);
 
 		// Handle conditional requests
-		const ifNoneMatch = context.headers.get("if-none-match");
+		const ifNoneMatch = context.requestHeaders.get("if-none-match");
 		if (ifNoneMatch === `"${asset.filename}"`) {
-			context.status(304);
+			context.responseStatusCode = 304;
 			return;
 		}
 
-		// Stream file content
-		const stream = createReadStream(asset.resolvedPath);
-		context.status(200);
-		context.body(stream);
+		// Read file content into Buffer
+		const fileBuffer = readFileSync(asset.resolvedPath);
+		context.responseStatusCode = 200;
+		context.responseBody = fileBuffer;
 	} catch {
 		// File not found or other error
-		context.status(404);
-		context.text("Asset not found");
+		context.responseStatusCode = 404;
+		await context.text("Asset not found");
 	}
 }
 

@@ -179,19 +179,19 @@ export class Config {
 	}
 
 	/**
+	 * Get base path with defaults
+	 * @returns {string} Base path for URL rewriting (default: "/")
+	 */
+	getBasePath() {
+		return this.basePath ?? "/";
+	}
+
+	/**
 	 * Get bundles configuration
 	 * @returns {Record<string, string>} Bundle mappings
 	 */
 	getBundles() {
 		return this.bundles ?? {};
-	}
-
-	/**
-	 * Get base path with defaults
-	 * @returns {string} Base path for deployment
-	 */
-	getBasePath() {
-		return this.basePath ?? "";
 	}
 
 	/**

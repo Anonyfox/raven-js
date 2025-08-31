@@ -26,7 +26,6 @@ import { createModuleDirectoryHandler } from "./routes/module-directory.js";
 import { createModuleOverviewHandler } from "./routes/module-overview.js";
 import { createPackageOverviewHandler } from "./routes/package-overview.js";
 import { createSitemapHandler } from "./routes/sitemap.js";
-import { createUrlBuilder } from "./utils/url-builder.js";
 
 /**
  * Creates documentation server instance with routes, static assets, and middleware.
@@ -37,7 +36,6 @@ import { createUrlBuilder } from "./utils/url-builder.js";
  * @param {string} packagePath - Path to package to document
  * @param {Object} options - Configuration options
  * @param {string} [options.domain] - Base domain for canonical URLs (optional)
- * @param {string} [options.basePath] - Base path for URL prefixing (default: "/")
  * @param {boolean} [options.enableLogging] - Enable request logging (default: false)
  * @returns {Object} Wings server instance ready to listen
  *
@@ -54,7 +52,7 @@ import { createUrlBuilder } from "./utils/url-builder.js";
  * });
  */
 export function createDocumentationServer(packagePath, options = {}) {
-	const { domain, basePath = "/", enableLogging = false } = options;
+	const { domain, enableLogging = false } = options;
 
 	// Validate required parameters
 	if (!packagePath || typeof packagePath !== "string") {
@@ -72,16 +70,20 @@ export function createDocumentationServer(packagePath, options = {}) {
 		);
 	}
 
-	// Create URL builder with base path
-	const urlBuilder = createUrlBuilder(basePath);
-
 	// Create asset registry and register discovered image assets
-	const assetRegistry = new AssetRegistry({ urlBuilder });
+	const assetRegistry = new AssetRegistry();
 
 	// Register package-level image assets (from discovery phase)
 	if (packageMetadata.imageAssets) {
+		console.log(
+			`[DEBUG] Registering ${packageMetadata.imageAssets.length} package assets`,
+		);
 		for (const asset of packageMetadata.imageAssets) {
-			assetRegistry.register(/** @type {any} */ (asset));
+			console.log(
+				`[DEBUG] Registering asset: ${/** @type {any} */ (asset).originalPath} -> ${/** @type {any} */ (asset).resolvedPath}`,
+			);
+			const url = assetRegistry.register(/** @type {any} */ (asset));
+			console.log(`[DEBUG] Asset registered as: ${url}`);
 		}
 	}
 
@@ -109,17 +111,14 @@ export function createDocumentationServer(packagePath, options = {}) {
 	const currentFileUrl = import.meta.url;
 	const currentFilePath = fileURLToPath(currentFileUrl);
 	const currentDir = path.dirname(currentFilePath);
-	const staticDir = path.resolve(currentDir, "../../static");
+	const staticDir = path.resolve(currentDir, "../static");
+	console.log("staticDir", staticDir);
 
 	router.use(new Assets({ assetsDir: staticDir }));
 
-	// Helper function to prefix routes with base path
-	const routePath = (/** @type {string} */ path) =>
-		basePath === "/" ? path : `${basePath.replace(/\/+$/, "")}${path}`;
-
 	// Register asset serving route for local image assets
 	router.get(
-		routePath("/assets/:filename"),
+		"/assets/:filename",
 		/** @type {any} */ (createAssetMiddleware(assetRegistry)),
 	);
 
@@ -127,49 +126,39 @@ export function createDocumentationServer(packagePath, options = {}) {
 	const packageOverviewHandler = createPackageOverviewHandler(
 		packageInstance,
 		assetRegistry,
-		{ urlBuilder },
 	);
-	const moduleDirectoryHandler = createModuleDirectoryHandler(packageInstance, {
-		urlBuilder,
-	});
+	const moduleDirectoryHandler = createModuleDirectoryHandler(packageInstance);
 	const moduleOverviewHandler = createModuleOverviewHandler(
 		packageInstance,
 		assetRegistry,
-		{ urlBuilder },
 	);
-	const entityPageHandler = createEntityPageHandler(packageInstance, {
-		urlBuilder,
-	});
+	const entityPageHandler = createEntityPageHandler(packageInstance);
 	const sitemapHandler = createSitemapHandler(packageInstance, {
 		baseUrl: domain ? `https://${domain}` : "https://docs.example.com",
-		urlBuilder,
 	});
 
-	// Register all documentation routes with base path prefix
+	// Register all documentation routes
 
 	// Package overview route (homepage)
-	router.get(routePath("/"), /** @type {any} */ (packageOverviewHandler));
+	router.get("/", /** @type {any} */ (packageOverviewHandler));
 
 	// Module directory route (all modules overview)
-	router.get(
-		routePath("/modules/"),
-		/** @type {any} */ (moduleDirectoryHandler),
-	);
+	router.get("/modules/", /** @type {any} */ (moduleDirectoryHandler));
 
 	// Module overview route (specific module documentation)
 	router.get(
-		routePath("/modules/:moduleName/"),
+		"/modules/:moduleName/",
 		/** @type {any} */ (moduleOverviewHandler),
 	);
 
 	// Entity documentation route (specific API documentation)
 	router.get(
-		routePath("/modules/:moduleName/:entityName/"),
+		"/modules/:moduleName/:entityName/",
 		/** @type {any} */ (entityPageHandler),
 	);
 
 	// Sitemap route (SEO optimization)
-	router.get(routePath("/sitemap.xml"), /** @type {any} */ (sitemapHandler));
+	router.get("/sitemap.xml", /** @type {any} */ (sitemapHandler));
 
 	// Wings router handles 404s automatically when no routes match
 
@@ -179,11 +168,9 @@ export function createDocumentationServer(packagePath, options = {}) {
 	// Attach package metadata for external access (cast to bypass TypeScript)
 	/** @type {any} */ (server).packageInstance = packageInstance;
 	/** @type {any} */ (server).assetRegistry = assetRegistry;
-	/** @type {any} */ (server).urlBuilder = urlBuilder;
 	/** @type {any} */ (server).serverOptions = {
 		packagePath,
 		domain,
-		basePath,
 		enableLogging,
 	};
 
