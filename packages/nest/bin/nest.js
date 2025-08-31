@@ -47,10 +47,10 @@ function findWorkspaceRoot(startPath) {
 
 import {
 	copyFavicon,
-	generateAllBundles,
+	// generateAllBundles, // Temporarily disabled
 	generateContextJson,
+	generateGleanDocs,
 	generateLandingPage,
-	generateTypeDoc,
 	getDocsPath,
 } from "../lib/docs/index.js";
 import { bumpVersion, updatePackageVersions } from "../lib/index.js";
@@ -361,74 +361,75 @@ async function buildPackageDocs(
 		console.log(`  ⚠️  Could not generate context for ${packageName}`);
 	}
 
-	// Generate bundles
-	console.log(`  📦 Generating bundles for ${packageName}...`);
-	const bundles = await generateAllBundles(packagePath, packageName);
-	if (bundles) {
-		// Write bundle files directly to docs folder with new naming pattern
-		if (bundles.cjs) {
-			writeFileSync(
-				join(docsPath, `${packageName}.bundle.cjs`),
-				bundles.cjs.code,
-			);
-			if (bundles.cjs.map) {
-				writeFileSync(
-					join(docsPath, `${packageName}.bundle.cjs.map`),
-					bundles.cjs.map,
-				);
-			}
-		}
-		if (bundles.cjsMin) {
-			writeFileSync(
-				join(docsPath, `${packageName}.bundle.cjs.min.js`),
-				bundles.cjsMin.code,
-			);
-			if (bundles.cjsMin.map) {
-				writeFileSync(
-					join(docsPath, `${packageName}.bundle.cjs.min.js.map`),
-					bundles.cjsMin.map,
-				);
-			}
-		}
-		if (bundles.esm) {
-			writeFileSync(
-				join(docsPath, `${packageName}.bundle.esm.js`),
-				bundles.esm.code,
-			);
-			if (bundles.esm.map) {
-				writeFileSync(
-					join(docsPath, `${packageName}.bundle.esm.js.map`),
-					bundles.esm.map,
-				);
-			}
-		}
-		if (bundles.esmMin) {
-			writeFileSync(
-				join(docsPath, `${packageName}.bundle.esm.min.js`),
-				bundles.esmMin.code,
-			);
-			if (bundles.esmMin.map) {
-				writeFileSync(
-					join(docsPath, `${packageName}.bundle.esm.min.js.map`),
-					bundles.esmMin.map,
-				);
-			}
-		}
+	// Generate bundles - TEMPORARILY DISABLED to avoid esbuild node:fs errors
+	// console.log(`  📦 Generating bundles for ${packageName}...`);
+	// const bundles = await generateAllBundles(packagePath, packageName);
+	// if (bundles) {
+	// 	// Write bundle files directly to docs folder with new naming pattern
+	// 	if (bundles.cjs) {
+	// 		writeFileSync(
+	// 			join(docsPath, `${packageName}.bundle.cjs`),
+	// 			bundles.cjs.code,
+	// 		);
+	// 		if (bundles.cjs.map) {
+	// 			writeFileSync(
+	// 				join(docsPath, `${packageName}.bundle.cjs.map`),
+	// 				bundles.cjs.map,
+	// 			);
+	// 		}
+	// 	}
+	// 	if (bundles.cjsMin) {
+	// 		writeFileSync(
+	// 			join(docsPath, `${packageName}.bundle.cjs.min.js`),
+	// 			bundles.cjsMin.code,
+	// 		);
+	// 		if (bundles.cjsMin.map) {
+	// 			writeFileSync(
+	// 				join(docsPath, `${packageName}.bundle.cjs.min.js.map`),
+	// 				bundles.cjsMin.map,
+	// 			);
+	// 		}
+	// 	}
+	// 	if (bundles.esm) {
+	// 		writeFileSync(
+	// 			join(docsPath, `${packageName}.bundle.esm.js`),
+	// 			bundles.esm.code,
+	// 		);
+	// 		if (bundles.esm.map) {
+	// 			writeFileSync(
+	// 				join(docsPath, `${packageName}.bundle.esm.js.map`),
+	// 				bundles.esm.map,
+	// 			);
+	// 		}
+	// 	}
+	// 	if (bundles.esmMin) {
+	// 		writeFileSync(
+	// 			join(docsPath, `${packageName}.bundle.esm.min.js`),
+	// 			bundles.esmMin.code,
+	// 		);
+	// 		if (bundles.esmMin.map) {
+	// 			writeFileSync(
+	// 				join(docsPath, `${packageName}.bundle.esm.min.js.map`),
+	// 				bundles.esmMin.map,
+	// 			);
+	// 		}
+	// 	}
+	//
+	// 	console.log(`  ✅ Bundles generated for ${packageName}`);
+	// } else {
+	// 	console.log(`  ⚠️  Could not generate bundles for ${packageName}`);
+	// }
+	console.log(`  ⏭️  Bundle generation skipped (temporarily disabled)`);
 
-		console.log(`  ✅ Bundles generated for ${packageName}`);
-	} else {
-		console.log(`  ⚠️  Could not generate bundles for ${packageName}`);
-	}
-
-	// Generate TypeDoc documentation
-	console.log(`  📚 Generating TypeDoc documentation for ${packageName}...`);
+	// Generate Glean documentation
+	console.log(`  📚 Generating Glean documentation for ${packageName}...`);
 	const packageDocsPath = join(docsPath, packageName);
-	const typeDocSuccess = await generateTypeDoc(packagePath, packageDocsPath);
-	if (typeDocSuccess) {
-		console.log(`  ✅ TypeDoc documentation generated: ${packageName}/`);
+	const gleanSuccess = await generateGleanDocs(packagePath, packageDocsPath);
+	if (gleanSuccess) {
+		console.log(`  ✅ Glean documentation generated: ${packageName}/`);
 	} else {
 		console.log(
-			`  ⚠️  Could not generate TypeDoc documentation for ${packageName}`,
+			`  ⚠️  Could not generate Glean documentation for ${packageName}`,
 		);
 	}
 

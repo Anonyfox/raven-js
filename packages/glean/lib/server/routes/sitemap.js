@@ -22,6 +22,7 @@ import { sitemapTemplate } from "../templates/sitemap.js";
  * @param {{name: string, modules: Array<{importPath: string, isDefault: boolean, publicEntities: Array<{name: string}>}>}} packageInstance - Package instance with modules and entities
  * @param {Object} options - Configuration options
  * @param {string} [options.baseUrl] - Base URL for the documentation site
+ * @param {Object} [options.urlBuilder] - URL builder for base path handling
  * @returns {Function} Wings route handler for sitemap.xml
  *
  * @example
@@ -32,7 +33,7 @@ import { sitemapTemplate } from "../templates/sitemap.js";
  * app.get('/sitemap.xml', handler);
  */
 export function createSitemapHandler(packageInstance, options = {}) {
-	const { baseUrl = "https://docs.example.com" } = options;
+	const { baseUrl = "https://docs.example.com", urlBuilder } = options;
 
 	/**
 	 * Handle sitemap.xml requests
@@ -41,7 +42,7 @@ export function createSitemapHandler(packageInstance, options = {}) {
 	return async function sitemapHandler(ctx) {
 		try {
 			// Extract sitemap data from package
-			const data = extractSitemapData(packageInstance, baseUrl);
+			const data = extractSitemapData(packageInstance, baseUrl, { urlBuilder });
 
 			// Generate XML sitemap
 			const xmlContent = sitemapTemplate(data);

@@ -26,6 +26,7 @@ import { createModuleDirectoryHandler } from "./routes/module-directory.js";
 import { createModuleOverviewHandler } from "./routes/module-overview.js";
 import { createPackageOverviewHandler } from "./routes/package-overview.js";
 import { createSitemapHandler } from "./routes/sitemap.js";
+import { createUrlBuilder } from "./utils/url-builder.js";
 
 /**
  * Creates documentation server instance with routes, static assets, and middleware.
@@ -36,6 +37,7 @@ import { createSitemapHandler } from "./routes/sitemap.js";
  * @param {string} packagePath - Path to package to document
  * @param {Object} options - Configuration options
  * @param {string} [options.domain] - Base domain for canonical URLs (optional)
+ * @param {string} [options.basePath] - Base path for URL prefixing (default: "/")
  * @param {boolean} [options.enableLogging] - Enable request logging (default: false)
  * @returns {Object} Wings server instance ready to listen
  *
@@ -52,7 +54,7 @@ import { createSitemapHandler } from "./routes/sitemap.js";
  * });
  */
 export function createDocumentationServer(packagePath, options = {}) {
-	const { domain, enableLogging = false } = options;
+	const { domain, basePath = "/", enableLogging = false } = options;
 
 	// Validate required parameters
 	if (!packagePath || typeof packagePath !== "string") {
@@ -89,6 +91,9 @@ export function createDocumentationServer(packagePath, options = {}) {
 		}
 	}
 
+	// Create URL builder with base path
+	const urlBuilder = createUrlBuilder(basePath);
+
 	// Create Wings router instance
 	const router = new Router();
 
@@ -108,9 +113,13 @@ export function createDocumentationServer(packagePath, options = {}) {
 
 	router.use(new Assets({ assetsDir: staticDir }));
 
+	// Helper function to prefix routes with base path
+	const routePath = (/** @type {string} */ path) =>
+		basePath === "/" ? path : `${basePath.replace(/\/+$/, "")}${path}`;
+
 	// Register asset serving route for local image assets
 	router.get(
-		"/assets/:filename",
+		routePath("/assets/:filename"),
 		/** @type {any} */ (createAssetMiddleware(assetRegistry)),
 	);
 
@@ -118,39 +127,49 @@ export function createDocumentationServer(packagePath, options = {}) {
 	const packageOverviewHandler = createPackageOverviewHandler(
 		packageInstance,
 		assetRegistry,
+		{ urlBuilder },
 	);
-	const moduleDirectoryHandler = createModuleDirectoryHandler(packageInstance);
+	const moduleDirectoryHandler = createModuleDirectoryHandler(packageInstance, {
+		urlBuilder,
+	});
 	const moduleOverviewHandler = createModuleOverviewHandler(
 		packageInstance,
 		assetRegistry,
+		{ urlBuilder },
 	);
-	const entityPageHandler = createEntityPageHandler(packageInstance);
+	const entityPageHandler = createEntityPageHandler(packageInstance, {
+		urlBuilder,
+	});
 	const sitemapHandler = createSitemapHandler(packageInstance, {
 		baseUrl: domain ? `https://${domain}` : "https://docs.example.com",
+		urlBuilder,
 	});
 
-	// Register all documentation routes
+	// Register all documentation routes with base path prefix
 
 	// Package overview route (homepage)
-	router.get("/", /** @type {any} */ (packageOverviewHandler));
+	router.get(routePath("/"), /** @type {any} */ (packageOverviewHandler));
 
 	// Module directory route (all modules overview)
-	router.get("/modules/", /** @type {any} */ (moduleDirectoryHandler));
+	router.get(
+		routePath("/modules/"),
+		/** @type {any} */ (moduleDirectoryHandler),
+	);
 
 	// Module overview route (specific module documentation)
 	router.get(
-		"/modules/:moduleName/",
+		routePath("/modules/:moduleName/"),
 		/** @type {any} */ (moduleOverviewHandler),
 	);
 
 	// Entity documentation route (specific API documentation)
 	router.get(
-		"/modules/:moduleName/:entityName/",
+		routePath("/modules/:moduleName/:entityName/"),
 		/** @type {any} */ (entityPageHandler),
 	);
 
 	// Sitemap route (SEO optimization)
-	router.get("/sitemap.xml", /** @type {any} */ (sitemapHandler));
+	router.get(routePath("/sitemap.xml"), /** @type {any} */ (sitemapHandler));
 
 	// Wings router handles 404s automatically when no routes match
 
@@ -160,9 +179,11 @@ export function createDocumentationServer(packagePath, options = {}) {
 	// Attach package metadata for external access (cast to bypass TypeScript)
 	/** @type {any} */ (server).packageInstance = packageInstance;
 	/** @type {any} */ (server).assetRegistry = assetRegistry;
+	/** @type {any} */ (server).urlBuilder = urlBuilder;
 	/** @type {any} */ (server).serverOptions = {
 		packagePath,
 		domain,
+		basePath,
 		enableLogging,
 	};
 

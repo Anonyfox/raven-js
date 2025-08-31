@@ -20,11 +20,8 @@ describe("lib/docs/index.js", () => {
 		assert.strictEqual(typeof docs.generateESMMinifiedBundle, "function");
 		assert.strictEqual(typeof docs.getBundleEntryPoint, "function");
 
-		// TypeDoc generation functions
-		assert.strictEqual(typeof docs.canGenerateTypeDoc, "function");
-		assert.strictEqual(typeof docs.generateTypeDoc, "function");
-		assert.strictEqual(typeof docs.generateTypeDocConfig, "function");
-		assert.strictEqual(typeof docs.getEntryPoints, "function");
+		// Glean generation functions
+		assert.strictEqual(typeof docs.generateGleanDocs, "function");
 	});
 
 	it("should have working getWorkspaceRoot function", () => {

@@ -41,7 +41,8 @@ import { baseTemplate } from "./base.js";
  *   packageName: 'my-package'
  * });
  */
-export function moduleDirectoryTemplate(data) {
+export function moduleDirectoryTemplate(data, options = {}) {
+	const { urlBuilder } = /** @type {any} */ (options);
 	const {
 		moduleList,
 		directoryStats,
@@ -116,5 +117,6 @@ export function moduleDirectoryTemplate(data) {
 		},
 		packageMetadata: /** @type {any} */ (data).packageMetadata,
 		generationTimestamp: /** @type {any} */ (data).generationTimestamp,
+		urlBuilder,
 	});
 }

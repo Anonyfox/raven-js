@@ -17,6 +17,7 @@
  * Extract package overview data for homepage with modules, statistics, and README content.
  *
  * @param {import('../../extract/models/package.js').Package} packageInstance - Package data
+ * @param {Object} [_urlBuilder] - URL builder for generating navigation links (unused currently)
  * @returns {Object} Structured data for package overview template
  *
  * @example
@@ -30,7 +31,7 @@
  * if (overview.hasReadme) console.log('README available');
  * if (overview.hasModules) console.log('Modules available');
  */
-export function extractPackageOverviewData(packageInstance) {
+export function extractPackageOverviewData(packageInstance, _urlBuilder) {
 	if (!packageInstance || typeof packageInstance !== "object") {
 		throw new Error("Package instance is required");
 	}

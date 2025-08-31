@@ -28,7 +28,8 @@ import { moduleDirectoryTemplate } from "../templates/module-directory.js";
  * const handler = createModuleDirectoryHandler(packageInstance);
  * app.get('/modules/', handler);
  */
-export function createModuleDirectoryHandler(packageInstance) {
+export function createModuleDirectoryHandler(packageInstance, options = {}) {
+	const { urlBuilder } = /** @type {any} */ (options);
 	/**
 	 * Module directory route handler
 	 * @param {import('@raven-js/wings').Context} ctx - Wings request context
@@ -39,7 +40,9 @@ export function createModuleDirectoryHandler(packageInstance) {
 			const data = extractModuleDirectoryData(packageInstance);
 
 			// Generate complete HTML page
-			const html = moduleDirectoryTemplate(/** @type {any} */ (data));
+			const html = moduleDirectoryTemplate(/** @type {any} */ (data), {
+				urlBuilder,
+			});
 
 			// Send HTML response with caching
 			await ctx.html(html);

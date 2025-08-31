@@ -26,6 +26,7 @@ import { createDocumentationServer } from "./server/index.js";
  * @param {string} outputPath - Destination directory for static files
  * @param {Object} options - Generation options
  * @param {string} [options.domain] - Base domain for canonical URLs
+ * @param {string} [options.basePath] - Base path for URL prefixing (default: "/")
  * @returns {Promise<{totalFiles: number, totalBytes: number, generatedAt: string}>} Generation statistics
  */
 export async function generateStaticSite(
@@ -33,7 +34,11 @@ export async function generateStaticSite(
 	outputPath,
 	options = {},
 ) {
-	const { domain } = options;
+	const { domain, basePath = "/" } = options;
+
+	// Normalize base path - ensure it starts and ends with /
+	const normalizedBasePath =
+		basePath === "/" ? "/" : `/${basePath.replace(/^\/+|\/+$/g, "")}/`;
 
 	// Validate inputs
 	if (!packagePath || typeof packagePath !== "string") {
@@ -44,14 +49,20 @@ export async function generateStaticSite(
 	}
 
 	// Create documentation server instance (router + package data)
-	const server = createDocumentationServer(packagePath, { domain });
+	const server = createDocumentationServer(packagePath, {
+		domain,
+		basePath: normalizedBasePath,
+	});
 	const packageInstance = /** @type {any} */ (server).packageInstance;
 	const router = /** @type {any} */ (server).router;
 	const assetRegistry = /** @type {any} */ (server).assetRegistry;
+	const urlBuilder = /** @type {any} */ (server).urlBuilder;
 
 	// Extract all URLs from sitemap
 	const baseUrl = domain ? `https://${domain}` : "https://docs.example.com";
-	const sitemapData = extractSitemapData(packageInstance, baseUrl);
+	const sitemapData = extractSitemapData(packageInstance, baseUrl, {
+		urlBuilder,
+	});
 
 	// Prepare output directory
 	await fs.promises.rm(outputPath, { recursive: true, force: true });
@@ -72,8 +83,18 @@ export async function generateStaticSite(
 		await router.handleRequest(context);
 
 		if (context.responseStatusCode === 200 && context.responseBody) {
+			// Strip base path from URL path for file system conversion
+			// e.g., "/beak/modules/" becomes "/modules/"
+			let fileUrlPath = urlPath;
+			if (
+				normalizedBasePath !== "/" &&
+				urlPath.startsWith(normalizedBasePath)
+			) {
+				fileUrlPath = urlPath.slice(normalizedBasePath.length - 1); // Keep leading slash
+			}
+
 			// Convert URL path to file system path
-			const filePath = urlPathToFilePath(urlPath, outputPath);
+			const filePath = urlPathToFilePath(fileUrlPath, outputPath);
 
 			// Ensure directory exists
 			const dir = path.dirname(filePath);
@@ -88,7 +109,11 @@ export async function generateStaticSite(
 	}
 
 	// Generate sitemap.xml separately
-	const sitemapUrl = new URL("/sitemap.xml", "http://localhost");
+	const sitemapPath =
+		normalizedBasePath === "/"
+			? "/sitemap.xml"
+			: `${normalizedBasePath}sitemap.xml`;
+	const sitemapUrl = new URL(sitemapPath, "http://localhost");
 	const sitemapContext = new Context("GET", sitemapUrl, new Headers());
 	await router.handleRequest(sitemapContext);
 

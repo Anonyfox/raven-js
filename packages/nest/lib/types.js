@@ -89,16 +89,6 @@
  */
 
 /**
- * @typedef {Object} TypeDocConfig
- * @property {string[]} entryPoints - Array of entry point paths
- * @property {string} out - Output directory path
- * @property {boolean} skipErrorChecking - Skip TypeScript error checking
- * @property {string} customFooterHtml - Custom footer HTML
- * @property {string} name - Package name for TypeDoc
- * @property {string} tsconfig - TypeScript config path
- */
-
-/**
  * @typedef {Object} BundleContent
  * @property {string} code - Bundle code content
  * @property {string} map - Source map content

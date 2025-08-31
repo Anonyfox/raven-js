@@ -158,22 +158,36 @@ export async function generateESMBundle(packagePath) {
 			return null;
 		}
 
+		// Check if package is Node.js-only by checking for node: imports or bin field
+		const packageJsonPath = join(packagePath, "package.json");
+		let isNodePackage = false;
+		try {
+			const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+			isNodePackage = !!packageJson.bin;
+		} catch {
+			// Continue with browser default if can't read package.json
+		}
+
 		// Create a temporary directory for esbuild to write files
 		const tempDir = mkdtempSync(join(tmpdir(), "esbuild-"));
 		const outFile = join(tempDir, "bundle.js");
 
 		try {
-			await build({
+			const buildOptions = {
 				entryPoints: [join(packagePath, entryPoint)],
 				bundle: true,
-				format: "esm",
+				format: /** @type {"esm"} */ ("esm"),
 				minify: false,
 				sourcemap: true,
 				target: "es2015",
-				platform: "browser",
+				platform: /** @type {"node" | "browser"} */ (
+					isNodePackage ? "node" : "browser"
+				),
 				outfile: outFile,
 				absWorkingDir: packagePath,
-			});
+			};
+
+			await build(buildOptions);
 
 			// Read the generated files
 			const code = readFileSync(outFile, "utf8");
@@ -205,22 +219,36 @@ export async function generateESMMinifiedBundle(packagePath) {
 			return null;
 		}
 
+		// Check if package is Node.js-only by checking for node: imports or bin field
+		const packageJsonPath = join(packagePath, "package.json");
+		let isNodePackage = false;
+		try {
+			const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+			isNodePackage = !!packageJson.bin;
+		} catch {
+			// Continue with browser default if can't read package.json
+		}
+
 		// Create a temporary directory for esbuild to write files
 		const tempDir = mkdtempSync(join(tmpdir(), "esbuild-"));
 		const outFile = join(tempDir, "bundle.js");
 
 		try {
-			await build({
+			const buildOptions = {
 				entryPoints: [join(packagePath, entryPoint)],
 				bundle: true,
-				format: "esm",
+				format: /** @type {"esm"} */ ("esm"),
 				minify: true,
 				sourcemap: true,
 				target: "es2015",
-				platform: "browser",
+				platform: /** @type {"node" | "browser"} */ (
+					isNodePackage ? "node" : "browser"
+				),
 				outfile: outFile,
 				absWorkingDir: packagePath,
-			});
+			};
+
+			await build(buildOptions);
 
 			// Read the generated files
 			const code = readFileSync(outFile, "utf8");

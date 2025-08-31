@@ -21,6 +21,8 @@ import { packageOverviewTemplate } from "../templates/package-overview.js";
  *
  * @param {import('../../extract/models/package.js').Package} packageInstance - Package data
  * @param {import('../../assets/registry.js').AssetRegistry} [assetRegistry] - Asset registry for path rewriting
+ * @param {Object} [options] - Handler options
+ * @param {Object} [options.urlBuilder] - URL builder for generating navigation links
  * @returns {Function} Wings route handler function
  *
  * @example
@@ -28,7 +30,12 @@ import { packageOverviewTemplate } from "../templates/package-overview.js";
  * const handler = createPackageOverviewHandler(packageInstance, assetRegistry);
  * app.get('/', handler);
  */
-export function createPackageOverviewHandler(packageInstance, assetRegistry) {
+export function createPackageOverviewHandler(
+	packageInstance,
+	assetRegistry,
+	options = {},
+) {
+	const { urlBuilder } = options;
 	/**
 	 * Package overview route handler
 	 * @param {import('@raven-js/wings').Context} ctx - Wings request context
@@ -42,6 +49,7 @@ export function createPackageOverviewHandler(packageInstance, assetRegistry) {
 			const html = packageOverviewTemplate(
 				/** @type {any} */ (data),
 				assetRegistry,
+				{ urlBuilder },
 			);
 
 			// Send HTML response with caching

@@ -30,7 +30,8 @@ import { entityPageTemplate } from "../templates/entity-page.js";
  * const handler = createEntityPageHandler(packageInstance);
  * app.get('/modules/:moduleName/:entityName/', handler);
  */
-export function createEntityPageHandler(packageInstance) {
+export function createEntityPageHandler(packageInstance, options = {}) {
+	const { urlBuilder } = /** @type {any} */ (options);
 	/**
 	 * Handle entity documentation page requests
 	 * @param {import('@raven-js/wings').Context} ctx - Wings request context
@@ -105,7 +106,9 @@ export function createEntityPageHandler(packageInstance) {
 			);
 
 			// Generate HTML using template
-			const html = entityPageTemplate(/** @type {any} */ (data));
+			const html = entityPageTemplate(/** @type {any} */ (data), {
+				urlBuilder,
+			});
 
 			// Send HTML response with security and caching headers
 			await ctx.html(html);

@@ -62,6 +62,7 @@ Examples:
   glean validate .                             Validate current directory
   glean ssg . ./docs                          Generate static documentation site
   glean ssg . ./docs --domain example.com     Generate with custom domain
+  glean ssg . ./docs --base /myproject/        Generate with base path for subdirectory deployment
   glean server                                 Start server for current directory
   glean server ./my-project --port 8080       Start server on custom port
 
@@ -91,6 +92,11 @@ export async function runSsgCommand(args) {
 	const domain =
 		domainIndex !== -1 && args[domainIndex + 1] ? args[domainIndex + 1] : null;
 
+	// Parse base path flag
+	const baseIndex = args.indexOf("--base");
+	const basePath =
+		baseIndex !== -1 && args[baseIndex + 1] ? args[baseIndex + 1] : "/";
+
 	const sourceDir = args.find((arg) => !arg.startsWith("-"));
 	const outputDir = args.find(
 		(arg, index) => !arg.startsWith("-") && index > args.indexOf(sourceDir),
@@ -106,10 +112,16 @@ export async function runSsgCommand(args) {
 	if (domain) {
 		console.log(`🌐 Using domain for SEO: ${domain}`);
 	}
+	if (basePath !== "/") {
+		console.log(`📍 Using base path: ${basePath}`);
+	}
 
 	try {
 		// Generate static site using lib2
-		const stats = await generateStaticSite(sourceDir, outputDir, { domain });
+		const stats = await generateStaticSite(sourceDir, outputDir, {
+			domain,
+			basePath,
+		});
 
 		console.log(`\n📊 Generation Results:`);
 		console.log(`   Files generated: ${stats.totalFiles}`);

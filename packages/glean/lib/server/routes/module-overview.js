@@ -29,7 +29,12 @@ import { moduleOverviewTemplate } from "../templates/module-overview.js";
  * const handler = createModuleOverviewHandler(packageInstance, assetRegistry);
  * app.get('/modules/:moduleName/', handler);
  */
-export function createModuleOverviewHandler(packageInstance, assetRegistry) {
+export function createModuleOverviewHandler(
+	packageInstance,
+	assetRegistry,
+	options = {},
+) {
+	const { urlBuilder } = /** @type {any} */ (options);
 	/**
 	 * Handle module overview page requests
 	 * @param {import('@raven-js/wings').Context} ctx - Wings request context
@@ -58,6 +63,7 @@ export function createModuleOverviewHandler(packageInstance, assetRegistry) {
 			const html = moduleOverviewTemplate(
 				/** @type {any} */ (data),
 				assetRegistry,
+				{ urlBuilder },
 			);
 
 			// Send HTML response with caching

@@ -48,6 +48,8 @@ function applyAssetPathRewriting(html, assetRegistry) {
  * @param {boolean} data.hasReadme - Whether README content exists
  * @param {boolean} data.hasModules - Whether modules exist
  * @param {import('../../assets/registry.js').AssetRegistry} [assetRegistry] - Asset registry for path rewriting
+ * @param {Object} [options] - Template options
+ * @param {Object} [options.urlBuilder] - URL builder for generating navigation links
  * @returns {string} Complete HTML page
  *
  * @example
@@ -62,7 +64,8 @@ function applyAssetPathRewriting(html, assetRegistry) {
  *   hasModules: false
  * }, assetRegistry);
  */
-export function packageOverviewTemplate(data, assetRegistry) {
+export function packageOverviewTemplate(data, assetRegistry, options = {}) {
+	const { urlBuilder } = options;
 	const {
 		name,
 		version,
@@ -138,7 +141,11 @@ export function packageOverviewTemplate(data, assetRegistry) {
 						modules: modules.map(
 							/** @param {any} module */ (module) => ({
 								name: module.name.split("/").pop() || "index",
-								link: `/modules/${module.name.split("/").pop()}/`,
+								link: urlBuilder
+									? /** @type {any} */ (urlBuilder).moduleUrl(
+											module.name.split("/").pop(),
+										)
+									: `/modules/${module.name.split("/").pop()}/`,
 								entityCount: module.publicEntityCount,
 								fullImportPath: module.name,
 								isDefault: module.isDefault,
@@ -171,5 +178,6 @@ export function packageOverviewTemplate(data, assetRegistry) {
 		},
 		packageMetadata: /** @type {any} */ (data).packageMetadata,
 		generationTimestamp: /** @type {any} */ (data).generationTimestamp,
+		urlBuilder,
 	});
 }

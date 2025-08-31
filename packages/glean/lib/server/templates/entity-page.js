@@ -42,7 +42,8 @@ import { baseTemplate } from "./base.js";
  *   moduleName: 'utils'
  * });
  */
-export function entityPageTemplate(data) {
+export function entityPageTemplate(data, options = {}) {
+	const { urlBuilder } = /** @type {any} */ (options);
 	const {
 		entity,
 		documentation,
@@ -597,5 +598,6 @@ export function entityPageTemplate(data) {
 		},
 		packageMetadata: /** @type {any} */ (data).packageMetadata,
 		generationTimestamp: /** @type {any} */ (data).generationTimestamp,
+		urlBuilder,
 	});
 }

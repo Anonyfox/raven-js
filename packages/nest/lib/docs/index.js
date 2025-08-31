@@ -19,11 +19,6 @@ export {
 	getBundleEntryPoint,
 } from "./generate-bundle.js";
 export { generateContext, generateContextJson } from "./generate-context.js";
+export { generateGleanDocs } from "./generate-glean.js";
 export { generateLandingPage } from "./generate-landingpage.js";
-export {
-	canGenerateTypeDoc,
-	generateTypeDoc,
-	generateTypeDocConfig,
-	getEntryPoints,
-} from "./generate-typedoc.js";
 export { getDocsPath, getWorkspaceRoot } from "./get-docs-path.js";

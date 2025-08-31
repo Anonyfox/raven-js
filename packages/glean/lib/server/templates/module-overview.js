@@ -96,7 +96,8 @@ function getTypeVariant(entityType) {
  *   packageName: 'my-package'
  * });
  */
-export function moduleOverviewTemplate(data, assetRegistry) {
+export function moduleOverviewTemplate(data, assetRegistry, options = {}) {
+	const { urlBuilder } = /** @type {any} */ (options);
 	const { module, organizedEntities, stats, packageName, hasEntities } =
 		/** @type {any} */ (data);
 
@@ -321,5 +322,6 @@ export function moduleOverviewTemplate(data, assetRegistry) {
 		},
 		packageMetadata: /** @type {any} */ (data).packageMetadata,
 		generationTimestamp: /** @type {any} */ (data).generationTimestamp,
+		urlBuilder,
 	});
 }
