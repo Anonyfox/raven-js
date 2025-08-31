@@ -119,7 +119,16 @@ export function entityPageTemplate(data, options = {}) {
 
 		// If the type matches the current entity, link to current page
 		if (typeString === entity.name) {
-			return html`<a href="${entity.importPath ? `/modules/${entity.importPath.split("/").pop()}/${entity.name}/` : "#"}" class="text-decoration-none"><code class="${colorClass}">${safeHtml`${typeString}`}</code></a>`;
+			const entityUrl =
+				entity.importPath && urlBuilder
+					? /** @type {any} */ (urlBuilder).entityUrl(
+							entity.importPath.split("/").pop(),
+							entity.name,
+						)
+					: entity.importPath
+						? `/modules/${entity.importPath.split("/").pop()}/${entity.name}/`
+						: "#";
+			return html`<a href="${entityUrl}" class="text-decoration-none"><code class="${colorClass}">${safeHtml`${typeString}`}</code></a>`;
 		}
 
 		/** @type {any} */
@@ -137,9 +146,22 @@ export function entityPageTemplate(data, options = {}) {
 
 	// Generate breadcrumbs
 	const breadcrumbs = [
-		{ href: "/", text: `📦 ${packageName}` },
-		{ href: "/modules/", text: "Modules" },
-		{ href: `/modules/${moduleName}/`, text: moduleName },
+		{
+			href: urlBuilder ? /** @type {any} */ (urlBuilder).homeUrl() : "/",
+			text: `📦 ${packageName}`,
+		},
+		{
+			href: urlBuilder
+				? /** @type {any} */ (urlBuilder).modulesUrl()
+				: "/modules/",
+			text: "Modules",
+		},
+		{
+			href: urlBuilder
+				? /** @type {any} */ (urlBuilder).moduleUrl(moduleName)
+				: `/modules/${moduleName}/`,
+			text: moduleName,
+		},
 		{ text: entity.name, active: true },
 	];
 

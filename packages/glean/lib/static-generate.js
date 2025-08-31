@@ -190,7 +190,9 @@ async function copyImageAssets(assetRegistry, outputPath) {
 		const assets = assetRegistry.getAllAssets();
 
 		for (const asset of assets) {
-			const destPath = path.join(outputPath, asset.assetUrl.substring(1)); // Remove leading /
+			// Extract just the filename from the asset URL (strip base path and /assets/ prefix)
+			const filename = asset.assetUrl.split("/").pop();
+			const destPath = path.join(outputPath, "assets", filename);
 
 			try {
 				// Copy file from resolved path to destination

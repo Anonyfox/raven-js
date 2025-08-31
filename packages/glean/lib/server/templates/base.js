@@ -278,7 +278,7 @@ export function baseTemplate({
 	<!-- Main Navigation -->
 	<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
 		<div class="container-fluid">
-			<a class="navbar-brand fw-bold text-primary" href="/">
+			<a class="navbar-brand fw-bold text-primary" href="${urlBuilder ? /** @type {any} */ (urlBuilder).homeUrl() : "/"}">
 				${packageName} <small class="text-muted">Documentation</small>
 			</a>
 
@@ -289,10 +289,10 @@ export function baseTemplate({
 			<div class="collapse navbar-collapse" id="navbarNav">
 				<ul class="navbar-nav me-auto">
 					<li class="nav-item">
-						<a class="nav-link ${navigation.current === "overview" ? "active" : ""}" href="/">Overview</a>
+						<a class="nav-link ${navigation.current === "overview" ? "active" : ""}" href="${urlBuilder ? /** @type {any} */ (urlBuilder).homeUrl() : "/"}">Overview</a>
 					</li>
 					<li class="nav-item">
-						<a class="nav-link ${navigation.current === "modules" ? "active" : ""}" href="/modules/">Modules</a>
+						<a class="nav-link ${navigation.current === "modules" ? "active" : ""}" href="${urlBuilder ? /** @type {any} */ (urlBuilder).modulesUrl() : "/modules/"}">Modules</a>
 					</li>
 				</ul>
 

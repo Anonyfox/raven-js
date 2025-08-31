@@ -72,8 +72,11 @@ export function createDocumentationServer(packagePath, options = {}) {
 		);
 	}
 
+	// Create URL builder with base path
+	const urlBuilder = createUrlBuilder(basePath);
+
 	// Create asset registry and register discovered image assets
-	const assetRegistry = new AssetRegistry();
+	const assetRegistry = new AssetRegistry({ urlBuilder });
 
 	// Register package-level image assets (from discovery phase)
 	if (packageMetadata.imageAssets) {
@@ -90,9 +93,6 @@ export function createDocumentationServer(packagePath, options = {}) {
 			}
 		}
 	}
-
-	// Create URL builder with base path
-	const urlBuilder = createUrlBuilder(basePath);
 
 	// Create Wings router instance
 	const router = new Router();

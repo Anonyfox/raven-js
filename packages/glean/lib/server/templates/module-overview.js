@@ -111,8 +111,16 @@ export function moduleOverviewTemplate(data, assetRegistry, options = {}) {
 
 	// Generate breadcrumbs
 	const breadcrumbs = [
-		{ href: "/", text: `📦 ${packageName}` },
-		{ href: "/modules/", text: "Modules" },
+		{
+			href: urlBuilder ? /** @type {any} */ (urlBuilder).homeUrl() : "/",
+			text: `📦 ${packageName}`,
+		},
+		{
+			href: urlBuilder
+				? /** @type {any} */ (urlBuilder).modulesUrl()
+				: "/modules/",
+			text: "Modules",
+		},
 		{ text: module.name, active: true },
 	];
 

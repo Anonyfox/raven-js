@@ -36,7 +36,13 @@
  * if (moduleData.hasEntities) console.log('Entities available');
  * if (moduleData.module.hasReadme) console.log('Module README available');
  */
-export function extractModuleOverviewData(packageInstance, moduleName) {
+export function extractModuleOverviewData(
+	packageInstance,
+	moduleName,
+	options = {},
+) {
+	const { urlBuilder } = /** @type {any} */ (options);
+
 	if (!packageInstance || typeof packageInstance !== "object") {
 		throw new Error("Package instance is required");
 	}
@@ -121,7 +127,9 @@ export function extractModuleOverviewData(packageInstance, moduleName) {
 				isDeprecated: entity.hasJSDocTag?.("deprecated") || false,
 
 				// Direct link to this module's entity
-				link: `/modules/${moduleName}/${entity.name}/`,
+				link: urlBuilder
+					? /** @type {any} */ (urlBuilder).entityUrl(moduleName, entity.name)
+					: `/modules/${moduleName}/${entity.name}/`,
 				isReexport: false,
 			}));
 	});
@@ -165,7 +173,12 @@ export function extractModuleOverviewData(packageInstance, moduleName) {
 					isDeprecated: originalEntity.hasJSDocTag?.("deprecated") || false,
 
 					// Link to the original entity's location
-					link: `/modules/${sourceModuleName}/${originalEntity.name}/`,
+					link: urlBuilder
+						? /** @type {any} */ (urlBuilder).entityUrl(
+								sourceModuleName,
+								originalEntity.name,
+							)
+						: `/modules/${sourceModuleName}/${originalEntity.name}/`,
 					isReexport: true,
 					originalModule: sourceModuleName,
 				});
@@ -182,7 +195,11 @@ export function extractModuleOverviewData(packageInstance, moduleName) {
 			fullImportPath: m.importPath,
 			isCurrent: m.importPath === module.importPath,
 			isDefault: m.isDefault,
-			link: `/modules/${m.importPath.split("/").pop()}/`,
+			link: urlBuilder
+				? /** @type {any} */ (urlBuilder).moduleUrl(
+						m.importPath.split("/").pop(),
+					)
+				: `/modules/${m.importPath.split("/").pop()}/`,
 			entityCount: m.publicEntityCount || 0,
 		})),
 	};

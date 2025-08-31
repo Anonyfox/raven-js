@@ -57,7 +57,9 @@ export function createModuleOverviewHandler(
 			}
 
 			// Extract data for the specific module
-			const data = extractModuleOverviewData(packageInstance, moduleName);
+			const data = extractModuleOverviewData(packageInstance, moduleName, {
+				urlBuilder,
+			});
 
 			// Generate HTML using template
 			const html = moduleOverviewTemplate(

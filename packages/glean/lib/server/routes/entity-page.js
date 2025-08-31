@@ -103,6 +103,7 @@ export function createEntityPageHandler(packageInstance, options = {}) {
 				packageInstance,
 				moduleName,
 				entityName,
+				{ urlBuilder },
 			);
 
 			// Generate HTML using template

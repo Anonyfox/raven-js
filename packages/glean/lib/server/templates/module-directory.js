@@ -82,6 +82,7 @@ export function moduleDirectoryTemplate(data, options = {}) {
 										? module.description
 										: undefined,
 									publicEntityCount: module.publicEntityCount,
+									urlBuilder,
 								}),
 						),
 						columns: 3,

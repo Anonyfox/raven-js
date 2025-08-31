@@ -145,6 +145,7 @@ export function entityCard({
  * @param {boolean} [module.isDefault] - Whether module is default export
  * @param {string} [module.description] - Module description
  * @param {number} module.publicEntityCount - Number of public entities
+ * @param {Object} [module.urlBuilder] - URL builder for base path support
  * @returns {string} Module card HTML
  */
 export function moduleCard({
@@ -152,6 +153,7 @@ export function moduleCard({
 	isDefault = false,
 	description,
 	publicEntityCount,
+	urlBuilder,
 }) {
 	const moduleName = importPath.split("/").pop() || "index";
 
@@ -163,7 +165,7 @@ export function moduleCard({
 					<div>
 						<h5 class="card-title mb-1">
 							${isDefault ? html`<span class="badge bg-primary me-2">default</span>` : ""}
-							<a href="/modules/${moduleName}/" class="text-decoration-none">
+							<a href="${urlBuilder ? /** @type {any} */ (urlBuilder).moduleUrl(moduleName) : `/modules/${moduleName}/`}" class="text-decoration-none">
 								${moduleName}
 							</a>
 						</h5>
@@ -203,7 +205,7 @@ export function moduleCard({
 			<!-- Module Footer -->
 			<div class="card-footer bg-white border-top-0 pt-0 mt-auto">
 				<div class="d-flex gap-2">
-					<a href="/modules/${moduleName}/" class="btn btn-primary btn-sm flex-fill">
+					<a href="${urlBuilder ? /** @type {any} */ (urlBuilder).moduleUrl(moduleName) : `/modules/${moduleName}/`}" class="btn btn-primary btn-sm flex-fill">
 						📖 Explore Module
 					</a>
 				</div>

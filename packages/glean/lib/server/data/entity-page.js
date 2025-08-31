@@ -35,7 +35,13 @@
  * const pageData = extractEntityPageData(package, 'core', 'MyClass');
  * console.log(pageData.documentation.methods);
  */
-export function extractEntityPageData(packageInstance, moduleName, entityName) {
+export function extractEntityPageData(
+	packageInstance,
+	moduleName,
+	entityName,
+	options = {},
+) {
+	const { urlBuilder } = /** @type {any} */ (options);
 	/** @type {any} */
 	const pkg = packageInstance;
 	// STEP 1: Find the target entity
@@ -136,7 +142,7 @@ export function extractEntityPageData(packageInstance, moduleName, entityName) {
 	// STEP 4: Related entities and cross-references
 	const relatedEntities = {
 		// Entities in the same module
-		sameModule: getSameModuleEntities(mod, entity),
+		sameModule: getSameModuleEntities(mod, entity, urlBuilder),
 
 		// Entities that reference this entity
 		referencedBy: getReferencingEntities(pkg, entity),
@@ -145,7 +151,7 @@ export function extractEntityPageData(packageInstance, moduleName, entityName) {
 		references: getReferencedEntities(pkg, entity),
 
 		// Similar entities (same type across modules)
-		similar: getSimilarEntities(pkg, entity),
+		similar: getSimilarEntities(pkg, entity, urlBuilder),
 	};
 
 	// STEP 5: Navigation context
@@ -154,7 +160,9 @@ export function extractEntityPageData(packageInstance, moduleName, entityName) {
 		currentModule: {
 			name: moduleName,
 			fullImportPath: mod.importPath,
-			link: `/modules/${moduleName}/`,
+			link: urlBuilder
+				? /** @type {any} */ (urlBuilder).moduleUrl(moduleName)
+				: `/modules/${moduleName}/`,
 		},
 		currentEntity: {
 			name: entityName,
@@ -166,11 +174,15 @@ export function extractEntityPageData(packageInstance, moduleName, entityName) {
 				fullImportPath: m.importPath,
 				isCurrent: m.importPath === mod.importPath,
 				isDefault: m.isDefault || false,
-				link: `/modules/${m.importPath.split("/").pop()}/`,
+				link: urlBuilder
+					? /** @type {any} */ (urlBuilder).moduleUrl(
+							m.importPath.split("/").pop(),
+						)
+					: `/modules/${m.importPath.split("/").pop()}/`,
 				entityCount: m.publicEntityCount || 0,
 			}),
 		),
-		moduleEntities: getModuleEntityNavigation(mod, entity),
+		moduleEntities: getModuleEntityNavigation(mod, entity, urlBuilder),
 	};
 
 	// STEP 6: Build complete data structure
@@ -592,9 +604,10 @@ function extractTypeInfo(entity) {
  * Get entities in the same module (excluding current entity)
  * @param {Object} module - Module instance
  * @param {Object} currentEntity - Current entity
+ * @param {Object} [urlBuilder] - URL builder for base path support
  * @returns {Array<Object>} Same module entities
  */
-function getSameModuleEntities(module, currentEntity) {
+function getSameModuleEntities(module, currentEntity, urlBuilder) {
 	/** @type {any} */
 	const mod = module;
 	/** @type {any} */
@@ -613,7 +626,12 @@ function getSameModuleEntities(module, currentEntity) {
 				name: entity.name,
 				type: entity.entityType || "unknown",
 				description: (entity.description || "").slice(0, 100),
-				link: `/modules/${mod.importPath.split("/").pop()}/${entity.name}/`,
+				link: urlBuilder
+					? /** @type {any} */ (urlBuilder).entityUrl(
+							mod.importPath.split("/").pop(),
+							entity.name,
+						)
+					: `/modules/${mod.importPath.split("/").pop()}/${entity.name}/`,
 			}),
 		);
 }
@@ -656,9 +674,10 @@ function getReferencedEntities(packageInstance, entity) {
  * Get similar entities (same type across other modules)
  * @param {Object} packageInstance - Package instance
  * @param {Object} entity - Current entity
+ * @param {Object} [urlBuilder] - URL builder for base path support
  * @returns {Array<Object>} Similar entities
  */
-function getSimilarEntities(packageInstance, entity) {
+function getSimilarEntities(packageInstance, entity, urlBuilder) {
 	/** @type {any} */
 	const pkg = packageInstance;
 	/** @type {any} */
@@ -688,7 +707,13 @@ function getSimilarEntities(packageInstance, entity) {
 					type: similarEntity.entityType || "unknown",
 					description: (similarEntity.description || "").slice(0, 100),
 					moduleName: parentModule?.importPath?.split("/").pop() || "unknown",
-					link: `/modules/${parentModule?.importPath?.split("/").pop()}/${similarEntity.name}/`,
+					link:
+						/** @type {any} */ (urlBuilder) && parentModule?.importPath
+							? /** @type {any} */ (urlBuilder).entityUrl(
+									parentModule.importPath.split("/").pop(),
+									similarEntity.name,
+								)
+							: `/modules/${parentModule?.importPath?.split("/").pop()}/${similarEntity.name}/`,
 				};
 			},
 		);
@@ -698,9 +723,10 @@ function getSimilarEntities(packageInstance, entity) {
  * Get navigation data for entities within the current module
  * @param {Object} module - Module instance
  * @param {Object} currentEntity - Current entity
+ * @param {Object} [urlBuilder] - URL builder for base path support
  * @returns {Array<Object>} Module entity navigation
  */
-function getModuleEntityNavigation(module, currentEntity) {
+function getModuleEntityNavigation(module, currentEntity, urlBuilder) {
 	/** @type {any} */
 	const mod = module;
 	/** @type {any} */
@@ -717,7 +743,12 @@ function getModuleEntityNavigation(module, currentEntity) {
 				name: entity.name,
 				type: entity.entityType || "unknown",
 				isCurrent: entity.name === curr.name,
-				link: `/modules/${mod.importPath.split("/").pop()}/${entity.name}/`,
+				link: urlBuilder
+					? /** @type {any} */ (urlBuilder).entityUrl(
+							mod.importPath.split("/").pop(),
+							entity.name,
+						)
+					: `/modules/${mod.importPath.split("/").pop()}/${entity.name}/`,
 			}),
 		);
 }
