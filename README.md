@@ -34,7 +34,7 @@ Inspired by apex predators who survive through intelligence, not dependencies:
 ### Raven Actions (Tools)
 
 - 🥚 **Hatch** - Bootstrap new apps • 📋 Planned
-- 🐣 **Fledge** - Build & bundle • 📋 Planned
+- 🐣 **Fledge** - Build & bundle • 🚧 In Development
 - 🦅 **Soar** - Deploy anywhere • 📋 Planned
 - 🔍 **[Glean](packages/glean/README.md)** - JSDoc tools & MCP • ✅ Production Ready
 
