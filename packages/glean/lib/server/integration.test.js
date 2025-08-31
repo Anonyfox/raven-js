@@ -109,9 +109,8 @@ describe("Documentation Server Integration", () => {
 		assert(html.includes("/modules/utils/"), "Contains utils module link");
 		assert(html.includes("/modules/api/"), "Contains api module link");
 
-		// Should contain statistics
-		assert(html.includes("Modules"), "Contains module statistics");
-		assert(html.includes("Entities"), "Contains entity statistics");
+		// Should contain module navigation
+		assert(html.includes("Modules"), "Contains module navigation");
 	});
 
 	test("serves module directory with all modules", async () => {

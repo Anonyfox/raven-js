@@ -9,9 +9,9 @@
 /**
  * Package overview template for documentation homepage
  *
- * Renders package information, README content, module navigation,
- * and statistics using Bootstrap 5 components. Follows WEBAPP.md
- * content specification for package overview pages.
+ * Renders package information, README content, and module navigation
+ * using Bootstrap 5 components. Follows WEBAPP.md content specification
+ * for package overview pages.
  */
 
 import { html, markdownToHTML } from "@raven-js/beak";
@@ -21,7 +21,6 @@ import {
 	gettingStarted,
 	moduleNavigation,
 	pageHeader,
-	statsSidebar,
 } from "../components/index.js";
 import { baseTemplate } from "./base.js";
 
@@ -33,13 +32,8 @@ import { baseTemplate } from "./base.js";
  * @param {string} data.description - Package description
  * @param {string} data.readmeMarkdown - README markdown content
  * @param {Array<Object>} data.modules - Module information array
- * @param {Object} data.stats - Package statistics
- * @param {number} data.stats.moduleCount - Number of modules
- * @param {number} data.stats.entityCount - Number of entities
- * @param {number} data.stats.publicEntityCount - Number of public entities
  * @param {boolean} data.hasReadme - Whether README content exists
  * @param {boolean} data.hasModules - Whether modules exist
- * @param {boolean} data.hasPublicEntities - Whether public entities exist
  * @returns {string} Complete HTML page
  */
 export function packageOverviewTemplate(data) {
@@ -49,10 +43,8 @@ export function packageOverviewTemplate(data) {
 		description,
 		readmeMarkdown,
 		modules,
-		stats,
 		hasReadme,
 		hasModules,
-		hasPublicEntities,
 	} = data;
 
 	// Generate header badges
@@ -61,46 +53,26 @@ export function packageOverviewTemplate(data) {
 		badges.push({ text: `v${version}`, variant: "secondary" });
 	}
 
-	// Generate package statistics for inline display
-	const packageStatsDisplay = html`
-		<div class="d-flex gap-3 flex-wrap">
-			<div class="text-center">
-				<div class="fs-4 fw-bold text-primary">${stats.moduleCount}</div>
-				<div class="small text-muted">Module${stats.moduleCount !== 1 ? "s" : ""}</div>
-			</div>
-			<div class="text-center">
-				<div class="fs-4 fw-bold text-success">${stats.publicEntityCount}</div>
-				<div class="small text-muted">Public API${stats.publicEntityCount !== 1 ? "s" : ""}</div>
-			</div>
-			<div class="text-center">
-				<div class="fs-4 fw-bold text-info">${stats.entityCount}</div>
-				<div class="small text-muted">Total Entit${stats.entityCount !== 1 ? "ies" : "y"}</div>
-			</div>
-		</div>
-	`;
-
 	// Generate main content
 	const content = html`
 		${pageHeader({
 			title: name,
 			subtitle: description ? markdownToHTML(description) : undefined,
 			badges,
-			description: packageStatsDisplay,
 		})}
 
-		<!-- Quick Navigation -->
+		<!-- Getting Started Section - Moved to top -->
 		${
 			hasModules
-				? contentSection({
-						title: "Documentation",
-						icon: "📚",
-						headerVariant: "light",
-						content: html`
-				<div class="d-flex gap-2 flex-wrap">
-					<a href="/modules/" class="btn btn-primary btn-sm">📖 Browse All Modules</a>
-					${hasPublicEntities ? html`<a href="/sitemap.xml" class="btn btn-outline-secondary btn-sm">🗺️ Sitemap</a>` : ""}
-				</div>
-			`,
+				? gettingStarted({
+						packageName: name,
+						actions: [
+							{
+								href: "/modules/",
+								text: "Explore Modules",
+								variant: "primary",
+							},
+						],
 					})
 				: ""
 		}
@@ -151,51 +123,12 @@ export function packageOverviewTemplate(data) {
 					})}
 				</div>
 
-				<!-- Package Statistics -->
-				<div class="mb-4">
-					${statsSidebar({
-						stats: [
-							{
-								value: stats.moduleCount,
-								label: "Modules",
-								variant: "primary",
-							},
-							{
-								value: stats.publicEntityCount,
-								label: "Public",
-								variant: "success",
-							},
-							{ value: stats.entityCount, label: "Total", variant: "info" },
-							{
-								value: `${Math.round((stats.publicEntityCount / stats.entityCount) * 100) || 0}%`,
-								label: "Coverage",
-								variant: "warning",
-							},
-						],
-						title: "📊 Package Statistics",
-					})}
-				</div>
+
 			</div>
 			`
 					: ""
 			}
 		</div>
-
-		<!-- Getting Started Section -->
-		${
-			hasModules
-				? gettingStarted({
-						packageName: name,
-						actions: [
-							{
-								href: "/modules/",
-								text: "Explore Modules",
-								variant: "primary",
-							},
-						],
-					})
-				: ""
-		}
 	`;
 
 	// Generate complete page using base template

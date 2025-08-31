@@ -93,29 +93,6 @@ describe("packageOverviewTemplate", () => {
 		assert(!html.includes("<h1>"), "Does not render empty markdown");
 	});
 
-	test("displays package statistics correctly", () => {
-		const data = createMockData({
-			stats: {
-				moduleCount: 3,
-				entityCount: 15,
-				publicEntityCount: 12,
-			},
-		});
-		const html = packageOverviewTemplate(data);
-
-		// Module count
-		assert(html.includes("3"), "Contains module count");
-		assert(html.includes("Module"), "Contains module label");
-
-		// Public entity count
-		assert(html.includes("12"), "Contains public entity count");
-		assert(html.includes("Public"), "Contains public label");
-
-		// Total entity count
-		assert(html.includes("15"), "Contains total entity count");
-		assert(html.includes("Total"), "Contains total label");
-	});
-
 	test("renders module navigation correctly", () => {
 		const data = createMockData();
 		const html = packageOverviewTemplate(data);
@@ -164,17 +141,7 @@ describe("packageOverviewTemplate", () => {
 		// Should not show module navigation
 		assert(!html.includes("🗂️ Modules"), "Does not show module navigation");
 
-		// Should still show statistics (zeros)
-		assert(html.includes("0"), "Shows zero statistics");
-	});
-
-	test("includes navigation links", () => {
-		const data = createMockData();
-		const html = packageOverviewTemplate(data);
-
-		// Quick navigation
-		assert(html.includes('href="/modules/"'), "Contains modules link");
-		assert(html.includes("Browse All Modules"), "Contains module browse text");
+		// Should not show module statistics since we removed them
 	});
 
 	test("includes getting started section when modules exist", () => {
@@ -235,33 +202,6 @@ describe("packageOverviewTemplate", () => {
 			htmlPlural.includes("Modules"),
 			"Uses plural module label for multiple",
 		);
-	});
-
-	test("calculates coverage percentage correctly", () => {
-		const data = createMockData({
-			stats: {
-				moduleCount: 2,
-				entityCount: 10,
-				publicEntityCount: 8,
-			},
-		});
-		const html = packageOverviewTemplate(data);
-
-		// 8/10 * 100 = 80%
-		assert(html.includes("80%"), "Shows correct coverage percentage");
-	});
-
-	test("handles zero entities coverage calculation", () => {
-		const data = createMockData({
-			stats: {
-				moduleCount: 1,
-				entityCount: 0,
-				publicEntityCount: 0,
-			},
-		});
-		const html = packageOverviewTemplate(data);
-
-		assert(html.includes("0%"), "Shows 0% for no entities");
 	});
 
 	test("includes proper meta tags via base template", () => {

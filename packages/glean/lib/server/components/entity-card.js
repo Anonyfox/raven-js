@@ -19,27 +19,6 @@ import { attributionBar } from "./attribution-bar.js";
 import { seeAlsoLinks } from "./see-links.js";
 
 /**
- * Truncate plain text safely at word boundaries
- * @param {string} text - Plain text to truncate
- * @param {number} maxLength - Maximum length in characters
- * @returns {string} Truncated text
- */
-function truncateText(text, maxLength) {
-	if (!text || text.length <= maxLength) return text;
-
-	// Find the last space before maxLength
-	let truncated = text.substring(0, maxLength);
-	const lastSpace = truncated.lastIndexOf(" ");
-
-	// If we found a space, truncate there to avoid cutting words
-	if (lastSpace > maxLength * 0.8) {
-		truncated = truncated.substring(0, lastSpace);
-	}
-
-	return `${truncated.trim()}...`;
-}
-
-/**
  * Generate entity card for grid display
  * @param {Object} options - Entity card options
  * @param {string} options.name - Entity name
@@ -152,24 +131,17 @@ export function entityCard({
 /**
  * Generate module card for module directory
  * @param {Object} module - Module information
- * @param {string} module.name - Module name
  * @param {string} module.importPath - Module import path
  * @param {boolean} [module.isDefault] - Whether module is default export
  * @param {string} [module.description] - Module description
- * @param {string} [module.readmePreview] - README preview text
  * @param {number} module.publicEntityCount - Number of public entities
- * @param {Array<string>} module.entityTypes - Available entity types
- * @param {Array<Object>} [module.sampleEntities] - Sample entities
  * @returns {string} Module card HTML
  */
 export function moduleCard({
 	importPath,
 	isDefault = false,
 	description,
-	readmePreview,
 	publicEntityCount,
-	entityTypes = [],
-	sampleEntities = [],
 }) {
 	const moduleName = importPath.split("/").pop() || "index";
 
@@ -199,86 +171,21 @@ export function moduleCard({
 				${
 					description
 						? html`
-				<div class="mb-3">
-					<div class="text-muted mb-0" style="max-height: 3rem; overflow: hidden;">
-						${safeHtml`${truncateText(markdownToText(description), 200)}`}
-					</div>
-				</div>
-				`
-						: ""
-				}
-
-				${
-					readmePreview
-						? html`
-				<div class="mb-3">
-					<div class="small text-muted bg-light p-2 rounded">
-						<div style="max-height: 4rem; overflow: hidden;">
-							${safeHtml`${truncateText(markdownToText(readmePreview), 200)}`}
-						</div>
+				<div class="mb-3 flex-grow-1">
+					<div class="text-muted mb-0">
+						${(() => {
+							const descText = markdownToText(description);
+							return descText.length > 1000
+								? safeHtml`${descText.slice(0, 1000).trim()}...`
+								: safeHtml`${descText}`;
+						})()}
 					</div>
 				</div>
 				`
 						: html`
-				<div class="mb-3">
-					<div class="small text-muted fst-italic">No documentation available</div>
+				<div class="mb-3 flex-grow-1">
+					<div class="small text-muted fst-italic">No description available</div>
 				</div>
-				`
-				}
-
-				<!-- Entity Types -->
-				${
-					entityTypes.length > 0
-						? html`
-				<div class="mb-3">
-					<div class="small text-muted mb-1">Available Types:</div>
-					<div>
-						${entityTypes.map(
-							(type) => html`
-						<span class="badge bg-light text-dark me-1 mb-1">${type}</span>
-						`,
-						)}
-					</div>
-				</div>
-				`
-						: ""
-				}
-
-				<!-- Sample Entities -->
-				${
-					sampleEntities.length > 0
-						? html`
-				<div class="mb-0 flex-grow-1">
-					<div class="small text-muted mb-2">Featured APIs:</div>
-					<div style="max-height: 12rem; overflow-y: auto;">
-										${sampleEntities.map(
-											/** @param {any} entity */ (entity) => html`
-				<div class="border rounded p-2 mb-2 bg-light">
-					<div class="d-flex align-items-center justify-content-between">
-						<div>
-							<strong class="text-primary">${entity.name}</strong>
-							<span class="badge bg-secondary ms-1">${entity.type}</span>
-						</div>
-					</div>
-					${
-						entity.description
-							? html`
-					<div class="small text-muted mt-1">
-						<div style="max-height: 2.5rem; overflow: hidden;">
-							${safeHtml`${truncateText(markdownToText(entity.description), 100)}`}
-						</div>
-					</div>
-					`
-							: ""
-					}
-				</div>
-				`,
-										)}
-					</div>
-				</div>
-				`
-						: html`
-				<div class="text-muted small fst-italic flex-grow-1">No public entities available</div>
 				`
 				}
 			</div>
