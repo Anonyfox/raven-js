@@ -57,7 +57,7 @@ describe("Frontier", () => {
 		// Should be deduplicated to one URL
 		assert.strictEqual(frontier.getPendingCount(), 1);
 		const url = frontier.getNextPending();
-		assert.strictEqual(url.href, "https://example.com/path?a=1&b=2");
+		assert.strictEqual(url.href, "https://example.com/path");
 	});
 
 	test("marks URLs as crawled", () => {

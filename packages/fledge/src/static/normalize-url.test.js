@@ -18,7 +18,7 @@ describe("normalizeUrl", () => {
 		assert.strictEqual(url.protocol, "https:");
 		assert.strictEqual(url.hostname, "example.com");
 		assert.strictEqual(url.pathname, "/Path");
-		assert.strictEqual(url.search, "?a=1&b=2");
+		assert.strictEqual(url.search, "");
 		assert.strictEqual(url.hash, "");
 	});
 
@@ -79,9 +79,10 @@ describe("normalizeUrl", () => {
 		assert.strictEqual(url.port, "8443");
 	});
 
-	test("sorts query parameters", () => {
+	test("strips query parameters", () => {
 		const url = normalizeUrl("https://example.com/path?z=3&a=1&m=2");
-		assert.strictEqual(url.search, "?a=1&m=2&z=3");
+		assert.strictEqual(url.search, "");
+		assert.strictEqual(url.href, "https://example.com/path");
 	});
 
 	test("normalizes pathname double slashes", () => {
@@ -136,8 +137,8 @@ describe("normalizeUrl", () => {
 		assert.strictEqual(url.hostname, "example.com");
 		assert.strictEqual(url.port, "");
 		assert.strictEqual(url.pathname, "/api/docs");
-		assert.strictEqual(url.search, "?a=1&z=3");
+		assert.strictEqual(url.search, "");
 		assert.strictEqual(url.hash, "");
-		assert.strictEqual(url.href, "http://example.com/api/docs?a=1&z=3");
+		assert.strictEqual(url.href, "http://example.com/api/docs");
 	});
 });

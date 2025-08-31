@@ -10,7 +10,7 @@
  * @file URL normalization for crawling consistency.
  *
  * Handles common URL normalization traps: hash fragments, relative URLs,
- * missing protocols, case sensitivity, and query parameter ordering.
+ * missing protocols, case sensitivity, and query parameter stripping.
  */
 
 /**
@@ -72,12 +72,8 @@ export function normalizeUrl(url, baseUrl = null) {
 		resolved.port = "";
 	}
 
-	// 4. Sort query parameters for consistent ordering
-	if (resolved.search) {
-		const params = new URLSearchParams(resolved.search);
-		params.sort();
-		resolved.search = params.toString();
-	}
+	// 4. Strip query parameters for static site generation
+	resolved.search = "";
 
 	// 5. Normalize pathname (remove double slashes, but preserve trailing slash semantics)
 	if (resolved.pathname) {
