@@ -328,4 +328,114 @@ describe("Config", () => {
 			/Export 'nonexistent' not found/,
 		);
 	});
+
+	test("fromString loads default export", async () => {
+		const jsCode = `
+			export default {
+				server: "http://localhost:4000",
+				routes: ["/api", "/docs"],
+				discover: true
+			};
+		`;
+
+		const config = await Config.fromString(jsCode);
+
+		assert.strictEqual(config.server, "http://localhost:4000");
+		assert.deepStrictEqual(config.routes, ["/api", "/docs"]);
+		assert.strictEqual(config.discover, true);
+	});
+
+	test("fromString loads named export", async () => {
+		const jsCode = `
+			export default {
+				server: "http://localhost:3000"
+			};
+
+			export const staging = {
+				server: "https://staging.example.com",
+				discover: false
+			};
+		`;
+
+		const config = await Config.fromString(jsCode, "staging");
+
+		assert.strictEqual(config.server, "https://staging.example.com");
+		assert.strictEqual(config.discover, false);
+	});
+
+	test("fromString works with ESM imports", async () => {
+		const jsCode = `
+			import { readFileSync } from 'node:fs';
+
+			// Can use imports in config code
+			const packageInfo = "fledge";
+
+			export default {
+				server: "http://localhost:3000",
+				routes: [\`/\${packageInfo}\`],
+				discover: { depth: 2 }
+			};
+		`;
+
+		const config = await Config.fromString(jsCode);
+
+		assert.strictEqual(config.server, "http://localhost:3000");
+		assert.deepStrictEqual(config.routes, ["/fledge"]);
+		assert(config.discover instanceof Discover);
+		assert.strictEqual(config.discover.depth, 2);
+	});
+
+	test("fromString validates loaded configuration", async () => {
+		const jsCode = `
+			export default {
+				server: 123 // Invalid server type
+			};
+		`;
+
+		await assert.rejects(
+			async () => await Config.fromString(jsCode),
+			/Server must be origin URL string or async boot function/,
+		);
+	});
+
+	test("fromString throws for syntax errors", async () => {
+		const jsCode = `
+			export default {
+				server: "http://localhost:3000"
+				// Missing comma - syntax error
+				routes: ["/"]
+			};
+		`;
+
+		await assert.rejects(
+			async () => await Config.fromString(jsCode),
+			/Failed to import config from code string/,
+		);
+	});
+
+	test("fromString throws for missing default export", async () => {
+		const jsCode = `
+			export const notDefault = {
+				server: "http://localhost:3000"
+			};
+		`;
+
+		await assert.rejects(
+			async () => await Config.fromString(jsCode),
+			/No default export found in code string/,
+		);
+	});
+
+	test("fromString throws for missing named export", async () => {
+		const jsCode = `
+			export default {
+				server: "http://localhost:3000"
+			};
+		`;
+
+		await assert.rejects(
+			async () => await Config.fromString(jsCode, "nonexistent"),
+			/Export 'nonexistent' not found in code string/,
+		);
+	});
 });

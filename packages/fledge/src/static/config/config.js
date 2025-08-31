@@ -103,6 +103,54 @@ export class Config {
 	}
 
 	/**
+	 * Create configuration from JavaScript code string
+	 * @param {string} jsCode - JavaScript code string with ESM import/export syntax
+	 * @param {string} [exportName] - Optional named export to select (uses default if not specified)
+	 * @returns {Promise<Config>} Configuration instance
+	 * @throws {Error} If import, configuration creation, or validation fails
+	 */
+	static async fromString(jsCode, exportName) {
+		try {
+			// Create data URL from JavaScript string for dynamic import
+			const dataUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(jsCode)}`;
+
+			// Dynamic import works with data URLs and full ESM syntax
+			const module = await import(dataUrl);
+
+			let configData;
+			if (exportName) {
+				if (!(exportName in module)) {
+					throw new Error(`Export '${exportName}' not found in code string`);
+				}
+				configData = module[exportName];
+			} else {
+				// Use default export or throw if not available
+				if ("default" in module) {
+					configData = module.default;
+				} else {
+					throw new Error("No default export found in code string");
+				}
+			}
+
+			const config = new Config(configData);
+			config.validate();
+			return config;
+		} catch (error) {
+			const err = /** @type {any} */ (error);
+			if (
+				err.message.includes("Export ") ||
+				err.message.includes("No default export")
+			) {
+				throw error; // Re-throw our clean export errors
+			}
+
+			throw new Error(
+				`Failed to import config from code string: ${err.message}`,
+			);
+		}
+	}
+
+	/**
 	 * Get server with validation
 	 * @returns {string | ServerBootFunction} Server configuration
 	 * @throws {Error} If server is not configured
