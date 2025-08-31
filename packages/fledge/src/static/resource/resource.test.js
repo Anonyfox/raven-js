@@ -25,7 +25,7 @@ describe("Resource", () => {
 					const error = new Error("timeout");
 					error.name = "AbortError";
 					reject(error);
-				}, 100);
+				}, 20);
 			});
 		}
 
@@ -44,7 +44,7 @@ describe("Resource", () => {
 							]),
 							arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
 						}),
-					10,
+					1,
 				),
 			);
 		}
@@ -72,7 +72,7 @@ describe("Resource", () => {
 							headers: new Map([["Content-Type", "text/html; charset=utf-8"]]),
 							arrayBuffer: () => Promise.resolve(buffer.buffer),
 						}),
-					10,
+					1,
 				),
 			);
 		}
@@ -103,7 +103,7 @@ describe("Resource", () => {
 						headers: new Map([["Content-Type", "text/html; charset=utf-8"]]),
 						arrayBuffer: () => Promise.resolve(buffer.buffer),
 					}),
-				10,
+				1,
 			),
 		);
 	}
@@ -277,7 +277,7 @@ describe("Resource", () => {
 		await assert.rejects(
 			async () =>
 				await Resource.fetch("/timeout", "https://example.com", {
-					timeout: 50,
+					timeout: 10,
 				}),
 			/Request timeout/,
 		);

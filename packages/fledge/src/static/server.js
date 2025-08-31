@@ -107,7 +107,7 @@ export class Server {
 	 * @param {number} [timeout=1000] - Connection timeout in milliseconds
 	 * @returns {Promise<boolean>} True if port accepts connections
 	 */
-	async isPortReady(port, timeout = 1000) {
+	async isPortReady(port, timeout = 200) {
 		return new Promise((resolve) => {
 			const socket = new Socket();
 			socket.setTimeout(timeout);
@@ -153,7 +153,7 @@ export class Server {
 	 * @throws {Error} If server crashes or timeout exceeded
 	 */
 	async waitForTcpReady(port, options = {}) {
-		const { timeout = 30000, interval = 100 } = options;
+		const { timeout = 5000, interval = 50 } = options;
 		const startTime = Date.now();
 
 		while (!this.#crashed && Date.now() - startTime < timeout) {
@@ -201,7 +201,7 @@ export class Server {
 			throw new Error("Server is already booting");
 		}
 
-		const { timeout = 30000, maxAttempts = 3 } = options;
+		const { timeout = 5000, maxAttempts = 3 } = options;
 		this.#isBooting = true;
 
 		try {

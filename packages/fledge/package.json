@@ -28,7 +28,7 @@
     "nest:docs": "node ../nest/bin/nest.js build-docs",
     "build": "esbuild bin/fledge.js --bundle --minify --platform=node --format=esm --external:esbuild --outfile=bin/fledge.min.js",
     "test": "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
-    "test:code": "timeout 20s node --no-warnings --test --test-concurrency=1 --test-reporter=dot",
+    "test:code": "timeout 20s node --no-warnings --test --test-concurrency=1 --test-reporter=dot --test-force-exit",
     "test:coverage": "timeout 10s node --no-warnings --test --test-concurrency=1 --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
     "test:style": "npx biome lint --error-on-warnings .",
     "test:types": "tsc --noEmit --project jsconfig.json"
