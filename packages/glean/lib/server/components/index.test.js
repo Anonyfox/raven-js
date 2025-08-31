@@ -47,9 +47,16 @@ describe("component exports", () => {
 		ok(typeof components.emptyState === "function");
 	});
 
+	test("exports attribution components", () => {
+		ok(typeof components.attributionBar === "function");
+		ok(typeof components.seeAlsoLinks === "function");
+		ok(typeof components.packageFooter === "function");
+		ok(typeof components.inlinePackageLinks === "function");
+	});
+
 	test("all exports are functions", () => {
 		const exportedFunctions = Object.values(components);
-		strictEqual(exportedFunctions.length, 18);
+		strictEqual(exportedFunctions.length, 22);
 
 		exportedFunctions.forEach((fn) => {
 			strictEqual(typeof fn, "function");

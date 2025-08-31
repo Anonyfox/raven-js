@@ -37,8 +37,9 @@ export class Package {
 	 * @param {string} version - Package version
 	 * @param {string} description - Package description
 	 * @param {string} readme - Package README.md content
+	 * @param {Object} [packageJsonData] - Complete package.json data for attribution
 	 */
-	constructor(name, version, description, readme) {
+	constructor(name, version, description, readme, packageJsonData) {
 		/** @type {string} Package name from package.json */
 		this.name = name || "";
 		/** @type {string} Package version */
@@ -47,6 +48,8 @@ export class Package {
 		this.description = description || "";
 		/** @type {string} Package README.md content */
 		this.readme = readme || "";
+		/** @type {Object|null} Complete package.json data for attribution */
+		this.packageJsonData = packageJsonData || null;
 		/** @type {Array<import('./module.js').Module>} Collection of documentation modules */
 		this.modules = [];
 	}

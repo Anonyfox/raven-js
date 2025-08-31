@@ -72,6 +72,9 @@ export class Package {
 		this.description =
 			typeof json.description === "string" ? json.description : "";
 
+		// Store complete package.json data for attribution
+		this.packageJsonData = json;
+
 		// Extract entry points - always validate against provided files or empty set
 		this.entryPoints = extractEntryPoints(json, files || new Set());
 	}

@@ -440,13 +440,82 @@ function extractReferencedTypes(entity) {
 }
 
 /**
+ * Extract file-level JSDoc attribution from first JSDoc block
+ *
+ * File-level attribution comes from the first JSDoc block in a file that contains
+ * @author or @see tags. This attribution flows to all entities defined in the file.
+ *
+ * @param {string} fileContent - Complete file content
+ * @param {Array<Object>} jsdocBlocks - Pre-extracted JSDoc blocks
+ * @returns {{authorTags: Array<Object>, seeTags: Array<Object>}} File-level attribution tags
+ */
+function extractFileLevelAttribution(_fileContent, jsdocBlocks) {
+	const attribution = { authorTags: [], seeTags: [] };
+
+	if (!jsdocBlocks || jsdocBlocks.length === 0) {
+		return attribution;
+	}
+
+	// Find the first JSDoc block that has @author or @see tags (typically at top of file)
+	for (const block of jsdocBlocks) {
+		const authors = block.tags.filter((tag) => tag.name === "author");
+		const sees = block.tags.filter((tag) => tag.name === "see");
+
+		if (authors.length > 0 || sees.length > 0) {
+			// Create proper JSDoc tag instances for file-level attribution
+			for (const authorTag of authors) {
+				attribution.authorTags.push(createTag("author", authorTag.content));
+			}
+			for (const seeTag of sees) {
+				attribution.seeTags.push(createTag("see", seeTag.content));
+			}
+			break; // Use only the first block with attribution
+		}
+	}
+
+	return attribution;
+}
+
+/**
+ * Associate file-level attribution with an entity
+ *
+ * Adds file-level @author and @see tags to an entity's jsdocTags array,
+ * but only if the entity doesn't already have those tag types (entity-level takes precedence).
+ *
+ * @param {import('./models/entities/base.js').EntityBase} entity - Entity to enhance with file-level attribution
+ * @param {{authorTags: Array<Object>, seeTags: Array<Object>}} fileLevelAttribution - File-level attribution
+ */
+function associateFileLevelAttribution(entity, fileLevelAttribution) {
+	if (!entity || !entity.jsdocTags || !fileLevelAttribution) {
+		return;
+	}
+
+	// Check if entity already has author tags - if not, add file-level authors
+	const hasEntityAuthorTags = entity.jsdocTags.some(
+		(tag) => tag.tagType === "author",
+	);
+	if (!hasEntityAuthorTags && fileLevelAttribution.authorTags.length > 0) {
+		entity.jsdocTags.push(...fileLevelAttribution.authorTags);
+	}
+
+	// Check if entity already has see tags - if not, add file-level sees
+	const hasEntitySeeTags = entity.jsdocTags.some(
+		(tag) => tag.tagType === "see",
+	);
+	if (!hasEntitySeeTags && fileLevelAttribution.seeTags.length > 0) {
+		entity.jsdocTags.push(...fileLevelAttribution.seeTags);
+	}
+}
+
+/**
  * Parse single file to extract entities and re-exports from JSDoc blocks
  *
  * **Algorithm:**
  * 1. Extract JSDoc comment blocks using regex
- * 2. First pass: Extract directly exported entities
- * 3. Second pass: Include typedef/callback entities referenced by exported entities
- * 4. Return object with entities and re-exports arrays
+ * 2. Extract file-level attribution from first JSDoc block with @author/@see
+ * 3. First pass: Extract directly exported entities and associate file-level attribution
+ * 4. Second pass: Include typedef/callback entities referenced by exported entities
+ * 5. Return object with entities and re-exports arrays
  *
  * @param {import('../discover/models/file.js').File} file - File instance with content
  * @returns {{entities: Array<import('./models/entities/base.js').EntityBase>, reexports: Array<Object>}} Entities and re-exports from file
@@ -460,6 +529,12 @@ function parseFileEntities(file) {
 	const entities = [];
 	const reexports = [];
 
+	// Extract file-level JSDoc attribution (from first JSDoc block at top of file)
+	const fileLevelAttribution = extractFileLevelAttribution(
+		file.text,
+		jsdocBlocks,
+	);
+
 	// First pass: Extract directly exported entities (with normal export enforcement)
 	for (const block of jsdocBlocks) {
 		const result = createEntityFromBlock(block, file.path, file.text, true);
@@ -471,12 +546,16 @@ function parseFileEntities(file) {
 					if (item.type === "reexport") {
 						reexports.push(item);
 					} else {
+						// Associate file-level attribution with entity
+						associateFileLevelAttribution(item, fileLevelAttribution);
 						entities.push(item);
 					}
 				}
 			} else if (result.type === "reexport") {
 				reexports.push(result);
 			} else {
+				// Associate file-level attribution with entity
+				associateFileLevelAttribution(result, fileLevelAttribution);
 				entities.push(result);
 			}
 		}
@@ -503,6 +582,8 @@ function parseFileEntities(file) {
 					allReferencedTypes.has(result.name) &&
 					!entities.find((e) => e.name === result.name)
 				) {
+					// Associate file-level attribution with entity
+					associateFileLevelAttribution(result, fileLevelAttribution);
 					entities.push(result);
 				}
 			}

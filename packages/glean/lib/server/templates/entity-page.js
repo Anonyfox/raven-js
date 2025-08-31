@@ -15,12 +15,16 @@
  */
 
 import { html, markdownToHTML, safeHtml } from "@raven-js/beak";
+import { createEntityAttribution } from "../../extract/models/attribution.js";
 import {
+	attributionBar,
 	codeBlock,
 	contentSection,
 	deprecationAlert,
 	entityCard,
+	packageFooter,
 	pageHeader,
+	seeAlsoLinks,
 	tableSection,
 } from "../components/index.js";
 import { baseTemplate } from "./base.js";
@@ -93,6 +97,26 @@ export function entityPageTemplate(data) {
 	const ent = entity;
 	/** @type {any} */
 	const docs = documentation;
+
+	// Create attribution context for entity (defensive)
+	let attributionContext = null;
+	try {
+		const entityInstance = /** @type {any} */ (data).entityInstance;
+		if (
+			entityInstance &&
+			typeof (/** @type {any} */ (entityInstance).getJSDocTagsByType) ===
+				"function"
+		) {
+			attributionContext = createEntityAttribution(
+				/** @type {any} */ (entityInstance),
+				/** @type {any} */ (data).packageMetadata,
+				/** @type {any} */ (data).allModules, // Pass all modules for re-export tracing
+			);
+		}
+	} catch (_error) {
+		// Silently fail if attribution creation fails (e.g., in tests with mock entities)
+		attributionContext = null;
+	}
 
 	// Generate entity type badge color
 	const getTypeBadgeClass = (/** @type {string} */ type) => {
@@ -185,6 +209,20 @@ export function entityPageTemplate(data) {
 						reason: docs.deprecated.reason,
 						since: docs.deprecated.since,
 					})
+				: ""
+		}
+
+		<!-- Attribution -->
+		${
+			attributionContext?.hasAttribution
+				? html`
+		<div class="card border-info mb-4">
+			<div class="card-body py-2">
+				${attributionBar(attributionContext)}
+				${seeAlsoLinks(attributionContext)}
+			</div>
+		</div>
+		`
 				: ""
 		}
 
@@ -608,6 +646,8 @@ export function entityPageTemplate(data) {
 						: ""
 				}
 		</div>
+
+		${packageFooter(attributionContext)}
 	`;
 
 	// Generate sidebar navigation (matching module-overview.js exactly)

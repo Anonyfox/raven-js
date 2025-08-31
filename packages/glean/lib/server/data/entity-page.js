@@ -170,11 +170,14 @@ export function extractEntityPageData(packageInstance, moduleName, entityName) {
 	const docs = documentation;
 	return {
 		entity: entityData,
+		entityInstance: entity, // Pass the real entity instance for attribution
 		documentation,
 		relatedEntities,
 		navigation: navigationContext,
 		packageName: packageName,
 		moduleName: moduleName,
+		packageMetadata: extractPackageMetadata(packageInstance), // Add package metadata
+		allModules: packageInstance.modules, // Pass all modules for re-export tracing
 
 		// Computed flags for conditional rendering
 		hasParameters: docs.parameters.length > 0,
@@ -191,6 +194,30 @@ export function extractEntityPageData(packageInstance, moduleName, entityName) {
 		hasSource: Boolean(entityData.source),
 		hasLocation: Boolean(entityData.location),
 	};
+}
+
+/**
+ * Extract package metadata for attribution
+ * @param {import('../../extract/models/package.js').Package} packageInstance - Package instance
+ * @returns {Object|null} Package metadata for attribution
+ */
+function extractPackageMetadata(packageInstance) {
+	/** @type {any} */
+	const pkg = packageInstance;
+
+	// Get package.json data from the package instance
+	if (pkg.packageJsonData) {
+		return {
+			author: pkg.packageJsonData.author,
+			homepage: pkg.packageJsonData.homepage,
+			repository: pkg.packageJsonData.repository,
+			bugs: pkg.packageJsonData.bugs,
+			funding: pkg.packageJsonData.funding,
+		};
+	}
+
+	// Fallback to null if no package data available
+	return null;
 }
 
 /**

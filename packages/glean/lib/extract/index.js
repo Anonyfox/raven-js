@@ -45,6 +45,7 @@ export function extract(discoveryPackage) {
 		discoveryPackage.version,
 		discoveryPackage.description,
 		discoveryPackage.readme,
+		discoveryPackage.packageJsonData, // Pass through package.json data for attribution
 	);
 
 	// Transform each discovery module into documentation module

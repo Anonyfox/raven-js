@@ -204,10 +204,39 @@ export function extractModuleOverviewData(packageInstance, moduleName) {
 		packageName: packageName,
 		packageDescription: packageInstance.description || "",
 
+		// Attribution data
+		moduleEntities: module.entities || [], // Raw entity instances for attribution
+		packageMetadata: extractPackageMetadata(packageInstance), // Package metadata
+		allModules: packageInstance.modules, // Pass all modules for re-export tracing
+
 		// Meta information for template
 		hasEntities: moduleData.entityCount > 0,
 		hasMultipleTypes: moduleData.availableTypes.length > 1,
 		hasDeprecatedEntities: entityStats.deprecatedCount > 0,
 		hasExampleEntities: entityStats.withExamplesCount > 0,
 	};
+}
+
+/**
+ * Extract package metadata for attribution
+ * @param {import('../../extract/models/package.js').Package} packageInstance - Package instance
+ * @returns {Object|null} Package metadata for attribution
+ */
+function extractPackageMetadata(packageInstance) {
+	/** @type {any} */
+	const pkg = packageInstance;
+
+	// Get package.json data from the package instance
+	if (pkg.packageJsonData) {
+		return {
+			author: pkg.packageJsonData.author,
+			homepage: pkg.packageJsonData.homepage,
+			repository: pkg.packageJsonData.repository,
+			bugs: pkg.packageJsonData.bugs,
+			funding: pkg.packageJsonData.funding,
+		};
+	}
+
+	// Fallback to null if no package data available
+	return null;
 }

@@ -14,6 +14,9 @@
  */
 
 import { html, markdownToHTML, markdownToText, safeHtml } from "@raven-js/beak";
+import { createEntityAttribution } from "../../extract/models/attribution.js";
+import { attributionBar } from "./attribution-bar.js";
+import { seeAlsoLinks } from "./see-links.js";
 
 /**
  * Truncate plain text safely at word boundaries
@@ -48,6 +51,9 @@ function truncateText(text, maxLength) {
  * @param {string} [options.location.file] - Source file
  * @param {number} [options.location.line] - Source line
  * @param {boolean} [options.showFooter] - Whether to show card footer
+ * @param {Object} [options.entity] - Full entity object with JSDoc tags for attribution
+ * @param {Object} [options.packageMetadata] - Package metadata for attribution
+ * @param {Array<Object>} [options.allModules] - All modules for re-export tracing
  * @returns {string} Entity card HTML
  */
 export function entityCard({
@@ -58,6 +64,9 @@ export function entityCard({
 	badges = [],
 	location,
 	showFooter = true,
+	entity = null,
+	packageMetadata = null,
+	allModules = null,
 }) {
 	/** @type {Record<string, string>} */
 	const typeVariantMap = {
@@ -73,6 +82,15 @@ export function entityCard({
 	const typeVariant = typeVariantMap[type] || "secondary";
 	const typeBadge = { text: type, variant: typeVariant };
 	const allBadges = [typeBadge, ...badges];
+
+	// Create attribution context if entity data is provided
+	const attributionContext = entity
+		? createEntityAttribution(
+				/** @type {any} */ (entity),
+				packageMetadata,
+				/** @type {any} */ (allModules),
+			)
+		: null;
 
 	return html`
 		<div class="card border h-100">
@@ -102,6 +120,8 @@ export function entityCard({
 				</p>
 				`
 				}
+				${attributionContext ? attributionBar(attributionContext) : ""}
+				${attributionContext ? seeAlsoLinks(attributionContext, true) : ""}
 			</div>
 			${
 				showFooter

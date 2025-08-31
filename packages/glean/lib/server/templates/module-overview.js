@@ -15,10 +15,14 @@
  */
 
 import { html, markdownToHTML, safeHtml } from "@raven-js/beak";
+import { createModuleAttribution } from "../../extract/models/attribution.js";
 import {
 	applySyntaxHighlighting,
+	attributionBar,
 	contentSection,
+	packageFooter,
 	pageHeader,
+	seeAlsoLinks,
 } from "../components/index.js";
 import { baseTemplate } from "./base.js";
 
@@ -121,6 +125,23 @@ export function moduleOverviewTemplate(data) {
 		badges.unshift({ text: "default", variant: "primary" });
 	}
 
+	// Create module-level attribution context
+	let moduleAttributionContext = null;
+	try {
+		const moduleEntities = /** @type {any} */ (data).moduleEntities || [];
+		const packageMetadata = /** @type {any} */ (data).packageMetadata;
+		if (moduleEntities.length > 0) {
+			moduleAttributionContext = createModuleAttribution(
+				moduleEntities,
+				packageMetadata,
+				/** @type {any} */ (data).allModules, // Pass all modules for re-export tracing
+			);
+		}
+	} catch (_error) {
+		// Silently fail if attribution creation fails
+		moduleAttributionContext = null;
+	}
+
 	// Generate main content
 	const content = html`
 		${pageHeader({
@@ -129,6 +150,20 @@ export function moduleOverviewTemplate(data) {
 			breadcrumbs,
 			badges,
 		})}
+
+		<!-- Module Attribution -->
+		${
+			moduleAttributionContext?.hasAttribution
+				? html`
+		<div class="card border-info mb-4">
+			<div class="card-body py-2">
+				${attributionBar(moduleAttributionContext)}
+				${seeAlsoLinks(moduleAttributionContext)}
+			</div>
+		</div>
+		`
+				: ""
+		}
 
 		<!-- Import Statement -->
 		<div class="card border-primary mb-4">
@@ -238,7 +273,7 @@ export function moduleOverviewTemplate(data) {
 				}
 		</div>
 
-
+		${packageFooter(moduleAttributionContext)}
 	`;
 
 	// Return complete HTML page using base template
