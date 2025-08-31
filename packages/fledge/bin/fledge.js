@@ -22,7 +22,7 @@ import { parseArgs } from "node:util";
 
 // Import our static generation components
 import { Config } from "../src/static/config/config.js";
-import { Crawler } from "../src/static/crawler.js";
+import { generateStaticSite } from "../src/static/index.js";
 
 /**
  * Read configuration from stdin (piped input)
@@ -205,53 +205,36 @@ async function runStaticGeneration(config, args) {
 	console.log("🦅 Starting static site generation...");
 
 	try {
-		const crawler = new Crawler(config);
+		// Generate static site
+		const result = await generateStaticSite(config, {
+			outputDir,
+			verbose,
+		});
 
-		// Start crawling
-		await crawler.start();
-		await crawler.crawl();
+		console.log(`📦 Found ${result.totalFiles} resources to process`);
 
-		// Get crawled resources
-		const resources = crawler.getResources();
-		console.log(`📦 Found ${resources.length} resources to process`);
-
-		// Save all resources to files
-		let savedCount = 0;
-		for (const resource of resources) {
-			try {
-				const savedPath = await resource.saveToFile(
-					outputDir,
-					config.getBasePath(),
-				);
-				if (verbose) {
-					const url = resource.getUrl();
-					console.log(`   💾 ${url.pathname} → ${savedPath}`);
-				}
-				savedCount++;
-			} catch (error) {
-				const url = resource.getUrl();
-				console.warn(
-					`   ⚠️  Failed to save ${url.href}: ${/** @type {Error} */ (error).message}`,
-				);
+		// Show verbose file details if requested
+		if (verbose && result.savedPaths) {
+			for (const saved of result.savedPaths) {
+				console.log(`   💾 ${saved.url} → ${saved.path}`);
 			}
 		}
 
-		// Show final statistics
-		const stats =
-			/** @type {{startTime: number, endTime: number, totalTime: number, resourcesCount: number, errorsCount: number}} */ (
-				crawler.getStatistics()
-			);
-		console.log("");
-		console.log(`✅ Static site generation complete!`);
-		console.log(`   📁 Output directory: ${resolve(outputDir)}`);
-		console.log(`   📄 Files saved: ${savedCount}/${resources.length}`);
-		console.log(`   ⏱️  Total time: ${stats.totalTime}ms`);
-		console.log(`   🌐 Resources crawled: ${stats.resourcesCount}`);
-		if (stats.errorsCount > 0) {
-			console.log(`   ⚠️  Errors encountered: ${stats.errorsCount}`);
+		// Show any errors
+		for (const error of result.errors) {
+			console.warn(`   ⚠️  Failed to save ${error.url}: ${error.error}`);
 		}
 
-		await crawler.stop();
+		// Show final statistics
+		console.log("");
+		console.log(`✅ Static site generation complete!`);
+		console.log(`   📁 Output directory: ${resolve(result.outputDir)}`);
+		console.log(`   📄 Files saved: ${result.savedFiles}/${result.totalFiles}`);
+		console.log(`   ⏱️  Total time: ${result.totalTime}ms`);
+		console.log(`   🌐 Resources crawled: ${result.resourcesCount}`);
+		if (result.errorsCount > 0) {
+			console.log(`   ⚠️  Errors encountered: ${result.errorsCount}`);
+		}
 	} catch (error) {
 		console.error(
 			`❌ Static generation failed: ${/** @type {Error} */ (error).message}`,

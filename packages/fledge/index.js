@@ -13,9 +13,6 @@
  * across three hunting modes: standalone binary, script blob, and static folder.
  */
 
-import binary from "./src/binary/index.js";
-import script from "./src/script/index.js";
-import staticGen from "./src/static/index.js";
-
-export { binary, script, staticGen as static };
-export default { binary, script, static: staticGen };
+export * from "./src/binary/index.js";
+export * from "./src/script/index.js";
+export * from "./src/static/index.js";
