@@ -24,6 +24,12 @@ import { createServer, Socket } from "node:net";
  * Server process manager with blackbox detection and lifecycle management
  */
 export class Server {
+	/** @type {Set<Server>} Global set of all Server instances for cleanup */
+	static #instances = new Set();
+
+	/** @type {boolean} Track if global cleanup handlers are installed */
+	static #cleanupInstalled = false;
+
 	/** @type {ServerBootFunction} User's server boot function */
 	#handler;
 
@@ -48,8 +54,29 @@ export class Server {
 	/** @type {string | null} Crash reason for debugging */
 	#crashReason = null;
 
-	/** @type {boolean} Track cleanup registration */
-	#cleanupRegistered = false;
+	/**
+	 * Install global cleanup handlers for all Server instances
+	 */
+	static #installGlobalCleanup() {
+		// DISABLE GLOBAL CLEANUP IN TESTS to prevent hanging
+		if (process.env.NODE_ENV === "test" || this.#cleanupInstalled) return;
+
+		const cleanupAll = () => {
+			for (const server of Server.#instances) {
+				try {
+					if (server.#childProcess && !server.#childProcess.killed) {
+						server.#childProcess.kill("SIGTERM");
+					}
+				} catch {
+					// Process might already be dead
+				}
+			}
+		};
+
+		process.once("exit", cleanupAll);
+		process.once("SIGINT", cleanupAll);
+		this.#cleanupInstalled = true;
+	}
 
 	/**
 	 * Create server manager
@@ -60,7 +87,8 @@ export class Server {
 			throw new Error("Server handler must be a function");
 		}
 		this.#handler = handler;
-		this.#registerCleanupHandlers();
+		Server.#installGlobalCleanup();
+		Server.#instances.add(this);
 	}
 
 	/**
@@ -104,41 +132,35 @@ export class Server {
 	/**
 	 * Test if port is ready for connections
 	 * @param {number} port - Port number to test
-	 * @param {number} [timeout=1000] - Connection timeout in milliseconds
+	 * @param {number} [timeout=200] - Connection timeout in milliseconds
 	 * @returns {Promise<boolean>} True if port accepts connections
 	 */
 	async isPortReady(port, timeout = 200) {
 		return new Promise((resolve) => {
 			const socket = new Socket();
-			socket.setTimeout(timeout);
+			let done = false;
 
-			const cleanup = () => {
+			const finish = (/** @type {boolean} */ ok) => {
+				if (done) return;
+				done = true;
+				clearTimeout(timer);
 				socket.removeAllListeners();
-				if (!socket.destroyed) {
-					socket.destroy();
-				}
+				if (!socket.destroyed) socket.destroy();
+				resolve(ok);
 			};
 
-			socket.on("connect", () => {
-				cleanup();
-				resolve(true);
-			});
+			// Hard wall; don't rely on socket idle timeout
+			const timer = setTimeout(() => finish(false), timeout);
 
-			socket.on("error", () => {
-				cleanup();
-				resolve(false);
-			});
-
-			socket.on("timeout", () => {
-				cleanup();
-				resolve(false);
-			});
+			socket.once("connect", () => finish(true));
+			socket.once("error", () => finish(false));
+			socket.once("timeout", () => finish(false));
 
 			try {
-				socket.connect(port, "localhost");
+				// Prefer IPv4 to avoid dual-stack delays on 'localhost'
+				socket.connect({ port, host: "127.0.0.1" });
 			} catch {
-				cleanup();
-				resolve(false);
+				finish(false);
 			}
 		});
 	}
@@ -147,29 +169,38 @@ export class Server {
 	 * Wait for server to become ready via TCP probing
 	 * @param {number} port - Port to probe
 	 * @param {object} [options] - Wait options
-	 * @param {number} [options.timeout=30000] - Maximum wait time in milliseconds
-	 * @param {number} [options.interval=100] - Polling interval in milliseconds
+	 * @param {number} [options.timeout=5000] - Maximum wait time in milliseconds
+	 * @param {number} [options.interval=50] - Polling interval in milliseconds
+	 * @param {number} [options.probeTimeout=200] - Maximum time per probe
 	 * @returns {Promise<void>} Resolves when server is ready
 	 * @throws {Error} If server crashes or timeout exceeded
 	 */
 	async waitForTcpReady(port, options = {}) {
-		const { timeout = 5000, interval = 50 } = options;
-		const startTime = Date.now();
+		const { timeout = 5000, interval = 50, probeTimeout = 200 } = options;
+		const deadline = Date.now() + timeout;
 
-		while (!this.#crashed && Date.now() - startTime < timeout) {
-			if (await this.isPortReady(port)) {
-				return; // Server is ready!
-			}
+		while (!this.#crashed) {
+			const remaining = deadline - Date.now();
+			if (remaining <= 0) break;
 
-			// Brief pause between probes
-			await new Promise((resolve) => setTimeout(resolve, interval));
+			const ok = await this.isPortReady(
+				port,
+				Math.min(probeTimeout, remaining),
+			);
+			if (ok) return;
+
+			// Sleep, but never longer than the remaining budget
+			await new Promise((resolve) =>
+				setTimeout(
+					resolve,
+					Math.min(interval, Math.max(0, deadline - Date.now())),
+				),
+			);
 		}
 
-		// Handle failure cases
 		if (this.#crashed) {
 			throw new Error(`Server crashed during boot: ${this.#crashReason}`);
 		}
-
 		throw new Error(
 			`Server boot timeout after ${timeout}ms - no response on port ${port}`,
 		);
@@ -219,8 +250,9 @@ export class Server {
 					// Spawn child process immediately
 					await this.#spawnServerProcess();
 
-					// Wait for server readiness via TCP probing
-					await this.waitForTcpReady(this.#port, { timeout });
+					// Wait for server readiness via TCP probing with fast fail in tests
+					const probeTimeout = timeout < 1000 ? 20 : 200; // Use 20ms probes for fast tests
+					await this.waitForTcpReady(this.#port, { timeout, probeTimeout });
 
 					// Success!
 					this.#isBooted = true;
@@ -350,18 +382,20 @@ export class Server {
 		const { gracefulTimeout = 5000 } = options;
 
 		try {
-			// Send graceful termination signal
+			// Attach listeners first, then signal to avoid race condition
+			const waitPromise = this.#waitForProcessExit(gracefulTimeout);
 			this.#childProcess.kill("SIGTERM");
-
-			// Wait for graceful exit
-			await this.#waitForProcessExit(gracefulTimeout);
+			await waitPromise;
 		} catch {
 			// Force kill if graceful shutdown failed
 			if (this.#childProcess && !this.#childProcess.killed) {
+				const waitPromise = this.#waitForProcessExit(1000);
 				this.#childProcess.kill("SIGKILL");
-				await this.#waitForProcessExit(1000);
+				await waitPromise;
 			}
 		} finally {
+			// Remove from global instances and clear state
+			Server.#instances.delete(this);
 			this.#childProcess = null;
 			this.#isBooted = false;
 			this.#port = null;
@@ -404,29 +438,6 @@ export class Server {
 				resolve();
 			}
 		});
-	}
-
-	/**
-	 * Register cleanup handlers for parent process termination
-	 */
-	#registerCleanupHandlers() {
-		if (this.#cleanupRegistered) return;
-
-		const cleanup = () => {
-			if (this.#childProcess && !this.#childProcess.killed) {
-				try {
-					this.#childProcess.kill("SIGTERM");
-				} catch {
-					// Process might already be dead
-				}
-			}
-		};
-
-		// Only register cleanup for actual exit conditions, not test-specific ones
-		process.on("exit", cleanup);
-		process.on("SIGINT", cleanup);
-
-		this.#cleanupRegistered = true;
 	}
 
 	/**

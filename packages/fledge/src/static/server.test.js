@@ -14,20 +14,41 @@ import { Server } from "./server.js";
 
 // Global cleanup to ensure no hanging resources
 let createdServers = [];
+let createdTcpServers = [];
 
 afterEach(async () => {
-	// Kill all servers created during tests
-	for (const server of createdServers) {
+	// Kill all servers with timeout race
+	const killPromises = createdServers.map(async (server) => {
 		try {
-			await server.kill();
+			await server.kill({ gracefulTimeout: 100 }); // Even faster cleanup
 		} catch {
 			// Ignore cleanup errors
 		}
-	}
+	});
+
+	// Close all TCP servers
+	const closePromises = createdTcpServers.map(
+		(tcpServer) =>
+			new Promise((resolve) => {
+				if (tcpServer.listening) {
+					tcpServer.close(() => resolve());
+				} else {
+					resolve();
+				}
+			}),
+	);
+
+	// Wait for all cleanup with a timeout to prevent hanging
+	await Promise.race([
+		Promise.all([...killPromises, ...closePromises]),
+		new Promise((resolve) => setTimeout(resolve, 300)), // Max 300ms for cleanup
+	]);
+
 	createdServers = [];
+	createdTcpServers = [];
 });
 
-describe("Server", () => {
+describe("Server", { concurrency: 1 }, () => {
 	test("constructs with handler function", () => {
 		const handler = async ({ port: _port }) => {};
 		const server = new Server(handler);
@@ -61,13 +82,16 @@ describe("Server", () => {
 
 	test("detects port readiness correctly", async () => {
 		const server = new Server(async ({ port: _port }) => {});
+		createdServers.push(server);
 
-		// Test non-existent port
+		// Test non-existent port with timeout
 		const unusedPort = await server.findFreePort();
-		assert.strictEqual(await server.isPortReady(unusedPort), false);
+		assert.strictEqual(await server.isPortReady(unusedPort, 50), false);
 
 		// Test active port
 		const testServer = createTcpServer();
+		createdTcpServers.push(testServer); // Track for cleanup
+
 		const activePort = await new Promise((resolve, reject) => {
 			testServer.listen(0, (error) => {
 				if (error) {
@@ -79,12 +103,9 @@ describe("Server", () => {
 			});
 		});
 
-		assert.strictEqual(await server.isPortReady(activePort), true);
+		assert.strictEqual(await server.isPortReady(activePort, 50), true);
 
-		// Cleanup
-		await new Promise((resolve) => {
-			testServer.close(() => resolve());
-		});
+		// No manual cleanup needed - afterEach handles it
 	});
 
 	test("sleep utility works correctly", async () => {
