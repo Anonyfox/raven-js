@@ -73,7 +73,12 @@ describe("HasMinimalSettings", () => {
 				resolveJsonModule: true,
 			},
 			include: ["**/*.js"],
-			exclude: ["**/*.test.js", "node_modules/**", "static/**", "**/*.min.js"],
+			exclude: [
+				"**/*.test.js",
+				"node_modules/**",
+				"./static/**",
+				"**/*.min.js",
+			],
 		};
 
 		writeFileSync(jsconfigPath, JSON.stringify(canonicalConfig, null, 2));
@@ -97,7 +102,7 @@ describe("HasMinimalSettings", () => {
 				resolveJsonModule: true,
 			},
 			include: ["**/*.js"],
-			exclude: ["node_modules/**", "static/**", "**/*.min.js"],
+			exclude: ["node_modules/**", "./static/**", "**/*.min.js"],
 		};
 
 		writeFileSync(
@@ -196,7 +201,7 @@ describe("HasMinimalSettings", () => {
 				resolveJsonModule: true,
 			},
 			include: ["**/*.js"],
-			exclude: ["node_modules/**"], // Missing **/*.test.js, static/**, **/*.min.js
+			exclude: ["node_modules/**"], // Missing **/*.test.js, ./static/**, **/*.min.js
 		};
 
 		writeFileSync(jsconfigPath, JSON.stringify(wrongExcludeConfig, null, 2));
@@ -222,7 +227,7 @@ describe("HasMinimalSettings", () => {
 			exclude: [
 				"**/*.test.js",
 				"node_modules/**",
-				"static/**",
+				"./static/**",
 				"**/*.min.js",
 				"build/**",
 			], // Additional build/** pattern

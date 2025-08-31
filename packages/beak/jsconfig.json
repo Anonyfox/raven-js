@@ -8,5 +8,5 @@
     "resolveJsonModule": true
   },
   "include": ["**/*.js"],
-  "exclude": ["**/*.test.js", "node_modules/**", "static/**", "**/*.min.js"]
+  "exclude": ["**/*.test.js", "node_modules/**", "./static/**", "**/*.min.js"]
 }

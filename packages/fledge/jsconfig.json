@@ -19,5 +19,5 @@
     "allowUnusedLabels": false
   },
   "include": ["**/*.js"],
-  "exclude": ["node_modules/**", "static/**", "**/*.min.js", "**/*.test.js"]
+  "exclude": ["node_modules/**", "./static/**", "**/*.min.js", "**/*.test.js"]
 }

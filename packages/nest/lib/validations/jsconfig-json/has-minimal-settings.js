@@ -22,7 +22,7 @@ const CANONICAL_JSCONFIG = {
 		resolveJsonModule: true,
 	},
 	include: ["**/*.js"],
-	exclude: ["**/*.test.js", "node_modules/**", "static/**", "**/*.min.js"],
+	exclude: ["**/*.test.js", "node_modules/**", "./static/**", "**/*.min.js"],
 };
 
 /**
@@ -39,7 +39,7 @@ const CANONICAL_JSCONFIG_EXAMPLES = {
 		resolveJsonModule: true,
 	},
 	include: ["**/*.js"],
-	exclude: ["node_modules/**", "static/**", "**/*.min.js"],
+	exclude: ["node_modules/**", "./static/**", "**/*.min.js"],
 };
 
 /**
