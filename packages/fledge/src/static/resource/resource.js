@@ -18,6 +18,7 @@ import { dirname, join } from "node:path";
 import { normalizeUrl } from "../normalize-url.js";
 import { Attempt } from "./attempt.js";
 import { extractUrlsFromHtml } from "./extract-urls-from-html.js";
+import { rewriteHtmlUrls } from "./rewrite-urls-in-html.js";
 
 /**
  * Web resource processor with static fetch factory and attempt tracking
@@ -341,11 +342,12 @@ export class Resource {
 	/**
 	 * Save resource to file system for static site generation
 	 * @param {string} destinationFolder - Root folder for static site output
+	 * @param {string} [basePath] - Optional base path for URL rewriting (e.g., "/my-app")
 	 * @returns {Promise<string>} Path where file was saved
 	 * @throws {Error} If file cannot be saved
 	 */
-	async saveToFile(destinationFolder) {
-		const filePath = this.#determineFilePath(destinationFolder);
+	async saveToFile(destinationFolder, basePath) {
+		const filePath = this.#determineFilePath(destinationFolder, basePath);
 
 		// Create intermediate directories
 		const dirPath = dirname(filePath);
@@ -353,8 +355,14 @@ export class Resource {
 
 		// Write content to file
 		if (this.isHtml()) {
-			// HTML resources are saved as text
-			const content = this.getContent();
+			// HTML resources are saved as text with optional URL rewriting
+			let content = this.getContent();
+
+			// Apply basePath URL rewriting if basePath is provided
+			if (basePath && basePath !== "/" && basePath !== "") {
+				content = rewriteHtmlUrls(content, this.#url.href, basePath);
+			}
+
 			await writeFile(filePath, content, "utf8");
 		} else {
 			// Assets are saved as binary
@@ -367,25 +375,44 @@ export class Resource {
 	/**
 	 * Determine file path for saving resource to disk
 	 * @param {string} destinationFolder - Root folder for static site output
+	 * @param {string} [basePath] - Optional base path for directory structure
 	 * @returns {string} Full file path for saving
 	 */
-	#determineFilePath(destinationFolder) {
+	#determineFilePath(destinationFolder, basePath) {
 		// Use the final resolved URL for path determination
 		const urlPath = this.#url.pathname;
+
+		// Prepare base directory - if basePath is provided, create subdirectory
+		let baseDir = destinationFolder;
+		if (basePath && basePath !== "/" && basePath !== "") {
+			// Normalize basePath: ensure starts with / but doesn't end with /
+			const normalizedBasePath = basePath.startsWith("/")
+				? basePath
+				: `/${basePath}`;
+			const cleanBasePath = normalizedBasePath.endsWith("/")
+				? normalizedBasePath.slice(0, -1)
+				: normalizedBasePath;
+
+			// Remove leading slash for directory creation
+			const basePathDir = cleanBasePath.startsWith("/")
+				? cleanBasePath.slice(1)
+				: cleanBasePath;
+			baseDir = join(destinationFolder, basePathDir);
+		}
 
 		if (this.isHtml()) {
 			// HTML resources always save as index.html in directory structure
 			if (urlPath === "/" || urlPath === "") {
-				return join(destinationFolder, "index.html");
+				return join(baseDir, "index.html");
 			}
 
 			// For other paths, create directory structure with index.html
-			return join(destinationFolder, urlPath, "index.html");
+			return join(baseDir, urlPath, "index.html");
 		} else {
 			// Asset resources keep their original path structure
 			// Remove leading slash for join() to work correctly
 			const relativePath = urlPath.startsWith("/") ? urlPath.slice(1) : urlPath;
-			return join(destinationFolder, relativePath);
+			return join(baseDir, relativePath);
 		}
 	}
 

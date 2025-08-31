@@ -219,7 +219,10 @@ async function runStaticGeneration(config, args) {
 		let savedCount = 0;
 		for (const resource of resources) {
 			try {
-				const savedPath = await resource.saveToFile(outputDir);
+				const savedPath = await resource.saveToFile(
+					outputDir,
+					config.getBasePath(),
+				);
 				if (verbose) {
 					const url = resource.getUrl();
 					console.log(`   💾 ${url.pathname} → ${savedPath}`);

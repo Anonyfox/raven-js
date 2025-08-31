@@ -425,4 +425,198 @@ describe("Resource", () => {
 		);
 		globalThis.fetch = originalFetch;
 	});
+
+	test("saves HTML with basePath in subdirectory", async () => {
+		globalThis.fetch = mockFetch;
+
+		const resource = await Resource.fetch("/", "https://example.com");
+		const tempDir = "/tmp/fledge-test";
+
+		// Clean up any existing temp directory
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
+
+		const savedPath = await resource.saveToFile(tempDir, "/my-app");
+
+		// Should save in basePath subdirectory
+		assert.strictEqual(savedPath, "/tmp/fledge-test/my-app/index.html");
+
+		// Cleanup
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
+		globalThis.fetch = originalFetch;
+	});
+
+	test("saves assets with basePath in subdirectory", async () => {
+		globalThis.fetch = mockFetch;
+
+		const resource = await Resource.fetch("/logo.png", "https://example.com");
+		const tempDir = "/tmp/fledge-test";
+
+		// Clean up any existing temp directory
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
+
+		const savedPath = await resource.saveToFile(tempDir, "/my-app");
+
+		// Should save in basePath subdirectory
+		assert.strictEqual(savedPath, "/tmp/fledge-test/my-app/logo.png");
+
+		// Cleanup
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
+		globalThis.fetch = originalFetch;
+	});
+
+	test("handles various basePath formats", async () => {
+		globalThis.fetch = mockFetch;
+
+		const resource = await Resource.fetch("/page", "https://example.com");
+		const tempDir = "/tmp/fledge-test";
+
+		// Clean up any existing temp directory
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
+
+		// Test different basePath formats - they should all normalize the same way
+		const path1 = await resource.saveToFile(tempDir, "app");
+		assert.strictEqual(path1, "/tmp/fledge-test/app/page/index.html");
+
+		const path2 = await resource.saveToFile(tempDir, "/app/");
+		assert.strictEqual(path2, "/tmp/fledge-test/app/page/index.html");
+
+		const path3 = await resource.saveToFile(tempDir, "app/");
+		assert.strictEqual(path3, "/tmp/fledge-test/app/page/index.html");
+
+		// Cleanup
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
+		globalThis.fetch = originalFetch;
+	});
+
+	test("ignores empty or root basePath", async () => {
+		globalThis.fetch = mockFetch;
+
+		const resource = await Resource.fetch("/page", "https://example.com");
+		const tempDir = "/tmp/fledge-test";
+
+		// Clean up any existing temp directory
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
+
+		// These should behave like no basePath
+		const path1 = await resource.saveToFile(tempDir, "");
+		assert.strictEqual(path1, "/tmp/fledge-test/page/index.html");
+
+		const path2 = await resource.saveToFile(tempDir, "/");
+		assert.strictEqual(path2, "/tmp/fledge-test/page/index.html");
+
+		// Cleanup
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
+		globalThis.fetch = originalFetch;
+	});
+
+	test("rewrites URLs in HTML with basePath", async () => {
+		// Mock HTML content with internal URLs
+		const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+	<link href="/styles.css" rel="stylesheet">
+</head>
+<body>
+	<a href="/about">About</a>
+	<img src="/logo.png" alt="Logo">
+</body>
+</html>`;
+
+		// Mock fetch to return our test HTML
+		globalThis.fetch = () =>
+			Promise.resolve({
+				ok: true,
+				status: 200,
+				statusText: "OK",
+				headers: new Map([["Content-Type", "text/html"]]),
+				arrayBuffer: () =>
+					Promise.resolve(new TextEncoder().encode(htmlContent).buffer),
+			});
+
+		const resource = await Resource.fetch("/", "https://example.com");
+		const tempDir = "/tmp/fledge-test";
+
+		// Clean up any existing temp directory
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
+
+		const savedPath = await resource.saveToFile(tempDir, "/my-app");
+
+		// Read the saved file and check URL rewriting
+		const { readFile } = await import("node:fs/promises");
+		const savedContent = await readFile(savedPath, "utf8");
+
+		// Check that URLs were rewritten with basePath
+		assert.match(savedContent, /<link href="\/my-app\/styles\.css"/);
+		assert.match(savedContent, /<a href="\/my-app\/about">/);
+		assert.match(savedContent, /<img src="\/my-app\/logo\.png"/);
+
+		// Cleanup
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
+		globalThis.fetch = originalFetch;
+	});
+
+	test("does not rewrite URLs without basePath", async () => {
+		// Mock HTML content with internal URLs
+		const htmlContent = `<html>
+<body>
+	<a href="/about">About</a>
+	<img src="/logo.png" alt="Logo">
+</body>
+</html>`;
+
+		// Mock fetch to return our test HTML
+		globalThis.fetch = () =>
+			Promise.resolve({
+				ok: true,
+				status: 200,
+				statusText: "OK",
+				headers: new Map([["Content-Type", "text/html"]]),
+				arrayBuffer: () =>
+					Promise.resolve(new TextEncoder().encode(htmlContent).buffer),
+			});
+
+		const resource = await Resource.fetch("/", "https://example.com");
+		const tempDir = "/tmp/fledge-test";
+
+		// Clean up any existing temp directory
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
+
+		const savedPath = await resource.saveToFile(tempDir); // No basePath
+
+		// Read the saved file and check URLs are unchanged
+		const { readFile } = await import("node:fs/promises");
+		const savedContent = await readFile(savedPath, "utf8");
+
+		// URLs should be unchanged
+		assert.match(savedContent, /<a href="\/about">/);
+		assert.match(savedContent, /<img src="\/logo\.png"/);
+
+		// Cleanup
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
+		globalThis.fetch = originalFetch;
+	});
 });

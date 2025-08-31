@@ -14,6 +14,7 @@
  */
 
 import { normalizeUrl } from "../normalize-url.js";
+import { URL_PATTERNS } from "./url-patterns.js";
 
 /**
  * Safely normalize URL with error handling
@@ -77,9 +78,11 @@ export function extractUrlsFromPattern(htmlString, regex, baseUrl) {
  * @returns {Set<URL>} Set of URLs from href attributes
  */
 export function extractLinkUrls(htmlString, baseUrl) {
-	// Match <a href="url"> with various quote styles
-	const regex = /<a[^>]+href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^>\s]+))/gi;
-	return extractUrlsFromPattern(htmlString, regex, baseUrl);
+	return extractUrlsFromPattern(
+		htmlString,
+		URL_PATTERNS.LINKS.getRegex(),
+		baseUrl,
+	);
 }
 
 /**
@@ -89,9 +92,11 @@ export function extractLinkUrls(htmlString, baseUrl) {
  * @returns {Set<URL>} Set of URLs from src attributes
  */
 export function extractImageUrls(htmlString, baseUrl) {
-	// Match <img src="url"> with various quote styles
-	const regex = /<img[^>]+src\s*=\s*(?:"([^"]*)"|'([^']*)'|([^>\s]+))/gi;
-	return extractUrlsFromPattern(htmlString, regex, baseUrl);
+	return extractUrlsFromPattern(
+		htmlString,
+		URL_PATTERNS.IMAGES.getRegex(),
+		baseUrl,
+	);
 }
 
 /**
@@ -101,9 +106,11 @@ export function extractImageUrls(htmlString, baseUrl) {
  * @returns {Set<URL>} Set of URLs from src attributes
  */
 export function extractScriptUrls(htmlString, baseUrl) {
-	// Match <script src="url"> with various quote styles
-	const regex = /<script[^>]+src\s*=\s*(?:"([^"]*)"|'([^']*)'|([^>\s]+))/gi;
-	return extractUrlsFromPattern(htmlString, regex, baseUrl);
+	return extractUrlsFromPattern(
+		htmlString,
+		URL_PATTERNS.SCRIPTS.getRegex(),
+		baseUrl,
+	);
 }
 
 /**
@@ -113,9 +120,11 @@ export function extractScriptUrls(htmlString, baseUrl) {
  * @returns {Set<URL>} Set of URLs from href attributes
  */
 export function extractStylesheetUrls(htmlString, baseUrl) {
-	// Match <link href="url"> - includes stylesheets, icons, etc.
-	const regex = /<link[^>]+href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^>\s]+))/gi;
-	return extractUrlsFromPattern(htmlString, regex, baseUrl);
+	return extractUrlsFromPattern(
+		htmlString,
+		URL_PATTERNS.STYLESHEETS.getRegex(),
+		baseUrl,
+	);
 }
 
 /**
@@ -125,9 +134,11 @@ export function extractStylesheetUrls(htmlString, baseUrl) {
  * @returns {Set<URL>} Set of URLs from src attributes
  */
 export function extractIframeUrls(htmlString, baseUrl) {
-	// Match <iframe src="url"> with various quote styles
-	const regex = /<iframe[^>]+src\s*=\s*(?:"([^"]*)"|'([^']*)'|([^>\s]+))/gi;
-	return extractUrlsFromPattern(htmlString, regex, baseUrl);
+	return extractUrlsFromPattern(
+		htmlString,
+		URL_PATTERNS.IFRAMES.getRegex(),
+		baseUrl,
+	);
 }
 
 /**
@@ -140,22 +151,25 @@ export function extractMediaUrls(htmlString, baseUrl) {
 	const urls = new Set();
 
 	// Video and audio src attributes
-	const mediaSrcRegex =
-		/<(?:video|audio)[^>]+src\s*=\s*(?:"([^"]*)"|'([^']*)'|([^>\s]+))/gi;
 	const mediaSrcUrls = extractUrlsFromPattern(
 		htmlString,
-		mediaSrcRegex,
+		URL_PATTERNS.MEDIA_SRC.getRegex(),
 		baseUrl,
 	);
 
 	// Source elements within video/audio
-	const sourceRegex =
-		/<source[^>]+src\s*=\s*(?:"([^"]*)"|'([^']*)'|([^>\s]+))/gi;
-	const sourceUrls = extractUrlsFromPattern(htmlString, sourceRegex, baseUrl);
+	const sourceUrls = extractUrlsFromPattern(
+		htmlString,
+		URL_PATTERNS.SOURCE.getRegex(),
+		baseUrl,
+	);
 
 	// Track elements
-	const trackRegex = /<track[^>]+src\s*=\s*(?:"([^"]*)"|'([^']*)'|([^>\s]+))/gi;
-	const trackUrls = extractUrlsFromPattern(htmlString, trackRegex, baseUrl);
+	const trackUrls = extractUrlsFromPattern(
+		htmlString,
+		URL_PATTERNS.TRACK.getRegex(),
+		baseUrl,
+	);
 
 	// Union all media URLs using href strings for deduplication
 	const allHrefs = new Set();
@@ -181,13 +195,18 @@ export function extractEmbedUrls(htmlString, baseUrl) {
 	const urls = new Set();
 
 	// Embed src
-	const embedRegex = /<embed[^>]+src\s*=\s*(?:"([^"]*)"|'([^']*)'|([^>\s]+))/gi;
-	const embedUrls = extractUrlsFromPattern(htmlString, embedRegex, baseUrl);
+	const embedUrls = extractUrlsFromPattern(
+		htmlString,
+		URL_PATTERNS.EMBED.getRegex(),
+		baseUrl,
+	);
 
 	// Object data
-	const objectRegex =
-		/<object[^>]+data\s*=\s*(?:"([^"]*)"|'([^']*)'|([^>\s]+))/gi;
-	const objectUrls = extractUrlsFromPattern(htmlString, objectRegex, baseUrl);
+	const objectUrls = extractUrlsFromPattern(
+		htmlString,
+		URL_PATTERNS.OBJECT.getRegex(),
+		baseUrl,
+	);
 
 	// Union embed URLs using href strings for deduplication
 	const allHrefs = new Set();
@@ -212,7 +231,7 @@ export function extractCssUrls(htmlString, baseUrl) {
 	const urls = new Set();
 
 	// Extract content from <style> tags
-	const styleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi;
+	const styleRegex = URL_PATTERNS.STYLE_TAGS.getRegex();
 	let styleMatch;
 
 	styleMatch = styleRegex.exec(htmlString);
@@ -226,7 +245,7 @@ export function extractCssUrls(htmlString, baseUrl) {
 	}
 
 	// Extract from inline style attributes
-	const inlineStyleRegex = /style\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
+	const inlineStyleRegex = URL_PATTERNS.INLINE_STYLES.getRegex();
 	let inlineMatch;
 
 	inlineMatch = inlineStyleRegex.exec(htmlString);
@@ -249,9 +268,11 @@ export function extractCssUrls(htmlString, baseUrl) {
  * @returns {Set<URL>} Set of URLs from CSS url() functions
  */
 function extractCssUrlsFromContent(cssContent, baseUrl) {
-	// Match url("..."), url('...'), and url(...) patterns
-	const urlRegex = /url\s*\(\s*(?:"([^"]*)"|'([^']*)'|([^)]+))\s*\)/gi;
-	return extractUrlsFromPattern(cssContent, urlRegex, baseUrl);
+	return extractUrlsFromPattern(
+		cssContent,
+		URL_PATTERNS.CSS_URLS.getRegex(),
+		baseUrl,
+	);
 }
 
 /**
@@ -264,8 +285,7 @@ export function extractMetaUrls(htmlString, baseUrl) {
 	const urls = new Set();
 
 	// Match <meta http-equiv="refresh" content="delay;url=...">
-	const metaRegex =
-		/<meta[^>]+http-equiv\s*=\s*["']refresh["'][^>]+content\s*=\s*["']([^"']*)["']/gi;
+	const metaRegex = URL_PATTERNS.META_REFRESH.getRegex();
 	let match;
 
 	match = metaRegex.exec(htmlString);
@@ -273,7 +293,7 @@ export function extractMetaUrls(htmlString, baseUrl) {
 		const content = match[1];
 		if (content) {
 			// Extract URL from content="5;url=https://example.com"
-			const urlMatch = /url\s*=\s*(.+)/i.exec(content);
+			const urlMatch = URL_PATTERNS.META_REFRESH_URL.getRegex().exec(content);
 			if (urlMatch?.[1]) {
 				const urlString = urlMatch[1].trim();
 				const normalizedUrl = safeNormalizeUrl(urlString, baseUrl);
