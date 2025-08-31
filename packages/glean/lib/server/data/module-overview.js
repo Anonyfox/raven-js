@@ -73,6 +73,9 @@ export function extractModuleOverviewData(packageInstance, moduleName) {
 		name: moduleName,
 		fullName: module.importPath,
 
+		// Module description from @file tag
+		description: module.description || "",
+
 		// Documentation content
 		readme: module.readme || "",
 		hasReadme: Boolean(module.readme),

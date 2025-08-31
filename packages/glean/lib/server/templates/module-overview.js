@@ -9,8 +9,9 @@
 /**
  * Module overview template for /modules/{moduleName}/ route
  *
- * Renders individual module documentation with entity organization,
- * metadata badges, and navigation context using Bootstrap 5 components.
+ * Renders individual module documentation with optimized content flow:
+ * module description as lead text, API reference first, then README,
+ * and attribution at the bottom. Uses Bootstrap 5 components.
  * Follows WEBAPP.md specification for module overview presentation.
  */
 
@@ -69,30 +70,11 @@ function getTypeVariant(entityType) {
 /**
  * Generate module overview HTML page
  * @param {Object} data - Module overview data from extractor
- * @param {Object} data.module - Module metadata
- * @param {string} data.module.name - Module name
- * @param {string} data.module.fullName - Full import path
- * @param {boolean} data.module.isDefault - Whether module is default
- * @param {string} data.module.readme - README markdown content
- * @param {boolean} data.module.hasReadme - Whether README exists
- * @param {number} data.module.entityCount - Number of entities
- * @param {Array<string>} data.module.availableTypes - Available entity types
- * @param {Object<string, Array<Object>>} data.organizedEntities - Entities organized by type
- * @param {Object} data.navigation - Navigation context
- * @param {Array<Object>} data.navigation.allModules - All modules for navigation
- * @param {Object} data.stats - Module statistics
- * @param {number} data.stats.totalEntities - Total entity count
- * @param {Object<string, number>} data.stats.entitiesByType - Entity counts by type
- * @param {number} data.stats.deprecatedCount - Deprecated entity count
- * @param {number} data.stats.withExamplesCount - Entity count with examples
- * @param {string} data.packageName - Package name
- * @param {boolean} data.hasEntities - Whether module has entities
- * @param {boolean} data.hasDeprecatedEntities - Whether module has deprecated entities
- * @param {boolean} data.hasExampleEntities - Whether module has entities with examples
  * @returns {string} Complete HTML page
  */
 export function moduleOverviewTemplate(data) {
-	const { module, organizedEntities, stats, packageName, hasEntities } = data;
+	const { module, organizedEntities, stats, packageName, hasEntities } =
+		/** @type {any} */ (data);
 
 	// Process README content through beak markdown processor and apply syntax highlighting
 	const readmeHTML = module.hasReadme
@@ -138,20 +120,16 @@ export function moduleOverviewTemplate(data) {
 	const content = html`
 		${pageHeader({
 			title: module.name,
-			subtitle: html`<code class="bg-light px-2 py-1 rounded">${module.fullName}</code>`,
 			breadcrumbs,
 			badges,
 		})}
 
-		<!-- Module Attribution -->
+		<!-- Module Description -->
 		${
-			moduleAttributionContext?.hasAttribution
+			module.description
 				? html`
-		<div class="card border-info mb-4">
-			<div class="card-body py-2">
-				${attributionBar(moduleAttributionContext)}
-				${seeAlsoLinks(moduleAttributionContext)}
-			</div>
+		<div class="lead text-muted mb-4">
+			${markdownToHTML(module.description)}
 		</div>
 		`
 				: ""
@@ -186,84 +164,95 @@ export function moduleOverviewTemplate(data) {
 			</div>
 		</div>
 
-		<!-- Main Content -->
-		<div class="mb-4">
-				<!-- README Section -->
-				${
-					module.hasReadme
-						? contentSection({
-								title: "📚 Documentation",
-								content: readmeHTML,
-							})
-						: ""
-				}
-
-				<!-- Entity Sections -->
-				${
-					hasEntities
-						? contentSection({
-								title: "🔧 API Reference",
-								content: Object.entries(organizedEntities)
-									.map(
-										/** @param {[string, Array<any>]} entry */
-										([type, entities]) => {
-											return html`
-								<div class="mb-4">
-									<h4 class="h6 fw-bold text-uppercase text-muted mb-3">
-										${pluralizeType(type, entities.length).toUpperCase()} (${entities.length})
-									</h4>
-									<div class="list-group list-group-flush">
-										${entities.map(
-											(entity) => html`
-											<div class="list-group-item d-flex justify-content-between align-items-start">
-												<div class="flex-grow-1 me-3">
-													<div class="d-flex align-items-center mb-2">
-														<h5 class="mb-0 me-2">
-															<a href="${safeHtml`${entity.link}`}" class="text-decoration-none">${safeHtml`${entity.name}`}</a>
-														</h5>
-														<span class="badge bg-${getTypeVariant(entity.entityType || type)} me-2">${safeHtml`${entity.entityType || type}`}</span>
-														${entity.isDeprecated ? html`<span class="badge bg-warning">deprecated</span>` : ""}
-														${entity.hasExamples ? html`<span class="badge bg-success">examples</span>` : ""}
+		<!-- API Reference Section -->
+		${
+			hasEntities
+				? contentSection({
+						title: "🔧 API Reference",
+						content: Object.entries(organizedEntities)
+							.map(
+								/** @param {[string, Array<any>]} entry */
+								([type, entities]) => {
+									return html`
+							<div class="mb-4">
+								<h4 class="h6 fw-bold text-uppercase text-muted mb-3">
+									${pluralizeType(type, entities.length).toUpperCase()} (${entities.length})
+								</h4>
+								<div class="list-group list-group-flush">
+									${entities.map(
+										(entity) => html`
+										<div class="list-group-item d-flex justify-content-between align-items-start">
+											<div class="flex-grow-1 me-3">
+												<div class="d-flex align-items-center mb-2">
+													<h5 class="mb-0 me-2">
+														<a href="${safeHtml`${entity.link}`}" class="text-decoration-none">${safeHtml`${entity.name}`}</a>
+													</h5>
+													<span class="badge bg-${getTypeVariant(entity.entityType || type)} me-2">${safeHtml`${entity.entityType || type}`}</span>
+													${entity.isDeprecated ? html`<span class="badge bg-warning">deprecated</span>` : ""}
+													${entity.hasExamples ? html`<span class="badge bg-success">examples</span>` : ""}
+												</div>
+												${
+													entity.description
+														? html`
+													<div class="text-muted mb-2">
+														${markdownToHTML(entity.description)}
 													</div>
-													${
-														entity.description
-															? html`
-														<div class="text-muted mb-2">
-															${markdownToHTML(entity.description)}
-														</div>
-													`
-															: html`
-														<div class="text-muted fst-italic mb-2">No description available</div>
-													`
-													}
-												</div>
-												<div class="flex-shrink-0">
-													<a href="${safeHtml`${entity.link}`}" class="btn btn-outline-primary btn-sm">
-														📖 View
-													</a>
-												</div>
+												`
+														: html`
+													<div class="text-muted fst-italic mb-2">No description available</div>
+												`
+												}
 											</div>
-										`,
-										)}
-									</div>
+											<div class="flex-shrink-0">
+												<a href="${safeHtml`${entity.link}`}" class="btn btn-outline-primary btn-sm">
+													📖 View
+												</a>
+											</div>
+										</div>
+									`,
+									)}
 								</div>
-							`;
-										},
-									)
-									.join(""),
-							})
-						: html`
-					<div class="text-center py-5">
-						<div class="display-1 mb-3">📭</div>
-						<h3 class="text-muted mb-3">No Public Entities</h3>
-						<p class="text-muted">
-							This module doesn't export any public APIs.
-							${module.hasReadme ? "Check the documentation above for usage information." : ""}
-						</p>
-					</div>
-				`
-				}
+							</div>
+						`;
+								},
+							)
+							.join(""),
+					})
+				: html`
+				<div class="text-center py-5">
+					<div class="display-1 mb-3">📭</div>
+					<h3 class="text-muted mb-3">No Public Entities</h3>
+					<p class="text-muted">
+						This module doesn't export any public APIs.
+						${module.hasReadme ? "Check the documentation above for usage information." : ""}
+					</p>
+				</div>
+			`
+		}
+
+		<!-- README Section -->
+		${
+			module.hasReadme
+				? contentSection({
+						title: "📚 Documentation",
+						content: readmeHTML,
+					})
+				: ""
+		}
+
+		<!-- Module Attribution -->
+		${
+			moduleAttributionContext?.hasAttribution
+				? html`
+		<div class="card border-info mb-4">
+			<div class="card-body py-2">
+				${attributionBar(moduleAttributionContext)}
+				${seeAlsoLinks(moduleAttributionContext)}
+			</div>
 		</div>
+		`
+				: ""
+		}
 
 
 	`;
