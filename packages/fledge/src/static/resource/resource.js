@@ -13,6 +13,8 @@
  * and URL extraction. Static factory pattern with incremental processing methods.
  */
 
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
 import { normalizeUrl } from "../normalize-url.js";
 import { Attempt } from "./attempt.js";
 import { extractUrlsFromHtml } from "./extract-urls-from-html.js";
@@ -254,7 +256,7 @@ export class Resource {
 			this.#extractedUrls = extractUrlsFromHtml(htmlContent, this.#url);
 		}
 
-		return this.#extractedUrls;
+		return /** @type {Set<URL>} */ (this.#extractedUrls);
 	}
 
 	/**
@@ -335,6 +337,61 @@ export class Resource {
 	/**
 	 * Convert resource to JSON representation
 	 * @returns {object} JSON representation
+	 */
+	/**
+	 * Save resource to file system for static site generation
+	 * @param {string} destinationFolder - Root folder for static site output
+	 * @returns {Promise<string>} Path where file was saved
+	 * @throws {Error} If file cannot be saved
+	 */
+	async saveToFile(destinationFolder) {
+		const filePath = this.#determineFilePath(destinationFolder);
+
+		// Create intermediate directories
+		const dirPath = dirname(filePath);
+		await mkdir(dirPath, { recursive: true });
+
+		// Write content to file
+		if (this.isHtml()) {
+			// HTML resources are saved as text
+			const content = this.getContent();
+			await writeFile(filePath, content, "utf8");
+		} else {
+			// Assets are saved as binary
+			await writeFile(filePath, new Uint8Array(this.#buffer));
+		}
+
+		return filePath;
+	}
+
+	/**
+	 * Determine file path for saving resource to disk
+	 * @param {string} destinationFolder - Root folder for static site output
+	 * @returns {string} Full file path for saving
+	 */
+	#determineFilePath(destinationFolder) {
+		// Use the final resolved URL for path determination
+		const urlPath = this.#url.pathname;
+
+		if (this.isHtml()) {
+			// HTML resources always save as index.html in directory structure
+			if (urlPath === "/" || urlPath === "") {
+				return join(destinationFolder, "index.html");
+			}
+
+			// For other paths, create directory structure with index.html
+			return join(destinationFolder, urlPath, "index.html");
+		} else {
+			// Asset resources keep their original path structure
+			// Remove leading slash for join() to work correctly
+			const relativePath = urlPath.startsWith("/") ? urlPath.slice(1) : urlPath;
+			return join(destinationFolder, relativePath);
+		}
+	}
+
+	/**
+	 * JSON representation of resource for serialization
+	 * @returns {object} Serializable resource data
 	 */
 	toJSON() {
 		return {

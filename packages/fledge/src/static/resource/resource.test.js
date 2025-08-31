@@ -77,7 +77,10 @@ describe("Resource", () => {
 			);
 		}
 
-		if (urlStr.includes("asset")) {
+		if (
+			urlStr.includes("asset") ||
+			/\.(png|jpg|jpeg|gif|svg|ico|webp)$/i.test(urlStr)
+		) {
 			const buffer = new ArrayBuffer(1024);
 			return Promise.resolve({
 				ok: true,
@@ -298,6 +301,128 @@ describe("Resource", () => {
 
 		assert.strictEqual(capturedHeaders["User-Agent"], "Custom Agent/1.0");
 
+		globalThis.fetch = originalFetch;
+	});
+
+	test("saves HTML resource as index.html", async () => {
+		globalThis.fetch = mockFetch;
+
+		const resource = await Resource.fetch("/page", "https://example.com");
+		const tempDir = "/tmp/fledge-test";
+
+		// Clean up any existing temp directory
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
+
+		const savedPath = await resource.saveToFile(tempDir);
+
+		// Should save as index.html in page directory
+		assert.strictEqual(savedPath, "/tmp/fledge-test/page/index.html");
+
+		// Verify file exists and has correct content
+		const { readFile } = await import("node:fs/promises");
+		const content = await readFile(savedPath, "utf8");
+		assert.strictEqual(content, "<html><body><h1>Test Page</h1></body></html>");
+
+		// Cleanup
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
+		globalThis.fetch = originalFetch;
+	});
+
+	test("saves root HTML resource as index.html", async () => {
+		globalThis.fetch = mockFetch;
+
+		const resource = await Resource.fetch("/", "https://example.com");
+		const tempDir = "/tmp/fledge-test";
+
+		// Clean up any existing temp directory
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
+
+		const savedPath = await resource.saveToFile(tempDir);
+
+		// Should save directly as index.html in root
+		assert.strictEqual(savedPath, "/tmp/fledge-test/index.html");
+
+		// Verify file exists
+		const { readFile } = await import("node:fs/promises");
+		const content = await readFile(savedPath, "utf8");
+		assert.strictEqual(content, "<html><body><h1>Test Page</h1></body></html>");
+
+		// Cleanup
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
+		globalThis.fetch = originalFetch;
+	});
+
+	test("saves asset resource with original path", async () => {
+		globalThis.fetch = mockFetch;
+
+		const resource = await Resource.fetch(
+			"/images/logo.png",
+			"https://example.com",
+		);
+		const tempDir = "/tmp/fledge-test";
+
+		// Clean up any existing temp directory
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
+
+		const savedPath = await resource.saveToFile(tempDir);
+
+		// Should save with original path structure
+		assert.strictEqual(savedPath, "/tmp/fledge-test/images/logo.png");
+
+		// Verify file exists and is binary
+		const { readFile } = await import("node:fs/promises");
+		const content = await readFile(savedPath);
+		assert.strictEqual(content instanceof Buffer, true);
+		assert.strictEqual(content.length > 0, true);
+
+		// Cleanup
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
+		globalThis.fetch = originalFetch;
+	});
+
+	test("creates intermediate directories", async () => {
+		globalThis.fetch = mockFetch;
+
+		const resource = await Resource.fetch(
+			"/deep/nested/path",
+			"https://example.com",
+		);
+		const tempDir = "/tmp/fledge-test";
+
+		// Clean up any existing temp directory
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
+
+		const savedPath = await resource.saveToFile(tempDir);
+
+		// Should create nested directory structure
+		assert.strictEqual(
+			savedPath,
+			"/tmp/fledge-test/deep/nested/path/index.html",
+		);
+
+		// Verify file exists
+		const { readFile } = await import("node:fs/promises");
+		const content = await readFile(savedPath, "utf8");
+		assert.strictEqual(content, "<html><body><h1>Test Page</h1></body></html>");
+
+		// Cleanup
+		await import("node:fs/promises").then((fs) =>
+			fs.rm(tempDir, { recursive: true, force: true }),
+		);
 		globalThis.fetch = originalFetch;
 	});
 });
