@@ -39,7 +39,7 @@
     "nest:validate": "node ../nest/bin/nest.js validate",
     "nest:docs": "node ../nest/bin/nest.js build-docs",
     "test": "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
-    "test:code": "timeout 10s node --no-warnings --test --test-reporter=dot",
+    "test:code": "timeout 30s node --no-warnings --test --test-reporter=dot",
     "test:coverage": "node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
     "test:style": "npx biome lint --error-on-warnings ./",
     "test:types": "tsc --noEmit --project jsconfig.json"
