@@ -9,14 +9,14 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
 
-import staticGen from "./index.js";
+import { Config, generateStaticSite } from "./index.js";
 
 describe("Static module", () => {
-	test("exports function", () => {
-		assert.strictEqual(typeof staticGen, "function");
+	test("exports generateStaticSite function", () => {
+		assert.strictEqual(typeof generateStaticSite, "function");
 	});
 
-	test("returns stub helloworld message", () => {
-		assert.strictEqual(staticGen(), "helloworld");
+	test("exports Config class", () => {
+		assert.strictEqual(typeof Config, "function");
 	});
 });

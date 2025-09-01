@@ -55,12 +55,18 @@ export async function generateStaticSite(
 	// Start server in background
 	let serverStarted = false;
 	await new Promise((resolve, reject) => {
+		const timeoutId = setTimeout(() => {
+			reject(new Error(`Server startup timeout after 5 seconds`));
+		}, 5000);
+
 		try {
 			/** @type {any} */ (server).listen(port, "localhost", () => {
+				clearTimeout(timeoutId);
 				serverStarted = true;
 				resolve(undefined);
 			});
 		} catch (error) {
+			clearTimeout(timeoutId);
 			reject(new Error(`Failed to start background server: ${error.message}`));
 		}
 	});
@@ -70,13 +76,10 @@ export async function generateStaticSite(
 		const configString = `
 			export default {
 				server: "http://localhost:${port}",
-				routes: [
-					"/",
-					"/sitemap.xml",
-					"/bootstrap.esm.js.map",
-					"/bootstrap.min.css.map"
-				],
+				routes: ["/", "/sitemap.xml"],
 				discover: true,
+				continueOnError: true,
+				timeout: 5000,
 				output: "${outputPath.replace(/\\/g, "\\\\")}"
 			};
 		`;
@@ -90,10 +93,31 @@ export async function generateStaticSite(
 			verbose: false,
 		});
 
+		// Calculate total bytes by examining generated files
+		let totalBytes = 0;
+		try {
+			const fs = await import("node:fs");
+			const path = await import("node:path");
+			const files = await fs.promises.readdir(outputPath, { recursive: true });
+			for (const file of files) {
+				try {
+					const filePath = path.join(outputPath, file);
+					const stats = await fs.promises.stat(filePath);
+					if (stats.isFile()) {
+						totalBytes += stats.size;
+					}
+				} catch {
+					// Skip files that can't be read
+				}
+			}
+		} catch {
+			// If we can't calculate bytes, use 0
+		}
+
 		// Return glean-compatible result format
 		return {
 			totalFiles: result.savedFiles,
-			totalBytes: 0, // Fledge doesn't track bytes, but glean expects this
+			totalBytes,
 			generatedAt: new Date().toISOString(),
 		};
 	} finally {
@@ -101,7 +125,14 @@ export async function generateStaticSite(
 		if (serverStarted) {
 			try {
 				await new Promise((resolve) => {
-					/** @type {any} */ (server).close(() => resolve(undefined));
+					const timeoutId = setTimeout(() => {
+						resolve(undefined); // Force resolve after timeout
+					}, 2000);
+
+					/** @type {any} */ (server).close(() => {
+						clearTimeout(timeoutId);
+						resolve(undefined);
+					});
 				});
 			} catch {
 				// Ignore cleanup errors

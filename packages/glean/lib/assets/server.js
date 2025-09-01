@@ -13,7 +13,7 @@
  * Serves registered assets directly from filesystem with zero memory bloat.
  */
 
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 
 /**
  * @typedef {import('./registry.js').AssetRegistry} AssetRegistry
@@ -45,18 +45,18 @@ import { existsSync, readFileSync, statSync } from "node:fs";
  * router.get('/assets/:filename', (ctx) => serveAsset(ctx, assetRegistry));
  */
 export async function serveAsset(context, registry) {
-	const pathname = context.path;
+	const pathname = /** @type {any} */ (context).path;
 
 	// Extract filename from URL path
 	if (!pathname.startsWith("/assets/")) {
-		context.responseStatusCode = 404;
+		/** @type {any} */ (context).responseStatusCode = 404;
 		await context.text("Asset not found");
 		return;
 	}
 
 	// Check if registry exists
 	if (!registry) {
-		context.responseStatusCode = 404;
+		/** @type {any} */ (context).responseStatusCode = 404;
 		await context.text("Asset not found");
 		return;
 	}
@@ -64,7 +64,7 @@ export async function serveAsset(context, registry) {
 	// Get asset from registry
 	const asset = registry.getAsset(pathname);
 	if (!asset) {
-		context.responseStatusCode = 404;
+		/** @type {any} */ (context).responseStatusCode = 404;
 		await context.text("Asset not found");
 		return;
 	}
@@ -74,28 +74,39 @@ export async function serveAsset(context, registry) {
 		const stats = statSync(asset.resolvedPath);
 
 		// Set response headers
-		context.responseHeaders.set("Content-Type", asset.contentType);
-		context.responseHeaders.set("Content-Length", stats.size.toString());
-		context.responseHeaders.set(
+		/** @type {any} */ (context).responseHeaders.set(
+			"Content-Type",
+			asset.contentType,
+		);
+		/** @type {any} */ (context).responseHeaders.set(
+			"Content-Length",
+			stats.size.toString(),
+		);
+		/** @type {any} */ (context).responseHeaders.set(
 			"Cache-Control",
 			"public, max-age=31536000, immutable",
 		); // 1 year cache
-		context.responseHeaders.set("ETag", `"${asset.filename}"`);
+		/** @type {any} */ (context).responseHeaders.set(
+			"ETag",
+			`"${asset.filename}"`,
+		);
 
 		// Handle conditional requests
-		const ifNoneMatch = context.requestHeaders.get("if-none-match");
+		const ifNoneMatch = /** @type {any} */ (context).requestHeaders.get(
+			"if-none-match",
+		);
 		if (ifNoneMatch === `"${asset.filename}"`) {
-			context.responseStatusCode = 304;
+			/** @type {any} */ (context).responseStatusCode = 304;
 			return;
 		}
 
 		// Read file content into Buffer
 		const fileBuffer = readFileSync(asset.resolvedPath);
-		context.responseStatusCode = 200;
-		context.responseBody = fileBuffer;
+		/** @type {any} */ (context).responseStatusCode = 200;
+		/** @type {any} */ (context).responseBody = fileBuffer;
 	} catch {
 		// File not found or other error
-		context.responseStatusCode = 404;
+		/** @type {any} */ (context).responseStatusCode = 404;
 		await context.text("Asset not found");
 	}
 }

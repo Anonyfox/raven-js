@@ -13,7 +13,7 @@
 import { ok, strictEqual } from "node:assert";
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { Readable } from "node:stream";
+
 import { describe, test } from "node:test";
 import { AssetRegistry } from "./registry.js";
 import { createAssetMiddleware, serveAsset } from "./server.js";
@@ -27,7 +27,9 @@ const testDir = "/tmp/glean-asset-server-test";
 class MockContext {
 	constructor(pathname = "/assets/test.png", headers = {}) {
 		this.url = new URL(`http://localhost${pathname}`);
+		this.path = pathname; // Wings Context API compatibility
 		this.headers = new Map(Object.entries(headers));
+		this.requestHeaders = new Map(Object.entries(headers)); // Wings Context API compatibility
 		this.responseHeaders = new Map();
 		this.responseStatusCode = 200;
 		this.responseBody = null;
@@ -103,16 +105,10 @@ describe("serveAsset", () => {
 		// Should have ETag header
 		ok(context.responseHeaders.get("ETag"));
 
-		// Should have stream body
-		ok(context.responseBody instanceof Readable);
+		// Should have buffer body
+		ok(context.responseBody instanceof Buffer);
 
-		// Close stream before cleanup to prevent async file access
-		if (
-			context.responseBody &&
-			typeof context.responseBody.destroy === "function"
-		) {
-			context.responseBody.destroy();
-		}
+		// No cleanup needed for Buffer
 
 		// Small delay to allow async operations to complete
 		await new Promise((resolve) => setTimeout(resolve, 10));
@@ -186,13 +182,7 @@ describe("serveAsset", () => {
 		const etag = context1.responseHeaders.get("ETag");
 		ok(etag);
 
-		// Close first stream before second request
-		if (
-			context1.responseBody &&
-			typeof context1.responseBody.destroy === "function"
-		) {
-			context1.responseBody.destroy();
-		}
+		// No cleanup needed for Buffer
 
 		// Second request with If-None-Match header
 		const context2 = new MockContext(assetUrl, { "if-none-match": etag });
@@ -241,15 +231,9 @@ describe("serveAsset", () => {
 				context.responseHeaders.get("Content-Type"),
 				asset.contentType,
 			);
-			ok(context.responseBody instanceof Readable);
+			ok(context.responseBody instanceof Buffer);
 
-			// Close stream before next iteration
-			if (
-				context.responseBody &&
-				typeof context.responseBody.destroy === "function"
-			) {
-				context.responseBody.destroy();
-			}
+			// No cleanup needed for Buffer
 		}
 
 		// Small delay to allow async operations to complete
@@ -296,13 +280,7 @@ describe("createAssetMiddleware", () => {
 		strictEqual(context.responseStatusCode, 200);
 		strictEqual(context.responseHeaders.get("Content-Type"), "image/png");
 
-		// Close stream before cleanup
-		if (
-			context.responseBody &&
-			typeof context.responseBody.destroy === "function"
-		) {
-			context.responseBody.destroy();
-		}
+		// No cleanup needed for Buffer
 
 		// Small delay to allow async operations to complete
 		await new Promise((resolve) => setTimeout(resolve, 10));

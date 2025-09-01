@@ -104,7 +104,16 @@ export function createDocumentationServer(packagePath, options = {}) {
 	const currentFileUrl = import.meta.url;
 	const currentFilePath = fileURLToPath(currentFileUrl);
 	const currentDir = path.dirname(currentFilePath);
-	const staticDir = path.resolve(currentDir, "../static");
+
+	// Different paths for development vs production (bundled)
+	// Development: lib/server/index.js -> ../../static
+	// Production: bin/glean.min.js -> ../static
+	const isBundled =
+		currentFilePath.includes("bin/") && currentFilePath.includes(".min.js");
+	const staticDir = path.resolve(
+		currentDir,
+		isBundled ? "../static" : "../../static",
+	);
 
 	router.use(new Assets({ assetsDir: staticDir }));
 

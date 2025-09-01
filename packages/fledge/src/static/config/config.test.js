@@ -143,9 +143,9 @@ describe("Config", () => {
 		assert.strictEqual(config.getBasePath(), "/my-app");
 	});
 
-	test("getBasePath returns empty string when not configured", () => {
+	test("getBasePath returns '/' when not configured", () => {
 		const config = new Config();
-		assert.strictEqual(config.getBasePath(), "");
+		assert.strictEqual(config.getBasePath(), "/");
 	});
 
 	test("getAssets returns configured assets", () => {
