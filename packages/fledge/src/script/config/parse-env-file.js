@@ -48,6 +48,7 @@ export function parseEnvFile(content) {
 		throw new Error("Environment file content must be a string");
 	}
 
+	/** @type {Record<string, string>} */
 	const variables = {};
 	const lines = normalizeLineEndings(content).split("\n");
 	let i = 0;
@@ -81,10 +82,13 @@ function normalizeLineEndings(content) {
  * Parse a single line or multiline value starting at given index
  * @param {string[]} lines - Array of file lines
  * @param {number} startIndex - Starting line index
- * @returns {{ variable?: { key: string, value: string }, nextIndex: number }} Parse result
+ * @returns {{ variable?: { key: string, value: string } | null, nextIndex: number }} Parse result
  */
 function parseLine(lines, startIndex) {
 	const line = lines[startIndex];
+	if (!line) {
+		return { variable: null, nextIndex: startIndex + 1 };
+	}
 	const trimmed = line.trim();
 
 	// Skip empty lines and comments
@@ -203,6 +207,10 @@ function startsWithQuote(value) {
  */
 function parseQuotedValue(quotedValue, lines, currentIndex) {
 	const quoteChar = quotedValue[0];
+	if (!quoteChar) {
+		return { value: "", nextIndex: currentIndex + 1 };
+	}
+
 	let content = quotedValue.slice(1); // Remove opening quote
 	let lineIndex = currentIndex;
 
@@ -223,6 +231,10 @@ function parseQuotedValue(quotedValue, lines, currentIndex) {
 	// Continue reading lines until we find the closing quote
 	while (lineIndex < lines.length) {
 		const line = lines[lineIndex];
+		if (!line) {
+			lineIndex++;
+			continue;
+		}
 
 		// Check if this line ends the quote
 		if (line.endsWith(quoteChar) && !isEscaped(line, line.length - 1)) {

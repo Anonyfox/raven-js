@@ -158,8 +158,12 @@ async function resolveAssetPath(assetPath) {
  * @returns {string[]} Array of file paths
  */
 function listFilesRecursively(dirPath) {
+	/** @type {string[]} */
 	const files = [];
 
+	/**
+	 * @param {string} currentPath
+	 */
 	function scanDirectory(currentPath) {
 		try {
 			const entries = readdirSync(currentPath, { withFileTypes: true });

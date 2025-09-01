@@ -66,10 +66,10 @@ export class Metadata {
 	 * @param {boolean} [metadata.banner=true] - Enable banner generation
 	 */
 	constructor(metadata) {
-		this.name = metadata.name;
-		this.version = metadata.version;
-		this.description = metadata.description;
-		this.author = metadata.author;
+		this.name = metadata.name || "";
+		this.version = metadata.version || "";
+		this.description = metadata.description || "";
+		this.author = metadata.author || "";
 		this.buildUrl = metadata.buildUrl || "https://ravenjs.dev";
 		this.banner = metadata.banner !== false; // Default to true
 	}

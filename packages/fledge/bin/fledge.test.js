@@ -85,7 +85,7 @@ describe("CLI executable", () => {
 			"--validate",
 		]);
 		strictEqual(result.code, 0);
-		match(result.stdout, /✅ Configuration validation successful!/);
+		match(result.stdout, /✅ Static configuration validation successful!/);
 		match(result.stdout, /Server: http:\/\/localhost:8080/);
 		match(result.stdout, /Routes: \//);
 	});
@@ -95,7 +95,7 @@ describe("CLI executable", () => {
 			'export default {server: "http://localhost:3000", routes: ["/", "/about"]}';
 		const result = await runCli(["static", "--validate"], config);
 		strictEqual(result.code, 0);
-		match(result.stdout, /✅ Configuration validation successful!/);
+		match(result.stdout, /✅ Static configuration validation successful!/);
 		match(result.stdout, /Server: http:\/\/localhost:3000/);
 		match(result.stdout, /Routes: \/, \/about/);
 	});
@@ -110,7 +110,7 @@ describe("CLI executable", () => {
 		const result = await runCli(["unknown"]);
 		strictEqual(result.code, 1);
 		match(result.stderr, /Unknown command: unknown/);
-		match(result.stderr, /Currently supported commands: static/);
+		match(result.stderr, /Available commands: static, script/);
 	});
 
 	it("handles malformed piped config gracefully", async () => {

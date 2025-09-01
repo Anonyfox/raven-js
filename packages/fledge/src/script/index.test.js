@@ -159,7 +159,7 @@ describe("generateScriptBundle", () => {
 			assert.strictEqual(result.executable, "");
 			assert.strictEqual(result.statistics.bundleSize, 0);
 			assert.strictEqual(result.statistics.assetCount, 0);
-			assert.ok(result.message.includes("validation successful"));
+			assert.ok(result.statistics.message.includes("validation successful"));
 		});
 
 		it("validates config with assets", async () => {

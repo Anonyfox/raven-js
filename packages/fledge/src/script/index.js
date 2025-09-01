@@ -45,8 +45,8 @@ export async function generateScriptBundle(configInput, options = {}) {
 				totalTime: 0,
 				bundleSize: 0,
 				assetCount: config.getAssets().getFiles().length,
+				message: "Configuration validation successful",
 			},
-			message: "Configuration validation successful",
 		};
 	}
 
@@ -65,7 +65,7 @@ export async function generateScriptBundle(configInput, options = {}) {
 	return {
 		executable,
 		statistics,
-		outputPath,
+		...(outputPath && { outputPath }),
 	};
 }
 
@@ -90,7 +90,7 @@ async function parseConfigInput(configInput, exportName) {
 		if (typeof configInput === "object" && configInput !== null) {
 			// Check if it's already a ScriptConfig instance
 			if (configInput.constructor?.name === "ScriptConfig") {
-				return configInput;
+				return /** @type {ScriptConfig} */ (configInput);
 			}
 			return await ScriptConfig.fromObject(configInput);
 		}

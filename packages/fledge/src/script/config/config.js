@@ -141,20 +141,20 @@ export class ScriptConfig {
 	 */
 	static async fromObject(configObject) {
 		// Resolve complex fields asynchronously
-
-		const assets = await Assets.resolve(configObject.assets);
-		const env = await Environment.resolve(configObject.env);
-		const metadata = Metadata.fromPackageJson(configObject.metadata);
+		const config = /** @type {any} */ (configObject);
+		const assets = await Assets.resolve(config.assets);
+		const env = await Environment.resolve(config.env);
+		const metadata = Metadata.fromPackageJson(config.metadata);
 
 		// Create final config with resolved instances
 		const resolvedConfig = {
-			...configObject,
+			...config,
 			assets,
 			env,
 			metadata,
 		};
 
-		return new ScriptConfig(resolvedConfig);
+		return new ScriptConfig(/** @type {any} */ (resolvedConfig));
 	}
 
 	/**
