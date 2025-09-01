@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node --watch-path=./src --watch-path=./public boot.js",
+    "build": "npx ../../packages/fledge/bin/fledge.js script raven.fledge.js --verbose",
     "lint": "npx biome lint .",
     "format": "npx biome format . --write"
   },
