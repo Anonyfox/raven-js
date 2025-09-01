@@ -75,6 +75,7 @@ export {
 	detectParticipalPhraseFormula,
 	detectPerfectGrammar,
 	detectRuleOfThreeObsession,
+	isAIText,
 } from "./language/index.js";
 // Export learning algorithms
 export { LinearRegression, Model, NeuralNetwork } from "./learning/index.js";

@@ -16,3 +16,4 @@
 
 // Re-export all analysis functions from the analysis submodule
 export * from "./analysis/index.js";
+export { isAIText } from "./is-ai-text.js";

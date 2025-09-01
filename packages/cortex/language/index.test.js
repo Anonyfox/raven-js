@@ -57,6 +57,10 @@ describe("language module", () => {
 			typeof language.detectRuleOfThreeObsession === "function",
 			"Should export detectRuleOfThreeObsession",
 		);
+		assert.ok(
+			typeof language.isAIText === "function",
+			"Should export isAIText",
+		);
 	});
 
 	it("functions are callable", () => {
@@ -90,5 +94,29 @@ describe("language module", () => {
 			"calculateShannonEntropy should return a number",
 		);
 		assert.ok(entropyResult >= 0, "Should return non-negative entropy");
+
+		// Test isAIText function
+		const aiResult = language.isAIText(testText);
+		assert.ok(typeof aiResult === "object", "isAIText should return an object");
+		assert.ok(
+			typeof aiResult.aiLikelihood === "number",
+			"Should return AI likelihood",
+		);
+		assert.ok(
+			aiResult.aiLikelihood >= 0 && aiResult.aiLikelihood <= 1,
+			"AI likelihood should be between 0 and 1",
+		);
+		assert.ok(
+			typeof aiResult.certainty === "number",
+			"Should return certainty",
+		);
+		assert.ok(
+			typeof aiResult.combinedScore === "number",
+			"Should return combined score",
+		);
+		assert.ok(
+			typeof aiResult.classification === "string",
+			"Should return classification",
+		);
 	});
 });
