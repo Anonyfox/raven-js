@@ -26,8 +26,8 @@ import { createDocumentationServer } from "./server/index.js";
  * @param {string} packagePath - Path to package to document
  * @param {string} outputPath - Destination directory for static files
  * @param {Object} options - Generation options
- * @param {string} [options.domain] - Base domain for canonical URLs (unused with Fledge)
- * @param {string} [options.basePath] - Base path for URL prefixing (unused with Fledge)
+ * @param {string} [options.domain] - Base domain for canonical URLs (used by glean server)
+ * @param {string} [options.basePath] - Base path for URL prefixing (forwarded to fledge)
  * @returns {Promise<{totalFiles: number, totalBytes: number, generatedAt: string}>} Generation statistics
  */
 export async function generateStaticSite(
@@ -80,6 +80,7 @@ export async function generateStaticSite(
 				discover: true,
 				continueOnError: true,
 				timeout: 5000,
+				basePath: "${options.basePath || "/"}",
 				output: "${outputPath.replace(/\\/g, "\\\\")}"
 			};
 		`;
