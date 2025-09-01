@@ -170,7 +170,18 @@ export class Resolve extends Middleware {
 				if (ctx.responseStatusCode >= 200 && ctx.responseStatusCode < 300) {
 					// Generate import map data for inline injection (better browser compatibility)
 					const importMapData = await generateImportMap(projectRoot);
-					injectImportMap(ctx, importMapPath, importMapData);
+					const injected = injectImportMap(ctx, importMapPath, importMapData);
+
+					// Update Content-Length header if HTML was modified
+					if (injected && ctx.responseBody) {
+						const { HEADER_NAMES } = await import(
+							"../../../core/string-pool.js"
+						);
+						ctx.responseHeaders.set(
+							HEADER_NAMES.CONTENT_LENGTH,
+							Buffer.byteLength(ctx.responseBody).toString(),
+						);
+					}
 				}
 			}, "resolve-after"),
 		);

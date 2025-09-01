@@ -21,7 +21,8 @@
       "!plugins/vscode",
       "!**/bin/*.min.js",
       "!**/static",
-      "!**/bundles"
+      "!**/bundles",
+      "!dist"
     ]
   }
 }

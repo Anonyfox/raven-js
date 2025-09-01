@@ -271,7 +271,7 @@ export function ssr(fn, options = {}) {
 				return null;
 			}
 
-			globalThis.fetch = (url, opts = {}) => {
+			globalThis.fetch = async (url, opts = {}) => {
 				const key = createCacheKey(url, opts);
 				const hit = findCached(key);
 
@@ -291,36 +291,53 @@ export function ssr(fn, options = {}) {
 					const absolute = new URL(urlString, getBaseURL()).toString();
 
 					const cached = hit.entry;
-					return /** @type {Promise<Response>} */ (
-						Promise.resolve({
-							ok: cached.ok,
-							status: cached.status,
-							statusText: cached.statusText,
-							headers: new Headers(cached.headers),
-							url: absolute,
-							redirected: false,
-							type: "basic",
-							body: null,
-							bodyUsed: false,
-							json: () => Promise.resolve(cached.json),
-							text: () => Promise.resolve(cached.text),
-							arrayBuffer: () => Promise.resolve(cached.arrayBuffer),
-							blob: () => Promise.resolve(cached.blob),
-							clone() {
-								return this;
-							},
-							formData: () =>
-								Promise.reject(
-									new Error("formData not available in SSR cache"),
-								),
-							bytes: () =>
-								Promise.resolve(cached.arrayBuffer || new ArrayBuffer(0)),
-						})
-					);
+					return /** @type {Response} */ ({
+						ok: cached.ok,
+						status: cached.status,
+						statusText: cached.statusText,
+						headers: new Headers(cached.headers),
+						url: absolute,
+						redirected: false,
+						type: "basic",
+						body: null,
+						bodyUsed: false,
+						json: () => Promise.resolve(cached.json),
+						text: () => Promise.resolve(cached.text),
+						arrayBuffer: () => Promise.resolve(cached.arrayBuffer),
+						blob: () => Promise.resolve(cached.blob),
+						clone() {
+							return this;
+						},
+						formData: () =>
+							Promise.reject(new Error("formData not available in SSR cache")),
+						bytes: () =>
+							Promise.resolve(cached.arrayBuffer || new ArrayBuffer(0)),
+					});
 				}
 
 				const absolute = new URL(String(url), getBaseURL()).toString();
-				return orig(absolute, opts);
+
+				// Handle self-signed certificates for internal requests in development/staging
+				const fetchOpts = { ...opts };
+				if (
+					typeof window === "undefined" &&
+					typeof process !== "undefined" &&
+					process.versions?.node &&
+					(absolute.includes("localhost") ||
+						absolute.includes("127.0.0.1") ||
+						absolute.includes("0.0.0.0"))
+				) {
+					// Use Node.js https agent with certificate validation disabled for internal requests
+					// Hide the import from bundlers using dynamic string construction
+					const nodeHttps = "node:" + "https";
+					const https = await import(nodeHttps);
+					const httpsAgent = new https.Agent({
+						rejectUnauthorized: false,
+					});
+					/** @type {any} */ (fetchOpts).agent = httpsAgent;
+				}
+
+				return orig(absolute, fetchOpts);
 			};
 
 			// Don't restore fetch immediately - let deferred effects run first
@@ -370,7 +387,27 @@ export function ssr(fn, options = {}) {
 					return new URL(String(url), getBaseURL()).toString();
 				})();
 
-				const p = orig(absolute, opts).then(async (resp) => {
+				// Handle self-signed certificates for internal requests in development/staging
+				const fetchOpts = { ...opts };
+				if (
+					typeof window === "undefined" &&
+					typeof process !== "undefined" &&
+					process.versions?.node &&
+					(absolute.includes("localhost") ||
+						absolute.includes("127.0.0.1") ||
+						absolute.includes("0.0.0.0"))
+				) {
+					// Use Node.js https agent with certificate validation disabled for internal requests
+					// Hide the import from bundlers using dynamic string construction
+					const nodeHttps = "node:" + "https";
+					const https = await import(nodeHttps);
+					const httpsAgent = new https.Agent({
+						rejectUnauthorized: false,
+					});
+					/** @type {any} */ (fetchOpts).agent = httpsAgent;
+				}
+
+				const p = orig(absolute, fetchOpts).then(async (resp) => {
 					const clone = resp.clone();
 					const data = {
 						ok: resp.ok,

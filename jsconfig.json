@@ -18,6 +18,7 @@
     "plugins/vscode/**",
     "**/*.test.js",
     "**/static/**",
-    "temp/**"
+    "temp/**",
+    "dist/**"
   ]
 }
