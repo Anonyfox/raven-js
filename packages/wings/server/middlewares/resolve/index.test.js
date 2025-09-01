@@ -330,9 +330,8 @@ describe("Resolve Middleware Class", () => {
 			await ctx.runAfterCallbacks();
 
 			assert.ok(
-				ctx.responseBody.includes(
-					'<script type="importmap" src="/importmap.json"></script>',
-				),
+				ctx.responseBody.includes('<script type="importmap">'),
+				"Should contain inline import map",
 			);
 
 			await cleanup();
@@ -356,9 +355,8 @@ describe("Resolve Middleware Class", () => {
 			await ctx.runAfterCallbacks();
 
 			assert.ok(
-				ctx.responseBody.includes(
-					'<script type="importmap" src="/custom/imports.json"></script>',
-				),
+				ctx.responseBody.includes('<script type="importmap">'),
+				"Should contain inline import map",
 			);
 
 			await cleanup();
@@ -536,9 +534,8 @@ describe("Resolve Middleware Class", () => {
 			await htmlCtx.runAfterCallbacks();
 
 			assert.ok(
-				htmlCtx.responseBody.includes(
-					'<script type="importmap" src="/importmap.json"></script>',
-				),
+				htmlCtx.responseBody.includes('<script type="importmap">'),
+				"Should contain inline import map",
 			);
 
 			await cleanup();

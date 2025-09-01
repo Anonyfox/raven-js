@@ -146,15 +146,15 @@ export class Resolve extends Middleware {
 
 		// Serve JavaScript modules
 		if (pathname.endsWith(".js") || pathname.endsWith(".mjs")) {
-			// Remove leading slash to get relative path
-			const relativePath = pathname.slice(1);
+			// Remove leading slash and decode URL to handle scoped packages (@scope/package)
+			const decodedPath = decodeURIComponent(pathname.slice(1));
 
 			// Determine base directory: node_modules from project root, everything else from source folder
-			const baseDirectory = relativePath.startsWith("node_modules/")
+			const baseDirectory = decodedPath.startsWith("node_modules/")
 				? projectRoot
 				: sourceFolder;
 
-			const served = await serveModule(ctx, relativePath, baseDirectory);
+			const served = await serveModule(ctx, decodedPath, baseDirectory);
 			if (served) {
 				ctx.responseEnded = true; // Stop further middleware processing
 				return; // Module was served successfully
@@ -168,7 +168,9 @@ export class Resolve extends Middleware {
 			new Middleware(async (ctx) => {
 				// Only inject if response was successful and is HTML
 				if (ctx.responseStatusCode >= 200 && ctx.responseStatusCode < 300) {
-					injectImportMap(ctx, importMapPath);
+					// Generate import map data for inline injection (better browser compatibility)
+					const importMapData = await generateImportMap(projectRoot);
+					injectImportMap(ctx, importMapPath, importMapData);
 				}
 			}, "resolve-after"),
 		);

@@ -398,6 +398,12 @@ export class Context {
 	responseHeaders = new Headers();
 
 	/**
+	 * Private response body storage with automatic cache invalidation.
+	 * @type {string|Buffer|null}
+	 */
+	#responseBody = null;
+
+	/**
 	 * The body content to return in the HTTP response.
 	 *
 	 * Can be a string, Buffer, or null. The content type should be set
@@ -405,8 +411,7 @@ export class Context {
 	 *
 	 * **Note**: For large responses, consider using streams instead of
 	 * setting the entire body in memory.
-	 *
-	 * @type {string|Buffer|null}
+	 * **Cache Management**: Automatically invalidates byte length cache on assignment.
 	 *
 	 * @example
 	 * ```javascript
@@ -423,7 +428,22 @@ export class Context {
 	 * ctx.responseBody = null;
 	 * ```
 	 */
-	responseBody = null;
+	get responseBody() {
+		return this.#responseBody;
+	}
+
+	/**
+	 * Sets the response body and automatically invalidates the byte length cache.
+	 *
+	 * This ensures Content-Length headers remain accurate when the response body
+	 * is modified directly, preventing response truncation issues.
+	 *
+	 * @param {string|Buffer|null} value - The new response body
+	 */
+	set responseBody(value) {
+		this.#responseBody = value;
+		this.#responseBodyByteLength = null; // Invalidate cache
+	}
 
 	/**
 	 * The HTTP status code to return in the response.
@@ -1053,7 +1073,9 @@ export class Context {
 	 */
 	#getResponseBodyByteLength() {
 		if (this.#responseBodyByteLength === null) {
-			this.#responseBodyByteLength = Buffer.byteLength(this.responseBody || "");
+			this.#responseBodyByteLength = Buffer.byteLength(
+				this.#responseBody || "",
+			);
 		}
 		return this.#responseBodyByteLength.toString();
 	}
@@ -1069,7 +1091,7 @@ export class Context {
 	 * @param {string|Buffer} body - The new response body
 	 */
 	#setResponseBodyWithCache(body) {
-		this.responseBody = body || "";
+		this.#responseBody = body || "";
 		this.#responseBodyByteLength = null; // Invalidate cache
 	}
 

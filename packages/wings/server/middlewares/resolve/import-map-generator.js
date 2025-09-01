@@ -58,7 +58,9 @@ export async function generateImportMap(cwd) {
 						const cleanEntryPoint = entryPoint.startsWith("./")
 							? entryPoint.slice(2)
 							: entryPoint;
-						const urlPath = `/node_modules/${packageName}/${cleanEntryPoint}`;
+						// URL-encode package name to handle scoped packages (@scope/package)
+						const encodedPackageName = encodeURIComponent(packageName);
+						const urlPath = `/node_modules/${encodedPackageName}/${cleanEntryPoint}`;
 
 						// Generate import map entry
 						if (specifier === ".") {

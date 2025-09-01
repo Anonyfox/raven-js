@@ -21,13 +21,18 @@ import { HEADER_NAMES, MIME_TYPES } from "../../../core/string-pool.js";
  *
  * @param {import('../../../core/context.js').Context} ctx - Wings context instance
  * @param {string} importMapPath - URL path to import map endpoint
+ * @param {object} [importMapData] - Optional import map data to inline
  * @returns {boolean} True if injection was performed, false otherwise
  *
  * @example
  * // Inject import map into HTML response
  * injectImportMap(ctx, "/modules.json"); // true if injected
  */
-export function injectImportMap(ctx, importMapPath = "/importmap.json") {
+export function injectImportMap(
+	ctx,
+	importMapPath = "/importmap.json",
+	importMapData = null,
+) {
 	// Only process HTML responses
 	if (!isHtmlResponse(ctx)) {
 		return false;
@@ -38,8 +43,10 @@ export function injectImportMap(ctx, importMapPath = "/importmap.json") {
 		return false;
 	}
 
-	// Create import map script tag
-	const importMapScript = `<script type="importmap" src="${importMapPath}"></script>`;
+	// Create import map script tag - use inline for better browser compatibility
+	const importMapScript = importMapData
+		? `<script type="importmap">\n${JSON.stringify(importMapData, null, 2)}\n</script>`
+		: `<script type="importmap" src="${importMapPath}"></script>`;
 
 	// Find and inject before closing head tag (case-insensitive)
 	const headCloseRegex = /<\/head>/i;

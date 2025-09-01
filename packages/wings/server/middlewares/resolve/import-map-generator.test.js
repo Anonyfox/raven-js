@@ -176,10 +176,10 @@ describe("Import Map Generator", () => {
 			const result = await generateImportMap(testDir);
 
 			const expected = createExpectedImportMap({
-				"@test/beak": "/node_modules/@test/beak/index.js",
-				"@test/beak/html": "/node_modules/@test/beak/html/index.js",
-				"@test/beak/css": "/node_modules/@test/beak/css/index.js",
-				"@test/beak/js": "/node_modules/@test/beak/js/index.js",
+				"@test/beak": "/node_modules/%40test%2Fbeak/index.js",
+				"@test/beak/html": "/node_modules/%40test%2Fbeak/html/index.js",
+				"@test/beak/css": "/node_modules/%40test%2Fbeak/css/index.js",
+				"@test/beak/js": "/node_modules/%40test%2Fbeak/js/index.js",
 			});
 
 			assert.deepStrictEqual(result, expected);
