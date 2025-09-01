@@ -75,7 +75,7 @@ export {
 	detectParticipalPhraseFormula,
 	detectPerfectGrammar,
 	detectRuleOfThreeObsession,
-} from "./languages/index.js";
+} from "./language/index.js";
 // Export learning algorithms
 export { LinearRegression, Model, NeuralNetwork } from "./learning/index.js";
 // Export structural primitives

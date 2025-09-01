@@ -30,9 +30,9 @@
       "import": "./temporal/index.js",
       "types": "./types.temporal.d.ts"
     },
-    "./languages": {
-      "import": "./languages/index.js",
-      "types": "./types.languages.d.ts"
+    "./language": {
+      "import": "./language/index.js",
+      "types": "./types.language.d.ts"
     }
   },
   "scripts": {
