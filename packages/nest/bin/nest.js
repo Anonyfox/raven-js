@@ -423,8 +423,8 @@ async function buildPackageDocs(
 
 	// Generate Glean documentation
 	console.log(`  📚 Generating Glean documentation for ${packageName}...`);
-	const packageDocsPath = join(docsPath, packageName);
-	const gleanSuccess = await generateGleanDocs(packagePath, packageDocsPath);
+	const gleanSuccess = await generateGleanDocs(packagePath, docsPath);
+	const packageDocsPath = join(docsPath, packageName); // Fledge creates this based on basePath
 	if (gleanSuccess) {
 		console.log(`  ✅ Glean documentation generated: ${packageName}/`);
 	} else {

@@ -29,7 +29,7 @@ export async function generateGleanDocs(packagePath, outputPath) {
 		const packageName = basename(packagePath);
 
 		// Build the glean ssg command with domain and base path flags
-		const command = `npx glean ssg "${packagePath}" "${outputPath}" --domain docs.ravenjs.dev --base /${packageName}/`;
+		const command = `npx glean ssg "${packagePath}" "${outputPath}" --domain docs.ravenjs.dev --base /${packageName}`;
 
 		// Execute the command
 		execSync(command, {
