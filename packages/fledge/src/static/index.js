@@ -13,6 +13,7 @@
  * optimized for edge deployment and CDN distribution.
  */
 
+import { buildBundles, validateBundleConfig } from "./bundler.js";
 import { Crawler } from "./crawler.js";
 
 /**
@@ -51,6 +52,28 @@ export async function generateStaticSite(config, options) {
 	const crawler = new Crawler(config);
 
 	try {
+		// Build bundles first if configured
+		const bundlesConfig = config.getBundles();
+		if (Object.keys(bundlesConfig).length > 0) {
+			// Validate bundle configuration
+			validateBundleConfig(bundlesConfig);
+
+			// Build all bundles in-memory
+			const serverConfig = config.getServer();
+			const baseUrl = new URL(
+				typeof serverConfig === "string"
+					? serverConfig
+					: "http://localhost:3000",
+			);
+
+			const bundleResources = await buildBundles(bundlesConfig, baseUrl);
+
+			// Pre-populate crawler with bundle resources
+			for (const [mountPath, resource] of bundleResources) {
+				crawler.addVisitedResource(mountPath, resource);
+			}
+		}
+
 		// Start crawling
 		await crawler.start();
 		await crawler.crawl();

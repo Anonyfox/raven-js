@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, test } from "node:test";
 import { Config } from "./config/config.js";
 import { Discover } from "./config/discover.js";
 import { Crawler } from "./crawler.js";
+import { BundleResource } from "./resource/bundle-resource.js";
 
 // Global cleanup to ensure no hanging Crawler instances
 let createdCrawlers = [];
@@ -466,5 +467,71 @@ describe("Crawler", { concurrency: 1 }, () => {
 		const stats = crawler.getStatistics();
 		assert.strictEqual(stats.endTime > 0, true);
 		assert.strictEqual(stats.totalTime >= 0, true); // Can be 0 for very fast operations
+	});
+
+	test("addVisitedResource adds bundle to resources and marks as crawled", () => {
+		const config = new Config({
+			server: "http://localhost:3000",
+			routes: ["/"],
+		});
+
+		const crawler = new Crawler(config);
+		createdCrawlers.push(crawler);
+
+		// Create mock bundle resource
+		const bundleBuffer = new TextEncoder().encode("console.log('bundle');");
+		const sourcemapBuffer = new TextEncoder().encode('{"version":3}');
+		const bundleUrl = new URL("http://localhost:3000/app.js");
+		const baseUrl = new URL("http://localhost:3000");
+
+		const bundleResource = new BundleResource(
+			bundleBuffer,
+			sourcemapBuffer,
+			bundleUrl,
+			baseUrl,
+		);
+
+		// Add bundle resource before starting
+		crawler.addVisitedResource("/app.js", bundleResource);
+
+		// Verify resource was added
+		const resources = crawler.getResources();
+		assert.strictEqual(resources.length, 1);
+		assert.strictEqual(resources[0], bundleResource);
+
+		// Verify URL is marked as discovered and crawled
+		const frontierStats = crawler.getFrontierStats();
+		assert.strictEqual(frontierStats.crawled, 1);
+		assert.strictEqual(frontierStats.discovered, 0);
+	});
+
+	test("addVisitedResource throws if called after start", async () => {
+		const config = new Config({
+			server: "http://localhost:3000",
+			routes: ["/"],
+		});
+
+		const crawler = new Crawler(config);
+		createdCrawlers.push(crawler);
+
+		await crawler.start();
+
+		const bundleBuffer = new TextEncoder().encode("console.log('bundle');");
+		const bundleUrl = new URL("http://localhost:3000/app.js");
+		const baseUrl = new URL("http://localhost:3000");
+
+		const bundleResource = new BundleResource(
+			bundleBuffer,
+			null,
+			bundleUrl,
+			baseUrl,
+		);
+
+		assert.throws(
+			() => crawler.addVisitedResource("/app.js", bundleResource),
+			/Cannot add visited resources after crawler is started/,
+		);
+
+		await crawler.stop();
 	});
 });

@@ -357,6 +357,28 @@ export class Crawler {
 	}
 
 	/**
+	 * Add pre-built resource as visited (for bundles and other pre-generated content)
+	 * @param {string} urlPath - URL path to mark as visited
+	 * @param {Resource} resource - Pre-built resource instance
+	 * @throws {Error} If crawler is already started or resource is invalid
+	 */
+	addVisitedResource(urlPath, resource) {
+		if (this.#isStarted) {
+			throw new Error("Cannot add visited resources after crawler is started");
+		}
+
+		// Create URL from path for frontier tracking
+		const url = new URL(urlPath, "http://localhost");
+
+		// Add to frontier as discovered then mark as crawled
+		this.#frontier.discover(url);
+		this.#frontier.markCrawled(url);
+
+		// Add to resources collection
+		this.#resources.push(resource);
+	}
+
+	/**
 	 * Convert crawler state to JSON representation
 	 * @returns {object} JSON representation
 	 */

@@ -77,7 +77,7 @@
     "type": "github",
     "url": "https://github.com/sponsors/Anonyfox"
   },
-  "devDependencies": {
+  "dependencies": {
     "esbuild": "^0.25.9"
   }
 }
