@@ -83,6 +83,7 @@
   },
   "dependencies": {
     "@raven-js/beak": "*",
+    "@raven-js/fledge": "*",
     "@raven-js/wings": "*"
   }
 }

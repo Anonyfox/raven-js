@@ -33,6 +33,8 @@ import { Crawler } from "./crawler.js";
  * @property {Array<{url: string, path: string}>} [savedPaths] - Saved file details (if verbose)
  */
 
+export { Config } from "./config/config.js";
+
 /**
  * Generate static site from configuration
  * @param {import("./config/config.js").Config} config - Validated configuration

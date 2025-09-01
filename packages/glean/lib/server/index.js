@@ -75,15 +75,8 @@ export function createDocumentationServer(packagePath, options = {}) {
 
 	// Register package-level image assets (from discovery phase)
 	if (packageMetadata.imageAssets) {
-		console.log(
-			`[DEBUG] Registering ${packageMetadata.imageAssets.length} package assets`,
-		);
 		for (const asset of packageMetadata.imageAssets) {
-			console.log(
-				`[DEBUG] Registering asset: ${/** @type {any} */ (asset).originalPath} -> ${/** @type {any} */ (asset).resolvedPath}`,
-			);
-			const url = assetRegistry.register(/** @type {any} */ (asset));
-			console.log(`[DEBUG] Asset registered as: ${url}`);
+			assetRegistry.register(/** @type {any} */ (asset));
 		}
 	}
 
@@ -112,7 +105,6 @@ export function createDocumentationServer(packagePath, options = {}) {
 	const currentFilePath = fileURLToPath(currentFileUrl);
 	const currentDir = path.dirname(currentFilePath);
 	const staticDir = path.resolve(currentDir, "../static");
-	console.log("staticDir", staticDir);
 
 	router.use(new Assets({ assetsDir: staticDir }));
 

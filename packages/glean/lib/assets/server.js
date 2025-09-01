@@ -61,14 +61,6 @@ export async function serveAsset(context, registry) {
 		return;
 	}
 
-	// Debug: Show what's being looked up vs what's in registry
-	console.log(`[DEBUG] Looking up asset: ${pathname}`);
-	console.log(`[DEBUG] Registry has ${registry.size} assets`);
-	const allAssets = registry.getAllAssets();
-	console.log(
-		`[DEBUG] Registered URLs: ${allAssets.map((a) => a.assetUrl).join(", ")}`,
-	);
-
 	// Get asset from registry
 	const asset = registry.getAsset(pathname);
 	if (!asset) {
