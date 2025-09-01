@@ -7,13 +7,19 @@
  */
 
 /**
- * @file Language analysis module providing advanced text analysis capabilities
- * for detecting AI-generated content and analyzing linguistic patterns.
+ * @file Language processing module providing comprehensive text analysis and processing.
  *
- * This module serves as the main entry point for all language analysis functions,
- * re-exporting everything from the analysis submodule for convenience.
+ * Complete text processing capabilities including AI content detection, Unicode
+ * normalization, text segmentation, entity extraction, and linguistic analysis.
+ * All functions use platform-native JavaScript APIs with intelligent fallbacks.
  */
 
 // Re-export all analysis functions from the analysis submodule
 export * from "./analysis/index.js";
+// Re-export all extraction functions from the extraction submodule
+export * from "./extraction/index.js";
 export { isAIText } from "./is-ai-text.js";
+// Re-export all normalization functions from the normalization submodule
+export * from "./normalization/index.js";
+// Re-export all segmentation functions from the segmentation submodule
+export * from "./segmentation/index.js";
