@@ -11,8 +11,9 @@
  *
  * Complete text processing capabilities including AI content detection, Unicode
  * normalization, text segmentation, morphological transformation, feature extraction,
- * entity extraction, keyword extraction (RAKE and TextRank), and linguistic analysis.
- * All functions use platform-native JavaScript APIs with intelligent fallbacks.
+ * entity extraction, keyword extraction (RAKE and TextRank), string similarity metrics,
+ * and linguistic analysis. All functions use platform-native JavaScript APIs with
+ * intelligent fallbacks.
  */
 
 // Re-export all analysis functions from the analysis submodule
@@ -26,5 +27,7 @@ export { isAIText } from "./is-ai-text.js";
 export * from "./normalization/index.js";
 // Re-export all segmentation functions from the segmentation submodule
 export * from "./segmentation/index.js";
+// Re-export all similarity functions from the similarity submodule
+export * from "./similarity/index.js";
 // Re-export all transformation functions from the transformation submodule
 export * from "./transformation/index.js";
