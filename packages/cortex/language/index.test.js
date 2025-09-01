@@ -63,6 +63,18 @@ describe("language module", () => {
 		);
 	});
 
+	it("re-exports transformation functions", () => {
+		// Verify stemming functions are available
+		assert.ok(
+			typeof language.stemPorter2 === "function",
+			"Should export stemPorter2",
+		);
+		assert.ok(
+			typeof language.stemCistem === "function",
+			"Should export stemCistem",
+		);
+	});
+
 	it("functions are callable", () => {
 		// Test a few key functions to ensure they work through the re-export
 		const testText =
@@ -117,6 +129,38 @@ describe("language module", () => {
 		assert.ok(
 			typeof aiResult.classification === "string",
 			"Should return classification",
+		);
+	});
+
+	it("transformation functions are callable", () => {
+		// Test English stemming
+		const englishResult = language.stemPorter2("running");
+		assert.strictEqual(
+			englishResult,
+			"run",
+			"Should stem English words correctly",
+		);
+
+		const complexEnglish = language.stemPorter2("nationalization");
+		assert.strictEqual(
+			complexEnglish,
+			"nation",
+			"Should handle complex English suffixes",
+		);
+
+		// Test German stemming
+		const germanResult = language.stemCistem("laufen");
+		assert.strictEqual(
+			germanResult,
+			"lauf",
+			"Should stem German words correctly",
+		);
+
+		const germanUmlaut = language.stemCistem("Möglichkeit");
+		assert.strictEqual(
+			germanUmlaut,
+			"moeglich",
+			"Should handle German umlauts and suffixes",
 		);
 	});
 });

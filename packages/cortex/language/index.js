@@ -10,8 +10,9 @@
  * @file Language processing module providing comprehensive text analysis and processing.
  *
  * Complete text processing capabilities including AI content detection, Unicode
- * normalization, text segmentation, entity extraction, and linguistic analysis.
- * All functions use platform-native JavaScript APIs with intelligent fallbacks.
+ * normalization, text segmentation, morphological transformation, entity extraction,
+ * and linguistic analysis. All functions use platform-native JavaScript APIs with
+ * intelligent fallbacks.
  */
 
 // Re-export all analysis functions from the analysis submodule
@@ -23,3 +24,5 @@ export { isAIText } from "./is-ai-text.js";
 export * from "./normalization/index.js";
 // Re-export all segmentation functions from the segmentation submodule
 export * from "./segmentation/index.js";
+// Re-export all transformation functions from the transformation submodule
+export * from "./transformation/index.js";
