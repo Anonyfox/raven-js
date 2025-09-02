@@ -33,6 +33,10 @@
     "./language": {
       "import": "./language/index.js",
       "types": "./types.language.d.ts"
+    },
+    "./primitives": {
+      "import": "./primitives/index.js",
+      "types": "./types.primitives.d.ts"
     }
   },
   "scripts": {

@@ -14,49 +14,14 @@
  * processing functions for consistent feature generation.
  */
 
+import { fnv1a32, fnv1a64 } from "../../primitives/index.js";
 import {
 	extractCharNgrams,
 	extractMixedNgrams,
 	extractWordNgrams,
 } from "./ngrams.js";
 
-/**
- * FNV-1a hash function implementation (32-bit variant).
- * Fast, simple hash with good distribution properties.
- *
- * @param {string} str - String to hash
- * @returns {number} 32-bit hash value
- */
-function fnv1a32(str) {
-	let hash = 0x811c9dc5; // FNV offset basis (32-bit)
-
-	for (let i = 0; i < str.length; i++) {
-		hash ^= str.charCodeAt(i);
-		// FNV prime (32-bit): 0x01000193
-		hash = Math.imul(hash, 0x01000193);
-	}
-
-	return hash >>> 0; // Convert to unsigned 32-bit
-}
-
-/**
- * FNV-1a hash function implementation (64-bit variant using BigInt).
- * More collision-resistant than 32-bit version.
- *
- * @param {string} str - String to hash
- * @returns {bigint} 64-bit hash value
- */
-function fnv1a64(str) {
-	let hash = 0xcbf29ce484222325n; // FNV offset basis (64-bit)
-	const prime = 0x100000001b3n; // FNV prime (64-bit)
-
-	for (let i = 0; i < str.length; i++) {
-		hash ^= BigInt(str.charCodeAt(i));
-		hash *= prime;
-	}
-
-	return hash;
-}
+// Hash functions now imported from primitives module
 
 /**
  * Feature hasher for converting arbitrary features to fixed-size vectors.

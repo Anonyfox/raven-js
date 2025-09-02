@@ -15,28 +15,14 @@
  * clustering of large document collections.
  */
 
+import { fnv32 } from "../../primitives/index.js";
 import {
 	extractCharNgrams,
 	extractWordNgrams,
 } from "../featurization/ngrams.js";
 import { foldCase, normalizeUnicode } from "../normalization/index.js";
 
-/**
- * Simple 32-bit hash function using FNV-1a algorithm.
- * Provides good distribution for feature hashing.
- *
- * @param {string} str - String to hash
- * @param {number} [seed=2166136261] - FNV offset basis seed
- * @returns {number} 32-bit hash value
- */
-function fnvHash32(str, seed = 2166136261) {
-	let hash = seed;
-	for (let i = 0; i < str.length; i++) {
-		hash ^= str.charCodeAt(i);
-		hash = Math.imul(hash, 16777619); // FNV prime: 2^24 + 2^8 + 0x93
-	}
-	return hash >>> 0; // Convert to unsigned 32-bit
-}
+// Hash function now imported from primitives module
 
 /**
  * SimHash fingerprint generator for document deduplication.
@@ -154,8 +140,8 @@ export class SimHasher {
 				continue; // Skip invalid entries
 			}
 
-			// Hash the feature
-			const hash = fnvHash32(feature);
+			// Hash the feature using primitive FNV-1 hash
+			const hash = fnv32(feature);
 
 			// Update bit counters based on hash bits
 			for (let bit = 0; bit < this.hashBits; bit++) {
