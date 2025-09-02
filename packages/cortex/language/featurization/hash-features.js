@@ -7,263 +7,156 @@
  */
 
 /**
- * @file Feature hashing for dimensionality reduction with collision mitigation.
+ * @file Feature hashing for fast text similarity and deduplication.
  *
- * Implements the "hashing trick" using FNV-1a hash functions to map arbitrary
- * features to fixed-size vectors. Reuses existing n-gram extraction and text
- * processing functions for consistent feature generation.
+ * Converts text to compact hash-based fingerprints using the "hashing trick"
+ * with n-gram features and collision mitigation. Provides deterministic string
+ * output suitable for similarity detection and deduplication tasks.
  */
 
-import { fnv1a32, fnv1a64 } from "../../primitives/index.js";
+import { fnv1a32 } from "../../primitives/index.js";
 import {
 	extractCharNgrams,
 	extractMixedNgrams,
 	extractWordNgrams,
 } from "./ngrams.js";
 
-// Hash functions now imported from primitives module
+/**
+ * Extract n-gram features from text using the specified strategy.
+ *
+ * @param {string} text - Input text
+ * @param {string} featureType - Feature extraction strategy ('word', 'char', 'mixed')
+ * @returns {string[]} Array of extracted features
+ * @private
+ */
+function extractFeatures(text, featureType) {
+	switch (featureType) {
+		case "word":
+			return extractWordNgrams(text, 1, 1);
+		case "char":
+			return extractCharNgrams(text, 3, 1);
+		case "mixed": {
+			const mixed = extractMixedNgrams(text, {
+				charN: 3,
+				wordN: 1,
+				stride: 1,
+			});
+			// @ts-expect-error - mixed has char and word properties from extractMixedNgrams
+			return [...mixed.char, ...mixed.word];
+		}
+		default:
+			throw new Error(`Unknown feature type: ${featureType}`);
+	}
+}
 
 /**
- * Feature hasher for converting arbitrary features to fixed-size vectors.
- * Uses the hashing trick with collision mitigation via sign hashing.
+ * Hash a feature string to bucket index with optional sign for collision mitigation.
+ *
+ * @param {string} feature - Feature string to hash
+ * @param {number} numBuckets - Number of hash buckets
+ * @param {boolean} useSignHash - Whether to use sign hashing
+ * @returns {{index: number, sign: number}} Hash result
+ * @private
  */
-export class FeatureHasher {
-	/**
-	 * Creates a new feature hasher.
-	 *
-	 * @param {Object} options - Configuration options
-	 * @param {number} [options.numFeatures=1000] - Number of hash buckets (vector dimension)
-	 * @param {boolean} [options.useBigInt=false] - Use 64-bit hashing with BigInt
-	 * @param {boolean} [options.useSignHash=true] - Use sign hashing to reduce collisions
-	 * @param {string} [options.featureType='mixed'] - Type of features to extract ('word', 'char', 'mixed')
-	 * @param {Object} [options.ngramOptions] - Options passed to n-gram extraction
-	 */
-	constructor(options = {}) {
-		const {
-			numFeatures = 1000,
-			useBigInt = false,
-			useSignHash = true,
-			featureType = "mixed",
-			ngramOptions = {},
-		} = options;
+function hashFeature(feature, numBuckets, useSignHash) {
+	const hash = fnv1a32(feature);
+	const index = Math.abs(hash) % numBuckets;
 
-		this.numFeatures = numFeatures;
-		this.useBigInt = useBigInt;
-		this.useSignHash = useSignHash;
-		this.featureType = featureType;
-		this.ngramOptions = ngramOptions;
-
-		// Choose hash function based on BigInt preference
-		this.hashFunction = useBigInt ? fnv1a64 : fnv1a32;
+	let sign = 1;
+	if (useSignHash) {
+		const signHash = fnv1a32(`sign_${feature}`);
+		sign = signHash % 2 === 0 ? 1 : -1;
 	}
 
-	/**
-	 * Extracts features from text using configured n-gram extraction.
-	 *
-	 * @param {string} text - Input text
-	 * @returns {string[]} Array of features
-	 */
-	extractFeatures(text) {
-		switch (this.featureType) {
-			case "word":
-				return extractWordNgrams(text, 1, 1, this.ngramOptions);
-			case "char":
-				return extractCharNgrams(text, 3, 1, this.ngramOptions);
-			case "mixed": {
-				const mixed = extractMixedNgrams(text, {
-					charN: 3,
-					wordN: 1,
-					stride: 1,
-					options: this.ngramOptions,
-				});
-				// @ts-expect-error - mixed has char and word properties from extractMixedNgrams
-				return [...mixed.char, ...mixed.word];
-			}
-			default:
-				throw new Error(`Unknown feature type: ${this.featureType}`);
-		}
+	return { index, sign };
+}
+
+/**
+ * Convert feature hash vector to compact hex string representation.
+ *
+ * @param {Map<number, number>} vector - Sparse feature vector
+ * @param {number} numBuckets - Total number of buckets for padding
+ * @returns {string} Hex string representation
+ * @private
+ */
+function vectorToHex(vector, numBuckets) {
+	// Create dense array from sparse vector
+	const dense = new Array(numBuckets).fill(0);
+	for (const [index, value] of vector) {
+		dense[index] = value;
 	}
 
-	/**
-	 * Hashes a single feature to get bucket index and optional sign.
-	 *
-	 * @param {string} feature - Feature string to hash
-	 * @returns {{index: number, sign: number}} Hash result with index and sign
-	 */
-	hashFeature(feature) {
-		const hash = this.hashFunction(feature);
-		const index = this.useBigInt
-			? Number(/** @type {bigint} */ (hash) % BigInt(this.numFeatures))
-			: Math.abs(/** @type {number} */ (hash)) % this.numFeatures;
-
-		let sign = 1;
-		if (this.useSignHash) {
-			// Use a different hash for sign to reduce correlation
-			const signHash = this.hashFunction(`sign_${feature}`);
-			sign = this.useBigInt
-				? Number(/** @type {bigint} */ (signHash) % 2n) === 0
-					? 1
-					: -1
-				: /** @type {number} */ (signHash) % 2 === 0
-					? 1
-					: -1;
-		}
-
-		return { index, sign };
-	}
-
-	/**
-	 * Transforms text into a sparse feature vector representation.
-	 *
-	 * @param {string} text - Input text
-	 * @param {boolean} [normalize=false] - Normalize vector by feature count
-	 * @returns {Map<number, number>} Sparse vector as Map(index -> value)
-	 */
-	transform(text, normalize = false) {
-		const features = this.extractFeatures(text);
-		const vector = new Map();
-
-		for (const feature of features) {
-			const { index, sign } = this.hashFeature(feature);
-			vector.set(index, (vector.get(index) || 0) + sign);
-		}
-
-		// Optional normalization
-		if (normalize && vector.size > 0) {
-			const norm = Math.sqrt(
-				Array.from(vector.values()).reduce((sum, val) => sum + val * val, 0),
-			);
-			if (norm > 0) {
-				for (const [index, value] of vector) {
-					vector.set(index, value / norm);
-				}
+	// Convert to compact binary representation, then hex
+	const bytes = [];
+	for (let i = 0; i < dense.length; i += 8) {
+		let byte = 0;
+		for (let j = 0; j < 8 && i + j < dense.length; j++) {
+			if (dense[i + j] > 0) {
+				byte |= 1 << j;
 			}
 		}
-
-		return vector;
+		bytes.push(byte);
 	}
 
-	/**
-	 * Transforms text into a dense feature vector (array).
-	 *
-	 * @param {string} text - Input text
-	 * @param {boolean} [normalize=false] - Normalize vector by feature count
-	 * @returns {number[]} Dense vector of length numFeatures
-	 */
-	transformDense(text, normalize = false) {
-		const sparseVector = this.transform(text, normalize);
-		const denseVector = new Array(this.numFeatures).fill(0);
+	return bytes.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 
-		for (const [index, value] of sparseVector) {
-			denseVector[index] = value;
-		}
+/**
+ * Generate hash-based feature fingerprint from text.
+ *
+ * Converts text to a compact, deterministic hex string representation
+ * using n-gram feature extraction and hash-based dimensionality reduction.
+ * Perfect for text similarity detection, deduplication, and clustering.
+ *
+ * @param {string} text - Input text to fingerprint
+ * @param {Object} [options] - Configuration options
+ * @param {number} [options.numFeatures=512] - Number of hash buckets (affects precision)
+ * @param {string} [options.featureType='mixed'] - Feature extraction ('word', 'char', 'mixed')
+ * @param {boolean} [options.useSignHash=true] - Use sign hashing for collision mitigation
+ * @returns {string} Hex string fingerprint
+ *
+ * @example
+ * // Basic usage with sane defaults
+ * const fingerprint = hashFeatures('Hello world, this is a test.');
+ * console.log(fingerprint); // '4f2a1b8c...' (128 character hex string)
+ *
+ * @example
+ * // Similar texts produce similar fingerprints
+ * const text1 = 'The quick brown fox jumps over the lazy dog';
+ * const text2 = 'A quick brown fox jumps over the lazy dog';
+ * const hash1 = hashFeatures(text1);
+ * const hash2 = hashFeatures(text2);
+ * // Can compare hash1 vs hash2 for similarity
+ *
+ * @example
+ * // Custom configuration
+ * const fingerprint = hashFeatures('Technical document text', {
+ *   numFeatures: 1024,    // Higher precision
+ *   featureType: 'word',  // Word-only features
+ *   useSignHash: false    // Disable collision mitigation
+ * });
+ */
+export function hashFeatures(text, options = {}) {
+	const {
+		numFeatures = 512,
+		featureType = "mixed",
+		useSignHash = true,
+	} = options;
 
-		return denseVector;
+	if (typeof text !== "string") {
+		throw new TypeError("Input text must be a string");
 	}
 
-	/**
-	 * Transforms multiple texts into sparse vectors.
-	 *
-	 * @param {string[]} texts - Array of input texts
-	 * @param {boolean} [normalize=false] - Normalize vectors
-	 * @returns {Map<number, number>[]} Array of sparse vectors
-	 */
-	transformBatch(texts, normalize = false) {
-		return texts.map((text) => this.transform(text, normalize));
+	// Extract features from text
+	const features = extractFeatures(text, featureType);
+
+	// Build sparse feature vector using hash trick
+	const vector = new Map();
+	for (const feature of features) {
+		const { index, sign } = hashFeature(feature, numFeatures, useSignHash);
+		vector.set(index, (vector.get(index) || 0) + sign);
 	}
 
-	/**
-	 * Transforms multiple texts into dense matrix.
-	 *
-	 * @param {string[]} texts - Array of input texts
-	 * @param {boolean} [normalize=false] - Normalize vectors
-	 * @returns {number[][]} Matrix where each row is a dense vector
-	 */
-	transformBatchDense(texts, normalize = false) {
-		return texts.map((text) => this.transformDense(text, normalize));
-	}
-
-	/**
-	 * Computes cosine similarity between two sparse vectors.
-	 *
-	 * @param {Map<number, number>} vector1 - First sparse vector
-	 * @param {Map<number, number>} vector2 - Second sparse vector
-	 * @returns {number} Cosine similarity (-1 to 1)
-	 */
-	cosineSimilarity(vector1, vector2) {
-		let dotProduct = 0;
-		let norm1 = 0;
-		let norm2 = 0;
-
-		// Calculate dot product and norms
-		for (const [index, value1] of vector1) {
-			norm1 += value1 * value1;
-			const value2 = vector2.get(index) || 0;
-			dotProduct += value1 * value2;
-		}
-
-		for (const value2 of vector2.values()) {
-			norm2 += value2 * value2;
-		}
-
-		const denominator = Math.sqrt(norm1 * norm2);
-		return denominator === 0 ? 0 : dotProduct / denominator;
-	}
-
-	/**
-	 * Computes similarity between two texts using their hashed features.
-	 *
-	 * @param {string} text1 - First text
-	 * @param {string} text2 - Second text
-	 * @returns {number} Cosine similarity between texts
-	 */
-	similarity(text1, text2) {
-		const vector1 = this.transform(text1);
-		const vector2 = this.transform(text2);
-		return this.cosineSimilarity(vector1, vector2);
-	}
-
-	/**
-	 * Gets information about hash collisions for debugging.
-	 *
-	 * @param {string[]} features - Array of features to analyze
-	 * @returns {Object} Collision statistics
-	 */
-	analyzeCollisions(features) {
-		const hashToFeatures = new Map();
-		const indexToFeatures = new Map();
-
-		for (const feature of features) {
-			const hash = this.hashFunction(feature);
-			const { index } = this.hashFeature(feature);
-
-			// Track hash collisions
-			if (!hashToFeatures.has(hash)) {
-				hashToFeatures.set(hash, []);
-			}
-			hashToFeatures.get(hash).push(feature);
-
-			// Track index collisions
-			if (!indexToFeatures.has(index)) {
-				indexToFeatures.set(index, []);
-			}
-			indexToFeatures.get(index).push(feature);
-		}
-
-		const hashCollisions = Array.from(hashToFeatures.values()).filter(
-			(group) => group.length > 1,
-		).length;
-		const indexCollisions = Array.from(indexToFeatures.values()).filter(
-			(group) => group.length > 1,
-		).length;
-
-		return {
-			totalFeatures: features.length,
-			uniqueHashes: hashToFeatures.size,
-			uniqueIndices: indexToFeatures.size,
-			hashCollisions,
-			indexCollisions,
-			loadFactor: indexToFeatures.size / this.numFeatures,
-		};
-	}
+	// Convert to compact hex string
+	return vectorToHex(vector, numFeatures);
 }

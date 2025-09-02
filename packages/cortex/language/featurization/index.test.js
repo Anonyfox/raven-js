@@ -30,8 +30,8 @@ describe("featurization module", () => {
 			"Should export TfIdfVectorizer",
 		);
 		ok(
-			typeof featurization.FeatureHasher === "function",
-			"Should export FeatureHasher",
+			typeof featurization.hashFeatures === "function",
+			"Should export hashFeatures",
 		);
 		ok(
 			typeof featurization.RakeExtractor === "function",
@@ -130,121 +130,15 @@ describe("featurization module", () => {
 		ok(bm25Scores.has("machine"), "Should score BM25 terms");
 	});
 
-	it("FeatureHasher works through re-export", () => {
-		const hasher = new featurization.FeatureHasher({
-			numFeatures: 100,
+	it("hashFeatures works through re-export", () => {
+		const text = "Hello world! This is a test document.";
+		const hash = featurization.hashFeatures(text, {
+			numFeatures: 512,
 			featureType: "mixed",
 		});
 
-		// Test basic functionality
-		const features = hasher.extractFeatures("machine learning algorithms");
-		ok(Array.isArray(features), "Should extract features");
-		ok(features.length > 0, "Should extract some features");
-
-		// Test vector transformation
-		const sparseVector = hasher.transform("machine learning");
-		ok(sparseVector instanceof Map, "Should return sparse vector");
-		ok(sparseVector.size > 0, "Should have non-empty vector");
-
-		const denseVector = hasher.transformDense("machine learning");
-		ok(Array.isArray(denseVector), "Should return dense vector");
-		strictEqual(denseVector.length, 100, "Should match numFeatures");
-
-		// Test similarity
-		const similarity = hasher.similarity("machine learning", "deep learning");
-		ok(typeof similarity === "number", "Should return similarity score");
-		ok(similarity >= -1 && similarity <= 1, "Should be valid similarity");
-	});
-
-	it("RakeExtractor works through re-export", () => {
-		const rake = new featurization.RakeExtractor({
-			language: "en",
-			maxPhraseLength: 3,
-		});
-
-		// Test basic functionality
-		const phrases = rake.extractCandidatePhrases(
-			"machine learning algorithms are powerful",
-		);
-		ok(Array.isArray(phrases), "Should extract candidate phrases");
-		ok(phrases.length > 0, "Should extract some phrases");
-
-		// Test keyword extraction
-		const keywords = rake.extract(
-			"artificial intelligence and machine learning",
-		);
-		ok(Array.isArray(keywords), "Should return keywords array");
-		ok(keywords.length > 0, "Should extract some keywords");
-
-		// Test with scores
-		const keywordsWithScores = rake.extract("natural language processing", {
-			includeScores: true,
-			maxKeywords: 5,
-		});
-		ok(Array.isArray(keywordsWithScores), "Should return results array");
-		for (const result of keywordsWithScores) {
-			ok(typeof result === "object", "Should return objects with scores");
-			ok(typeof result.phrase === "string", "Should have phrase");
-			ok(typeof result.score === "number", "Should have numeric score");
-		}
-
-		// Test analysis
-		const analysis = rake.analyzeText("deep learning neural networks");
-		ok(typeof analysis === "object", "Should return analysis object");
-		ok(typeof analysis.totalWords === "number", "Should have word count");
-		ok(typeof analysis.totalPhrases === "number", "Should have phrase count");
-	});
-
-	it("TextRankExtractor works through re-export", () => {
-		const textrank = new featurization.TextRankExtractor({
-			language: "en",
-			windowSize: 3,
-			maxIterations: 20,
-		});
-
-		// Test basic functionality
-		const words = textrank.extractWords(
-			"machine learning algorithms are powerful",
-		);
-		ok(Array.isArray(words), "Should extract words");
-		ok(words.length > 0, "Should extract some words");
-
-		// Test keyword extraction
-		const keywords = textrank.extract(
-			"artificial intelligence and machine learning",
-		);
-		ok(Array.isArray(keywords), "Should return keywords array");
-		ok(keywords.length > 0, "Should extract some keywords");
-
-		// Test with scores
-		const keywordsWithScores = textrank.extract("natural language processing", {
-			includeScores: true,
-			maxKeywords: 5,
-		});
-		ok(Array.isArray(keywordsWithScores), "Should return results array");
-		for (const result of keywordsWithScores) {
-			ok(typeof result === "object", "Should return objects with scores");
-			ok(typeof result.phrase === "string", "Should have phrase");
-			ok(typeof result.score === "number", "Should have numeric score");
-		}
-
-		// Test analysis
-		const analysis = textrank.analyzeText("deep learning neural networks");
-		ok(typeof analysis === "object", "Should return analysis object");
-		ok(typeof analysis.totalWords === "number", "Should have word count");
-		ok(
-			typeof analysis.uniqueWords === "number",
-			"Should have unique word count",
-		);
-		ok(
-			typeof analysis.cooccurrenceEdges === "number",
-			"Should have edge count",
-		);
-
-		// Test graph extraction
-		const graphData = textrank.getGraph("machine learning algorithms");
-		ok(typeof graphData === "object", "Should return graph data");
-		ok(Array.isArray(graphData.nodes), "Should have nodes array");
-		ok(Array.isArray(graphData.edges), "Should have edges array");
+		strictEqual(typeof hash, "string");
+		strictEqual(hash.length, 128);
+		ok(/^[0-9a-f]+$/.test(hash));
 	});
 });

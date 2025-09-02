@@ -14,7 +14,7 @@
  * efficiency and compatibility with existing language processing pipeline functions.
  */
 
-export { FeatureHasher } from "./hash-features.js";
+export { hashFeatures } from "./hash-features.js";
 export {
 	extractCharNgrams,
 	extractMixedNgrams,
