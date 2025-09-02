@@ -66,4 +66,12 @@ describe("normalizeUnicode", () => {
 		strictEqual(normalizeUnicode("ＡＢＣ"), "ABC");
 		strictEqual(normalizeUnicode("１２３"), "123");
 	});
+
+	it("combines compatibility mappings with diacritic stripping", () => {
+		// Test NFKD → strip → NFC flow with compatibility characters that have diacritics
+		strictEqual(normalizeUnicode("ﬁ", true), "fi"); // ligature fi, no diacritics
+		strictEqual(normalizeUnicode("①", true), "1"); // circled 1, no diacritics
+		// Note: Most compatibility characters don't have diacritical variants,
+		// but the algorithm must handle the full pipeline correctly
+	});
 });

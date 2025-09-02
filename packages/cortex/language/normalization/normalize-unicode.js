@@ -14,6 +14,9 @@
  * with optional mark/diacritic removal for search applications.
  */
 
+// Pre-compiled regex for V8 optimization - avoids regex compilation on every call
+const COMBINING_MARKS_REGEX = /\p{M}/gu;
+
 /**
  * Normalizes Unicode text using NFKC normalization with optional diacritic stripping.
  *
@@ -39,10 +42,12 @@
  * normalizeUnicode('ﬀ'); // 'ff' (ligature to separate characters)
  */
 export function normalizeUnicode(text, stripDiacritics = false) {
-	const normalized = text.normalize("NFKC");
 	if (stripDiacritics) {
-		// First decompose to separate base characters from combining marks, then strip marks
-		return normalized.normalize("NFD").replace(/\p{M}/gu, "");
+		// NFKD performs compatibility decomposition, then strip marks, then canonical composition
+		return text
+			.normalize("NFKD")
+			.replace(COMBINING_MARKS_REGEX, "")
+			.normalize("NFC");
 	}
-	return normalized;
+	return text.normalize("NFKC");
 }
