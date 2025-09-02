@@ -108,14 +108,6 @@ describe("language module", () => {
 
 		// Similarity functions
 		assert.ok(
-			typeof language.damerauLevenshteinDistance === "function",
-			"Should export damerauLevenshteinDistance",
-		);
-		assert.ok(
-			typeof language.damerauLevenshteinSimilarity === "function",
-			"Should export damerauLevenshteinSimilarity",
-		);
-		assert.ok(
 			typeof language.osaDistance === "function",
 			"Should export osaDistance",
 		);
@@ -537,21 +529,6 @@ describe("language module", () => {
 	});
 
 	it("similarity functions integration works", () => {
-		// Test Damerau-Levenshtein distance
-		const dlDistance = language.damerauLevenshteinDistance("kitten", "sitting");
-		assert.ok(typeof dlDistance === "number", "Should return numeric distance");
-		assert.ok(dlDistance >= 0, "Distance should be non-negative");
-
-		const dlSimilarity = language.damerauLevenshteinSimilarity(
-			"hello",
-			"hello",
-		);
-		assert.strictEqual(
-			dlSimilarity,
-			1,
-			"Identical strings should have similarity 1",
-		);
-
 		// Test OSA distance
 		const osaDistance = language.osaDistance("test", "best");
 		assert.ok(
@@ -624,15 +601,10 @@ describe("language module", () => {
 		assert.ok(groups.length <= 4, "Should not exceed input length");
 
 		// Test case sensitivity
-		const caseSensitiveDistance = language.damerauLevenshteinDistance(
-			"Hello",
-			"hello",
-		);
-		const caseInsensitiveDistance = language.damerauLevenshteinDistance(
-			"Hello",
-			"hello",
-			{ caseSensitive: false },
-		);
+		const caseSensitiveDistance = language.osaDistance("Hello", "hello");
+		const caseInsensitiveDistance = language.osaDistance("Hello", "hello", {
+			caseSensitive: false,
+		});
 		assert.ok(
 			caseSensitiveDistance >= caseInsensitiveDistance,
 			"Case sensitive should be >= case insensitive",
@@ -647,16 +619,10 @@ describe("language module", () => {
 		const techText1 = "machine learning algorithm";
 		const techText2 = "machine learning algorithms";
 
-		const editDistance = language.damerauLevenshteinDistance(
-			techText1,
-			techText2,
-		);
+		const editDistance = language.osaDistance(techText1, techText2);
 		assert.ok(editDistance >= 1, "Should have at least 1 edit distance");
 
-		const similarity = language.damerauLevenshteinSimilarity(
-			techText1,
-			techText2,
-		);
+		const similarity = language.osaSimilarity(techText1, techText2);
 		assert.ok(similarity > 0.9, "Should be very similar");
 
 		const jaroSimilarity = language.jaroSimilarity(techText1, techText2);

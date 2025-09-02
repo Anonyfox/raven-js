@@ -12,15 +12,7 @@ import * as similarity from "./index.js";
 
 describe("similarity module", () => {
 	it("exports all similarity functions", () => {
-		// Damerau-Levenshtein exports
-		ok(
-			typeof similarity.damerauLevenshteinDistance === "function",
-			"Should export damerauLevenshteinDistance",
-		);
-		ok(
-			typeof similarity.damerauLevenshteinSimilarity === "function",
-			"Should export damerauLevenshteinSimilarity",
-		);
+		// OSA exports
 		ok(
 			typeof similarity.osaDistance === "function",
 			"Should export osaDistance",
@@ -58,17 +50,6 @@ describe("similarity module", () => {
 	});
 
 	it("functions work through re-exports", () => {
-		// Test Damerau-Levenshtein
-		const dlDistance = similarity.damerauLevenshteinDistance("cat", "bat");
-		ok(typeof dlDistance === "number", "Should return numeric distance");
-		ok(dlDistance >= 0, "Distance should be non-negative");
-
-		const dlSimilarity = similarity.damerauLevenshteinSimilarity(
-			"hello",
-			"hello",
-		);
-		ok(dlSimilarity === 1, "Identical strings should have similarity 1");
-
 		// Test OSA
 		const osaDistance = similarity.osaDistance("test", "best");
 		ok(typeof osaDistance === "number", "Should return numeric OSA distance");
@@ -154,15 +135,10 @@ describe("similarity module", () => {
 		const testString2 = "logarithm";
 
 		// All similarity measures should return values between 0 and 1
-		const dlSim = similarity.damerauLevenshteinSimilarity(
-			testString1,
-			testString2,
-		);
 		const osaSim = similarity.osaSimilarity(testString1, testString2);
 		const jaroSim = similarity.jaroSimilarity(testString1, testString2);
 		const jwSim = similarity.jaroWinklerSimilarity(testString1, testString2);
 
-		ok(dlSim >= 0 && dlSim <= 1, "DL similarity in valid range");
 		ok(osaSim >= 0 && osaSim <= 1, "OSA similarity in valid range");
 		ok(jaroSim >= 0 && jaroSim <= 1, "Jaro similarity in valid range");
 		ok(jwSim >= 0 && jwSim <= 1, "Jaro-Winkler similarity in valid range");
@@ -186,22 +162,16 @@ describe("similarity module", () => {
 
 	it("handles edge cases consistently", () => {
 		// Empty strings
-		const dlEmpty = similarity.damerauLevenshteinSimilarity("", "");
 		const osaEmpty = similarity.osaSimilarity("", "");
 		const jaroEmpty = similarity.jaroSimilarity("", "");
 		const jwEmpty = similarity.jaroWinklerSimilarity("", "");
 
-		ok(dlEmpty === 1, "All algorithms should return 1 for empty strings");
 		ok(osaEmpty === 1, "OSA should return 1 for empty strings");
 		ok(jaroEmpty === 1, "Jaro should return 1 for empty strings");
 		ok(jwEmpty === 1, "Jaro-Winkler should return 1 for empty strings");
 
 		// Identical strings
 		const testStr = "identical";
-		ok(
-			similarity.damerauLevenshteinDistance(testStr, testStr) === 0,
-			"DL distance should be 0 for identical strings",
-		);
 		ok(
 			similarity.osaDistance(testStr, testStr) === 0,
 			"OSA distance should be 0 for identical strings",

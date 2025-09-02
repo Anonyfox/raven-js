@@ -17,14 +17,11 @@
  * deduplication and fast approximate search.
  */
 
-// Export Damerau-Levenshtein distance algorithms
+// Export Hamming distance algorithms (equal-length substitution-only distance)
 export {
-	damerauLevenshteinDistance,
-	damerauLevenshteinSimilarity,
-	osaDistance,
-	osaSimilarity,
-} from "./damerau-levenshtein.js";
-
+	hammingDistance,
+	hammingSimilarity,
+} from "./hamming.js";
 // Export Jaro-Winkler similarity algorithms
 export {
 	findBestMatch,
@@ -34,10 +31,22 @@ export {
 	jaroWinklerDistance,
 	jaroWinklerSimilarity,
 } from "./jaro-winkler.js";
+// Export LCS algorithms (longest common subsequence)
+export { lcsLength, lcsSimilarity, lcsString } from "./lcs.js";
+// Export Levenshtein distance algorithms (classic 3-operation edit distance)
+export {
+	levenshteinDistance,
+	levenshteinSimilarity,
+} from "./levenshtein.js";
 // Export LSH algorithms
 export { LSHBuckets } from "./lsh.js";
 // Export MinHash algorithms
 export { MinHasher } from "./minhash.js";
+// Export OSA distance algorithms (clean implementation)
+export {
+	osaDistance,
+	osaSimilarity,
+} from "./osa.js";
 
 // Export SimHash algorithms
 export { SimHasher } from "./simhash.js";
