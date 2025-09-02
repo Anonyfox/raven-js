@@ -77,10 +77,18 @@ describe("tokenizeWords", () => {
 		]);
 	});
 
-	it("handles empty and whitespace-only strings", () => {
+	it("handles invalid and edge case inputs gracefully", () => {
+		// Null/undefined inputs
+		deepStrictEqual(tokenizeWords(null), []);
+		deepStrictEqual(tokenizeWords(undefined), []);
+
+		// Empty and whitespace-only strings
 		deepStrictEqual(tokenizeWords(""), []);
 		deepStrictEqual(tokenizeWords("   "), []);
 		deepStrictEqual(tokenizeWords("\t\n\r"), []);
+
+		// Clean single-parameter API
+		deepStrictEqual(tokenizeWords("Hello world"), ["Hello", "world"]);
 	});
 
 	it("handles multiple spaces and newlines", () => {

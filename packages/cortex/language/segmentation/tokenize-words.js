@@ -7,22 +7,24 @@
  */
 
 /**
- * @file Word tokenization using Intl.Segmenter with regex fallback.
+ * @file Word tokenization using Unicode-aware regex patterns.
  *
  * Provides intelligent word boundary detection that handles contractions,
- * hyphens, and international text correctly. Uses modern Intl.Segmenter
- * when available, falling back to Unicode-aware regex patterns.
+ * hyphens, and international text correctly. Uses Unicode-aware regex
+ * for consistent cross-platform results.
  */
 
+// Pre-compiled regex for V8 optimization - avoids regex compilation on every call
+const WORD_PATTERN = /[\p{L}\p{N}]+(?:['.-][\p{L}\p{N}]+)*/gu;
+
 /**
- * Tokenizes text into words using intelligent boundary detection.
+ * Tokenizes text into words using Unicode-aware regex patterns.
  *
- * Uses Intl.Segmenter for accurate word boundary detection when available,
- * falling back to Unicode-aware regex for older environments. Handles
- * contractions, hyphenated words, and international scripts correctly.
+ * Provides consistent word boundary detection across platforms. Handles
+ * contractions, hyphenated words, decimals, and international scripts correctly.
+ * Preserves internal apostrophes, hyphens, and periods within words.
  *
  * @param {string} text - The text to tokenize into words
- * @param {string} _locale - BCP 47 locale code (currently unused, reserved for future use)
  * @returns {string[]} Array of word tokens
  *
  * @example
@@ -35,20 +37,20 @@
  *
  * @example
  * // International text support
- * tokenizeWords('こんにちは世界', 'ja'); // ['こんにちは', '世界']
+ * tokenizeWords('café naïve résumé'); // ['café', 'naïve', 'résumé']
  *
  * @example
- * // Hyphenated words
- * tokenizeWords('state-of-the-art solution'); // ['state-of-the-art', 'solution']
+ * // Hyphenated words and decimals
+ * tokenizeWords('state-of-the-art version 2.0'); // ['state-of-the-art', 'version', '2.0']
  */
-export function tokenizeWords(text, _locale = "en") {
-	// Use Unicode-aware regex for consistent results across platforms
-	// Match sequences of word characters, including:
+export function tokenizeWords(text) {
+	// Handle edge cases - return early for invalid inputs
+	if (!text) return [];
+
+	// Use pre-compiled Unicode-aware regex for consistent results across platforms
+	// Matches sequences of word characters including:
 	// - Letters from any script (\p{L})
 	// - Numbers (\p{N})
-	// - Apostrophes within words
-	// - Periods within words (for version numbers, decimals)
-	// - Hyphens within words
-	const wordPattern = /[\p{L}\p{N}]+(?:['.-][\p{L}\p{N}]+)*/gu;
-	return text.match(wordPattern) || [];
+	// - Internal apostrophes, periods, and hyphens
+	return text.match(WORD_PATTERN) || [];
 }
