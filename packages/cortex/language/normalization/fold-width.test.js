@@ -61,8 +61,13 @@ describe("foldWidth", () => {
 		strictEqual(foldWidth("こんにちは１２３"), "こんにちは123");
 	});
 
-	it("handles empty string", () => {
+	it("handles edge case inputs gracefully", () => {
+		// Empty string
 		strictEqual(foldWidth(""), "");
+
+		// Null/undefined inputs
+		strictEqual(foldWidth(null), "");
+		strictEqual(foldWidth(undefined), "");
 	});
 
 	it("converts complex expressions", () => {

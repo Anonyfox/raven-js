@@ -14,6 +14,9 @@
  * applications where mixed character widths create comparison failures.
  */
 
+// Pre-compiled regex for V8 optimization - avoids regex compilation on every call
+const FULLWIDTH_REGEX = /[\uff01-\uff5e]/g;
+
 /**
  * Converts fullwidth characters to their halfwidth equivalents.
  *
@@ -37,8 +40,11 @@
  * foldWidth('Ｅｍａｉｌ：ｔｅｓｔ＠ｅｘａｍｐｌｅ．ｃｏｍ'); // 'Email:test@example.com'
  */
 export function foldWidth(text) {
-	return text.replace(/[\uff01-\uff5e]/g, (match) => {
-		// Convert fullwidth characters (0xFF01-0xFF5E) to halfwidth (0x21-0x7E)
+	// Handle edge cases - return early for invalid inputs
+	if (!text) return text || "";
+
+	// Convert fullwidth characters (0xFF01-0xFF5E) to halfwidth (0x21-0x7E)
+	return text.replace(FULLWIDTH_REGEX, (match) => {
 		const code = match.charCodeAt(0);
 		return String.fromCharCode(code - 0xfee0);
 	});
