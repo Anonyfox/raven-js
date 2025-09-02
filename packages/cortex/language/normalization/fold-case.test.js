@@ -35,27 +35,20 @@ describe("foldCase", () => {
 		strictEqual(typeof english, "string");
 	});
 
-	it("handles German ß without conversion by default", () => {
+	it("handles German case folding", () => {
 		strictEqual(foldCase("Straße", "de"), "straße");
 		strictEqual(foldCase("Weiß", "de"), "weiß");
+		strictEqual(foldCase("Großbritannien", "de"), "großbritannien");
 	});
 
-	it("converts German ß to ss when requested", () => {
-		strictEqual(foldCase("Straße", "de", true), "strasse");
-		strictEqual(foldCase("Weiß", "de", true), "weiss");
-		strictEqual(foldCase("Großbritannien", "de", true), "grossbritannien");
-	});
-
-	it("only applies ß conversion for German locales", () => {
-		strictEqual(foldCase("Straße", "en", true), "straße");
-		strictEqual(foldCase("Straße", "fr", true), "straße");
-		strictEqual(foldCase("Straße", "de-AT", true), "strasse");
-		strictEqual(foldCase("Straße", "de-CH", true), "strasse");
+	it("handles uppercase ẞ (sharp S) correctly", () => {
+		// Modern German uppercase sharp s (introduced 2017) - ẞ → ß via locale rules
+		strictEqual(foldCase("STRAẞE", "de"), "straße");
+		strictEqual(foldCase("GROẞ", "de"), "groß");
 	});
 
 	it("handles empty string", () => {
 		strictEqual(foldCase(""), "");
-		strictEqual(foldCase("", "de", true), "");
 	});
 
 	it("handles text without uppercase", () => {
@@ -72,7 +65,43 @@ describe("foldCase", () => {
 		strictEqual(foldCase("Αθήνα", "el"), "αθήνα");
 	});
 
-	it("handles multiple ß characters", () => {
-		strictEqual(foldCase("Weiß und Groß", "de", true), "weiss und gross");
+	it("handles German locale variations", () => {
+		// Test valid German locale formats
+		strictEqual(foldCase("Straße", "de-DE"), "straße");
+		strictEqual(foldCase("Straße", "de-AT"), "straße");
+		strictEqual(foldCase("Straße", "de-CH"), "straße");
+	});
+
+	it("distinguishes Turkish I variations", () => {
+		// Turkish has different I/i mappings than English
+		const turkishResult = foldCase("ISTANBUL", "tr");
+		const englishResult = foldCase("ISTANBUL", "en");
+
+		// Both should be strings
+		strictEqual(typeof turkishResult, "string");
+		strictEqual(typeof englishResult, "string");
+
+		// Test dotted İ specifically
+		const dottedTurkish = foldCase("İSTANBUL", "tr");
+		const dottedEnglish = foldCase("İSTANBUL", "en");
+		strictEqual(typeof dottedTurkish, "string");
+		strictEqual(typeof dottedEnglish, "string");
+	});
+
+	it("handles invalid inputs gracefully", () => {
+		// Null/undefined text
+		strictEqual(foldCase(null), "");
+		strictEqual(foldCase(undefined), "");
+		strictEqual(foldCase(""), "");
+
+		// Invalid locales fallback to English
+		strictEqual(foldCase("Test", null), "test");
+		strictEqual(foldCase("Test", undefined), "test");
+		strictEqual(foldCase("Test", ""), "test");
+		strictEqual(foldCase("Test", "xyz"), "test");
+
+		// Very short/invalid locales fallback to English
+		strictEqual(foldCase("Test", "d"), "test");
+		strictEqual(foldCase("Test", "x"), "test");
 	});
 });

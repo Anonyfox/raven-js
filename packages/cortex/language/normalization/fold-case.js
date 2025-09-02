@@ -9,21 +9,20 @@
 /**
  * @file Locale-aware case folding for consistent text comparison.
  *
- * Provides proper case normalization that respects locale-specific rules,
- * avoiding common pitfalls like the Turkish I problem and German ß handling.
- * Uses platform-native locale support for accurate transformations.
+ * Provides pure case normalization that respects locale-specific rules,
+ * avoiding common pitfalls like the Turkish I problem. Uses platform-native
+ * locale support for accurate transformations.
  */
 
 /**
  * Performs locale-aware case folding for consistent text comparison.
  *
  * Uses toLocaleLowerCase() to handle locale-specific case conversion rules
- * that differ from simple ASCII case folding. Includes special handling
- * for German ß → ss conversion when specified.
+ * that differ from simple ASCII case folding. Provides pure case folding
+ * without character substitution for clean, predictable behavior.
  *
  * @param {string} text - The text to case-fold
  * @param {string} locale - BCP 47 locale code (e.g., 'en', 'de', 'tr')
- * @param {boolean} germanSharpS - Convert German ß to ss for compatibility
  * @returns {string} The case-folded text
  *
  * @example
@@ -36,16 +35,22 @@
  * foldCase('İstanbul', 'en'); // 'i̇stanbul' (different result)
  *
  * @example
- * // German ß handling
+ * // German case folding
  * foldCase('Straße', 'de'); // 'straße'
- * foldCase('Straße', 'de', true); // 'strasse'
+ * foldCase('STRAẞE', 'de'); // 'straße' (ẞ → ß via locale rules)
  */
-export function foldCase(text, locale = "en", germanSharpS = false) {
-	let folded = text.toLocaleLowerCase(locale);
+export function foldCase(text, locale = "en") {
+	// Handle edge cases - return early for invalid inputs
+	if (!text) return text || "";
 
-	if (germanSharpS && (locale === "de" || locale.startsWith("de-"))) {
-		folded = folded.replace(/ß/g, "ss");
+	// Ensure valid locale fallback
+	if (!locale) locale = "en";
+
+	// Platform-native locale-aware case folding with graceful fallback
+	try {
+		return text.toLocaleLowerCase(locale);
+	} catch (_error) {
+		// Fallback to English locale if provided locale is invalid
+		return text.toLocaleLowerCase("en");
 	}
-
-	return folded;
 }
