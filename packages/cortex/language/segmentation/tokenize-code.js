@@ -14,6 +14,11 @@
  * Essential for search and analysis of technical documentation and code.
  */
 
+// Pre-compiled regexes for V8 optimization - avoid regex compilation on every call
+const SEPARATOR_REGEX = /[\s\-_.]+/;
+const CAMEL_CASE_REGEX =
+	/(?=[A-Z][a-z])|(?<=[a-z])(?=[A-Z])|(?<=[0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/;
+
 /**
  * Tokenizes developer text by splitting on common programming naming conventions.
  *
@@ -44,20 +49,19 @@
  * tokenizeCode('v2.api-endpoint_handler'); // ['v2', 'api', 'endpoint', 'handler']
  */
 export function tokenizeCode(text) {
+	// Handle edge cases - return early for invalid inputs
 	if (!text) return [];
 
 	const tokens = [];
 
-	// Split the text into segments using common separators
-	const segments = text.split(/[\s\-_.]+/);
+	// Split the text into segments using pre-compiled separator regex
+	const segments = text.split(SEPARATOR_REGEX);
 
 	for (const segment of segments) {
 		if (!segment) continue;
 
-		// Handle camelCase and PascalCase within each segment
-		const camelTokens = segment.split(
-			/(?=[A-Z][a-z])|(?<=[a-z])(?=[A-Z])|(?<=[0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/,
-		);
+		// Handle camelCase and PascalCase within each segment using pre-compiled regex
+		const camelTokens = segment.split(CAMEL_CASE_REGEX);
 
 		for (const token of camelTokens) {
 			if (token?.trim()) {

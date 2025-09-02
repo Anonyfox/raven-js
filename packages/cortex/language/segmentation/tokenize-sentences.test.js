@@ -156,4 +156,62 @@ describe("tokenizeSentences", () => {
 	it("handles edge case with period at end", () => {
 		deepStrictEqual(tokenizeSentences("Test."), ["Test."]);
 	});
+
+	it("uses regex fallback when Intl.Segmenter fails", () => {
+		// Temporarily break Intl.Segmenter to force fallback path
+		const originalSegmenter = Intl.Segmenter;
+		Intl.Segmenter = () => {
+			throw new Error("Segmenter unavailable");
+		};
+
+		try {
+			deepStrictEqual(tokenizeSentences("Hello world. How are you?"), [
+				"Hello world.",
+				"How are you?",
+			]);
+
+			deepStrictEqual(tokenizeSentences("First sentence! Second sentence?"), [
+				"First sentence!",
+				"Second sentence?",
+			]);
+		} finally {
+			// Restore original Intl.Segmenter
+			Intl.Segmenter = originalSegmenter;
+		}
+	});
+
+	it("uses regex fallback when Intl.Segmenter is undefined", () => {
+		// Temporarily remove Intl.Segmenter to force fallback path
+		const originalSegmenter = Intl.Segmenter;
+		delete Intl.Segmenter;
+
+		try {
+			deepStrictEqual(tokenizeSentences("Test sentence. Another one."), [
+				"Test sentence.",
+				"Another one.",
+			]);
+		} finally {
+			// Restore original Intl.Segmenter
+			Intl.Segmenter = originalSegmenter;
+		}
+	});
+
+	it("handles fallback edge case with no sentence boundaries", () => {
+		// Test text that doesn't match sentence boundary regex in fallback
+		const originalSegmenter = Intl.Segmenter;
+		delete Intl.Segmenter;
+
+		try {
+			// Text with no capital letter after punctuation - won't trigger regex split
+			deepStrictEqual(tokenizeSentences("no capitals here, just text"), [
+				"no capitals here, just text",
+			]);
+
+			// Test empty regex split result to trigger filter fallback
+			deepStrictEqual(tokenizeSentences("   "), []); // Whitespace only should result in empty array
+		} finally {
+			// Restore original Intl.Segmenter
+			Intl.Segmenter = originalSegmenter;
+		}
+	});
 });

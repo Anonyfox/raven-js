@@ -119,7 +119,12 @@ describe("tokenizeCode", () => {
 		deepStrictEqual(tokenizeCode("Word"), ["Word"]);
 	});
 
-	it("handles empty and whitespace", () => {
+	it("handles invalid and edge case inputs gracefully", () => {
+		// Null/undefined inputs
+		deepStrictEqual(tokenizeCode(null), []);
+		deepStrictEqual(tokenizeCode(undefined), []);
+
+		// Empty and whitespace-only strings
 		deepStrictEqual(tokenizeCode(""), []);
 		deepStrictEqual(tokenizeCode("   "), []);
 		deepStrictEqual(tokenizeCode("\t\n"), []);
