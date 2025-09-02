@@ -14,6 +14,10 @@
  * when available, falling back to heuristic-based regex patterns.
  */
 
+// Pre-compiled regexes for V8 optimization - avoid regex compilation on every call
+const SENTENCE_BOUNDARY_REGEX = /([.!?]+)(?:\s+)(?=[A-Z\p{Lu}])/u;
+const PUNCTUATION_END_REGEX = /[.!?]+$/;
+
 /**
  * Tokenizes text into sentences using intelligent boundary detection.
  *
@@ -38,36 +42,42 @@
  * tokenizeSentences('Really?! Yes... I think so.'); // ['Really?!', 'Yes... I think so.']
  */
 export function tokenizeSentences(text, locale = "en") {
+	// Handle edge cases - return early for invalid inputs
+	if (!text) return [];
+
+	// Ensure valid locale fallback
+	if (!locale) locale = "en";
+
 	// Try modern Intl.Segmenter first
 	if (typeof Intl !== "undefined" && Intl.Segmenter) {
-		const segmenter = new Intl.Segmenter(locale, { granularity: "sentence" });
-		const sentences = [];
+		try {
+			const segmenter = new Intl.Segmenter(locale, { granularity: "sentence" });
+			const sentences = [];
 
-		for (const { segment } of segmenter.segment(text)) {
-			const trimmed = segment.trim();
-			if (trimmed) {
-				sentences.push(trimmed);
+			for (const { segment } of segmenter.segment(text)) {
+				const trimmed = segment.trim();
+				if (trimmed) {
+					sentences.push(trimmed);
+				}
 			}
-		}
 
-		return sentences;
+			return sentences;
+		} catch (_error) {
+			// Fall through to regex approach if Intl.Segmenter fails
+		}
 	}
 
-	// Fallback regex-based approach with heuristics
-	// Split on sentence-ending punctuation followed by whitespace and capital letter
-	// But avoid splitting on common abbreviations and decimals
+	// Optimized regex-based fallback with pre-compiled patterns
 	const sentences = [];
-
-	// First pass: split on likely sentence boundaries
-	const segments = text.split(/([.!?]+)(?:\s+)(?=[A-Z\p{Lu}])/u);
+	const segments = text.split(SENTENCE_BOUNDARY_REGEX);
 
 	let current = "";
 
 	for (let i = 0; i < segments.length; i++) {
 		current += segments[i];
 
-		// If this segment ends with punctuation and next segment starts with capital
-		if (i < segments.length - 1 && /[.!?]+$/.test(segments[i])) {
+		// Check if this segment ends with punctuation and we have more segments
+		if (i < segments.length - 1 && PUNCTUATION_END_REGEX.test(segments[i])) {
 			const trimmed = current.trim();
 			if (trimmed) {
 				sentences.push(trimmed);

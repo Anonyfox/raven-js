@@ -82,10 +82,21 @@ describe("tokenizeSentences", () => {
 		]);
 	});
 
-	it("handles empty and whitespace-only strings", () => {
+	it("handles invalid and edge case inputs gracefully", () => {
+		// Null/undefined inputs
+		deepStrictEqual(tokenizeSentences(null), []);
+		deepStrictEqual(tokenizeSentences(undefined), []);
+
+		// Empty and whitespace-only strings
 		deepStrictEqual(tokenizeSentences(""), []);
 		deepStrictEqual(tokenizeSentences("   "), []);
 		deepStrictEqual(tokenizeSentences("\t\n\r"), []);
+
+		// Invalid locale handling
+		deepStrictEqual(tokenizeSentences("Hello world.", null), ["Hello world."]);
+		deepStrictEqual(tokenizeSentences("Hello world.", undefined), [
+			"Hello world.",
+		]);
 	});
 
 	it("handles newlines and paragraph breaks", () => {
