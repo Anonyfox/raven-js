@@ -59,7 +59,14 @@ const PERPLEXITY_BASELINES = {
  * @param {number} [options.minWordCount=15] - Minimum word count for reliable analysis
  * @param {boolean} [options.includeDetails=false] - Whether to include metric-specific details
  * @param {number} [options.vocabularySize=10000] - Estimated vocabulary size for entropy calculations
- * @returns {{aiLikelihood: number, overallPerplexity: number, predictabilityScore: number, entropyMeasures: Object, diversityMetrics: Object, wordCount: number, detailedMetrics: Array<Object>}} Analysis results with AI detection metrics. aiLikelihood: Overall AI probability score (0-1, higher = more AI-like). overallPerplexity: Estimated perplexity score (lower = more predictable). predictabilityScore: Word choice predictability vs human baseline. entropyMeasures: Entropy calculations for different n-gram levels. diversityMetrics: Vocabulary diversity and creativity measures. wordCount: Total words analyzed. detailedMetrics: Array of individual metric breakdowns (if includeDetails=true).
+ * @returns {{aiLikelihood: number, overallPerplexity: number, predictabilityScore: number, entropyMeasures: Object, diversityMetrics: Object, wordCount: number, detailedMetrics: Array<Object>}} Analysis results with AI detection metrics:
+ *   - aiLikelihood: Overall AI probability score (0-1, higher = more AI-like)
+ *   - overallPerplexity: Estimated perplexity score (lower = more predictable)
+ *   - predictabilityScore: Word choice predictability vs human baseline
+ *   - entropyMeasures: Entropy calculations for different n-gram levels
+ *   - diversityMetrics: Vocabulary diversity and creativity measures
+ *   - wordCount: Total words analyzed
+ *   - detailedMetrics: Array of individual metric breakdowns (if includeDetails=true)
  *
  * @throws {TypeError} When text parameter is not a string
  * @throws {Error} When text contains insufficient words for analysis
