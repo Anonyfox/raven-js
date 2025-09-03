@@ -46,11 +46,13 @@ export function foldCase(text, locale = "en") {
 	// Ensure valid locale fallback
 	if (!locale) locale = "en";
 
-	// Platform-native locale-aware case folding with graceful fallback
+	// Validate locale using Intl canonicalization; fallback deterministically to 'en'
 	try {
-		return text.toLocaleLowerCase(locale);
+		Intl.getCanonicalLocales(locale);
 	} catch (_error) {
-		// Fallback to English locale if provided locale is invalid
-		return text.toLocaleLowerCase("en");
+		locale = "en";
 	}
+
+	// Platform-native locale-aware case folding
+	return text.toLocaleLowerCase(locale);
 }
