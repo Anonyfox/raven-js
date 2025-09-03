@@ -16,7 +16,11 @@
  *
  * The ensemble approach addresses the limitations of single-metric detection by
  * combining statistical, linguistic, stylistic, and structural analysis methods.
+ * Uses robust cortex building blocks for accurate word counting and international text support.
  */
+
+import { foldCase } from "../normalization/index.js";
+import { tokenizeWords } from "../segmentation/index.js";
 
 import { analyzeAITransitionPhrases } from "./ai-transition-phrases.js";
 // Import all detection algorithms
@@ -141,7 +145,8 @@ export function analyzeWithEnsemble(text, options = {}) {
 		);
 	}
 
-	const words = text.split(/\s+/).filter((word) => word.length > 0);
+	// Count total words using robust Unicode-aware tokenization
+	const words = tokenizeWords(text);
 	const wordCount = words.length;
 
 	if (wordCount < minWordCount) {
@@ -351,12 +356,12 @@ export function analyzeWithEnsemble(text, options = {}) {
 }
 
 /**
- * Detects the likely text type based on content analysis
+ * Detects the likely text type based on content analysis using international-aware case folding
  * @param {string} text - Input text to analyze
  * @returns {string} Detected text type
  */
 function detectTextType(text) {
-	const lowerText = text.toLowerCase();
+	const lowerText = foldCase(text);
 
 	// Social media indicators (check first - very specific patterns)
 	if (
