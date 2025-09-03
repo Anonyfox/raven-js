@@ -130,8 +130,8 @@ describe("lcsLength", () => {
 		});
 
 		it("handles long strings with scattered matches", () => {
-			const str1 = "a".repeat(100) + "x" + "b".repeat(100);
-			const str2 = "c".repeat(50) + "x" + "d".repeat(150);
+			const str1 = `${"a".repeat(100)}x${"b".repeat(100)}`;
+			const str2 = `${"c".repeat(50)}x${"d".repeat(150)}`;
 			strictEqual(lcsLength(str1, str2), 1); // Only "x" is common
 		});
 	});

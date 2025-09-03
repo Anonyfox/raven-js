@@ -152,7 +152,7 @@ describe("hammingDistance", () => {
 
 		it("handles long strings with single difference", () => {
 			const longString1 = "a".repeat(10000);
-			const longString2 = "a".repeat(9999) + "b";
+			const longString2 = `${"a".repeat(9999)}b`;
 			strictEqual(hammingDistance(longString1, longString2), 1);
 		});
 

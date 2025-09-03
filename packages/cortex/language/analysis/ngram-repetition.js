@@ -96,13 +96,14 @@ export function analyzeNgramRepetition(text, options = {}) {
 
 	// Extract n-grams using proven featurization building blocks
 	// This handles Unicode normalization, international case folding, and robust tokenization
-	const extractedNgrams = ngrams(text, {
-		type: ngramType,
-		n: n,
-		caseSensitive: caseSensitive,
-		normalize: true, // Enable Unicode normalization
-		lowercase: !caseSensitive, // Use international-aware case folding
-	});
+	const extractedNgrams = /** @type {string[]} */ (
+		ngrams(text, {
+			type: ngramType,
+			n: n,
+			normalize: true, // Enable Unicode normalization
+			lowercase: !caseSensitive, // Use international-aware case folding
+		})
+	);
 
 	// Check if we extracted enough n-grams for analysis
 	if (extractedNgrams.length === 0) {
