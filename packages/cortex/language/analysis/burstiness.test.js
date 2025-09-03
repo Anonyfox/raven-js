@@ -81,11 +81,12 @@ describe("calculateBurstiness", () => {
 			assert.ok(typeof result === "number", "Should parse complex punctuation");
 		});
 
-		it("processes semicolon-separated sentences", () => {
-			const text = "First clause; second clause is longer; short.";
+		it("processes proper sentence boundaries", () => {
+			const text =
+				"First sentence. Second sentence is much longer than the first. Short.";
 			const result = calculateBurstiness(text);
 
-			assert.ok(result > 0, "Should handle semicolon separators");
+			assert.ok(result > 0, "Should handle proper sentence boundaries");
 		});
 
 		it("handles sentences with extra whitespace", () => {

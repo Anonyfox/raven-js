@@ -12,7 +12,10 @@
  * Measures burstiness (sentence length variance) to distinguish human from AI-generated text.
  * Human writing naturally varies sentence lengths 40-60% more than AI-generated content,
  * providing a robust statistical fingerprint for content authenticity verification.
+ * Uses robust cortex building blocks for accurate boundary detection.
  */
+
+import { tokenizeSentences, tokenizeWords } from "../segmentation/index.js";
 
 /**
  * Calculates text burstiness by measuring sentence length variation.
@@ -62,15 +65,8 @@ export function calculateBurstiness(text) {
 		throw new Error("Cannot analyze empty text");
 	}
 
-	// Split text into sentences using comprehensive punctuation patterns
-	// Handles English and German sentence endings: . ! ? ; (German also uses … frequently)
-	const sentencePattern = /[.!?;…]+(?:\s|$)/g;
-	let sentences = text.split(sentencePattern);
-
-	// Filter out empty sentences and trim whitespace
-	sentences = sentences
-		.map((sentence) => sentence.trim())
-		.filter((sentence) => sentence.length > 0);
+	// Use robust sentence tokenization with abbreviation/decimal handling
+	const sentences = tokenizeSentences(text);
 
 	if (sentences.length < 2) {
 		throw new Error(
@@ -78,10 +74,9 @@ export function calculateBurstiness(text) {
 		);
 	}
 
-	// Count words in each sentence
-	// Split on whitespace and filter out empty elements
+	// Count words in each sentence using robust Unicode-aware tokenization
 	const sentenceLengths = sentences.map((sentence) => {
-		const words = sentence.split(/\s+/).filter((word) => word.length > 0);
+		const words = tokenizeWords(sentence);
 		return words.length;
 	});
 
