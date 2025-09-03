@@ -24,18 +24,18 @@ import { foldCase } from "../normalization/index.js";
  * Detects the likely text type based on content analysis using provided signature phrases.
  *
  * @param {string} text - Input text to analyze
- * @param {{ signaturePhrases: SignaturePhraseProfile }} options - Detection options
+ * @param {{ languagePack: import('../languagepacks/language-pack.js').LanguagePack }} options - Detection options
  * @returns {{ type: string, confidence: number, scores: Record<string, number> }} Classification result
  */
 export function detectTextType(text, options) {
 	if (typeof text !== "string") {
 		throw new TypeError("Input 'text' must be a string.");
 	}
-	if (!options || !options.signaturePhrases) {
-		throw new Error("Parameter 'signaturePhrases' is required");
+	if (!options || !options.languagePack) {
+		throw new Error("Parameter 'languagePack' is required");
 	}
 
-	const { signaturePhrases } = options;
+	const { languagePack } = options;
 
 	const lowerText = foldCase(text);
 
@@ -43,7 +43,7 @@ export function detectTextType(text, options) {
 
 	// Simple tokenization for token matches (Unicode-aware is done upstream where needed)
 	// Here, we rely on substring/word-boundary checks and provided patterns.
-	const categories = signaturePhrases.categories || {};
+	const categories = languagePack.categories || {};
 
 	for (const categoryName of Object.keys(categories)) {
 		const rules = categories[categoryName] || {};
@@ -108,8 +108,8 @@ export function detectTextType(text, options) {
 	}
 
 	// Determine best category by score, break ties by priority order if provided
-	const priority = signaturePhrases.priority || [];
-	let best = signaturePhrases.defaultType || "business";
+	const priority = languagePack.priority || [];
+	let best = languagePack.defaultType || "business";
 	let bestScore = -Infinity;
 	for (const [cat, val] of Object.entries(categoryScores)) {
 		if (val > bestScore) {
@@ -127,7 +127,7 @@ export function detectTextType(text, options) {
 
 	// If no positive evidence, pick defaultType
 	if (bestScore <= 0) {
-		best = signaturePhrases.defaultType || "business";
+		best = languagePack.defaultType || "business";
 	}
 
 	// Confidence: normalized against sum and exclusivity

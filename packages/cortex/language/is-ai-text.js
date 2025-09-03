@@ -20,7 +20,7 @@
  */
 
 /**
- * @typedef {import('./signaturephrases/signature-phrase.js').SignaturePhraseProfile} SignaturePhraseProfile
+ * @typedef {import('./languagepacks/language-pack.js').LanguagePack} LanguagePack
  */
 
 /**
@@ -227,10 +227,10 @@ const ALGORITHM_RELIABILITY_WEIGHTS = {
 };
 
 /**
- * @param {import('./signaturephrases/signature-phrase.js').SignaturePhraseProfile | undefined} signaturePhrases
+ * @param {import('./languagepacks/language-pack.js').LanguagePack | undefined} signaturePhrases
  */
 function getEffectiveWeights(signaturePhrases) {
-	/** @type {import('./signaturephrases/signature-phrase.js').SignaturePhraseProfile | undefined} */
+	/** @type {import('./languagepacks/language-pack.js').LanguagePack | undefined} */
 	const _sp = signaturePhrases;
 	const w = { ...ALGORITHM_RELIABILITY_WEIGHTS };
 	if (_sp && typeof _sp.grammar?.weight === "number") {
@@ -513,7 +513,7 @@ function calculateTextMetrics(text) {
  *
  * @param {string} text - Input text to analyze for AI characteristics
  * @param {Object} [options={}] - Configuration options
- * @param {SignaturePhraseProfile} options.signaturePhrases - Language signature phrases (required)
+ * @param {import('./languagepacks/language-pack.js').LanguagePack} options.languagePack - Language pack (required)
  * @param {boolean} [options.includeDetails=true] - Include individual algorithm results and consensus metrics
  * @param {boolean} [options.enableEarlyTermination=true] - Skip remaining algorithms if strong consensus reached
  * @param {number} [options.maxExecutionTime=50] - Maximum time per algorithm in milliseconds
@@ -522,12 +522,12 @@ function calculateTextMetrics(text) {
  *
  * @throws {TypeError} When text parameter is not a string
  * @throws {Error} When text is empty or too short for analysis
- * @throws {Error} When signaturePhrases is not provided
+ * @throws {Error} When languagePack is not provided
  *
  * @example
  * // Analyze AI-generated text (now achieves higher confidence)
  * const aiText = "Furthermore, the comprehensive system delivers optimal performance through advanced algorithms. The implementation provides three main benefits: efficiency, scalability, and reliability.";
- * const result = isAIText(aiText, { signaturePhrases: ["system", "performance", "advanced"] });
+ * const result = isAIText(aiText, { languagePack: ENGLISH_LANGUAGE_PACK });
  * console.log(`AI Likelihood: ${result.aiLikelihood}`); // ~0.88+ (improved from ~0.71)
  * console.log(`Certainty: ${result.certainty}`); // ~0.92+ (improved from ~0.61)
  * console.log(`Combined Score: ${result.combinedScore}`); // ~0.81+ (improved from ~0.43)
@@ -536,17 +536,17 @@ function calculateTextMetrics(text) {
  * @example
  * // Analyze human text with natural errors (maintains accurate human detection)
  * const humanText = "I can't believe what happened today! The system was acting kinda weird and their were some issues. Its not perfect but it gets the job done.";
- * const result = isAIText(humanText, { signaturePhrases: ["system", "performance", "advanced"] });
+ * const result = isAIText(humanText, { languagePack: ENGLISH_LANGUAGE_PACK });
  * console.log(`AI Likelihood: ${result.aiLikelihood}`); // ~0.20-0.35
  * console.log(`Classification: ${result.classification}`); // "Human"
  *
  * @example
  * // German text analysis (cross-language capability)
  * const germanText = "Das stimmt – es gibt definitiv einige Risiken, und im Vorfeld ist einiges zu testen.";
- * const result = isAIText(germanText, { signaturePhrases: ["system", "performance", "advanced"] });
+ * const result = isAIText(germanText, { languagePack: GERMAN_LANGUAGE_PACK });
  * console.log(`Detected Type: ${result.textMetrics.detectedTextType}`); // Auto-detects language context
  */
-export function isAIText(text, options = {}) {
+export function isAIText(text, options) {
 	// ============================================================================
 	// PHASE 1: INPUT VALIDATION & PREPROCESSING
 	// ============================================================================
@@ -563,17 +563,17 @@ export function isAIText(text, options = {}) {
 		includeDetails = true,
 		enableEarlyTermination = true,
 		maxExecutionTime = 50,
-		signaturePhrases,
+		languagePack,
 	} = options;
 
-	if (!signaturePhrases) {
-		throw new Error("Parameter 'signaturePhrases' is required");
+	if (!languagePack) {
+		throw new Error("Parameter 'languagePack' is required");
 	}
 
 	const startTime = performance.now();
 	const textMetrics = calculateTextMetrics(text);
 	const detectedTextType = detectTextTypeWithPhrases(text, {
-		signaturePhrases,
+		languagePack,
 	}).type;
 
 	// Minimum viable text check
@@ -593,7 +593,7 @@ export function isAIText(text, options = {}) {
 	let totalWeightedConfidence = 0;
 	const strongAlgorithmResults = []; // Track strong algorithm results separately
 
-	const RELIABILITY_WEIGHTS = getEffectiveWeights(signaturePhrases);
+	const RELIABILITY_WEIGHTS = getEffectiveWeights(languagePack);
 
 	for (const algorithmConfig of ALGORITHM_EXECUTION_ORDER) {
 		// Check if algorithm can run on this text
@@ -625,13 +625,13 @@ export function isAIText(text, options = {}) {
 		try {
 			// Inject language profiles for detectors that accept them
 			if (algorithmConfig.name === "ai_transition_phrases") {
-				rawResult = analyzeAITransitionPhrases(text, { signaturePhrases });
+				rawResult = analyzeAITransitionPhrases(text, { languagePack });
 			} else if (algorithmConfig.name === "participial_phrases") {
-				rawResult = detectParticipalPhraseFormula(text, { signaturePhrases });
+				rawResult = detectParticipalPhraseFormula(text, { languagePack });
 			} else if (algorithmConfig.name === "rule_of_three") {
-				rawResult = detectRuleOfThreeObsession(text, { signaturePhrases });
+				rawResult = detectRuleOfThreeObsession(text, { languagePack });
 			} else if (algorithmConfig.name === "perfect_grammar") {
-				rawResult = detectPerfectGrammar(text, { signaturePhrases });
+				rawResult = detectPerfectGrammar(text, { languagePack });
 			} else {
 				rawResult = algorithmConfig.fn(text);
 			}

@@ -77,8 +77,7 @@ const PARTICIPIAL_BASELINES = {
  * @param {number} [options.minWordCount=25] - Minimum word count
  * @param {boolean} [options.includeDetails=false] - Include details
  * @param {number} [options.sensitivityThreshold=2.0] - Overuse threshold multiplier
- * @param {import('../signaturephrases/signature-phrase.js').SignaturePhraseProfile} [options.signaturePhrases] - Full language profile
- * @param {{ sentenceInitial?: { presentActions?: Set<string>, presentStates?: Set<string>, past?: Set<string>, irregular?: Set<string> }, technicalVerbs?: Set<string>, processVerbs?: Set<string>, systemVerbs?: Set<string>, academicVerbs?: Set<string>, businessVerbs?: Set<string>, marketingVerbs?: Set<string>, whenGerunds?: Set<string>, transitionsVerbs?: Set<string>, weight?: number }} [options.participleProfile] - Legacy profile
+ * @param {import('../languagepacks/language-pack.js').LanguagePack} [options.languagePack] - Language pack
  * @returns {{aiLikelihood: number, overallScore: number, participialDensity: number, totalPatterns: number, wordCount: number, detectedPatterns: Array<Object>}} Analysis results with AI detection metrics. aiLikelihood: Overall AI probability score (0-1, higher = more AI-like). overallScore: Weighted frequency score vs human baseline. participialDensity: Total participial patterns per 1000 words. totalPatterns: Total number of flagged participial patterns found. wordCount: Total words analyzed. detectedPatterns: Array of detected patterns with frequencies (if includeDetails=true).
  *
  * @throws {TypeError} When text parameter is not a string
@@ -135,8 +134,7 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 		minWordCount = 25,
 		includeDetails = false,
 		sensitivityThreshold = 2.0,
-		signaturePhrases,
-		participleProfile,
+		languagePack,
 	} = options;
 
 	if (!Number.isInteger(minWordCount) || minWordCount < 1) {
@@ -157,7 +155,7 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 		);
 	}
 
-	const profile = signaturePhrases?.participles || participleProfile;
+	const profile = languagePack?.participles;
 
 	// Analyze participial phrase patterns
 	const detectedPatterns = [];

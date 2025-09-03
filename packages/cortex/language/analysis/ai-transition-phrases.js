@@ -27,7 +27,7 @@ import { tokenizeWords } from "../segmentation/index.js";
  * more AI-like language patterns.
  *
  * @param {string} text - Input text to analyze for AI transition phrases
- * @param {{ caseSensitive?: boolean; minWordCount?: number; includeDetails?: boolean; signaturePhrases?: import('../signaturephrases/signature-phrase.js').SignaturePhraseProfile, transitionsProfile?: { phrases?: string[], regex?: RegExp[], weight?: number, caseInsensitive?: boolean } }} [options={}] - Analysis options
+ * @param {{ caseSensitive?: boolean; minWordCount?: number; includeDetails?: boolean; languagePack?: import('../languagepacks/language-pack.js').LanguagePack }} [options={}] - Analysis options
  * @returns {{aiLikelihood: number, overallScore: number, phrasesPerThousand: number, totalPhrases: number, wordCount: number, detectedPhrases: Array<Object>}} Analysis results with AI detection metrics. aiLikelihood: Overall AI probability score (0-1, higher = more AI-like). overallScore: Weighted frequency score vs human baseline. phrasesPerThousand: Detected phrases per 1000 words. totalPhrases: Total number of AI phrases found. wordCount: Total words analyzed. detectedPhrases: Array of found phrases with frequencies (if includeDetails=true).
  *
  * @throws {TypeError} When text parameter is not a string
@@ -84,8 +84,7 @@ export function analyzeAITransitionPhrases(text, options = {}) {
 		caseSensitive = false,
 		minWordCount = 20,
 		includeDetails = false,
-		signaturePhrases,
-		transitionsProfile,
+		languagePack,
 	} = options;
 
 	if (!Number.isInteger(minWordCount) || minWordCount < 1) {
@@ -108,7 +107,7 @@ export function analyzeAITransitionPhrases(text, options = {}) {
 	// Prepare phrases list strictly from language profile (no English fallback)
 	/** @type {Record<string, number>} */
 	const phrasesToSearch = {};
-	const profile = signaturePhrases?.transitions || transitionsProfile;
+	const profile = languagePack?.transitions;
 	if (
 		profile?.phrases &&
 		(Array.isArray(profile.phrases) || profile.phrases.size > 0)

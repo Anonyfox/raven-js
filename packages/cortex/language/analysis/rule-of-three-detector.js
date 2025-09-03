@@ -74,8 +74,7 @@ const TRIADIC_BASELINES = {
  * @param {number} [options.minWordCount=30] - Minimum word count for reliable analysis
  * @param {boolean} [options.includeDetails=false] - Include pattern details
  * @param {number} [options.sensitivityThreshold=2.0] - Overuse threshold multiplier
- * @param {import('../signaturephrases/signature-phrase.js').SignaturePhraseProfile} [options.signaturePhrases] - Full language profile
- * @param {{ conjunctions?: Set<string>, separators?: RegExp[], minItemLength?: number, whitelistTokens?: Set<string>, weight?: number }} [options.ruleOfThreeProfile] - Legacy profile
+ * @param {import('../languagepacks/language-pack.js').LanguagePack} [options.languagePack] - Language pack
  * @returns {{aiLikelihood: number, overallScore: number, triadicDensity: number, totalPatterns: number, wordCount: number, detectedPatterns: Array<Object>}} Analysis results with AI detection metrics. aiLikelihood: Overall AI probability score (0-1, higher = more AI-like). overallScore: Weighted frequency score vs human baseline. triadicDensity: Total triadic patterns per 1000 words. totalPatterns: Total number of flagged triadic patterns found. wordCount: Total words analyzed. detectedPatterns: Array of detected patterns with frequencies (if includeDetails=true).
  *
  * @throws {TypeError} When text parameter is not a string
@@ -132,8 +131,7 @@ export function detectRuleOfThreeObsession(text, options = {}) {
 		minWordCount = 30,
 		includeDetails = false,
 		sensitivityThreshold = 2.0,
-		signaturePhrases,
-		ruleOfThreeProfile,
+		languagePack,
 	} = options;
 
 	if (!Number.isInteger(minWordCount) || minWordCount < 1) {
@@ -159,7 +157,7 @@ export function detectRuleOfThreeObsession(text, options = {}) {
 	let totalPatterns = 0;
 	let weightedScore = 0;
 
-	const profile = signaturePhrases?.ruleOfThree || ruleOfThreeProfile;
+	const profile = languagePack?.ruleOfThree;
 
 	// Pattern detection functions
 	const patterns = {

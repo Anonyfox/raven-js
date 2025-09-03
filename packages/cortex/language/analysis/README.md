@@ -43,7 +43,7 @@ Advanced linguistic algorithms that detect AI-generated content through statisti
 
 ```javascript
 import { analyzeWithEnsemble, calculateBurstiness } from "@raven-js/cortex";
-import { ENGLISH_SIGNATURE_PHRASES } from "@raven-js/cortex/language/signaturephrases/english.js";
+import { ENGLISH_LANGUAGE_PACK } from "@raven-js/cortex/language/languagepacks/english.js";
 
 // Fast initial screening
 function quickScreen(text) {
@@ -55,7 +55,7 @@ function quickScreen(text) {
 function deepAnalysis(text) {
   const result = analyzeWithEnsemble(text, {
     enableEarlyTermination: true,
-    signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+    languagePack: ENGLISH_LANGUAGE_PACK,
   });
   return result.aiLikelihood > 0.7 ? "ai-generated" : "human-written";
 }
@@ -68,17 +68,17 @@ import {
   detectPerfectGrammar,
   analyzeAITransitionPhrases,
 } from "@raven-js/cortex";
-import { ENGLISH_SIGNATURE_PHRASES } from "@raven-js/cortex/language/signaturephrases/english.js";
+import { ENGLISH_LANGUAGE_PACK } from "@raven-js/cortex/language/languagepacks/english.js";
 
 function checkEssayAuthenticity(essayText) {
   // AI essays tend to be grammatically perfect
   const grammar = detectPerfectGrammar(essayText, {
-    signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+    languagePack: ENGLISH_LANGUAGE_PACK,
   });
 
   // And use formal transition phrases excessively
   const transitions = analyzeAITransitionPhrases(essayText, {
-    signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+    languagePack: ENGLISH_LANGUAGE_PACK,
   });
 
   const combinedScore = (grammar.aiLikelihood + transitions.aiLikelihood) / 2;
@@ -114,17 +114,17 @@ import {
   detectRuleOfThreeObsession,
   analyzeAITransitionPhrases,
 } from "@raven-js/cortex";
-import { ENGLISH_SIGNATURE_PHRASES } from "@raven-js/cortex/language/signaturephrases/english.js";
+import { ENGLISH_LANGUAGE_PACK } from "@raven-js/cortex/language/languagepacks/english.js";
 
 function analyzeMarketingCopy(content) {
   // AI marketing copy obsesses with three-item lists
   const ruleOfThree = detectRuleOfThreeObsession(content, {
-    signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+    languagePack: ENGLISH_LANGUAGE_PACK,
   });
 
   // And uses formulaic transition phrases
   const transitions = analyzeAITransitionPhrases(content, {
-    signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+    languagePack: ENGLISH_LANGUAGE_PACK,
   });
 
   return {
@@ -195,7 +195,7 @@ const batchAnalysis = texts.map((text) => ({
   burstiness: calculateBurstiness(text),
   entropy: calculateShannonEntropy(text),
   grammar: detectPerfectGrammar(text, {
-    signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+    languagePack: ENGLISH_LANGUAGE_PACK,
   }),
 }));
 
@@ -220,13 +220,13 @@ function smartAnalysis(text) {
 ```javascript
 import { analyzeWithEnsemble } from "@raven-js/cortex";
 import { detectTextType } from "@raven-js/cortex/language/analysis";
-import { ENGLISH_SIGNATURE_PHRASES } from "@raven-js/cortex/language/signaturephrases/english.js";
+import { ENGLISH_LANGUAGE_PACK } from "@raven-js/cortex/language/languagepacks/english.js";
 
 function safeAnalysis(text) {
   try {
     return analyzeWithEnsemble(text, {
       maxExecutionTime: 100,
-      signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+      languagePack: ENGLISH_LANGUAGE_PACK,
     });
   } catch (error) {
     console.warn("AI detection failed:", error.message);
@@ -254,7 +254,7 @@ function cachedAnalysis(text) {
   }
 
   const result = analyzeWithEnsemble(text, {
-    signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+    languagePack: ENGLISH_LANGUAGE_PACK,
   });
   analysisCache.set(hash, result);
   return result;
@@ -273,7 +273,7 @@ async function progressiveDetection(text) {
 
   // Phase 2: Medium confidence check (< 5ms)
   const grammar = detectPerfectGrammar(text, {
-    signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+    languagePack: ENGLISH_LANGUAGE_PACK,
   });
   if (grammar.aiLikelihood > 0.8)
     return { aiLikelihood: 0.8, method: "grammar" };
@@ -281,7 +281,7 @@ async function progressiveDetection(text) {
   // Phase 3: Full ensemble analysis (< 25ms)
   return analyzeWithEnsemble(text, {
     includeDetails: false,
-    signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+    languagePack: ENGLISH_LANGUAGE_PACK,
   });
 }
 ```
@@ -291,23 +291,23 @@ async function progressiveDetection(text) {
 ```javascript
 import { detectTextType } from "@raven-js/cortex/language/analysis";
 import {
-  ENGLISH_SIGNATURE_PHRASES,
-  GERMAN_SIGNATURE_PHRASES,
-  MINIMAL_SIGNATURE_PHRASES,
-} from "@raven-js/cortex/language/signaturephrases";
+  ENGLISH_LANGUAGE_PACK,
+  GERMAN_LANGUAGE_PACK,
+  MINIMAL_LANGUAGE_PACK,
+} from "@raven-js/cortex/language/languagepacks";
 
 const { type, confidence } = detectTextType(text, {
-  signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+  languagePack: ENGLISH_LANGUAGE_PACK,
 });
 
 // In the ensemble:
-analyzeWithEnsemble(text, { signaturePhrases: MINIMAL_SIGNATURE_PHRASES });
+analyzeWithEnsemble(text, { languagePack: MINIMAL_LANGUAGE_PACK });
 ```
 
 Notes:
 
-- Pass `signaturePhrases` to enable `textType: 'auto'` without bundling a default language.
-- Choose packs explicitly for tree-shaking. `MINIMAL_SIGNATURE_PHRASES` is a low-FP broad default.
+- Pass `languagePack` to enable `textType: 'auto'` without bundling a default language.
+- Choose packs explicitly for tree-shaking. `MINIMAL_LANGUAGE_PACK` is a low-FP broad default.
 
 ---
 

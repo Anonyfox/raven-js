@@ -37,7 +37,7 @@ import { tokenizeWords } from "../segmentation/index.js";
  * @param {number} [options.minWordCount=30] - Minimum word count for reliable analysis.
  * @param {number} [options.errorToleranceThreshold=0.5] - Multiplier below human baseline to flag as suspicious.
  * @param {boolean} [options.includeDetails=false] - Whether to include error-specific details.
- * @param {import('../signaturephrases/signature-phrase.js').SignaturePhraseProfile} [options.signaturePhrases] - Full language profile (preferred)
+ * @param {import('../languagepacks/language-pack.js').LanguagePack} [options.languagePack] - Language pack (preferred)
  * @param {{ errorPatterns?: RegExp[], falsePositiveTokens?: Set<string> }} [options.grammarProfile] - Language-specific grammar profile (legacy)
  * @returns {{aiLikelihood: number, overallScore: number, perfectionScore: number, totalErrors: number, wordCount: number, detectedErrors: Array<Object>}} Analysis results with AI detection metrics.
  *   - aiLikelihood: Overall AI probability score (0-1, higher = more AI-like).
@@ -74,7 +74,7 @@ export function detectPerfectGrammar(text, options = {}) {
 		minWordCount = 30,
 		errorToleranceThreshold = 0.5,
 		includeDetails = false,
-		signaturePhrases,
+		languagePack,
 		grammarProfile,
 	} = options;
 
@@ -105,7 +105,7 @@ export function detectPerfectGrammar(text, options = {}) {
 	const detectedErrors = [];
 	let totalErrors = 0;
 
-	const effectiveGrammar = signaturePhrases?.grammar || grammarProfile;
+	const effectiveGrammar = languagePack?.grammar || grammarProfile;
 
 	if (
 		effectiveGrammar &&

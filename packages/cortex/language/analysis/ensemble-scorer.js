@@ -91,7 +91,7 @@ const TEXT_TYPE_ADJUSTMENTS = {
  * @param {boolean} [options.includeDetails=false] - Whether to include individual algorithm results.
  * @param {string} [options.textType='auto'] - Text type hint ('technical', 'academic', 'business', 'creative', 'casual', 'social_media', 'auto').
  * @param {number} [options.confidenceThreshold=0.6] - Minimum confidence for high-confidence predictions.
- * @param {import('../signaturephrases/signature-phrase.js').SignaturePhraseProfile} [options.signaturePhrases] - Language profile for auto text-type detection
+ * @param {import('../languagepacks/language-pack.js').LanguagePack} [options.languagePack] - Language pack for auto text-type detection
  * @param {object} [options.algorithmWeights] - Custom weights for individual algorithms (optional override).
  * @returns {{aiLikelihood: number, confidence: string, weightedScore: number, algorithmCount: number, consensus: number, textType: string, individualResults: Array<Object>}} Comprehensive analysis results.
  *   - aiLikelihood: Overall AI probability score (0-1, higher = more AI-like).
@@ -129,7 +129,7 @@ export function analyzeWithEnsemble(text, options = {}) {
 		minWordCount = 25,
 		includeDetails = false,
 		textType = "auto",
-		signaturePhrases,
+		languagePack,
 		confidenceThreshold = 0.6,
 		algorithmWeights = ALGORITHM_WEIGHTS,
 	} = options;
@@ -160,9 +160,9 @@ export function analyzeWithEnsemble(text, options = {}) {
 	// Detect text type if set to auto using injected signature phrases; else neutral default
 	let detectedTextType = textType;
 	if (textType === "auto") {
-		if (signaturePhrases) {
+		if (languagePack) {
 			try {
-				const detection = detectTextTypeWithPhrases(text, { signaturePhrases });
+				const detection = detectTextTypeWithPhrases(text, { languagePack });
 				detectedTextType = detection.type;
 			} catch {
 				detectedTextType = "business";
@@ -187,29 +187,17 @@ export function analyzeWithEnsemble(text, options = {}) {
 	// Type-safe algorithm weights
 	const weights = /** @type {Record<string, number>} */ (algorithmWeights);
 
-	if (
-		signaturePhrases &&
-		typeof signaturePhrases.grammar?.weight === "number"
-	) {
-		weights.perfect_grammar = signaturePhrases.grammar.weight;
+	if (languagePack && typeof languagePack.grammar?.weight === "number") {
+		weights.perfect_grammar = languagePack.grammar.weight;
 	}
-	if (
-		signaturePhrases &&
-		typeof signaturePhrases.ruleOfThree?.weight === "number"
-	) {
-		weights.rule_of_three = signaturePhrases.ruleOfThree.weight;
+	if (languagePack && typeof languagePack.ruleOfThree?.weight === "number") {
+		weights.rule_of_three = languagePack.ruleOfThree.weight;
 	}
-	if (
-		signaturePhrases &&
-		typeof signaturePhrases.transitions?.weight === "number"
-	) {
-		weights.ai_transition_phrases = signaturePhrases.transitions.weight;
+	if (languagePack && typeof languagePack.transitions?.weight === "number") {
+		weights.ai_transition_phrases = languagePack.transitions.weight;
 	}
-	if (
-		signaturePhrases &&
-		typeof signaturePhrases.participles?.weight === "number"
-	) {
-		weights.participial_phrases = signaturePhrases.participles.weight;
+	if (languagePack && typeof languagePack.participles?.weight === "number") {
+		weights.participial_phrases = languagePack.participles.weight;
 	}
 
 	// Run each algorithm and handle failures gracefully
@@ -257,7 +245,7 @@ export function analyzeWithEnsemble(text, options = {}) {
 		{
 			name: "ai_transition_phrases",
 			fn: /** @type {(t: string) => any} */ (
-				(t) => analyzeAITransitionPhrases(t, { signaturePhrases })
+				(t) => analyzeAITransitionPhrases(t, { languagePack })
 			),
 			weight:
 				weights.ai_transition_phrases !== undefined
@@ -279,7 +267,7 @@ export function analyzeWithEnsemble(text, options = {}) {
 		{
 			name: "rule_of_three",
 			fn: /** @type {(t: string) => any} */ (
-				(t) => detectRuleOfThreeObsession(t, { signaturePhrases })
+				(t) => detectRuleOfThreeObsession(t, { languagePack })
 			),
 			weight:
 				weights.rule_of_three !== undefined
@@ -291,7 +279,7 @@ export function analyzeWithEnsemble(text, options = {}) {
 		{
 			name: "participial_phrases",
 			fn: /** @type {(t: string) => any} */ (
-				(t) => detectParticipalPhraseFormula(t, { signaturePhrases })
+				(t) => detectParticipalPhraseFormula(t, { languagePack })
 			),
 			weight:
 				weights.participial_phrases !== undefined
@@ -313,7 +301,7 @@ export function analyzeWithEnsemble(text, options = {}) {
 		{
 			name: "perfect_grammar",
 			fn: /** @type {(t: string) => any} */ (
-				(t) => detectPerfectGrammar(t, { signaturePhrases })
+				(t) => detectPerfectGrammar(t, { languagePack })
 			),
 			weight:
 				weights.perfect_grammar !== undefined
