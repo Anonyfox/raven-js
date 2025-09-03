@@ -187,6 +187,14 @@ export function analyzeWithEnsemble(text, options = {}) {
 	// Type-safe algorithm weights
 	const weights = /** @type {Record<string, number>} */ (algorithmWeights);
 
+	// If language-specific grammar weight exists, override perfect_grammar weight
+	if (
+		signaturePhrases &&
+		typeof signaturePhrases.grammar?.weight === "number"
+	) {
+		weights.perfect_grammar = signaturePhrases.grammar.weight;
+	}
+
 	// Run each algorithm and handle failures gracefully
 	const algorithms = [
 		{

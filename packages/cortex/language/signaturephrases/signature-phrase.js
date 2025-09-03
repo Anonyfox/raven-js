@@ -18,6 +18,7 @@
  * @property {string} name - Human-readable profile name (e.g., "english")
  * @property {string} [defaultType] - Fallback type if no matches occur
  * @property {string[]} [priority] - Tie-break priority order of categories
+ * @property {{ errorPatterns?: RegExp[], weight?: number, falsePositiveTokens?: Set<string> }} [grammar] - Language-specific grammar config
  * @property {Record<string, SignaturePhraseCategory>} categories - Map of category name to rules
  */
 

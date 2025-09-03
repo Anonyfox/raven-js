@@ -15,6 +15,11 @@
 export const GERMAN_SIGNATURE_PHRASES = {
 	name: "german",
 	defaultType: "business",
+	grammar: {
+		weight: 0.0,
+		errorPatterns: [],
+		falsePositiveTokens: new Set(["ich", "und", "oder"]),
+	},
 	priority: [
 		"social_media",
 		"casual",
@@ -30,7 +35,7 @@ export const GERMAN_SIGNATURE_PHRASES = {
 			punctuation: [/!{2,}/],
 		},
 		casual: {
-			tokens: new Set(["halt", "irgendwie", "naja", "okay", "sachen", "ding"]),
+			tokens: new Set(["halt", "irgendwie", "naja", "okay", "ding"]),
 			phrases: new Set(["ziemlich gut", "nicht schlecht"]),
 		},
 		academic: {

@@ -15,6 +15,10 @@
 export const MINIMAL_SIGNATURE_PHRASES = {
 	name: "minimal",
 	defaultType: "business",
+	grammar: {
+		weight: 0.0,
+		errorPatterns: [],
+	},
 	priority: [
 		"social_media",
 		"casual",

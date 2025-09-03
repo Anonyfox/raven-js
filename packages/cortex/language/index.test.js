@@ -9,6 +9,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import * as language from "./index.js";
+import { ENGLISH_SIGNATURE_PHRASES } from "./signaturephrases/english.js";
 
 describe("language module", () => {
 	it("re-exports all analysis functions", () => {
@@ -168,7 +169,9 @@ describe("language module", () => {
 		assert.ok(entropyResult >= 0, "Should return non-negative entropy");
 
 		// Test isAIText function
-		const aiResult = language.isAIText(testText);
+		const aiResult = language.isAIText(testText, {
+			signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+		});
 		assert.ok(typeof aiResult === "object", "isAIText should return an object");
 		assert.ok(
 			typeof aiResult.aiLikelihood === "number",

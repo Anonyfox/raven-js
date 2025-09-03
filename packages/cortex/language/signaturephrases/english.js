@@ -15,6 +15,10 @@
 export const ENGLISH_SIGNATURE_PHRASES = {
 	name: "english",
 	defaultType: "business",
+	grammar: {
+		weight: 0.09,
+		errorPatterns: [],
+	},
 	priority: [
 		"social_media",
 		"casual",

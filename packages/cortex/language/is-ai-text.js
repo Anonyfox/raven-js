@@ -19,9 +19,23 @@
  * detection with mathematical rigor.
  */
 
+/**
+ * @typedef {import('./signaturephrases/signature-phrase.js').SignaturePhraseProfile} SignaturePhraseProfile
+ */
+
+/**
+ * Text metrics returned by isAIText.
+ * @typedef {Object} AITextMetrics
+ * @property {number} wordCount
+ * @property {number} sentenceCount
+ * @property {number} characterCount
+ * @property {string} detectedTextType
+ */
+
 // Import all detection algorithms
 import { analyzeAITransitionPhrases } from "./analysis/ai-transition-phrases.js";
 import { calculateBurstiness } from "./analysis/burstiness.js";
+import { detectTextType as detectTextTypeWithPhrases } from "./analysis/detect-text-type.js";
 import { detectEmDashEpidemic } from "./analysis/em-dash-detector.js";
 import { analyzeNgramRepetition } from "./analysis/ngram-repetition.js";
 import { detectParticipalPhraseFormula } from "./analysis/participial-phrase-detector.js";
@@ -211,6 +225,19 @@ const ALGORITHM_RELIABILITY_WEIGHTS = {
 	zipf_deviation: 0.07, // Weak - statistical but high natural variance
 	em_dash_epidemic: 0.06, // Weak - style indicator, context-dependent
 };
+
+/**
+ * @param {import('./signaturephrases/signature-phrase.js').SignaturePhraseProfile | undefined} signaturePhrases
+ */
+function getEffectiveWeights(signaturePhrases) {
+	/** @type {import('./signaturephrases/signature-phrase.js').SignaturePhraseProfile | undefined} */
+	const _sp = signaturePhrases;
+	const w = { ...ALGORITHM_RELIABILITY_WEIGHTS };
+	if (_sp && typeof _sp.grammar?.weight === "number") {
+		w.perfect_grammar = _sp.grammar.weight;
+	}
+	return w;
+}
 
 /**
  * Production-ready decision thresholds for different confidence levels.
@@ -463,86 +490,6 @@ function calculateTextMetrics(text) {
 }
 
 /**
- * Detects text type for context-aware scoring adjustments.
- * Different text types have different natural AI likelihood baselines.
- *
- * @param {string} text - Input text to analyze
- * @returns {string} Detected text type
- */
-function detectTextType(text) {
-	const lowerText = text.toLowerCase();
-
-	// Social media indicators (check first - very specific patterns)
-	if (
-		/\b(omg|lol|tbh|imo|cant|dont|wont|ur|u\b)\b/.test(lowerText) ||
-		/[!]{2,}/.test(text) ||
-		/😭|😊|😂|❤️|🔥/.test(text)
-	) {
-		return "social_media";
-	}
-
-	// Casual indicators (check early - informal patterns)
-	if (
-		/\b(kinda|gonna|wanna|yeah|okay|stuff|thing|pretty good|not bad)\b/.test(
-			lowerText,
-		)
-	) {
-		return "casual";
-	}
-
-	// Academic indicators (check before technical to avoid confusion)
-	if (
-		/\b(research|study|hypothesis|findings|conclusion|longitudinal|correlation|populations|investigation)\b/.test(
-			lowerText,
-		) ||
-		(/\b(analysis|methodology)\b/.test(lowerText) &&
-			/\b(research|study|findings)\b/.test(lowerText))
-	) {
-		return "academic";
-	}
-
-	// Technical indicators (check first for strong technical signals)
-	if (
-		/\b(api|algorithm|database|function|optimization|performance|technical|framework)\b/.test(
-			lowerText,
-		) ||
-		(/\b(implementation|system)\b/.test(lowerText) &&
-			/\b(api|algorithm|performance|optimization|technical|framework)\b/.test(
-				lowerText,
-			))
-	) {
-		return "technical";
-	}
-
-	// Business indicators
-	if (
-		/\b(stakeholders|objectives|deliverables|strategic|operational|comprehensive|solutions|organizational|roadmap|excellence)\b/.test(
-			lowerText,
-		) ||
-		(/\b(implementation)\b/.test(lowerText) &&
-			/\b(strategic|objectives|stakeholders|business|organizational)\b/.test(
-				lowerText,
-			))
-	) {
-		return "business";
-	}
-
-	// Creative indicators
-	if (
-		/\b(suddenly|whispered|gazed|dreamed|imagined|beautiful|mysterious|magical)\b/.test(
-			lowerText,
-		) ||
-		text.includes('"') ||
-		text.includes("'")
-	) {
-		return "creative";
-	}
-
-	// Default to business if no clear indicators
-	return "business";
-}
-
-/**
  * Revolutionary AI text detection using exponential ensemble scoring with strong signal dominance.
  *
  * This function implements a mathematically sophisticated AI detection system featuring:
@@ -560,18 +507,21 @@ function detectTextType(text) {
  *
  * @param {string} text - Input text to analyze for AI characteristics
  * @param {Object} [options={}] - Configuration options
+ * @param {SignaturePhraseProfile} options.signaturePhrases - Language signature phrases (required)
  * @param {boolean} [options.includeDetails=true] - Include individual algorithm results and consensus metrics
  * @param {boolean} [options.enableEarlyTermination=true] - Skip remaining algorithms if strong consensus reached
  * @param {number} [options.maxExecutionTime=50] - Maximum time per algorithm in milliseconds
- * @returns {{aiLikelihood: number, certainty: number, combinedScore: number, consensus: number, totalExecutionTime: number, algorithmResults: Array<Object>, textMetrics: Object, explanation: string, classification: string}} Comprehensive analysis with exponential scoring
+ * @param {Array<string>} [options.signaturePhrases] - Array of phrases to use for text type detection
+ * @returns {{aiLikelihood: number, certainty: number, combinedScore: number, consensus: number, totalExecutionTime: number, algorithmResults: Array<Object>, textMetrics: AITextMetrics, explanation: string, classification: string}} Comprehensive analysis with exponential scoring
  *
  * @throws {TypeError} When text parameter is not a string
  * @throws {Error} When text is empty or too short for analysis
+ * @throws {Error} When signaturePhrases is not provided
  *
  * @example
  * // Analyze AI-generated text (now achieves higher confidence)
  * const aiText = "Furthermore, the comprehensive system delivers optimal performance through advanced algorithms. The implementation provides three main benefits: efficiency, scalability, and reliability.";
- * const result = isAIText(aiText);
+ * const result = isAIText(aiText, { signaturePhrases: ["system", "performance", "advanced"] });
  * console.log(`AI Likelihood: ${result.aiLikelihood}`); // ~0.88+ (improved from ~0.71)
  * console.log(`Certainty: ${result.certainty}`); // ~0.92+ (improved from ~0.61)
  * console.log(`Combined Score: ${result.combinedScore}`); // ~0.81+ (improved from ~0.43)
@@ -580,14 +530,14 @@ function detectTextType(text) {
  * @example
  * // Analyze human text with natural errors (maintains accurate human detection)
  * const humanText = "I can't believe what happened today! The system was acting kinda weird and their were some issues. Its not perfect but it gets the job done.";
- * const result = isAIText(humanText);
+ * const result = isAIText(humanText, { signaturePhrases: ["system", "performance", "advanced"] });
  * console.log(`AI Likelihood: ${result.aiLikelihood}`); // ~0.20-0.35
  * console.log(`Classification: ${result.classification}`); // "Human"
  *
  * @example
  * // German text analysis (cross-language capability)
  * const germanText = "Das stimmt – es gibt definitiv einige Risiken, und im Vorfeld ist einiges zu testen.";
- * const result = isAIText(germanText);
+ * const result = isAIText(germanText, { signaturePhrases: ["system", "performance", "advanced"] });
  * console.log(`Detected Type: ${result.textMetrics.detectedTextType}`); // Auto-detects language context
  */
 export function isAIText(text, options = {}) {
@@ -607,11 +557,18 @@ export function isAIText(text, options = {}) {
 		includeDetails = true,
 		enableEarlyTermination = true,
 		maxExecutionTime = 50,
+		signaturePhrases,
 	} = options;
+
+	if (!signaturePhrases) {
+		throw new Error("Parameter 'signaturePhrases' is required");
+	}
 
 	const startTime = performance.now();
 	const textMetrics = calculateTextMetrics(text);
-	const detectedTextType = detectTextType(text);
+	const detectedTextType = detectTextTypeWithPhrases(text, {
+		signaturePhrases,
+	}).type;
 
 	// Minimum viable text check
 	if (textMetrics.wordCount < 2) {
@@ -630,6 +587,8 @@ export function isAIText(text, options = {}) {
 	let totalWeightedConfidence = 0;
 	const strongAlgorithmResults = []; // Track strong algorithm results separately
 
+	const RELIABILITY_WEIGHTS = getEffectiveWeights(signaturePhrases);
+
 	for (const algorithmConfig of ALGORITHM_EXECUTION_ORDER) {
 		// Check if algorithm can run on this text
 		const canRun =
@@ -643,7 +602,7 @@ export function isAIText(text, options = {}) {
 					aiLikelihood: null,
 					executionTime: 0,
 					confidence: 0,
-					weight: ALGORITHM_RELIABILITY_WEIGHTS[algorithmConfig.name],
+					weight: RELIABILITY_WEIGHTS[algorithmConfig.name],
 					contributes: false,
 					reason: `Insufficient text (needs ${algorithmConfig.minWords}+ words, ${algorithmConfig.minSentences}+ sentences)`,
 				});
@@ -671,7 +630,7 @@ export function isAIText(text, options = {}) {
 					aiLikelihood: null,
 					executionTime: performance.now() - algorithmStartTime,
 					confidence: 0,
-					weight: ALGORITHM_RELIABILITY_WEIGHTS[algorithmConfig.name],
+					weight: RELIABILITY_WEIGHTS[algorithmConfig.name],
 					contributes: false,
 					reason: `Algorithm failed: ${error.message}`,
 				});
@@ -686,7 +645,7 @@ export function isAIText(text, options = {}) {
 					aiLikelihood: null,
 					executionTime: executionTime,
 					confidence: 0,
-					weight: ALGORITHM_RELIABILITY_WEIGHTS[algorithmConfig.name],
+					weight: RELIABILITY_WEIGHTS[algorithmConfig.name],
 					contributes: false,
 					reason: `Timeout (>${maxExecutionTime}ms)`,
 				});
@@ -708,7 +667,7 @@ export function isAIText(text, options = {}) {
 					aiLikelihood: null,
 					executionTime: executionTime,
 					confidence: 0,
-					weight: ALGORITHM_RELIABILITY_WEIGHTS[algorithmConfig.name],
+					weight: RELIABILITY_WEIGHTS[algorithmConfig.name],
 					contributes: false,
 					reason: "Invalid score returned",
 				});
@@ -721,8 +680,7 @@ export function isAIText(text, options = {}) {
 		// ============================================================================
 
 		const thresholdConfig = ALGORITHM_THRESHOLDS[algorithmConfig.name];
-		const reliabilityWeight =
-			ALGORITHM_RELIABILITY_WEIGHTS[algorithmConfig.name];
+		const reliabilityWeight = RELIABILITY_WEIGHTS[algorithmConfig.name];
 
 		// Apply sophisticated threshold-aware sigmoid amplification with strength awareness
 		const transformedScore = applyThresholdAmplification(
