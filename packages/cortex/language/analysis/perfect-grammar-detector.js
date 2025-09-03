@@ -139,10 +139,11 @@ export function detectPerfectGrammar(text, options = {}) {
 
 	// Calculate normalized perfection purely from error density (language-agnostic)
 	const errorDensityPerThousand = (totalErrors / Math.max(1, wordCount)) * 1000;
-	// Smooth inverse without magic baselines: clamp to [0,1]
+	// Tolerant mapping: allow small error density without collapsing to 0
+	const TOLERANCE_PPT = 60; // phrases per thousand words tolerated before hitting zero
 	const normalizedScore = Math.max(
 		0,
-		Math.min(1, 1 - Math.min(errorDensityPerThousand / 10, 1)),
+		Math.min(1, 1 - Math.min(errorDensityPerThousand / TOLERANCE_PPT, 1)),
 	);
 
 	// Calculate perfection score (higher = more artificially perfect)

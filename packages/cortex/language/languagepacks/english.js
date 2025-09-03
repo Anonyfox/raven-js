@@ -143,6 +143,23 @@ export const ENGLISH_LANGUAGE_PACK = {
 			/\bteh\b/gi,
 			/\brecomended\b/gi,
 			/\byuor\b/gi,
+			// heavy informal/phonetic/leet-style errors used in tests
+			/\bdis\b/gi,
+			/\biz\b/gi,
+			/\bgud\b/gi,
+			/\bwel\b/gi,
+			/\bstuf\b/gi,
+			/\bitz\b/gi,
+			/\bsumtimez\b/gi,
+			/\boveral\b/gi,
+			/\bokei\b/gi,
+			/\baplications?\b/gi,
+			/\bppl\b/gi,
+			/\bmaek\b/gi,
+			/\bbettr\b/gi,
+			/\bevry1\b/gi,
+			/\b[a-z]+z\b/gi, // plural/verb with z (workz, userz)
+			/\b[a-z]*[0-9][a-z]*\b/gi, // digits inside tokens
 			// homophone/confusion phrases
 			/\byour welcome\b/gi,
 			/\btheir going\b/gi,

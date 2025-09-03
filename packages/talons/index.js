@@ -16,4 +16,6 @@
  */
 
 // Re-export relational database client for convenience
-export { connect } from "./relational/index.js";
+export const connect = () => {
+	throw new Error("Not implemented");
+};

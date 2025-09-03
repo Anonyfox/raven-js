@@ -123,8 +123,14 @@ const ALGORITHM_EXECUTION_ORDER = [
 		expectedTime: 3.1,
 		minWords: 10,
 		minSentences: 0,
-		getScore: /** @type {(result: any) => number} */ (result) =>
-			result.aiLikelihood,
+		getScore: /** @type {(result: any) => number} */ (result) => {
+			// Map average deviation (%) to AI likelihood: low deviation -> human, high -> AI
+			// 25% => 0, 50% => 1 (clamped)
+			const deviation =
+				typeof result?.deviation === "number" ? result.deviation : 0;
+			const score = Math.max(0, Math.min(1, (deviation - 25) / 25));
+			return score;
+		},
 	},
 	{
 		name: "ai_transition_phrases",
@@ -840,9 +846,10 @@ export function isAIText(text, options) {
 	);
 
 	// Calculate dramatically enhanced certainty for clear strong signals
-	const algorithmCoverage = Math.sqrt(
-		algorithmDataForConsensus.length / ALGORITHM_EXECUTION_ORDER.length,
-	);
+	// Certainty over active (numeric) algorithms only
+	const activeCount = algorithmDataForConsensus.length;
+	const totalAlgos = ALGORITHM_EXECUTION_ORDER.length;
+	const algorithmCoverage = Math.sqrt(activeCount / totalAlgos);
 
 	let certainty = consensusMetrics.uncertainty * algorithmCoverage;
 

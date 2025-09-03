@@ -18,38 +18,6 @@
     ".": {
       "import": "./index.js",
       "types": "./types.d.ts"
-    },
-    "./relational": {
-      "import": "./relational/index.js",
-      "types": "./relational/types.d.ts"
-    },
-    "./relational/cluster": {
-      "import": "./relational/extras/cluster.js",
-      "types": "./types.relational.cluster.d.ts"
-    },
-    "./relational/diagnostics": {
-      "import": "./relational/extras/diagnostics.js",
-      "types": "./types.relational.diagnostics.d.ts"
-    },
-    "./relational/introspection": {
-      "import": "./relational/extras/introspection.js",
-      "types": "./types.relational.introspection.d.ts"
-    },
-    "./relational/pg": {
-      "import": "./relational/drivers/pg.js",
-      "types": "./types.relational.pg.d.ts"
-    },
-    "./relational/mysql": {
-      "import": "./relational/drivers/mysql.js",
-      "types": "./types.relational.mysql.d.ts"
-    },
-    "./relational/sqlite-node": {
-      "import": "./relational/drivers/sqlite-node.js",
-      "types": "./types.relational.sqlite-node.d.ts"
-    },
-    "./relational/sqlite-wasm": {
-      "import": "./relational/drivers/sqlite-wasm.js",
-      "types": "./types.relational.sqlite-wasm.d.ts"
     }
   },
   "scripts": {
