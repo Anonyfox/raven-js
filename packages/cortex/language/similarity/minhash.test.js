@@ -101,7 +101,9 @@ describe("MinHash", () => {
 			// computeSignature empty -> Infinity values
 			const emptySig = d.computeSignature(new Set());
 			strictEqual(emptySig.length, 10);
-			emptySig.forEach((v) => strictEqual(v, Number.POSITIVE_INFINITY));
+			emptySig.forEach((v) => {
+				strictEqual(v, Number.POSITIVE_INFINITY);
+			});
 			// estimateSimilarity invalids & mismatch
 			throws(
 				() => d.estimateSimilarity("not array", [1, 2, 3]),

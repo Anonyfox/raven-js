@@ -138,10 +138,12 @@ export function detectPerfectGrammar(text, options = {}) {
 	}
 
 	// Calculate normalized perfection purely from error density (language-agnostic)
-	let normalizedScore = 0;
 	const errorDensityPerThousand = (totalErrors / Math.max(1, wordCount)) * 1000;
-	// Smooth inverse without magic baselines: 1 / (1 + density)
-	normalizedScore = 1 / (1 + errorDensityPerThousand);
+	// Smooth inverse without magic baselines: clamp to [0,1]
+	const normalizedScore = Math.max(
+		0,
+		Math.min(1, 1 - Math.min(errorDensityPerThousand / 10, 1)),
+	);
 
 	// Calculate perfection score (higher = more artificially perfect)
 	const perfectionScore = normalizedScore * 100;

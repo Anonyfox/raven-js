@@ -37,10 +37,7 @@ describe("detectTextType", () => {
 		const result = detectTextType(text, {
 			languagePack: MINIMAL_LANGUAGE_PACK,
 		});
-		assert.equal(
-			result.type,
-			MINIMAL_LANGUAGE_PACK.signaturePhrases.defaultType,
-		);
+		assert.equal(result.type, MINIMAL_LANGUAGE_PACK.defaultType);
 	});
 
 	it("throws on missing languagePack", () => {

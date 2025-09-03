@@ -8,7 +8,15 @@
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { analyzeAITransitionPhrases } from "./ai-transition-phrases.js";
+import { ENGLISH_LANGUAGE_PACK } from "../languagepacks/english.js";
+import { analyzeAITransitionPhrases as baseAnalyzeAITransitionPhrases } from "./ai-transition-phrases.js";
+
+// Inject default ENGLISH languagePack for all tests; callers can still override via options
+const analyzeAITransitionPhrases = (text, options = {}) =>
+	baseAnalyzeAITransitionPhrases(text, {
+		languagePack: ENGLISH_LANGUAGE_PACK,
+		...options,
+	});
 
 describe("analyzeAITransitionPhrases", () => {
 	describe("basic functionality", () => {

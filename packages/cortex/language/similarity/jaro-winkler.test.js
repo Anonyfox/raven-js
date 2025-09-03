@@ -126,7 +126,9 @@ describe("Jaro-Winkler", () => {
 			const singletons = groupSimilarStrings(["apple", "orange", "grape"], {
 				threshold: 0.9,
 			});
-			singletons.forEach((g) => strictEqual(g.length, 1));
+			singletons.forEach((g) => {
+				strictEqual(g.length, 1);
+			});
 			// wrapper distance function coverage
 			ok(jaroWinklerDistance("prefix", "prefix") === 0);
 			// findBestMatch returnAll + empty candidates
