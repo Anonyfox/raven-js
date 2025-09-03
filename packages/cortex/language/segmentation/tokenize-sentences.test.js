@@ -15,203 +15,151 @@ import { describe, it } from "node:test";
 import { tokenizeSentences } from "./tokenize-sentences.js";
 
 describe("tokenizeSentences", () => {
-	it("tokenizes basic sentences", () => {
-		deepStrictEqual(tokenizeSentences("Hello world. How are you?"), [
-			"Hello world.",
-			"How are you?",
-		]);
-	});
-
-	it("handles different punctuation marks", () => {
-		deepStrictEqual(
-			tokenizeSentences("First sentence! Second sentence? Third sentence."),
-			["First sentence!", "Second sentence?", "Third sentence."],
-		);
-	});
-
-	it("handles exclamation and question combinations", () => {
-		deepStrictEqual(tokenizeSentences("Really?! Yes, I think so."), [
-			"Really?!",
-			"Yes, I think so.",
-		]);
-	});
-
-	it("preserves ellipses", () => {
-		const result = tokenizeSentences("First thought... Second thought.");
-		strictEqual(Array.isArray(result), true);
-		strictEqual(result.length >= 1, true);
-		// Content should be preserved even if segmentation varies
-	});
-
-	it("handles abbreviations with periods", () => {
-		const result = tokenizeSentences(
-			"Mr. Smith went to Dr. Jones. They discussed business.",
-		);
-		// Our regex-based implementation may not perfectly handle all abbreviations,
-		// but should produce reasonable sentence boundaries
-		strictEqual(Array.isArray(result), true);
-		strictEqual(result.length >= 1, true);
-		// At minimum, the text should be preserved
-		const combined = result.join(" ");
-		strictEqual(combined.includes("Smith"), true);
-		strictEqual(combined.includes("Jones"), true);
-		strictEqual(combined.includes("business"), true);
-	});
-
-	it("handles decimals and numbers", () => {
-		const result = tokenizeSentences(
-			"The price was $12.50. That seems reasonable.",
-		);
-		// Should not split on the decimal
-		strictEqual(
-			result.some((s) => s.includes("$12.50")),
-			true,
-		);
-	});
-
-	it("trims whitespace from sentences", () => {
-		deepStrictEqual(
-			tokenizeSentences("   First sentence.   Second sentence.   "),
-			["First sentence.", "Second sentence."],
-		);
-	});
-
-	it("handles single sentence", () => {
-		deepStrictEqual(tokenizeSentences("This is just one sentence."), [
-			"This is just one sentence.",
-		]);
-	});
-
-	it("handles invalid and edge case inputs gracefully", () => {
-		// Null/undefined inputs
-		deepStrictEqual(tokenizeSentences(null), []);
-		deepStrictEqual(tokenizeSentences(undefined), []);
-
-		// Empty and whitespace-only strings
-		deepStrictEqual(tokenizeSentences(""), []);
-		deepStrictEqual(tokenizeSentences("   "), []);
-		deepStrictEqual(tokenizeSentences("\t\n\r"), []);
-
-		// Invalid locale handling
-		deepStrictEqual(tokenizeSentences("Hello world.", null), ["Hello world."]);
-		deepStrictEqual(tokenizeSentences("Hello world.", undefined), [
-			"Hello world.",
-		]);
-	});
-
-	it("handles newlines and paragraph breaks", () => {
-		const result = tokenizeSentences("First sentence.\n\nSecond sentence.");
-		strictEqual(Array.isArray(result), true);
-		strictEqual(result.length >= 1, true);
-		strictEqual(
-			result.some((s) => s.includes("First")),
-			true,
-		);
-		strictEqual(
-			result.some((s) => s.includes("Second")),
-			true,
-		);
-	});
-
-	it("handles sentences without ending punctuation", () => {
-		deepStrictEqual(tokenizeSentences("Hello world"), ["Hello world"]);
-	});
-
-	it("handles multiple consecutive punctuation", () => {
-		deepStrictEqual(tokenizeSentences("What?!?! I cannot believe it!!!"), [
-			"What?!?!",
-			"I cannot believe it!!!",
-		]);
-	});
-
-	it("handles quotation marks", () => {
-		const result = tokenizeSentences(
-			'He said "Hello." She replied "Hi there."',
-		);
-		strictEqual(Array.isArray(result), true);
-		strictEqual(result.length >= 1, true);
-	});
-
-	it("handles mixed case after punctuation", () => {
-		deepStrictEqual(
-			tokenizeSentences("First sentence. second sentence starts lowercase."),
-			["First sentence. second sentence starts lowercase."],
-		);
-	});
-
-	it("handles Unicode punctuation", () => {
-		const result = tokenizeSentences("First sentence。 Second sentence！");
-		strictEqual(Array.isArray(result), true);
-		strictEqual(result.length >= 1, true);
-	});
-
-	it("handles long text with multiple sentences", () => {
-		const text =
-			"This is the first sentence. This is the second one! And here comes a third? Finally, the fourth sentence.";
-		const result = tokenizeSentences(text);
-		strictEqual(Array.isArray(result), true);
-		strictEqual(result.length >= 2, true); // Should detect multiple sentences
-	});
-
-	it("handles edge case with period at end", () => {
-		deepStrictEqual(tokenizeSentences("Test."), ["Test."]);
-	});
-
-	it("uses regex fallback when Intl.Segmenter fails", () => {
-		// Temporarily break Intl.Segmenter to force fallback path
-		const originalSegmenter = Intl.Segmenter;
-		Intl.Segmenter = () => {
-			throw new Error("Segmenter unavailable");
-		};
-
-		try {
+	// APEX PREDATOR PATTERN
+	describe("core functionality", () => {
+		it("segments common punctuation patterns and trims", () => {
+			// basic sentences
 			deepStrictEqual(tokenizeSentences("Hello world. How are you?"), [
 				"Hello world.",
 				"How are you?",
 			]);
-
-			deepStrictEqual(tokenizeSentences("First sentence! Second sentence?"), [
-				"First sentence!",
-				"Second sentence?",
+			// different punctuation
+			deepStrictEqual(
+				tokenizeSentences("First sentence! Second sentence? Third sentence."),
+				["First sentence!", "Second sentence?", "Third sentence."],
+			);
+			// exclamation and question combos
+			deepStrictEqual(tokenizeSentences("Really?! Yes, I think so."), [
+				"Really?!",
+				"Yes, I think so.",
 			]);
-		} finally {
-			// Restore original Intl.Segmenter
-			Intl.Segmenter = originalSegmenter;
-		}
+			// trims whitespace
+			deepStrictEqual(
+				tokenizeSentences("   First sentence.   Second sentence.   "),
+				["First sentence.", "Second sentence."],
+			);
+			// single sentence and endings
+			deepStrictEqual(tokenizeSentences("This is just one sentence."), [
+				"This is just one sentence.",
+			]);
+			deepStrictEqual(tokenizeSentences("Test."), ["Test."]);
+			// multiple consecutive punctuation
+			deepStrictEqual(tokenizeSentences("What?!?! I cannot believe it!!!"), [
+				"What?!?!",
+				"I cannot believe it!!!",
+			]);
+			// mixed case after punctuation stays intact
+			deepStrictEqual(
+				tokenizeSentences("First sentence. second sentence starts lowercase."),
+				["First sentence. second sentence starts lowercase."],
+			);
+			// Unicode punctuation
+			const unicode = tokenizeSentences("First sentence。 Second sentence！");
+			strictEqual(Array.isArray(unicode), true);
+			strictEqual(unicode.length >= 1, true);
+		});
 	});
 
-	it("uses regex fallback when Intl.Segmenter is undefined", () => {
-		// Temporarily remove Intl.Segmenter to force fallback path
-		const originalSegmenter = Intl.Segmenter;
-		delete Intl.Segmenter;
-
-		try {
-			deepStrictEqual(tokenizeSentences("Test sentence. Another one."), [
-				"Test sentence.",
-				"Another one.",
+	describe("edge cases and errors", () => {
+		it("handles ellipses, abbreviations, decimals, invalids, and newlines", () => {
+			// ellipses preserved
+			const ellipses = tokenizeSentences("First thought... Second thought.");
+			strictEqual(Array.isArray(ellipses), true);
+			strictEqual(ellipses.length >= 1, true);
+			// abbreviations: preserve content
+			const abbrev = tokenizeSentences(
+				"Mr. Smith went to Dr. Jones. They discussed business.",
+			);
+			strictEqual(Array.isArray(abbrev), true);
+			strictEqual(abbrev.length >= 1, true);
+			const combined = abbrev.join(" ");
+			strictEqual(combined.includes("Smith"), true);
+			strictEqual(combined.includes("Jones"), true);
+			strictEqual(combined.includes("business"), true);
+			// decimals not split
+			const price = tokenizeSentences(
+				"The price was $12.50. That seems reasonable.",
+			);
+			strictEqual(
+				price.some((s) => s.includes("$12.50")),
+				true,
+			);
+			// invalid inputs
+			deepStrictEqual(tokenizeSentences(null), []);
+			deepStrictEqual(tokenizeSentences(undefined), []);
+			deepStrictEqual(tokenizeSentences(""), []);
+			deepStrictEqual(tokenizeSentences("   "), []);
+			deepStrictEqual(tokenizeSentences("\t\n\r"), []);
+			// invalid locale handling
+			deepStrictEqual(tokenizeSentences("Hello world.", null), [
+				"Hello world.",
 			]);
-		} finally {
-			// Restore original Intl.Segmenter
-			Intl.Segmenter = originalSegmenter;
-		}
+			deepStrictEqual(tokenizeSentences("Hello world.", undefined), [
+				"Hello world.",
+			]);
+			// newlines / paragraph breaks
+			const para = tokenizeSentences("First sentence.\n\nSecond sentence.");
+			strictEqual(Array.isArray(para), true);
+			strictEqual(para.length >= 1, true);
+			strictEqual(
+				para.some((s) => s.includes("First")),
+				true,
+			);
+			strictEqual(
+				para.some((s) => s.includes("Second")),
+				true,
+			);
+			// force regex fallback via throwing Segmenter
+			const originalSegmenter = Intl.Segmenter;
+			Intl.Segmenter = () => {
+				throw new Error("Segmenter unavailable");
+			};
+			try {
+				deepStrictEqual(tokenizeSentences("Hello world. How are you?"), [
+					"Hello world.",
+					"How are you?",
+				]);
+				deepStrictEqual(tokenizeSentences("First sentence! Second sentence?"), [
+					"First sentence!",
+					"Second sentence?",
+				]);
+			} finally {
+				Intl.Segmenter = originalSegmenter;
+			}
+			// force regex fallback via undefined Segmenter
+			const original2 = Intl.Segmenter;
+			// eslint-disable-next-line unicorn/no-unreadable-array-destructuring
+			delete Intl.Segmenter;
+			try {
+				deepStrictEqual(tokenizeSentences("Test sentence. Another one."), [
+					"Test sentence.",
+					"Another one.",
+				]);
+			} finally {
+				Intl.Segmenter = original2;
+			}
+		});
 	});
 
-	it("handles fallback edge case with no sentence boundaries", () => {
-		// Test text that doesn't match sentence boundary regex in fallback
-		const originalSegmenter = Intl.Segmenter;
-		delete Intl.Segmenter;
-
-		try {
-			// Text with no capital letter after punctuation - won't trigger regex split
-			deepStrictEqual(tokenizeSentences("no capitals here, just text"), [
-				"no capitals here, just text",
-			]);
-
-			// Test empty regex split result to trigger filter fallback
-			deepStrictEqual(tokenizeSentences("   "), []); // Whitespace only should result in empty array
-		} finally {
-			// Restore original Intl.Segmenter
-			Intl.Segmenter = originalSegmenter;
-		}
+	describe("integration scenarios", () => {
+		it("handles long text and fallback edge cases", () => {
+			// long text
+			const text =
+				"This is the first sentence. This is the second one! And here comes a third? Finally, the fourth sentence.";
+			const result = tokenizeSentences(text);
+			strictEqual(Array.isArray(result), true);
+			strictEqual(result.length >= 2, true);
+			// fallback edge cases: no boundary after punctuation
+			const originalSegmenter = Intl.Segmenter;
+			delete Intl.Segmenter;
+			try {
+				deepStrictEqual(tokenizeSentences("no capitals here, just text"), [
+					"no capitals here, just text",
+				]);
+				deepStrictEqual(tokenizeSentences("   "), []);
+			} finally {
+				Intl.Segmenter = originalSegmenter;
+			}
+		});
 	});
 });
