@@ -12,7 +12,10 @@
  * Measures pattern redundancy through n-gram frequency analysis to distinguish
  * human from AI-generated text. AI content exhibits more repetitive sequential
  * patterns than human writing, providing statistical fingerprints for detection.
+ * Uses proven cortex building blocks for robust n-gram extraction.
  */
+
+import { ngrams } from "../featurization/index.js";
 
 /**
  * Analyzes n-gram repetition patterns in text to detect mechanical generation.
@@ -88,41 +91,34 @@ export function analyzeNgramRepetition(text, options = {}) {
 		throw new Error("Parameter unit must be 'character' or 'word'");
 	}
 
-	// Normalize text case if needed
-	const normalizedText = caseSensitive ? text : text.toLowerCase();
+	// Map unit parameter to ngrams function type parameter
+	const ngramType = unit === "character" ? "chars" : "words";
 
-	// Extract elements based on unit type
-	let elements;
-	if (unit === "character") {
-		elements = normalizedText.split("");
-	} else {
-		// Split on whitespace and filter out empty elements
-		elements = normalizedText.split(/\s+/).filter((word) => word.length > 0);
-	}
+	// Extract n-grams using proven featurization building blocks
+	// This handles Unicode normalization, international case folding, and robust tokenization
+	const extractedNgrams = ngrams(text, {
+		type: ngramType,
+		n: n,
+		caseSensitive: caseSensitive,
+		normalize: true, // Enable Unicode normalization
+		lowercase: !caseSensitive, // Use international-aware case folding
+	});
 
-	// Check if we have enough elements to create n-grams
-	if (elements.length < n) {
+	// Check if we extracted enough n-grams for analysis
+	if (extractedNgrams.length === 0) {
 		throw new Error(
 			`Text must contain at least ${n} ${unit}s to extract ${n}-grams`,
 		);
 	}
 
-	// Extract overlapping n-grams
-	const ngrams = [];
-	for (let i = 0; i <= elements.length - n; i++) {
-		const ngram = elements.slice(i, i + n);
-		const ngramString = unit === "character" ? ngram.join("") : ngram.join(" ");
-		ngrams.push(ngramString);
-	}
-
-	// Count n-gram frequencies
+	// Count n-gram frequencies using the extracted n-grams
 	const frequencyMap = new Map();
-	for (const ngram of ngrams) {
+	for (const ngram of extractedNgrams) {
 		frequencyMap.set(ngram, (frequencyMap.get(ngram) || 0) + 1);
 	}
 
 	// Calculate metrics
-	const totalNgrams = ngrams.length;
+	const totalNgrams = extractedNgrams.length;
 	const uniqueNgrams = frequencyMap.size;
 	const diversityRatio = uniqueNgrams / totalNgrams;
 
