@@ -7,11 +7,13 @@
  */
 
 /**
- * @file Data interaction library for modern JavaScript - databases, APIs, and data sources.
+ * @file Main entry point for the @raven-js/talons library.
  *
- * Zero-dependency toolkit for common data interaction patterns in modern applications.
- * Provides secure, performant utilities for database connections, API communication,
- * and data source integration using platform-native JavaScript features.
+ * Talons provides comprehensive data interaction capabilities for modern
+ * JavaScript applications. It includes high-performance relational database
+ * clients with unified APIs across PostgreSQL, MySQL, and SQLite, plus
+ * advanced features like connection pooling, clustering, and diagnostics.
  */
 
-export const hello = () => "Hello, world!";
+// Re-export relational database client for convenience
+export { connect } from "./relational/index.js";

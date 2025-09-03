@@ -12,10 +12,10 @@
 
 import { strictEqual } from "node:assert";
 import { describe, it } from "node:test";
-import { hello } from "./index.js";
+import { connect } from "./index.js";
 
 describe("@raven-js/talons", () => {
-	it("exports hello function that returns greeting", () => {
-		strictEqual(hello(), "Hello, world!");
+	it("exports connect function", () => {
+		strictEqual(typeof connect, "function");
 	});
 });
