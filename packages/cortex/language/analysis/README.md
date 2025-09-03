@@ -43,6 +43,7 @@ Advanced linguistic algorithms that detect AI-generated content through statisti
 
 ```javascript
 import { analyzeWithEnsemble, calculateBurstiness } from "@raven-js/cortex";
+import { ENGLISH_SIGNATURE_PHRASES } from "@raven-js/cortex/language/signaturephrases/english.js";
 
 // Fast initial screening
 function quickScreen(text) {
@@ -52,7 +53,10 @@ function quickScreen(text) {
 
 // Comprehensive analysis for flagged content
 function deepAnalysis(text) {
-  const result = analyzeWithEnsemble(text, { enableEarlyTermination: true });
+  const result = analyzeWithEnsemble(text, {
+    enableEarlyTermination: true,
+    signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+  });
   return result.aiLikelihood > 0.7 ? "ai-generated" : "human-written";
 }
 ```
@@ -64,13 +68,18 @@ import {
   detectPerfectGrammar,
   analyzeAITransitionPhrases,
 } from "@raven-js/cortex";
+import { ENGLISH_SIGNATURE_PHRASES } from "@raven-js/cortex/language/signaturephrases/english.js";
 
 function checkEssayAuthenticity(essayText) {
   // AI essays tend to be grammatically perfect
-  const grammar = detectPerfectGrammar(essayText);
+  const grammar = detectPerfectGrammar(essayText, {
+    signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+  });
 
   // And use formal transition phrases excessively
-  const transitions = analyzeAITransitionPhrases(essayText);
+  const transitions = analyzeAITransitionPhrases(essayText, {
+    signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+  });
 
   const combinedScore = (grammar.aiLikelihood + transitions.aiLikelihood) / 2;
 
@@ -105,13 +114,18 @@ import {
   detectRuleOfThreeObsession,
   analyzeAITransitionPhrases,
 } from "@raven-js/cortex";
+import { ENGLISH_SIGNATURE_PHRASES } from "@raven-js/cortex/language/signaturephrases/english.js";
 
 function analyzeMarketingCopy(content) {
   // AI marketing copy obsesses with three-item lists
-  const ruleOfThree = detectRuleOfThreeObsession(content);
+  const ruleOfThree = detectRuleOfThreeObsession(content, {
+    signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+  });
 
   // And uses formulaic transition phrases
-  const transitions = analyzeAITransitionPhrases(content);
+  const transitions = analyzeAITransitionPhrases(content, {
+    signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+  });
 
   return {
     aiLikelihood: Math.max(ruleOfThree.aiLikelihood, transitions.aiLikelihood),
@@ -169,10 +183,8 @@ function analyzeMarketingCopy(content) {
 
 ### Language Considerations
 
-- **Optimized for**: English text analysis
-- **Partial Support**: Germanic languages (German, Dutch)
-- **Limited**: Romance languages, non-Latin scripts
-- **Not Supported**: Right-to-left languages, logographic systems
+- Provide a language pack via `signaturePhrases` (e.g., ENGLISH, GERMAN, MINIMAL)
+- Tree-shake by importing only the packs you need
 
 ### Performance Optimization
 
@@ -182,7 +194,9 @@ const batchAnalysis = texts.map((text) => ({
   text,
   burstiness: calculateBurstiness(text),
   entropy: calculateShannonEntropy(text),
-  grammar: detectPerfectGrammar(text),
+  grammar: detectPerfectGrammar(text, {
+    signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+  }),
 }));
 
 // Early termination for obvious cases
@@ -193,7 +207,9 @@ function smartAnalysis(text) {
   }
 
   // Full analysis only when needed
-  return analyzeWithEnsemble(text);
+  return analyzeWithEnsemble(text, {
+    signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+  });
 }
 ```
 
@@ -204,7 +220,7 @@ function smartAnalysis(text) {
 ```javascript
 import { analyzeWithEnsemble } from "@raven-js/cortex";
 import { detectTextType } from "@raven-js/cortex/language/analysis";
-import { ENGLISH_SIGNATURE_PHRASES } from "@raven-js/cortex/language/signaturephrases";
+import { ENGLISH_SIGNATURE_PHRASES } from "@raven-js/cortex/language/signaturephrases/english.js";
 
 function safeAnalysis(text) {
   try {
@@ -237,7 +253,9 @@ function cachedAnalysis(text) {
     return analysisCache.get(hash);
   }
 
-  const result = analyzeWithEnsemble(text);
+  const result = analyzeWithEnsemble(text, {
+    signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+  });
   analysisCache.set(hash, result);
   return result;
 }
@@ -254,7 +272,9 @@ async function progressiveDetection(text) {
   if (burstiness > 0.7) return { aiLikelihood: 0.15, method: "burstiness" };
 
   // Phase 2: Medium confidence check (< 5ms)
-  const grammar = detectPerfectGrammar(text);
+  const grammar = detectPerfectGrammar(text, {
+    signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+  });
   if (grammar.aiLikelihood > 0.8)
     return { aiLikelihood: 0.8, method: "grammar" };
 
