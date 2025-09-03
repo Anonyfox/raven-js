@@ -247,14 +247,14 @@ function extractPhrases(text, wordScores, stopwords, minWordLength) {
  * @example
  * // Basic usage (requires user to provide stopwords for tree-shaking)
  * import { ENGLISH_STOPWORDS } from '@raven-js/cortex/language/stopwords';
- * const keywords = extractKeywords('Natural language processing research', {
+ * const keywords = textrank('Natural language processing research', {
  *   stopwords: ENGLISH_STOPWORDS
  * });
  * console.log(keywords); // ['natural language processing', 'research']
  *
  * @example
  * // Custom configuration
- * const keywords = extractKeywords(text, {
+ * const keywords = textrank(text, {
  *   stopwords: new Set(['the', 'and', 'or']),
  *   maxKeywords: 5,
  *   windowSize: 6,
@@ -266,7 +266,7 @@ function extractPhrases(text, wordScores, stopwords, minWordLength) {
  * const keywords = extractKeywords('Machine learning algorithms are powerful');
  * // Returns individual words/phrases since no stopwords provided
  */
-export function extractKeywords(text, options = {}) {
+export function textrank(text, options = {}) {
 	const {
 		stopwords = new Set(), // Empty set by default - user provides stopwords
 		normalize = true,

@@ -22,5 +22,5 @@ export {
 	extractMixedNgrams,
 	extractWordNgrams,
 } from "./ngrams.js";
-export { extractKeywords } from "./rake.js";
-export { extractKeywords as extractKeywordsTextRank } from "./textrank.js";
+export { rake } from "./rake.js";
+export { textrank } from "./textrank.js";

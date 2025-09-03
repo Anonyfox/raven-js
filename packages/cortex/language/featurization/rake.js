@@ -217,7 +217,7 @@ function scorePhrases(phrases, wordScores) {
  * const keywords = extractKeywords('Machine learning algorithms are powerful');
  * // Returns all candidate phrases since no stopwords provided
  */
-export function extractKeywords(text, options = {}) {
+export function rake(text, options = {}) {
 	const {
 		stopwords = new Set(), // Empty set by default - user provides stopwords
 		normalize = true,

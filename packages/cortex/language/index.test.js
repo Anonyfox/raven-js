@@ -95,13 +95,10 @@ describe("language module", () => {
 			typeof language.hashFeatures === "function",
 			"Should export hashFeatures",
 		);
+		assert.ok(typeof language.rake === "function", "Should export rake");
 		assert.ok(
-			typeof language.extractKeywords === "function",
-			"Should export extractKeywords",
-		);
-		assert.ok(
-			typeof language.extractKeywordsTextRank === "function",
-			"Should export extractKeywordsTextRank",
+			typeof language.textrank === "function",
+			"Should export textrank",
 		);
 
 		// Similarity functions

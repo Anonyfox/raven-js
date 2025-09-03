@@ -1,12 +1,12 @@
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
-import { extractKeywords } from "./rake.js";
+import { rake } from "./rake.js";
 
-describe("extractKeywords", () => {
+describe("rake", () => {
 	it("works with basic text and no stopwords", () => {
 		const text = "Machine learning algorithms are powerful tools";
 		// Without stopwords, entire sentence is one phrase - need higher maxPhraseLength
-		const keywords = extractKeywords(text, { maxPhraseLength: 6 });
+		const keywords = rake(text, { maxPhraseLength: 6 });
 
 		assert(Array.isArray(keywords));
 		assert(keywords.length > 0);
@@ -30,7 +30,7 @@ describe("extractKeywords", () => {
 			"to",
 		]);
 
-		const keywords = extractKeywords(text, {
+		const keywords = rake(text, {
 			stopwords,
 			maxKeywords: 5,
 		});
@@ -43,14 +43,14 @@ describe("extractKeywords", () => {
 	});
 
 	it("handles empty text", () => {
-		const keywords = extractKeywords("");
+		const keywords = rake("");
 		assert.deepStrictEqual(keywords, []);
 	});
 
 	it("throws on invalid input", () => {
-		assert.throws(() => extractKeywords(null), TypeError);
-		assert.throws(() => extractKeywords(123), TypeError);
-		assert.throws(() => extractKeywords({}), TypeError);
+		assert.throws(() => rake(null), TypeError);
+		assert.throws(() => rake(123), TypeError);
+		assert.throws(() => rake({}), TypeError);
 	});
 
 	it("provides consistent output for same input", () => {
@@ -59,8 +59,8 @@ describe("extractKeywords", () => {
 		const stopwords = new Set(["and"]);
 		const options = { stopwords, maxKeywords: 5 };
 
-		const keywords1 = extractKeywords(text, options);
-		const keywords2 = extractKeywords(text, options);
+		const keywords1 = rake(text, options);
+		const keywords2 = rake(text, options);
 
 		assert.deepStrictEqual(keywords1, keywords2);
 	});

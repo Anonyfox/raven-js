@@ -31,14 +31,8 @@ describe("featurization module", () => {
 			typeof featurization.hashFeatures === "function",
 			"Should export hashFeatures",
 		);
-		ok(
-			typeof featurization.extractKeywords === "function",
-			"Should export extractKeywords",
-		);
-		ok(
-			typeof featurization.extractKeywordsTextRank === "function",
-			"Should export extractKeywordsTextRank",
-		);
+		ok(typeof featurization.rake === "function", "Should export rake");
+		ok(typeof featurization.textrank === "function", "Should export textrank");
 	});
 
 	it("n-gram functions work through re-exports", () => {
