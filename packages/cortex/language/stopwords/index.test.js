@@ -6,14 +6,9 @@
  * @see {@link https://anonyfox.com}
  */
 
-import { ok, strictEqual, throws } from "node:assert";
+import { ok, strictEqual } from "node:assert";
 import { describe, it } from "node:test";
-import {
-	ENGLISH_STOPWORDS,
-	GERMAN_STOPWORDS,
-	getStopwords,
-	getSupportedLanguages,
-} from "./index.js";
+import { ENGLISH_STOPWORDS, GERMAN_STOPWORDS } from "./index.js";
 
 describe("stopwords module", () => {
 	describe("English stopwords", () => {
@@ -58,55 +53,6 @@ describe("stopwords module", () => {
 			ok(!GERMAN_STOPWORDS.has("lernen"));
 			ok(!GERMAN_STOPWORDS.has("algorithmus"));
 			ok(!GERMAN_STOPWORDS.has("computer"));
-		});
-	});
-
-	describe("getStopwords function", () => {
-		it("returns English stopwords for 'en'", () => {
-			const stopwords = getStopwords("en");
-			strictEqual(stopwords, ENGLISH_STOPWORDS);
-		});
-
-		it("returns English stopwords for 'english'", () => {
-			const stopwords = getStopwords("english");
-			strictEqual(stopwords, ENGLISH_STOPWORDS);
-		});
-
-		it("returns German stopwords for 'de'", () => {
-			const stopwords = getStopwords("de");
-			strictEqual(stopwords, GERMAN_STOPWORDS);
-		});
-
-		it("returns German stopwords for 'german'", () => {
-			const stopwords = getStopwords("german");
-			strictEqual(stopwords, GERMAN_STOPWORDS);
-		});
-
-		it("returns German stopwords for 'deutsch'", () => {
-			const stopwords = getStopwords("deutsch");
-			strictEqual(stopwords, GERMAN_STOPWORDS);
-		});
-
-		it("handles case insensitive language codes", () => {
-			strictEqual(getStopwords("EN"), ENGLISH_STOPWORDS);
-			strictEqual(getStopwords("De"), GERMAN_STOPWORDS);
-			strictEqual(getStopwords("ENGLISH"), ENGLISH_STOPWORDS);
-		});
-
-		it("throws error for unsupported language", () => {
-			throws(() => getStopwords("fr"), /Unsupported language: fr/);
-			throws(() => getStopwords("spanish"), /Unsupported language: spanish/);
-			throws(() => getStopwords(""), /Unsupported language: /);
-		});
-	});
-
-	describe("getSupportedLanguages function", () => {
-		it("returns array of supported languages", () => {
-			const languages = getSupportedLanguages();
-			ok(Array.isArray(languages));
-			ok(languages.includes("en"));
-			ok(languages.includes("de"));
-			strictEqual(languages.length, 2);
 		});
 	});
 
