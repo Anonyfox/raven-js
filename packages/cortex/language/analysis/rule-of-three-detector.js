@@ -13,7 +13,10 @@
  * Research shows AI systematically organizes information in groups of three (lists,
  * examples, explanations) at rates 3-5x higher than human writers, creating detectible
  * "rule of three" obsessions in content structure and organization.
+ * Uses robust cortex building blocks for enhanced text processing accuracy.
  */
+
+import { tokenizeSentences, tokenizeWords } from "../segmentation/index.js";
 
 /**
  * Human baseline frequencies for triadic patterns per 1000 words in natural writing.
@@ -137,8 +140,8 @@ export function detectRuleOfThreeObsession(text, options = {}) {
 		throw new Error("Parameter sensitivityThreshold must be a positive number");
 	}
 
-	// Count total words for frequency calculations
-	const words = text.split(/\s+/).filter((word) => word.length > 0);
+	// Count total words using robust Unicode-aware tokenization
+	const words = tokenizeWords(text);
 	const wordCount = words.length;
 
 	if (wordCount < minWordCount) {
@@ -258,9 +261,7 @@ export function detectRuleOfThreeObsession(text, options = {}) {
 
 		three_clause_sentences: (/** @type {string} */ text) => {
 			// Sentences with exactly three major clauses (simplified detection)
-			const sentences = text
-				.split(/[.!?]+/)
-				.filter((/** @type {string} */ s) => s.trim().length > 0);
+			const sentences = tokenizeSentences(text);
 			let count = 0;
 			for (const sentence of sentences) {
 				const clauses = sentence
@@ -273,9 +274,7 @@ export function detectRuleOfThreeObsession(text, options = {}) {
 
 		three_phrase_sentences: (/** @type {string} */ text) => {
 			// Sentences with three distinct phrases separated by commas
-			const sentences = text
-				.split(/[.!?]+/)
-				.filter((/** @type {string} */ s) => s.trim().length > 0);
+			const sentences = tokenizeSentences(text);
 			let count = 0;
 			for (const sentence of sentences) {
 				const phrases = sentence

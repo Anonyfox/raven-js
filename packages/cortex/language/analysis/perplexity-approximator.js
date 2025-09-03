@@ -14,7 +14,11 @@
  * predictable word sequences) compared to human writing, which exhibits greater lexical
  * creativity and unexpected word choices. This implementation provides statistical
  * approximations without requiring full language model dependencies.
+ * Uses robust cortex building blocks for enhanced tokenization accuracy.
  */
+
+import { foldCase } from "../normalization/index.js";
+import { tokenizeWords } from "../segmentation/index.js";
 
 /**
  * Human baseline metrics for perplexity characteristics in natural writing.
@@ -122,12 +126,10 @@ export function approximatePerplexity(text, options = {}) {
 		throw new Error("Parameter vocabularySize must be at least 1000");
 	}
 
-	// Tokenize and normalize text
-	const words = text
-		.toLowerCase()
-		.replace(/[^\w\s]/g, " ")
-		.split(/\s+/)
-		.filter((word) => word.length > 0);
+	// Tokenize and normalize text using robust building blocks
+	// International-aware case folding and Unicode-aware word tokenization
+	const normalizedText = foldCase(text);
+	const words = tokenizeWords(normalizedText);
 
 	const wordCount = words.length;
 
