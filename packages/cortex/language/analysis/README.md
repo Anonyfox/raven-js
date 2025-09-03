@@ -203,10 +203,15 @@ function smartAnalysis(text) {
 
 ```javascript
 import { analyzeWithEnsemble } from "@raven-js/cortex";
+import { detectTextType } from "@raven-js/cortex/language/analysis";
+import { ENGLISH_SIGNATURE_PHRASES } from "@raven-js/cortex/language/signaturephrases";
 
 function safeAnalysis(text) {
   try {
-    return analyzeWithEnsemble(text, { maxExecutionTime: 100 });
+    return analyzeWithEnsemble(text, {
+      maxExecutionTime: 100,
+      signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+    });
   } catch (error) {
     console.warn("AI detection failed:", error.message);
     return { aiLikelihood: 0.5, error: true }; // Neutral score on failure
@@ -254,9 +259,35 @@ async function progressiveDetection(text) {
     return { aiLikelihood: 0.8, method: "grammar" };
 
   // Phase 3: Full ensemble analysis (< 25ms)
-  return analyzeWithEnsemble(text, { includeDetails: false });
+  return analyzeWithEnsemble(text, {
+    includeDetails: false,
+    signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+  });
 }
 ```
+
+## 🧩 Text Type Classification (Language Packs)
+
+```javascript
+import { detectTextType } from "@raven-js/cortex/language/analysis";
+import {
+  ENGLISH_SIGNATURE_PHRASES,
+  GERMAN_SIGNATURE_PHRASES,
+  MINIMAL_SIGNATURE_PHRASES,
+} from "@raven-js/cortex/language/signaturephrases";
+
+const { type, confidence } = detectTextType(text, {
+  signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+});
+
+// In the ensemble:
+analyzeWithEnsemble(text, { signaturePhrases: MINIMAL_SIGNATURE_PHRASES });
+```
+
+Notes:
+
+- Pass `signaturePhrases` to enable `textType: 'auto'` without bundling a default language.
+- Choose packs explicitly for tree-shaking. `MINIMAL_SIGNATURE_PHRASES` is a low-FP broad default.
 
 ---
 

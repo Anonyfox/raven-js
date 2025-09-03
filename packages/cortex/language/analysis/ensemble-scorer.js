@@ -19,12 +19,12 @@
  * Uses robust cortex building blocks for accurate word counting and international text support.
  */
 
-import { foldCase } from "../normalization/index.js";
 import { tokenizeWords } from "../segmentation/index.js";
 
 import { analyzeAITransitionPhrases } from "./ai-transition-phrases.js";
 // Import all detection algorithms
 import { calculateBurstiness } from "./burstiness.js";
+import { detectTextType as detectTextTypeWithPhrases } from "./detect-text-type.js";
 import { detectEmDashEpidemic } from "./em-dash-detector.js";
 import { analyzeNgramRepetition } from "./ngram-repetition.js";
 import { detectParticipalPhraseFormula } from "./participial-phrase-detector.js";
@@ -91,6 +91,7 @@ const TEXT_TYPE_ADJUSTMENTS = {
  * @param {boolean} [options.includeDetails=false] - Whether to include individual algorithm results.
  * @param {string} [options.textType='auto'] - Text type hint ('technical', 'academic', 'business', 'creative', 'casual', 'social_media', 'auto').
  * @param {number} [options.confidenceThreshold=0.6] - Minimum confidence for high-confidence predictions.
+ * @param {import('../signaturephrases/signature-phrase.js').SignaturePhraseProfile} [options.signaturePhrases] - Language profile for auto text-type detection
  * @param {object} [options.algorithmWeights] - Custom weights for individual algorithms (optional override).
  * @returns {{aiLikelihood: number, confidence: string, weightedScore: number, algorithmCount: number, consensus: number, textType: string, individualResults: Array<Object>}} Comprehensive analysis results.
  *   - aiLikelihood: Overall AI probability score (0-1, higher = more AI-like).
@@ -128,6 +129,7 @@ export function analyzeWithEnsemble(text, options = {}) {
 		minWordCount = 25,
 		includeDetails = false,
 		textType = "auto",
+		signaturePhrases,
 		confidenceThreshold = 0.6,
 		algorithmWeights = ALGORITHM_WEIGHTS,
 	} = options;
@@ -155,9 +157,20 @@ export function analyzeWithEnsemble(text, options = {}) {
 		);
 	}
 
-	// Detect text type if set to auto
-	const detectedTextType =
-		textType === "auto" ? detectTextType(text) : textType;
+	// Detect text type if set to auto using injected signature phrases; else neutral default
+	let detectedTextType = textType;
+	if (textType === "auto") {
+		if (signaturePhrases) {
+			try {
+				const detection = detectTextTypeWithPhrases(text, { signaturePhrases });
+				detectedTextType = detection.type;
+			} catch {
+				detectedTextType = "business";
+			}
+		} else {
+			detectedTextType = "business";
+		}
+	}
 
 	// Run all algorithms and collect results
 	const algorithmResults = [];
@@ -360,78 +373,7 @@ export function analyzeWithEnsemble(text, options = {}) {
  * @param {string} text - Input text to analyze
  * @returns {string} Detected text type
  */
-function detectTextType(text) {
-	const lowerText = foldCase(text);
-
-	// Social media indicators (check first - very specific patterns)
-	if (
-		/\b(omg|lol|tbh|imo|cant|dont|wont|ur|u\b)\b/.test(lowerText) ||
-		/[!]{2,}/.test(text) ||
-		/😭|😊|😂|❤️|🔥/.test(text)
-	) {
-		return "social_media";
-	}
-
-	// Casual indicators (check early - informal patterns)
-	if (
-		/\b(kinda|gonna|wanna|yeah|okay|stuff|thing|pretty good|not bad)\b/.test(
-			lowerText,
-		)
-	) {
-		return "casual";
-	}
-
-	// Academic indicators (check before technical to avoid confusion)
-	if (
-		/\b(research|study|hypothesis|findings|conclusion|longitudinal|correlation|populations|investigation)\b/.test(
-			lowerText,
-		) ||
-		(/\b(analysis|methodology)\b/.test(lowerText) &&
-			/\b(research|study|findings)\b/.test(lowerText))
-	) {
-		return "academic";
-	}
-
-	// Technical indicators (check first for strong technical signals)
-	if (
-		/\b(api|algorithm|database|function|optimization|performance|technical|framework)\b/.test(
-			lowerText,
-		) ||
-		(/\b(implementation|system)\b/.test(lowerText) &&
-			/\b(api|algorithm|performance|optimization|technical|framework)\b/.test(
-				lowerText,
-			))
-	) {
-		return "technical";
-	}
-
-	// Business indicators
-	if (
-		/\b(stakeholders|objectives|deliverables|strategic|operational|comprehensive|solutions|organizational|roadmap|excellence)\b/.test(
-			lowerText,
-		) ||
-		(/\b(implementation)\b/.test(lowerText) &&
-			/\b(strategic|objectives|stakeholders|business|organizational)\b/.test(
-				lowerText,
-			))
-	) {
-		return "business";
-	}
-
-	// Creative indicators
-	if (
-		/\b(suddenly|whispered|gazed|dreamed|imagined|beautiful|mysterious|magical)\b/.test(
-			lowerText,
-		) ||
-		text.includes('"') ||
-		text.includes("'")
-	) {
-		return "creative";
-	}
-
-	// Default to business if no clear indicators
-	return "business";
-}
+// Inline detectTextType removed; use detect-text-type.js via injected signaturePhrases
 
 /**
  * Calculates consensus between algorithm scores

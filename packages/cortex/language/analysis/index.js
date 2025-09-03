@@ -16,6 +16,7 @@
 
 export { analyzeAITransitionPhrases } from "./ai-transition-phrases.js";
 export { calculateBurstiness } from "./burstiness.js";
+export { detectTextType } from "./detect-text-type.js";
 export { detectEmDashEpidemic } from "./em-dash-detector.js";
 export { analyzeWithEnsemble } from "./ensemble-scorer.js";
 export { analyzeNgramRepetition } from "./ngram-repetition.js";

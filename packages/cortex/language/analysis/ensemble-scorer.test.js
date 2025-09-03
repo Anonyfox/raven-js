@@ -1,5 +1,6 @@
 import assert from "node:assert";
 import { describe, it } from "node:test";
+import { ENGLISH_SIGNATURE_PHRASES } from "../signaturephrases/english.js";
 import { analyzeWithEnsemble } from "./ensemble-scorer.js";
 
 describe("analyzeWithEnsemble", () => {
@@ -210,7 +211,9 @@ describe("analyzeWithEnsemble", () => {
 			const technicalText =
 				"The API implementation utilizes advanced algorithms for database optimization and system performance enhancement. The technical methodology ensures efficient function execution across distributed computing environments and modern infrastructure.";
 
-			const result = analyzeWithEnsemble(technicalText);
+			const result = analyzeWithEnsemble(technicalText, {
+				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+			});
 
 			assert.ok(
 				result.textType === "technical",
@@ -222,7 +225,9 @@ describe("analyzeWithEnsemble", () => {
 			const academicText =
 				"This research study examines the correlation between environmental factors and behavioral patterns. The methodology incorporated longitudinal analysis across diverse populations. Furthermore, the findings indicate significant relationships that warrant additional investigation.";
 
-			const result = analyzeWithEnsemble(academicText);
+			const result = analyzeWithEnsemble(academicText, {
+				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+			});
 
 			assert.ok(
 				result.textType === "academic",
@@ -234,7 +239,9 @@ describe("analyzeWithEnsemble", () => {
 			const businessText =
 				"Our strategic objectives focus on delivering comprehensive solutions to stakeholders. The implementation roadmap ensures operational excellence while maximizing deliverables across all organizational functions and business units.";
 
-			const result = analyzeWithEnsemble(businessText);
+			const result = analyzeWithEnsemble(businessText, {
+				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+			});
 
 			assert.ok(
 				result.textType === "business",
@@ -246,7 +253,9 @@ describe("analyzeWithEnsemble", () => {
 			const casualText =
 				"I kinda think the system is pretty good overall. Yeah, it works okay for most stuff and gets the job done. The thing is, it's not perfect but it's good enough for what we need.";
 
-			const result = analyzeWithEnsemble(casualText);
+			const result = analyzeWithEnsemble(casualText, {
+				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+			});
 
 			assert.ok(result.textType === "casual", "Should detect casual text type");
 		});
@@ -255,7 +264,9 @@ describe("analyzeWithEnsemble", () => {
 			const socialMediaText =
 				"omg cant believe this happened!! the system crashed again and now everything is broken 😭 lol this is so frustrating but whatever i guess we'll figure it out somehow";
 
-			const result = analyzeWithEnsemble(socialMediaText);
+			const result = analyzeWithEnsemble(socialMediaText, {
+				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+			});
 
 			assert.ok(
 				result.textType === "social_media",
@@ -516,7 +527,9 @@ describe("analyzeWithEnsemble", () => {
 			const aiTechnicalText =
 				"The API implementation utilizes advanced algorithms for optimal performance optimization. The comprehensive framework delivers three key advantages: scalability, efficiency, and reliability. Furthermore, the system ensures consistent results through streamlined methodologies.";
 
-			const result = analyzeWithEnsemble(aiTechnicalText);
+			const result = analyzeWithEnsemble(aiTechnicalText, {
+				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+			});
 
 			assert.ok(
 				result.aiLikelihood > 0.6,
@@ -552,7 +565,9 @@ describe("analyzeWithEnsemble", () => {
 			const academicText =
 				"This study examines the correlation between environmental factors and behavioral patterns in urban ecosystems. The methodology incorporated longitudinal observations across diverse geographical locations. Furthermore, the findings indicate significant relationships between variables that warrant additional investigation.";
 
-			const result = analyzeWithEnsemble(academicText);
+			const result = analyzeWithEnsemble(academicText, {
+				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+			});
 
 			assert.ok(
 				result.textType === "academic",
@@ -568,7 +583,9 @@ describe("analyzeWithEnsemble", () => {
 			const businessText =
 				"Thank you for your inquiry regarding our comprehensive solutions. Our team provides strategic objectives that align with stakeholder requirements. We deliver measurable results through proven methodologies and operational excellence.";
 
-			const result = analyzeWithEnsemble(businessText);
+			const result = analyzeWithEnsemble(businessText, {
+				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+			});
 
 			assert.ok(
 				result.textType === "business",
