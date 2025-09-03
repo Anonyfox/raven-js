@@ -15,137 +15,121 @@ import { describe, it } from "node:test";
 import { extractUrls } from "./extract-urls.js";
 
 describe("extractUrls", () => {
-	it("extracts basic HTTP URLs", () => {
-		const text = "Visit http://example.com for more info";
-		const urls = extractUrls(text);
-		deepStrictEqual(urls, ["http://example.com"]);
+	// APEX PREDATOR PATTERN
+	describe("core functionality", () => {
+		it("parses common URL forms and structures", () => {
+			// basic http URL
+			deepStrictEqual(extractUrls("Visit http://example.com for more info"), [
+				"http://example.com",
+			]);
+			// basic https URL
+			deepStrictEqual(extractUrls("Secure site at https://example.com"), [
+				"https://example.com",
+			]);
+			// multiple URLs in one text
+			deepStrictEqual(
+				extractUrls("Check https://example.com and http://test.org"),
+				["https://example.com", "http://test.org"],
+			);
+			// port number
+			deepStrictEqual(
+				extractUrls("Development server at http://localhost:3000"),
+				["http://localhost:3000"],
+			);
+			// path segment
+			deepStrictEqual(
+				extractUrls("API endpoint https://api.example.com/v1/users"),
+				["https://api.example.com/v1/users"],
+			);
+			// query parameters
+			deepStrictEqual(
+				extractUrls("Search https://example.com/search?q=test&page=1"),
+				["https://example.com/search?q=test&page=1"],
+			);
+			// fragment
+			deepStrictEqual(
+				extractUrls("Section https://example.com/docs#introduction"),
+				["https://example.com/docs#introduction"],
+			);
+			// full complex URL
+			deepStrictEqual(
+				extractUrls(
+					"Full URL https://api.example.com:8080/v1/data?format=json&limit=100#results",
+				),
+				["https://api.example.com:8080/v1/data?format=json&limit=100#results"],
+			);
+			// underscore in domain
+			deepStrictEqual(extractUrls("Visit https://api_server.example.com"), [
+				"https://api_server.example.com",
+			]);
+			// hyphen in domain
+			deepStrictEqual(extractUrls("Check https://my-app.example.com"), [
+				"https://my-app.example.com",
+			]);
+			// numeric domain with port
+			deepStrictEqual(extractUrls("Server at https://192.168.1.1:8080"), [
+				"https://192.168.1.1:8080",
+			]);
+		});
 	});
 
-	it("extracts basic HTTPS URLs", () => {
-		const text = "Secure site at https://example.com";
-		const urls = extractUrls(text);
-		deepStrictEqual(urls, ["https://example.com"]);
+	describe("edge cases and errors", () => {
+		it("handles boundaries, protocol filtering, and empty inputs", () => {
+			// punctuation around URLs
+			deepStrictEqual(
+				extractUrls("(See https://example.com) and check https://test.org!"),
+				["https://example.com", "https://test.org"],
+			);
+			// sentence boundaries (regex retains trailing punctuation)
+			deepStrictEqual(
+				extractUrls(
+					"Website: https://example.com. Another site https://test.org?",
+				),
+				["https://example.com.", "https://test.org?"],
+			);
+			// non-http/https protocols are ignored
+			deepStrictEqual(
+				extractUrls("Email mailto:test@example.com or ftp://files.example.com"),
+				[],
+			);
+			// protocol matching is case-insensitive
+			deepStrictEqual(
+				extractUrls("Sites: HTTP://EXAMPLE.COM and HTTPS://TEST.ORG"),
+				["HTTP://EXAMPLE.COM", "HTTPS://TEST.ORG"],
+			);
+			// no matches
+			deepStrictEqual(extractUrls("This is just plain text with no URLs"), []);
+			// empty input
+			deepStrictEqual(extractUrls(""), []);
+			// placeholder replacement with matches
+			strictEqual(
+				extractUrls(
+					"Visit https://example.com and check https://test.org",
+					true,
+				),
+				"Visit <URL> and check <URL>",
+			);
+			// placeholder replacement with no matches
+			strictEqual(extractUrls("No URLs here", true), "No URLs here");
+		});
 	});
 
-	it("extracts multiple URLs from text", () => {
-		const text = "Check https://example.com and http://test.org";
-		const urls = extractUrls(text);
-		deepStrictEqual(urls, ["https://example.com", "http://test.org"]);
-	});
-
-	it("extracts URLs with ports", () => {
-		const text = "Development server at http://localhost:3000";
-		const urls = extractUrls(text);
-		deepStrictEqual(urls, ["http://localhost:3000"]);
-	});
-
-	it("extracts URLs with paths", () => {
-		const text = "API endpoint https://api.example.com/v1/users";
-		const urls = extractUrls(text);
-		deepStrictEqual(urls, ["https://api.example.com/v1/users"]);
-	});
-
-	it("extracts URLs with query parameters", () => {
-		const text = "Search https://example.com/search?q=test&page=1";
-		const urls = extractUrls(text);
-		deepStrictEqual(urls, ["https://example.com/search?q=test&page=1"]);
-	});
-
-	it("extracts URLs with fragments", () => {
-		const text = "Section https://example.com/docs#introduction";
-		const urls = extractUrls(text);
-		deepStrictEqual(urls, ["https://example.com/docs#introduction"]);
-	});
-
-	it("extracts complex URLs with all components", () => {
-		const text =
-			"Full URL https://api.example.com:8080/v1/data?format=json&limit=100#results";
-		const urls = extractUrls(text);
-		deepStrictEqual(urls, [
-			"https://api.example.com:8080/v1/data?format=json&limit=100#results",
-		]);
-	});
-
-	it("handles URLs with underscores in domains", () => {
-		const text = "Visit https://api_server.example.com";
-		const urls = extractUrls(text);
-		deepStrictEqual(urls, ["https://api_server.example.com"]);
-	});
-
-	it("handles URLs with hyphens in domains", () => {
-		const text = "Check https://my-app.example.com";
-		const urls = extractUrls(text);
-		deepStrictEqual(urls, ["https://my-app.example.com"]);
-	});
-
-	it("extracts URLs with numeric domains", () => {
-		const text = "Server at https://192.168.1.1:8080";
-		const urls = extractUrls(text);
-		deepStrictEqual(urls, ["https://192.168.1.1:8080"]);
-	});
-
-	it("handles URLs surrounded by punctuation", () => {
-		const text = "(See https://example.com) and check https://test.org!";
-		const urls = extractUrls(text);
-		deepStrictEqual(urls, ["https://example.com", "https://test.org"]);
-	});
-
-	it("handles URLs at sentence boundaries", () => {
-		const text = "Website: https://example.com. Another site https://test.org?";
-		const urls = extractUrls(text);
-		// Our regex includes trailing punctuation in URLs
-		deepStrictEqual(urls, ["https://example.com.", "https://test.org?"]);
-	});
-
-	it("ignores non-HTTP/HTTPS protocols", () => {
-		const text = "Email mailto:test@example.com or ftp://files.example.com";
-		const urls = extractUrls(text);
-		deepStrictEqual(urls, []);
-	});
-
-	it("handles case-insensitive protocol matching", () => {
-		const text = "Sites: HTTP://EXAMPLE.COM and HTTPS://TEST.ORG";
-		const urls = extractUrls(text);
-		deepStrictEqual(urls, ["HTTP://EXAMPLE.COM", "HTTPS://TEST.ORG"]);
-	});
-
-	it("returns empty array for text without URLs", () => {
-		const text = "This is just plain text with no URLs";
-		const urls = extractUrls(text);
-		deepStrictEqual(urls, []);
-	});
-
-	it("handles empty string", () => {
-		const urls = extractUrls("");
-		deepStrictEqual(urls, []);
-	});
-
-	it("replaces URLs with placeholders when requested", () => {
-		const text = "Visit https://example.com and check https://test.org";
-		const result = extractUrls(text, true);
-		strictEqual(result, "Visit <URL> and check <URL>");
-	});
-
-	it("handles placeholder replacement with no URLs", () => {
-		const text = "No URLs here";
-		const result = extractUrls(text, true);
-		strictEqual(result, text);
-	});
-
-	it("handles URLs with special characters in paths", () => {
-		const text =
-			"Resource at https://example.com/path/with_underscores-and-hyphens.html";
-		const urls = extractUrls(text);
-		deepStrictEqual(urls, [
-			"https://example.com/path/with_underscores-and-hyphens.html",
-		]);
-	});
-
-	it("handles URLs with encoded characters in query strings", () => {
-		const text = "Search https://example.com/search?q=hello%20world&type=exact";
-		const urls = extractUrls(text);
-		deepStrictEqual(urls, [
-			"https://example.com/search?q=hello%20world&type=exact",
-		]);
+	describe("integration scenarios", () => {
+		it("handles encoded chars and complex paths", () => {
+			// underscores and hyphens in path
+			deepStrictEqual(
+				extractUrls(
+					"Resource at https://example.com/path/with_underscores-and-hyphens.html",
+				),
+				["https://example.com/path/with_underscores-and-hyphens.html"],
+			);
+			// percent-encoded query values
+			deepStrictEqual(
+				extractUrls(
+					"Search https://example.com/search?q=hello%20world&type=exact",
+				),
+				["https://example.com/search?q=hello%20world&type=exact"],
+			);
+		});
 	});
 });

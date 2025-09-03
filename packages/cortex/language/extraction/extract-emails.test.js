@@ -15,159 +15,129 @@ import { describe, it } from "node:test";
 import { extractEmails } from "./extract-emails.js";
 
 describe("extractEmails", () => {
-	it("extracts basic email addresses", () => {
-		const text = "Contact us at info@example.com";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, ["info@example.com"]);
+	// APEX PREDATOR PATTERN
+	describe("core functionality", () => {
+		it("parses common email forms and domains", () => {
+			// basic email
+			deepStrictEqual(extractEmails("Contact us at info@example.com"), [
+				"info@example.com",
+			]);
+			// multiple emails in one text
+			deepStrictEqual(
+				extractEmails("Email admin@example.com or support@company.org"),
+				["admin@example.com", "support@company.org"],
+			);
+			// dots in local part
+			deepStrictEqual(extractEmails("Contact first.last@example.com"), [
+				"first.last@example.com",
+			]);
+			// plus in local part
+			deepStrictEqual(extractEmails("Send to user+tag@example.com"), [
+				"user+tag@example.com",
+			]);
+			// underscore in local part
+			deepStrictEqual(extractEmails("Email test_user@example.com"), [
+				"test_user@example.com",
+			]);
+			// percent in local part
+			deepStrictEqual(extractEmails("Special case user%example@domain.com"), [
+				"user%example@domain.com",
+			]);
+			// hyphen in local part
+			deepStrictEqual(extractEmails("Contact user-name@example.com"), [
+				"user-name@example.com",
+			]);
+			// subdomains
+			deepStrictEqual(extractEmails("Support at help@support.example.com"), [
+				"help@support.example.com",
+			]);
+			// international domain TLD
+			deepStrictEqual(extractEmails("Contact support@company.co.uk"), [
+				"support@company.co.uk",
+			]);
+			// hyphenated domain
+			deepStrictEqual(extractEmails("Email admin@my-company.com"), [
+				"admin@my-company.com",
+			]);
+			// long TLD
+			deepStrictEqual(extractEmails("Contact info@example.technology"), [
+				"info@example.technology",
+			]);
+		});
 	});
 
-	it("extracts multiple email addresses", () => {
-		const text = "Email admin@example.com or support@company.org";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, ["admin@example.com", "support@company.org"]);
+	describe("edge cases and errors", () => {
+		it("handles punctuation, casing, invalids, and empties", () => {
+			// surrounded by punctuation
+			deepStrictEqual(
+				extractEmails("Email (support@example.com) or check admin@test.org!"),
+				["support@example.com", "admin@test.org"],
+			);
+			// sentence boundaries
+			deepStrictEqual(
+				extractEmails("Contact: admin@example.com. Support: help@test.org?"),
+				["admin@example.com", "help@test.org"],
+			);
+			// mixed case preserved
+			deepStrictEqual(extractEmails("Email Admin@Example.COM"), [
+				"Admin@Example.COM",
+			]);
+			// complex mixed example
+			deepStrictEqual(
+				extractEmails(
+					"Send to first.last+tag@sub.domain.co.uk and test_user@example-site.org",
+				),
+				["first.last+tag@sub.domain.co.uk", "test_user@example-site.org"],
+			);
+			// invalid patterns ignored
+			deepStrictEqual(
+				extractEmails("Not emails: @example.com or user@ or user@"),
+				[],
+			);
+			// single-character TLD invalid
+			deepStrictEqual(extractEmails("Invalid: user@example.c"), []);
+			// numbers in local part
+			deepStrictEqual(extractEmails("Contact user123@example.com"), [
+				"user123@example.com",
+			]);
+			// numbers in domain/subdomain
+			deepStrictEqual(extractEmails("Support at admin@server1.example.com"), [
+				"admin@server1.example.com",
+			]);
+			// no matches
+			deepStrictEqual(
+				extractEmails("This is just plain text with no email addresses"),
+				[],
+			);
+			// empty input
+			deepStrictEqual(extractEmails(""), []);
+			// placeholder replacement with matches
+			strictEqual(
+				extractEmails("Contact admin@example.com or support@test.org", true),
+				"Contact <EMAIL> or <EMAIL>",
+			);
+			// placeholder replacement with no matches
+			strictEqual(
+				extractEmails("No email addresses here", true),
+				"No email addresses here",
+			);
+		});
 	});
 
-	it("extracts emails with dots in local part", () => {
-		const text = "Contact first.last@example.com";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, ["first.last@example.com"]);
-	});
-
-	it("extracts emails with plus signs in local part", () => {
-		const text = "Send to user+tag@example.com";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, ["user+tag@example.com"]);
-	});
-
-	it("extracts emails with underscores in local part", () => {
-		const text = "Email test_user@example.com";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, ["test_user@example.com"]);
-	});
-
-	it("extracts emails with percent signs in local part", () => {
-		const text = "Special case user%example@domain.com";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, ["user%example@domain.com"]);
-	});
-
-	it("extracts emails with hyphens in local part", () => {
-		const text = "Contact user-name@example.com";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, ["user-name@example.com"]);
-	});
-
-	it("extracts emails with subdomains", () => {
-		const text = "Support at help@support.example.com";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, ["help@support.example.com"]);
-	});
-
-	it("extracts emails with international domains", () => {
-		const text = "Contact support@company.co.uk";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, ["support@company.co.uk"]);
-	});
-
-	it("extracts emails with hyphens in domain", () => {
-		const text = "Email admin@my-company.com";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, ["admin@my-company.com"]);
-	});
-
-	it("extracts emails with long TLDs", () => {
-		const text = "Contact info@example.technology";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, ["info@example.technology"]);
-	});
-
-	it("handles emails surrounded by punctuation", () => {
-		const text = "Email (support@example.com) or check admin@test.org!";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, ["support@example.com", "admin@test.org"]);
-	});
-
-	it("handles emails at sentence boundaries", () => {
-		const text = "Contact: admin@example.com. Support: help@test.org?";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, ["admin@example.com", "help@test.org"]);
-	});
-
-	it("extracts emails in mixed case", () => {
-		const text = "Email Admin@Example.COM";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, ["Admin@Example.COM"]);
-	});
-
-	it("handles complex email combinations", () => {
-		const text =
-			"Send to first.last+tag@sub.domain.co.uk and test_user@example-site.org";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, [
-			"first.last+tag@sub.domain.co.uk",
-			"test_user@example-site.org",
-		]);
-	});
-
-	it("ignores invalid email patterns", () => {
-		const text = "Not emails: @example.com or user@ or user@";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, []);
-	});
-
-	it("ignores emails with single-character TLD", () => {
-		const text = "Invalid: user@example.c";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, []);
-	});
-
-	it("handles emails with numbers in local part", () => {
-		const text = "Contact user123@example.com";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, ["user123@example.com"]);
-	});
-
-	it("handles emails with numbers in domain", () => {
-		const text = "Support at admin@server1.example.com";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, ["admin@server1.example.com"]);
-	});
-
-	it("returns empty array for text without emails", () => {
-		const text = "This is just plain text with no email addresses";
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, []);
-	});
-
-	it("handles empty string", () => {
-		const emails = extractEmails("");
-		deepStrictEqual(emails, []);
-	});
-
-	it("replaces emails with placeholders when requested", () => {
-		const text = "Contact admin@example.com or support@test.org";
-		const result = extractEmails(text, true);
-		strictEqual(result, "Contact <EMAIL> or <EMAIL>");
-	});
-
-	it("handles placeholder replacement with no emails", () => {
-		const text = "No email addresses here";
-		const result = extractEmails(text, true);
-		strictEqual(result, text);
-	});
-
-	it("handles emails in different text formats", () => {
-		const text = `
-			Contacts:
-			- Primary: admin@example.com
-			- Secondary: backup@test.org
-			- Emergency: emergency+urgent@support.company.co.uk
-		`;
-		const emails = extractEmails(text);
-		deepStrictEqual(emails, [
-			"admin@example.com",
-			"backup@test.org",
-			"emergency+urgent@support.company.co.uk",
-		]);
+	describe("integration scenarios", () => {
+		it("extracts from structured and multiline content", () => {
+			// multiline bullet list
+			const text = `
+				Contacts:
+				- Primary: admin@example.com
+				- Secondary: backup@test.org
+				- Emergency: emergency+urgent@support.company.co.uk
+			`;
+			deepStrictEqual(extractEmails(text), [
+				"admin@example.com",
+				"backup@test.org",
+				"emergency+urgent@support.company.co.uk",
+			]);
+		});
 	});
 });
