@@ -623,7 +623,18 @@ export function isAIText(text, options = {}) {
 		let timedOut = false;
 
 		try {
-			rawResult = algorithmConfig.fn(text);
+			// Inject language profiles for detectors that accept them
+			if (algorithmConfig.name === "ai_transition_phrases") {
+				rawResult = analyzeAITransitionPhrases(text, { signaturePhrases });
+			} else if (algorithmConfig.name === "participial_phrases") {
+				rawResult = detectParticipalPhraseFormula(text, { signaturePhrases });
+			} else if (algorithmConfig.name === "rule_of_three") {
+				rawResult = detectRuleOfThreeObsession(text, { signaturePhrases });
+			} else if (algorithmConfig.name === "perfect_grammar") {
+				rawResult = detectPerfectGrammar(text, { signaturePhrases });
+			} else {
+				rawResult = algorithmConfig.fn(text);
+			}
 			executionTime = performance.now() - algorithmStartTime;
 
 			if (executionTime > maxExecutionTime) {

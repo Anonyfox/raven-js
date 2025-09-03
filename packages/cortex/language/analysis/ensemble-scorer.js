@@ -256,7 +256,9 @@ export function analyzeWithEnsemble(text, options = {}) {
 		},
 		{
 			name: "ai_transition_phrases",
-			fn: analyzeAITransitionPhrases,
+			fn: /** @type {(t: string) => any} */ (
+				(t) => analyzeAITransitionPhrases(t, { signaturePhrases })
+			),
 			weight:
 				weights.ai_transition_phrases !== undefined
 					? weights.ai_transition_phrases
@@ -276,7 +278,9 @@ export function analyzeWithEnsemble(text, options = {}) {
 		},
 		{
 			name: "rule_of_three",
-			fn: detectRuleOfThreeObsession,
+			fn: /** @type {(t: string) => any} */ (
+				(t) => detectRuleOfThreeObsession(t, { signaturePhrases })
+			),
 			weight:
 				weights.rule_of_three !== undefined
 					? weights.rule_of_three
@@ -286,7 +290,9 @@ export function analyzeWithEnsemble(text, options = {}) {
 		},
 		{
 			name: "participial_phrases",
-			fn: detectParticipalPhraseFormula,
+			fn: /** @type {(t: string) => any} */ (
+				(t) => detectParticipalPhraseFormula(t, { signaturePhrases })
+			),
 			weight:
 				weights.participial_phrases !== undefined
 					? weights.participial_phrases
@@ -306,7 +312,9 @@ export function analyzeWithEnsemble(text, options = {}) {
 		},
 		{
 			name: "perfect_grammar",
-			fn: detectPerfectGrammar,
+			fn: /** @type {(t: string) => any} */ (
+				(t) => detectPerfectGrammar(t, { signaturePhrases })
+			),
 			weight:
 				weights.perfect_grammar !== undefined
 					? weights.perfect_grammar

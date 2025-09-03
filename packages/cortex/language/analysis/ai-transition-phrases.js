@@ -19,66 +19,6 @@ import { foldCase } from "../normalization/index.js";
 import { tokenizeWords } from "../segmentation/index.js";
 
 /**
- * Predefined AI-characteristic transition phrases with their baseline human frequencies.
- * Frequencies represent occurrences per 1000 words in typical human writing.
- */
-const AI_TRANSITION_PHRASES = {
-	// High-frequency AI markers (appear 3-5x more in AI text)
-	"delve into": 0.1,
-	furthermore: 0.8,
-	moreover: 0.3,
-	"it's important to note": 0.05,
-	"it is important to note": 0.05,
-	notably: 0.4,
-	consequently: 0.3,
-	thus: 0.6,
-	therefore: 0.9,
-	hence: 0.2,
-
-	// Correlative conjunctions (AI overuses these patterns)
-	"not only": 0.3,
-	"but also": 0.3,
-	"whether or not": 0.1,
-	"either or": 0.1,
-	"neither nor": 0.05,
-
-	// Magniloquent constructions (AI over-compensation for sophistication)
-	"navigate the complexities": 0.01,
-	"in today's digital landscape": 0.01,
-	"in the realm of": 0.02,
-	"when it comes to": 0.1,
-	"at the end of the day": 0.05,
-	"in conclusion": 0.3,
-	"to summarize": 0.1,
-	"in summary": 0.2,
-
-	// Mechanical academic phrases
-	"as mentioned previously": 0.02,
-	"as discussed earlier": 0.02,
-	"it should be noted": 0.05,
-	"it's worth noting": 0.1,
-	"it is worth noting": 0.1,
-	"bear in mind": 0.05,
-	"keep in mind": 0.1,
-	"take into account": 0.08,
-	"take into consideration": 0.03,
-
-	// Filler sophistication markers
-	facilitate: 0.1,
-	utilize: 0.2,
-	implement: 0.3,
-	leverage: 0.1,
-	comprehensive: 0.2,
-	substantial: 0.15,
-	significant: 0.4,
-	considerable: 0.1,
-	extensive: 0.15,
-	various: 0.8,
-	numerous: 0.2,
-	multiple: 0.4,
-};
-
-/**
  * Analyzes text for AI-characteristic transition phrases and language patterns.
  *
  * Scans input text for predefined phrases that appear disproportionately in
@@ -87,11 +27,7 @@ const AI_TRANSITION_PHRASES = {
  * more AI-like language patterns.
  *
  * @param {string} text - Input text to analyze for AI transition phrases
- * @param {Object} [options={}] - Configuration options for analysis
- * @param {boolean} [options.caseSensitive=false] - Whether to preserve case in phrase matching
- * @param {number} [options.minWordCount=20] - Minimum word count for reliable analysis
- * @param {boolean} [options.includeDetails=false] - Whether to include phrase-specific details
- * @param {{ phrases?: Set<string>, regex?: RegExp[], weight?: number, caseInsensitive?: boolean }} [options.transitionsProfile]
+ * @param {{ caseSensitive?: boolean; minWordCount?: number; includeDetails?: boolean; signaturePhrases?: import('../signaturephrases/signature-phrase.js').SignaturePhraseProfile, transitionsProfile?: { phrases?: string[], regex?: RegExp[], weight?: number, caseInsensitive?: boolean } }} [options={}] - Analysis options
  * @returns {{aiLikelihood: number, overallScore: number, phrasesPerThousand: number, totalPhrases: number, wordCount: number, detectedPhrases: Array<Object>}} Analysis results with AI detection metrics. aiLikelihood: Overall AI probability score (0-1, higher = more AI-like). overallScore: Weighted frequency score vs human baseline. phrasesPerThousand: Detected phrases per 1000 words. totalPhrases: Total number of AI phrases found. wordCount: Total words analyzed. detectedPhrases: Array of found phrases with frequencies (if includeDetails=true).
  *
  * @throws {TypeError} When text parameter is not a string
@@ -148,6 +84,7 @@ export function analyzeAITransitionPhrases(text, options = {}) {
 		caseSensitive = false,
 		minWordCount = 20,
 		includeDetails = false,
+		signaturePhrases,
 		transitionsProfile,
 	} = options;
 
@@ -168,23 +105,19 @@ export function analyzeAITransitionPhrases(text, options = {}) {
 		);
 	}
 
-	// Prepare phrases/regex list from language profile or fallback
+	// Prepare phrases list strictly from language profile (no English fallback)
 	/** @type {Record<string, number>} */
-	let phrasesToSearch = {};
-	if (transitionsProfile?.phrases && transitionsProfile.phrases.size > 0) {
-		for (const p of transitionsProfile.phrases) {
-			phrasesToSearch[caseSensitive ? p : foldCase(p)] = 0.3; // default human baseline if unspecified
+	const phrasesToSearch = {};
+	const profile = signaturePhrases?.transitions || transitionsProfile;
+	if (
+		profile?.phrases &&
+		(Array.isArray(profile.phrases) || profile.phrases.size > 0)
+	) {
+		for (const p of Array.from(profile.phrases)) {
+			phrasesToSearch[caseSensitive ? p : foldCase(p)] = 0.3;
 		}
-	} else {
-		phrasesToSearch = caseSensitive
-			? AI_TRANSITION_PHRASES
-			: Object.fromEntries(
-					Object.entries(AI_TRANSITION_PHRASES).map(([phrase, frequency]) => [
-						foldCase(phrase),
-						frequency,
-					]),
-				);
 	}
+	// If no phrases defined, phrasesToSearch stays empty (neutral)
 
 	// Search for AI transition phrases
 	const detectedPhrases = [];
