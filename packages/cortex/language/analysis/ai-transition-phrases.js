@@ -12,7 +12,11 @@
  * Scans text for transitional phrases characteristic of AI-generated content.
  * Research shows AI uses specific phrases like "delve into" and "furthermore"
  * at rates 3-5x higher than human writers, creating detectible fingerprints.
+ * Uses robust cortex building blocks for international text handling.
  */
+
+import { foldCase } from "../normalization/index.js";
+import { tokenizeWords } from "../segmentation/index.js";
 
 /**
  * Predefined AI-characteristic transition phrases with their baseline human frequencies.
@@ -149,11 +153,11 @@ export function analyzeAITransitionPhrases(text, options = {}) {
 		throw new Error("Parameter minWordCount must be a positive integer");
 	}
 
-	// Normalize text case if needed
-	const normalizedText = caseSensitive ? text : text.toLowerCase();
+	// Normalize text case using international-aware folding
+	const normalizedText = caseSensitive ? text : foldCase(text);
 
-	// Count total words for frequency calculations
-	const words = normalizedText.split(/\s+/).filter((word) => word.length > 0);
+	// Count total words using robust Unicode-aware tokenization
+	const words = tokenizeWords(normalizedText);
 	const wordCount = words.length;
 
 	if (wordCount < minWordCount) {
@@ -162,12 +166,12 @@ export function analyzeAITransitionPhrases(text, options = {}) {
 		);
 	}
 
-	// Prepare phrases list (normalize case if needed)
+	// Prepare phrases list (normalize case consistently using international folding)
 	const phrasesToSearch = caseSensitive
 		? AI_TRANSITION_PHRASES
 		: Object.fromEntries(
 				Object.entries(AI_TRANSITION_PHRASES).map(([phrase, frequency]) => [
-					phrase.toLowerCase(),
+					foldCase(phrase),
 					frequency,
 				]),
 			);
