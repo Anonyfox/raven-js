@@ -25,21 +25,19 @@ describe("featurization module", () => {
 			typeof featurization.extractMixedNgrams === "function",
 			"Should export extractMixedNgrams",
 		);
-		ok(
-			typeof featurization.TfIdfVectorizer === "function",
-			"Should export TfIdfVectorizer",
-		);
+		// Note: TF-IDF is now a dedicated ML model in cortex/learning
+		// Use: import { Tfidf } from '@raven-js/cortex/learning'
 		ok(
 			typeof featurization.hashFeatures === "function",
 			"Should export hashFeatures",
 		);
 		ok(
-			typeof featurization.RakeExtractor === "function",
-			"Should export RakeExtractor",
+			typeof featurization.extractKeywords === "function",
+			"Should export extractKeywords",
 		);
 		ok(
-			typeof featurization.TextRankExtractor === "function",
-			"Should export TextRankExtractor",
+			typeof featurization.extractKeywordsTextRank === "function",
+			"Should export extractKeywordsTextRank",
 		);
 	});
 
@@ -110,25 +108,8 @@ describe("featurization module", () => {
 		ok(normalized.includes("ca"), "Should normalize to lowercase");
 	});
 
-	it("TfIdfVectorizer works through re-export", () => {
-		const vectorizer = new featurization.TfIdfVectorizer();
-
-		// Test basic functionality
-		vectorizer.addDocument("machine learning algorithms");
-		vectorizer.addDocument("natural language processing");
-
-		strictEqual(vectorizer.documentCount, 2);
-		ok(vectorizer.vocabularySize > 0, "Should have vocabulary");
-
-		// Test scoring
-		const tfidfScores = vectorizer.computeTfIdf("machine learning");
-		ok(tfidfScores instanceof Map, "Should return Map of scores");
-		ok(tfidfScores.has("machine"), "Should score query terms");
-
-		const bm25Scores = vectorizer.computeBm25("machine learning");
-		ok(bm25Scores instanceof Map, "Should return BM25 scores");
-		ok(bm25Scores.has("machine"), "Should score BM25 terms");
-	});
+	// Note: TF-IDF tests moved to learning/tfidf.test.js
+	// TF-IDF is now a proper ML model: import { Tfidf } from '@raven-js/cortex/learning'
 
 	it("hashFeatures works through re-export", () => {
 		const text = "Hello world! This is a test document.";

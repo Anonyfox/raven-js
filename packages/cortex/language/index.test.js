@@ -89,21 +89,19 @@ describe("language module", () => {
 			typeof language.extractMixedNgrams === "function",
 			"Should export extractMixedNgrams",
 		);
+		// Note: TF-IDF is now a dedicated ML model in cortex/learning
+		// Use: import { Tfidf } from '@raven-js/cortex/learning'
 		assert.ok(
-			typeof language.TfIdfVectorizer === "function",
-			"Should export TfIdfVectorizer",
-		);
-		assert.		ok(
 			typeof language.hashFeatures === "function",
 			"Should export hashFeatures",
 		);
 		assert.ok(
-			typeof language.RakeExtractor === "function",
-			"Should export RakeExtractor",
+			typeof language.extractKeywords === "function",
+			"Should export extractKeywords",
 		);
 		assert.ok(
-			typeof language.TextRankExtractor === "function",
-			"Should export TextRankExtractor",
+			typeof language.extractKeywordsTextRank === "function",
+			"Should export extractKeywordsTextRank",
 		);
 
 		// Similarity functions
@@ -279,43 +277,8 @@ describe("language module", () => {
 		assert.ok(mixedNgrams.word.length > 0, "Should extract word n-grams");
 	});
 
-	it("TfIdfVectorizer integration works", () => {
-		// Test integration with stemming from transformation module
-		const mockStemmer = language.stemPorter2; // Use our Porter2 stemmer
-		const vectorizer = new language.TfIdfVectorizer({
-			useStemming: true,
-			stemmer: mockStemmer,
-		});
-
-		// Build corpus with words that benefit from stemming
-		vectorizer.addDocument("running algorithms are testing machine learning");
-		vectorizer.addDocument("tested implementations run efficiently");
-		vectorizer.addDocument("tests demonstrate algorithmic performance");
-
-		assert.strictEqual(vectorizer.documentCount, 3, "Should add all documents");
-		assert.ok(vectorizer.vocabularySize > 0, "Should build vocabulary");
-
-		// Query with related terms that should match through stemming
-		const tfidfScores = vectorizer.computeTfIdf("test algorithm run");
-		assert.ok(tfidfScores instanceof Map, "Should return TF-IDF scores");
-
-		const bm25Scores = vectorizer.computeBm25("test algorithm run");
-		assert.ok(bm25Scores instanceof Map, "Should return BM25 scores");
-
-		// Test state management
-		const state = vectorizer.exportState();
-		assert.ok(typeof state === "object", "Should export serializable state");
-
-		const newVectorizer = language.TfIdfVectorizer.fromState(state, {
-			useStemming: true,
-			stemmer: mockStemmer,
-		});
-		assert.strictEqual(
-			newVectorizer.documentCount,
-			vectorizer.documentCount,
-			"Should restore document count",
-		);
-	});
+	// Note: TF-IDF integration tests moved to learning/tfidf.test.js
+	// TF-IDF is now a proper ML model: import { Tfidf } from '@raven-js/cortex/learning'
 
 	it("hashFeatures integration works", () => {
 		// Test with documents that should produce consistent hashes

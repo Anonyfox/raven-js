@@ -16,3 +16,4 @@
 export { LinearRegression } from "./linear-regression.js";
 export { Model } from "./model.js";
 export { NeuralNetwork } from "./neural-network.js";
+export { Tfidf } from "./tfidf.js";

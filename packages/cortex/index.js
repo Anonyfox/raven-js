@@ -78,7 +78,12 @@ export {
 	isAIText,
 } from "./language/index.js";
 // Export learning algorithms
-export { LinearRegression, Model, NeuralNetwork } from "./learning/index.js";
+export {
+	LinearRegression,
+	Model,
+	NeuralNetwork,
+	Tfidf,
+} from "./learning/index.js";
 // Export primitive functions
 export { fnv1a32, fnv1a64, fnv32 } from "./primitives/index.js";
 // Export structural primitives

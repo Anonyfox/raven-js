@@ -9,9 +9,11 @@
 /**
  * @file Feature extraction algorithms for machine learning and text analysis.
  *
- * Provides n-gram extraction, feature hashing, TF-IDF computation, and keyword
- * extraction capabilities (RAKE and TextRank). All functions are designed for
- * efficiency and compatibility with existing language processing pipeline functions.
+ * Provides n-gram extraction, feature hashing, and keyword extraction capabilities
+ * (RAKE and TextRank). All functions are designed for efficiency and compatibility
+ * with existing language processing pipeline functions.
+ *
+ * Note: TF-IDF is now a dedicated machine learning model in cortex/learning.
  */
 
 export { hashFeatures } from "./hash-features.js";
@@ -20,6 +22,5 @@ export {
 	extractMixedNgrams,
 	extractWordNgrams,
 } from "./ngrams.js";
-export { RakeExtractor } from "./rake.js";
-export { TextRankExtractor } from "./textrank.js";
-export { TfIdfVectorizer } from "./tfidf.js";
+export { extractKeywords } from "./rake.js";
+export { extractKeywords as extractKeywordsTextRank } from "./textrank.js";
