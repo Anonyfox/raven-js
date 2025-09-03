@@ -12,7 +12,10 @@
  * Analyzes punctuation frequency patterns that are characteristic of AI-generated content.
  * Research shows AI systematically overuses certain punctuation marks (em-dashes, semicolons,
  * ellipses, parentheses) at rates 2-4x higher than human writers, creating detectible fingerprints.
+ * Uses robust cortex building blocks for accurate word counting.
  */
+
+import { tokenizeWords } from "../segmentation/index.js";
 
 /**
  * Human baseline punctuation frequencies per 1000 words in natural writing.
@@ -152,8 +155,8 @@ export function detectEmDashEpidemic(text, options = {}) {
 		throw new Error("Parameter sensitivityThreshold must be a positive number");
 	}
 
-	// Count total words for frequency calculations
-	const words = text.split(/\s+/).filter((word) => word.length > 0);
+	// Count total words using robust Unicode-aware tokenization
+	const words = tokenizeWords(text);
 	const wordCount = words.length;
 
 	if (wordCount < minWordCount) {
