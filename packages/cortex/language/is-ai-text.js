@@ -227,11 +227,11 @@ const ALGORITHM_RELIABILITY_WEIGHTS = {
 };
 
 /**
- * @param {import('./languagepacks/language-pack.js').LanguagePack | undefined} signaturePhrases
+ * @param {import('./languagepacks/language-pack.js').LanguagePack | undefined} languagePack
  */
-function getEffectiveWeights(signaturePhrases) {
+function getEffectiveWeights(languagePack) {
 	/** @type {import('./languagepacks/language-pack.js').LanguagePack | undefined} */
-	const _sp = signaturePhrases;
+	const _sp = languagePack;
 	const w = { ...ALGORITHM_RELIABILITY_WEIGHTS };
 	if (_sp && typeof _sp.grammar?.weight === "number") {
 		w.perfect_grammar = _sp.grammar.weight;

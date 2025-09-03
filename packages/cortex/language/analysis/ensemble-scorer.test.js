@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { describe, it } from "node:test";
-import { ENGLISH_SIGNATURE_PHRASES } from "../signaturephrases/english.js";
+import { ENGLISH_LANGUAGE_PACK } from "../languagepacks/english.js";
 import { analyzeWithEnsemble } from "./ensemble-scorer.js";
 
 describe("analyzeWithEnsemble", () => {
@@ -212,7 +212,7 @@ describe("analyzeWithEnsemble", () => {
 				"The API implementation utilizes advanced algorithms for database optimization and system performance enhancement. The technical methodology ensures efficient function execution across distributed computing environments and modern infrastructure.";
 
 			const result = analyzeWithEnsemble(technicalText, {
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 
 			assert.ok(
@@ -226,7 +226,7 @@ describe("analyzeWithEnsemble", () => {
 				"This research study examines the correlation between environmental factors and behavioral patterns. The methodology incorporated longitudinal analysis across diverse populations. Furthermore, the findings indicate significant relationships that warrant additional investigation.";
 
 			const result = analyzeWithEnsemble(academicText, {
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 
 			assert.ok(
@@ -240,7 +240,7 @@ describe("analyzeWithEnsemble", () => {
 				"Our strategic objectives focus on delivering comprehensive solutions to stakeholders. The implementation roadmap ensures operational excellence while maximizing deliverables across all organizational functions and business units.";
 
 			const result = analyzeWithEnsemble(businessText, {
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 
 			assert.ok(
@@ -254,7 +254,7 @@ describe("analyzeWithEnsemble", () => {
 				"I kinda think the system is pretty good overall. Yeah, it works okay for most stuff and gets the job done. The thing is, it's not perfect but it's good enough for what we need.";
 
 			const result = analyzeWithEnsemble(casualText, {
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 
 			assert.ok(result.textType === "casual", "Should detect casual text type");
@@ -265,7 +265,7 @@ describe("analyzeWithEnsemble", () => {
 				"omg cant believe this happened!! the system crashed again and now everything is broken 😭 lol this is so frustrating but whatever i guess we'll figure it out somehow";
 
 			const result = analyzeWithEnsemble(socialMediaText, {
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 
 			assert.ok(
@@ -528,7 +528,7 @@ describe("analyzeWithEnsemble", () => {
 				"The API implementation utilizes advanced algorithms for optimal performance optimization. The comprehensive framework delivers three key advantages: scalability, efficiency, and reliability. Furthermore, the system ensures consistent results through streamlined methodologies.";
 
 			const result = analyzeWithEnsemble(aiTechnicalText, {
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 
 			assert.ok(
@@ -566,7 +566,7 @@ describe("analyzeWithEnsemble", () => {
 				"This study examines the correlation between environmental factors and behavioral patterns in urban ecosystems. The methodology incorporated longitudinal observations across diverse geographical locations. Furthermore, the findings indicate significant relationships between variables that warrant additional investigation.";
 
 			const result = analyzeWithEnsemble(academicText, {
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 
 			assert.ok(

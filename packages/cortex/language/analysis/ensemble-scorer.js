@@ -394,7 +394,7 @@ export function analyzeWithEnsemble(text, options = {}) {
  * @param {string} text - Input text to analyze
  * @returns {string} Detected text type
  */
-// Inline detectTextType removed; use detect-text-type.js via injected signaturePhrases
+// Inline detectTextType removed; use detect-text-type.js via injected languagePack
 
 /**
  * Calculates consensus between algorithm scores

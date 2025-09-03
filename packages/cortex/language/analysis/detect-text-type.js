@@ -17,7 +17,7 @@
 import { foldCase } from "../normalization/index.js";
 
 /**
- * @typedef {import('../signaturephrases/signature-phrase.js').SignaturePhraseProfile} SignaturePhraseProfile
+ * @typedef {import('../languagepacks/language-pack.js').LanguagePack} LanguagePack
  */
 
 /**

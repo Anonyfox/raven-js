@@ -9,7 +9,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import * as language from "./index.js";
-import { ENGLISH_SIGNATURE_PHRASES } from "./signaturephrases/english.js";
+import { ENGLISH_LANGUAGE_PACK } from "./languagepacks/english.js";
 
 describe("language module", () => {
 	it("re-exports all analysis functions", () => {
@@ -170,7 +170,7 @@ describe("language module", () => {
 
 		// Test isAIText function
 		const aiResult = language.isAIText(testText, {
-			signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+			languagePack: ENGLISH_LANGUAGE_PACK,
 		});
 		assert.ok(typeof aiResult === "object", "isAIText should return an object");
 		assert.ok(

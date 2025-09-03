@@ -9,7 +9,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { isAIText } from "./is-ai-text.js";
-import { ENGLISH_SIGNATURE_PHRASES } from "./signaturephrases/english.js";
+import { ENGLISH_LANGUAGE_PACK } from "./languagepacks/english.js";
 
 describe("isAIText", () => {
 	describe("basic functionality", () => {
@@ -18,7 +18,7 @@ describe("isAIText", () => {
 				"Furthermore, the comprehensive system delivers optimal performance through advanced algorithms and streamlined processes. The implementation provides three main benefits: efficiency, scalability, and reliability. Additionally, the framework ensures consistent results across all operational parameters while maintaining exceptional quality standards.";
 
 			const result = isAIText(aiText, {
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 
 			assert.ok(typeof result === "object", "Should return an object");
@@ -83,7 +83,7 @@ describe("isAIText", () => {
 				"I can't believe what happened today! The system was acting kinda weird and their were some issues with the setup. Its not perfect but it gets the job done most of the time. Sometimes things just don't work as expected, you know? We're trying to fix all the problems that keep popping up in different areas.";
 
 			const result = isAIText(humanText, {
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 
 			assert.ok(
@@ -116,7 +116,7 @@ describe("isAIText", () => {
 				"The system delivers optimal performance and provides three benefits: efficiency, scalability, reliability. However, it's kinda weird that users can't access some features properly. We're working on fixing these issues as they pop up organically.";
 
 			const result = isAIText(mixedText, {
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 
 			assert.ok(
@@ -145,7 +145,7 @@ describe("isAIText", () => {
 
 			const result = isAIText(text, {
 				includeDetails: true,
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 
 			assert.ok(
@@ -200,7 +200,7 @@ describe("isAIText", () => {
 
 			const result = isAIText(text, {
 				maxExecutionTime: 100,
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 
 			assert.ok(
@@ -217,7 +217,7 @@ describe("isAIText", () => {
 
 			const result = isAIText(strongAIText, {
 				includeDetails: true,
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 
 			// Should have strong AI signals with amplification
@@ -238,7 +238,7 @@ describe("isAIText", () => {
 				"The system provides reliable performance and functionality for various applications and use cases across different operational environments. The implementation ensures optimal efficiency and delivers comprehensive solutions for diverse business requirements.";
 
 			const result = isAIText(text, {
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 
 			assert.ok(
@@ -258,10 +258,10 @@ describe("isAIText", () => {
 				"I'm kinda thinking this stuff is pretty good overall. Yeah, it works okay for most things we need to do around here.";
 
 			const technicalResult = isAIText(technicalText, {
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 			const casualResult = isAIText(casualText, {
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 
 			assert.ok(
@@ -283,12 +283,12 @@ describe("isAIText", () => {
 			const resultWithEarly = isAIText(strongAIText, {
 				enableEarlyTermination: true,
 				includeDetails: true,
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 			const resultWithoutEarly = isAIText(strongAIText, {
 				enableEarlyTermination: false,
 				includeDetails: true,
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 
 			// Both should still produce valid results
@@ -309,7 +309,7 @@ describe("isAIText", () => {
 			const shortText = "Hello world!";
 
 			const result = isAIText(shortText, {
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 
 			assert.ok(
@@ -325,7 +325,7 @@ describe("isAIText", () => {
 
 		it("throws error for empty text", () => {
 			assert.throws(
-				() => isAIText("", { signaturePhrases: ENGLISH_SIGNATURE_PHRASES }),
+				() => isAIText("", { languagePack: ENGLISH_LANGUAGE_PACK }),
 				/Cannot analyze empty text/,
 				"Should throw error for empty text",
 			);
@@ -333,7 +333,7 @@ describe("isAIText", () => {
 
 		it("throws error for non-string input", () => {
 			assert.throws(
-				() => isAIText(123, { signaturePhrases: ENGLISH_SIGNATURE_PHRASES }),
+				() => isAIText(123, { languagePack: ENGLISH_LANGUAGE_PACK }),
 				/Input 'text' must be a string/,
 				"Should throw error for non-string input",
 			);
@@ -344,7 +344,7 @@ describe("isAIText", () => {
 
 			const result = isAIText(minimalText, {
 				includeDetails: true,
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 
 			assert.ok(typeof result === "object", "Should handle minimal text");
@@ -375,7 +375,7 @@ describe("isAIText", () => {
 
 			for (const testCase of texts) {
 				const result = isAIText(testCase.text, {
-					signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+					languagePack: ENGLISH_LANGUAGE_PACK,
 				});
 				assert.ok(
 					testCase.expectedType.includes(result.classification),
@@ -391,7 +391,7 @@ describe("isAIText", () => {
 				"The analytical framework incorporates methodologies for systematic evaluation of complex datasets and pattern identification across diverse organizational contexts.";
 
 			const result = isAIText(text, {
-				signaturePhrases: ENGLISH_SIGNATURE_PHRASES,
+				languagePack: ENGLISH_LANGUAGE_PACK,
 			});
 
 			// Combined score should be <= min(aiLikelihood, certainty)
