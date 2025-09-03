@@ -19,6 +19,8 @@
  * @property {string} [defaultType] - Fallback type if no matches occur
  * @property {string[]} [priority] - Tie-break priority order of categories
  * @property {{ errorPatterns?: RegExp[], weight?: number, falsePositiveTokens?: Set<string> }} [grammar] - Language-specific grammar config
+ * @property {{ conjunctions?: Set<string>, separators?: RegExp[], minItemLength?: number, whitelistTokens?: Set<string>, weight?: number }} [ruleOfThree] - Language-specific triad config
+ * @property {{ phrases?: Set<string>, regex?: RegExp[], weight?: number, caseInsensitive?: boolean }} [transitions] - Language-specific AI-transition phrases
  * @property {Record<string, SignaturePhraseCategory>} categories - Map of category name to rules
  */
 

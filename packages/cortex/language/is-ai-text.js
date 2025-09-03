@@ -236,6 +236,9 @@ function getEffectiveWeights(signaturePhrases) {
 	if (_sp && typeof _sp.grammar?.weight === "number") {
 		w.perfect_grammar = _sp.grammar.weight;
 	}
+	if (_sp && typeof _sp.transitions?.weight === "number") {
+		w.ai_transition_phrases = _sp.transitions.weight;
+	}
 	return w;
 }
 

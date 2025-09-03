@@ -74,6 +74,7 @@ const TRIADIC_BASELINES = {
  * @param {number} [options.minWordCount=30] - Minimum word count for reliable analysis
  * @param {boolean} [options.includeDetails=false] - Whether to include pattern-specific details
  * @param {number} [options.sensitivityThreshold=2.0] - Multiplier threshold for flagging overuse (2.0 = 2x human baseline)
+ * @param {{ conjunctions?: Set<string>, separators?: RegExp[], minItemLength?: number, whitelistTokens?: Set<string>, weight?: number }} [options.ruleOfThreeProfile]
  * @returns {{aiLikelihood: number, overallScore: number, triadicDensity: number, totalPatterns: number, wordCount: number, detectedPatterns: Array<Object>}} Analysis results with AI detection metrics. aiLikelihood: Overall AI probability score (0-1, higher = more AI-like). overallScore: Weighted frequency score vs human baseline. triadicDensity: Total triadic patterns per 1000 words. totalPatterns: Total number of flagged triadic patterns found. wordCount: Total words analyzed. detectedPatterns: Array of detected patterns with frequencies (if includeDetails=true).
  *
  * @throws {TypeError} When text parameter is not a string
@@ -130,6 +131,7 @@ export function detectRuleOfThreeObsession(text, options = {}) {
 		minWordCount = 30,
 		includeDetails = false,
 		sensitivityThreshold = 2.0,
+		ruleOfThreeProfile,
 	} = options;
 
 	if (!Number.isInteger(minWordCount) || minWordCount < 1) {
@@ -159,15 +161,29 @@ export function detectRuleOfThreeObsession(text, options = {}) {
 	const patterns = {
 		// Three-item list patterns
 		three_item_lists: (/** @type {string} */ text) => {
-			const patterns = [
-				/\b\w+,\s+\w+,?\s+and\s+\w+\b/gi, // "A, B, and C"
-				/\b\w+,\s+\w+,?\s+or\s+\w+\b/gi, // "A, B, or C"
-				/\b\w+;\s+\w+;\s+\w+\b/gi, // "A; B; C"
-			];
+			const conj = ruleOfThreeProfile?.conjunctions || new Set(["and", "or"]);
+			const seps = ruleOfThreeProfile?.separators || [/[,;]/g];
+			const minLen = ruleOfThreeProfile?.minItemLength ?? 3;
 			let count = 0;
-			for (const pattern of patterns) {
-				const matches = text.match(pattern) || [];
-				count += matches.length;
+			// Simple split heuristic: find sequences with two separators and a known conjunction
+			const sentences = tokenizeSentences(text);
+			for (const s of sentences) {
+				const hasConj = Array.from(conj).some((c) =>
+					new RegExp(`\\b${c}\\b`, "i").test(s),
+				);
+				if (!hasConj) continue;
+				const sepHits = seps.reduce(
+					(/** @type {number} */ sum, /** @type {RegExp} */ re) =>
+						sum + (s.match(re) || []).length,
+					0,
+				);
+				if (sepHits < 1) continue;
+				// Rough item candidates by comma/semicolon
+				const parts = s
+					.split(/[;,]/)
+					.map((p) => p.trim())
+					.filter((p) => p.length >= minLen);
+				if (parts.length >= 3) count++;
 			}
 			return count;
 		},

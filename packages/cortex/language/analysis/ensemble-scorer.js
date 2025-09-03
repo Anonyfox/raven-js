@@ -187,12 +187,23 @@ export function analyzeWithEnsemble(text, options = {}) {
 	// Type-safe algorithm weights
 	const weights = /** @type {Record<string, number>} */ (algorithmWeights);
 
-	// If language-specific grammar weight exists, override perfect_grammar weight
 	if (
 		signaturePhrases &&
 		typeof signaturePhrases.grammar?.weight === "number"
 	) {
 		weights.perfect_grammar = signaturePhrases.grammar.weight;
+	}
+	if (
+		signaturePhrases &&
+		typeof signaturePhrases.ruleOfThree?.weight === "number"
+	) {
+		weights.rule_of_three = signaturePhrases.ruleOfThree.weight;
+	}
+	if (
+		signaturePhrases &&
+		typeof signaturePhrases.transitions?.weight === "number"
+	) {
+		weights.ai_transition_phrases = signaturePhrases.transitions.weight;
 	}
 
 	// Run each algorithm and handle failures gracefully

@@ -19,6 +19,28 @@ export const ENGLISH_SIGNATURE_PHRASES = {
 		weight: 0.09,
 		errorPatterns: [],
 	},
+	ruleOfThree: {
+		conjunctions: new Set(["and", "or"]),
+		separators: [/[,;]/g],
+		minItemLength: 3,
+		whitelistTokens: new Set(),
+		weight: 0.13,
+	},
+	transitions: {
+		phrases: new Set([
+			"furthermore",
+			"moreover",
+			"in conclusion",
+			"as a result",
+			"however",
+			"consequently",
+			"therefore",
+			"thus",
+			"it's important to note",
+		]),
+		weight: 0.15,
+		caseInsensitive: true,
+	},
 	priority: [
 		"social_media",
 		"casual",

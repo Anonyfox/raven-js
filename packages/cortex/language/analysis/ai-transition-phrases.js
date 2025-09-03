@@ -91,6 +91,7 @@ const AI_TRANSITION_PHRASES = {
  * @param {boolean} [options.caseSensitive=false] - Whether to preserve case in phrase matching
  * @param {number} [options.minWordCount=20] - Minimum word count for reliable analysis
  * @param {boolean} [options.includeDetails=false] - Whether to include phrase-specific details
+ * @param {{ phrases?: Set<string>, regex?: RegExp[], weight?: number, caseInsensitive?: boolean }} [options.transitionsProfile]
  * @returns {{aiLikelihood: number, overallScore: number, phrasesPerThousand: number, totalPhrases: number, wordCount: number, detectedPhrases: Array<Object>}} Analysis results with AI detection metrics. aiLikelihood: Overall AI probability score (0-1, higher = more AI-like). overallScore: Weighted frequency score vs human baseline. phrasesPerThousand: Detected phrases per 1000 words. totalPhrases: Total number of AI phrases found. wordCount: Total words analyzed. detectedPhrases: Array of found phrases with frequencies (if includeDetails=true).
  *
  * @throws {TypeError} When text parameter is not a string
@@ -147,6 +148,7 @@ export function analyzeAITransitionPhrases(text, options = {}) {
 		caseSensitive = false,
 		minWordCount = 20,
 		includeDetails = false,
+		transitionsProfile,
 	} = options;
 
 	if (!Number.isInteger(minWordCount) || minWordCount < 1) {
@@ -166,15 +168,23 @@ export function analyzeAITransitionPhrases(text, options = {}) {
 		);
 	}
 
-	// Prepare phrases list (normalize case consistently using international folding)
-	const phrasesToSearch = caseSensitive
-		? AI_TRANSITION_PHRASES
-		: Object.fromEntries(
-				Object.entries(AI_TRANSITION_PHRASES).map(([phrase, frequency]) => [
-					foldCase(phrase),
-					frequency,
-				]),
-			);
+	// Prepare phrases/regex list from language profile or fallback
+	/** @type {Record<string, number>} */
+	let phrasesToSearch = {};
+	if (transitionsProfile?.phrases && transitionsProfile.phrases.size > 0) {
+		for (const p of transitionsProfile.phrases) {
+			phrasesToSearch[caseSensitive ? p : foldCase(p)] = 0.3; // default human baseline if unspecified
+		}
+	} else {
+		phrasesToSearch = caseSensitive
+			? AI_TRANSITION_PHRASES
+			: Object.fromEntries(
+					Object.entries(AI_TRANSITION_PHRASES).map(([phrase, frequency]) => [
+						foldCase(phrase),
+						frequency,
+					]),
+				);
+	}
 
 	// Search for AI transition phrases
 	const detectedPhrases = [];

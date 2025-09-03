@@ -19,6 +19,13 @@ export const MINIMAL_SIGNATURE_PHRASES = {
 		weight: 0.0,
 		errorPatterns: [],
 	},
+	ruleOfThree: {
+		weight: 0.0,
+		conjunctions: new Set(),
+		separators: [],
+		minItemLength: 3,
+		whitelistTokens: new Set(),
+	},
 	priority: [
 		"social_media",
 		"casual",

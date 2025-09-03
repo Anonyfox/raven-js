@@ -20,6 +20,27 @@ export const GERMAN_SIGNATURE_PHRASES = {
 		errorPatterns: [],
 		falsePositiveTokens: new Set(["ich", "und", "oder"]),
 	},
+	ruleOfThree: {
+		conjunctions: new Set(["und", "oder"]),
+		separators: [/[,;]/g],
+		minItemLength: 3,
+		whitelistTokens: new Set(["cvent", "aloom", "microsoft"]),
+		weight: 0.08,
+	},
+	transitions: {
+		phrases: new Set([
+			"außerdem",
+			"zusätzlich",
+			"darüber hinaus",
+			"ferner",
+			"abschließend",
+			"daher",
+			"allerdings",
+			"folglich",
+		]),
+		weight: 0.08,
+		caseInsensitive: true,
+	},
 	priority: [
 		"social_media",
 		"casual",
