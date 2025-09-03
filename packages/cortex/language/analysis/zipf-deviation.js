@@ -14,6 +14,9 @@
  * while AI content shows systematic deviations that create detectible fingerprints.
  */
 
+import { foldCase, normalizeUnicode } from "../normalization/index.js";
+import { tokenizeWords } from "../segmentation/index.js";
+
 /**
  * Analyzes text for deviations from Zipf's Law word frequency distribution.
  *
@@ -86,14 +89,19 @@ export function analyzeZipfDeviation(text, options = {}) {
 		throw new Error("Parameter maxRanks must be a positive integer");
 	}
 
-	// Normalize text case if needed
-	const normalizedText = caseSensitive ? text : text.toLowerCase();
+	// Normalize Unicode text for consistent character representation across encodings
+	// Handles emoji, combining characters, and compatibility mappings consistently
+	const unicodeText = normalizeUnicode(text);
 
-	// Extract words and filter by length
-	// Split on non-word characters and filter out empty strings
-	const words = normalizedText
-		.split(/\W+/)
-		.filter((word) => word.length >= minWordLength);
+	// Apply international-aware case folding if case-insensitive analysis requested
+	const normalizedText = caseSensitive ? unicodeText : foldCase(unicodeText);
+
+	// Extract words using robust Unicode-aware tokenization
+	// Handles contractions, hyphens, and international word boundaries correctly
+	const allWords = tokenizeWords(normalizedText);
+
+	// Filter words by minimum length requirement
+	const words = allWords.filter((word) => word.length >= minWordLength);
 
 	if (words.length < 10) {
 		throw new Error("Text must contain at least 10 valid words for analysis");

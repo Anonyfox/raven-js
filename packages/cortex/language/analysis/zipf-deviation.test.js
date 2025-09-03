@@ -354,7 +354,7 @@ describe("analyzeZipfDeviation", () => {
 	describe("edge cases", () => {
 		it("handles text with punctuation and numbers", () => {
 			const text =
-				"Version 2.0 released! Features include: authentication, logging, and monitoring.";
+				"Version 2.0 released! Features include: authentication, logging, monitoring, configuration, and database support.";
 			const result = analyzeZipfDeviation(text);
 
 			assert.ok(
@@ -415,7 +415,7 @@ describe("analyzeZipfDeviation", () => {
 
 		it("processes text with special characters", () => {
 			const text =
-				"user@example.com visits https://website.com for API documentation #programming";
+				"user@example.com visits https://website.com for comprehensive API documentation and programming tutorials #programming";
 			const result = analyzeZipfDeviation(text);
 
 			assert.ok(

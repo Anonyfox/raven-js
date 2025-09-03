@@ -12,7 +12,10 @@
  * Calculates information-theoretic entropy based on character frequency distribution
  * to distinguish human from AI-generated text. AI content shows 15-25% lower entropy
  * due to more predictable character patterns, providing a statistical fingerprint.
+ * Uses Unicode normalization for consistent international text processing.
  */
+
+import { normalizeUnicode } from "../normalization/index.js";
 
 /**
  * Calculates Shannon entropy of text based on character frequency distribution.
@@ -73,8 +76,12 @@ export function calculateShannonEntropy(text) {
 		throw new Error("Cannot calculate entropy of empty text");
 	}
 
+	// Normalize Unicode text for consistent character handling across encodings
+	// Handles emoji, combining characters, and compatibility mappings consistently
+	const normalizedText = normalizeUnicode(text);
+
 	// Convert to array of characters for processing
-	const characters = text.split("");
+	const characters = normalizedText.split("");
 	const totalCharacters = characters.length;
 
 	// Count frequency of each character
