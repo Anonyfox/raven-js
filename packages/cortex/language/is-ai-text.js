@@ -239,6 +239,9 @@ function getEffectiveWeights(signaturePhrases) {
 	if (_sp && typeof _sp.transitions?.weight === "number") {
 		w.ai_transition_phrases = _sp.transitions.weight;
 	}
+	if (_sp && typeof _sp.participles?.weight === "number") {
+		w.participial_phrases = _sp.participles.weight;
+	}
 	return w;
 }
 

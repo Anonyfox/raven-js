@@ -77,6 +77,7 @@ const PARTICIPIAL_BASELINES = {
  * @param {number} [options.minWordCount=25] - Minimum word count for reliable analysis
  * @param {boolean} [options.includeDetails=false] - Whether to include pattern-specific details
  * @param {number} [options.sensitivityThreshold=2.0] - Multiplier threshold for flagging overuse (2.0 = 2x human baseline)
+ * @param {import('../signaturephrases/signature-phrase.js').ParticiplesProfile} [options.participleProfile]
  * @returns {{aiLikelihood: number, overallScore: number, participialDensity: number, totalPatterns: number, wordCount: number, detectedPatterns: Array<Object>}} Analysis results with AI detection metrics. aiLikelihood: Overall AI probability score (0-1, higher = more AI-like). overallScore: Weighted frequency score vs human baseline. participialDensity: Total participial patterns per 1000 words. totalPatterns: Total number of flagged participial patterns found. wordCount: Total words analyzed. detectedPatterns: Array of detected patterns with frequencies (if includeDetails=true).
  *
  * @throws {TypeError} When text parameter is not a string
@@ -133,6 +134,7 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 		minWordCount = 25,
 		includeDetails = false,
 		sensitivityThreshold = 2.0,
+		participleProfile,
 	} = options;
 
 	if (!Number.isInteger(minWordCount) || minWordCount < 1) {
@@ -158,15 +160,20 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 	let totalPatterns = 0;
 	let weightedScore = 0;
 
-	// Pattern detection functions
+	// Helper to build regex from a Set of words
+	const startsWithAny = (/** @type {Set<string> | undefined} */ set) =>
+		set?.size ? new RegExp(`^(?:${Array.from(set).join("|")})\\b`) : null;
+
 	const patterns = {
 		// Sentence-initial participial phrases
 		sentence_initial_ing: (/** @type {string} */ text) => {
 			const sentences = tokenizeSentences(text);
 			let count = 0;
 			for (const sentence of sentences) {
-				// Match -ing words at sentence start
-				if (/^[A-Z][a-z]*ing\b/.test(sentence)) {
+				const rx =
+					startsWithAny(participleProfile?.sentenceInitial?.presentActions) ||
+					/^[A-Z][a-z]*ing\b/;
+				if (rx.test(sentence)) {
 					count++;
 				}
 			}
@@ -177,8 +184,10 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 			const sentences = tokenizeSentences(text);
 			let count = 0;
 			for (const sentence of sentences) {
-				// Match -ed words at sentence start
-				if (/^[A-Z][a-z]*ed\b/.test(sentence)) {
+				const rx =
+					startsWithAny(participleProfile?.sentenceInitial?.past) ||
+					/^[A-Z][a-z]*ed\b/;
+				if (rx.test(sentence)) {
 					count++;
 				}
 			}
@@ -187,35 +196,18 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 
 		sentence_initial_irregular: (/** @type {string} */ text) => {
 			const sentences = tokenizeSentences(text);
-			const irregularParticiples = [
-				"Built",
-				"Made",
-				"Done",
-				"Written",
-				"Taken",
-				"Given",
-				"Seen",
-				"Known",
-				"Shown",
-				"Drawn",
-				"Grown",
-				"Thrown",
-				"Driven",
-				"Chosen",
-				"Broken",
-				"Spoken",
-				"Stolen",
-				"Frozen",
-				"Proven",
-				"Hidden",
-				"Ridden",
-				"Bitten",
-			];
 			let count = 0;
 			for (const sentence of sentences) {
 				const words = tokenizeWords(sentence);
 				const firstWord = words[0];
-				if (firstWord && irregularParticiples.includes(firstWord)) {
+				const irregular = participleProfile?.sentenceInitial?.irregular;
+				if (
+					firstWord &&
+					(irregular?.has?.call(irregular, firstWord) ||
+						/^(?:Built|Made|Done|Written|Given|Taken|Shown|Known)\b/.test(
+							firstWord,
+						))
+				) {
 					count++;
 				}
 			}
@@ -247,8 +239,11 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 		},
 
 		present_participle_transitions: (/** @type {string} */ text) => {
+			const verbs = participleProfile?.transitionsVerbs;
 			const pattern =
-				/\b(?:Speaking|Looking|Considering|Thinking|Turning|Moving)\s+(?:of|at|about|to|toward)\b/gi;
+				verbs && verbs.size > 0
+					? new RegExp(`\\b(?:${Array.from(verbs).join("|")})\\b`, "gi")
+					: /\b(?:Speaking|Looking|Considering|Thinking|Turning|Moving)\b/gi;
 			return (text.match(pattern) || []).length;
 		},
 
@@ -257,11 +252,10 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 			const sentences = tokenizeSentences(text);
 			let count = 0;
 			for (const sentence of sentences) {
-				if (
-					/^(?:Running|Working|Processing|Operating|Functioning|Performing)\b/.test(
-						sentence,
-					)
-				) {
+				const rx =
+					startsWithAny(participleProfile?.sentenceInitial?.presentActions) ||
+					/^(?:Running|Working|Processing|Operating|Functioning|Performing)\b/;
+				if (rx.test(sentence)) {
 					count++;
 				}
 			}
@@ -273,11 +267,10 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 			const sentences = tokenizeSentences(text);
 			let count = 0;
 			for (const sentence of sentences) {
-				if (
-					/^(?:Being|Having|Considering|Maintaining|Ensuring|Providing)\b/.test(
-						sentence,
-					)
-				) {
+				const rx =
+					startsWithAny(participleProfile?.sentenceInitial?.presentStates) ||
+					/^(?:Being|Having|Considering|Maintaining|Ensuring|Providing)\b/;
+				if (rx.test(sentence)) {
 					count++;
 				}
 			}
@@ -289,11 +282,10 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 			const sentences = tokenizeSentences(text);
 			let count = 0;
 			for (const sentence of sentences) {
-				if (
-					/^(?:Completed|Finished|Accomplished|Achieved|Realized|Fulfilled)\b/.test(
-						sentence,
-					)
-				) {
+				const rx =
+					startsWithAny(participleProfile?.sentenceInitial?.past) ||
+					/^(?:Completed|Finished|Accomplished|Achieved|Realized|Fulfilled)\b/;
+				if (rx.test(sentence)) {
 					count++;
 				}
 			}
@@ -301,8 +293,11 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 		},
 
 		past_participle_passive: (/** @type {string} */ text) => {
+			const verbs = participleProfile?.sentenceInitial?.past;
 			const pattern =
-				/\b(?:Written|Developed|Created|Produced|Generated|Manufactured)\s+by\b/gi;
+				verbs && verbs.size > 0
+					? new RegExp(`\\b(?:${Array.from(verbs).join("|")})\\s+by\\b`, "gi")
+					: /\b(?:Written|Developed|Created|Produced|Generated|Manufactured)\s+by\b/gi;
 			return (text.match(pattern) || []).length;
 		},
 
@@ -401,11 +396,10 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 			const sentences = tokenizeSentences(text);
 			let count = 0;
 			for (const sentence of sentences) {
-				if (
-					/^(?:Examining|Investigating|Exploring|Researching|Studying|Analyzing)\b/.test(
-						sentence,
-					)
-				) {
+				const rx =
+					startsWithAny(participleProfile?.academicVerbs) ||
+					/^(?:Examining|Investigating|Exploring|Researching|Studying|Analyzing)\b/;
+				if (rx.test(sentence)) {
 					count++;
 				}
 			}
@@ -417,11 +411,10 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 			const sentences = tokenizeSentences(text);
 			let count = 0;
 			for (const sentence of sentences) {
-				if (
-					/^(?:Streamlining|Optimizing|Enhancing|Improving|Maximizing|Increasing)\b/.test(
-						sentence,
-					)
-				) {
+				const rx =
+					startsWithAny(participleProfile?.businessVerbs) ||
+					/^(?:Streamlining|Optimizing|Enhancing|Improving|Maximizing|Increasing)\b/;
+				if (rx.test(sentence)) {
 					count++;
 				}
 			}
@@ -433,11 +426,10 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 			const sentences = tokenizeSentences(text);
 			let count = 0;
 			for (const sentence of sentences) {
-				if (
-					/^(?:Delivering|Providing|Offering|Presenting|Introducing|Showcasing)\b/.test(
-						sentence,
-					)
-				) {
+				const rx =
+					startsWithAny(participleProfile?.marketingVerbs) ||
+					/^(?:Delivering|Providing|Offering|Presenting|Introducing|Showcasing)\b/;
+				if (rx.test(sentence)) {
 					count++;
 				}
 			}

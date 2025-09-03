@@ -205,6 +205,12 @@ export function analyzeWithEnsemble(text, options = {}) {
 	) {
 		weights.ai_transition_phrases = signaturePhrases.transitions.weight;
 	}
+	if (
+		signaturePhrases &&
+		typeof signaturePhrases.participles?.weight === "number"
+	) {
+		weights.participial_phrases = signaturePhrases.participles.weight;
+	}
 
 	// Run each algorithm and handle failures gracefully
 	const algorithms = [

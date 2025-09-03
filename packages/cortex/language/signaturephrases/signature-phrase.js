@@ -21,6 +21,7 @@
  * @property {{ errorPatterns?: RegExp[], weight?: number, falsePositiveTokens?: Set<string> }} [grammar] - Language-specific grammar config
  * @property {{ conjunctions?: Set<string>, separators?: RegExp[], minItemLength?: number, whitelistTokens?: Set<string>, weight?: number }} [ruleOfThree] - Language-specific triad config
  * @property {{ phrases?: Set<string>, regex?: RegExp[], weight?: number, caseInsensitive?: boolean }} [transitions] - Language-specific AI-transition phrases
+ * @property {ParticiplesProfile} [participles] - Language-specific participial patterns
  * @property {Record<string, SignaturePhraseCategory>} categories - Map of category name to rules
  */
 
@@ -33,6 +34,21 @@
  * @property {[Set<string>, Set<string>]} [cooccurrence] - Two token sets; both must occur
  * @property {(string|RegExp)[]} [emojis] - Emoji strings or regexes matched on raw text
  * @property {RegExp[]} [punctuation] - Punctuation patterns matched on raw text
+ */
+
+/**
+ * Participles profile for language-specific participial patterns.
+ * @typedef {Object} ParticiplesProfile
+ * @property {{ presentActions?: Set<string>, presentStates?: Set<string>, past?: Set<string>, irregular?: Set<string> }} [sentenceInitial]
+ * @property {Set<string>} [technicalVerbs]
+ * @property {Set<string>} [academicVerbs]
+ * @property {Set<string>} [businessVerbs]
+ * @property {Set<string>} [marketingVerbs]
+ * @property {Set<string>} [processVerbs]
+ * @property {Set<string>} [systemVerbs]
+ * @property {Set<string>} [transitionsVerbs]
+ * @property {Set<string>} [whenGerunds]
+ * @property {number} [weight]
  */
 
 export {};
