@@ -13,18 +13,7 @@ import * as featurization from "./index.js";
 describe("featurization module", () => {
 	it("re-exports all n-gram functions", () => {
 		// Verify all expected functions are available
-		ok(
-			typeof featurization.extractCharNgrams === "function",
-			"Should export extractCharNgrams",
-		);
-		ok(
-			typeof featurization.extractWordNgrams === "function",
-			"Should export extractWordNgrams",
-		);
-		ok(
-			typeof featurization.extractMixedNgrams === "function",
-			"Should export extractMixedNgrams",
-		);
+		ok(typeof featurization.ngrams === "function", "Should export ngrams");
 		// Note: TF-IDF is now a dedicated ML model in cortex/learning
 		// Use: import { Tfidf } from '@raven-js/cortex/learning'
 		ok(
@@ -35,27 +24,27 @@ describe("featurization module", () => {
 		ok(typeof featurization.textrank === "function", "Should export textrank");
 	});
 
-	it("n-gram functions work through re-exports", () => {
+	it("ngrams function works through re-export", () => {
 		const testText = "the quick brown fox jumps";
 
-		// Test character n-grams
-		const charResult = featurization.extractCharNgrams(testText, 3);
-		ok(Array.isArray(charResult), "extractCharNgrams should return array");
-		ok(charResult.length > 0, "Should extract character n-grams");
-		ok(charResult.includes("the"), "Should contain expected trigram");
-
-		// Test word n-grams
-		const wordResult = featurization.extractWordNgrams(testText, 2);
-		ok(Array.isArray(wordResult), "extractWordNgrams should return array");
-		ok(wordResult.length > 0, "Should extract word n-grams");
+		// Test default word n-grams
+		const wordResult = featurization.ngrams(testText);
+		ok(Array.isArray(wordResult), "ngrams should return array by default");
+		ok(wordResult.length > 0, "Should extract word n-grams by default");
 		ok(wordResult.includes("the quick"), "Should contain expected bigram");
 		ok(wordResult.includes("brown fox"), "Should contain expected bigram");
 
+		// Test character n-grams
+		const charResult = featurization.ngrams(testText, { type: "chars", n: 3 });
+		ok(Array.isArray(charResult), "ngrams with chars type should return array");
+		ok(charResult.length > 0, "Should extract character n-grams");
+		ok(charResult.includes("the"), "Should contain expected trigram");
+
 		// Test mixed n-grams
-		const mixedResult = featurization.extractMixedNgrams(testText);
+		const mixedResult = featurization.ngrams(testText, { type: "mixed" });
 		ok(
 			typeof mixedResult === "object",
-			"extractMixedNgrams should return object",
+			"ngrams with mixed type should return object",
 		);
 		ok(Array.isArray(mixedResult.char), "Should have char array");
 		ok(Array.isArray(mixedResult.word), "Should have word array");
@@ -65,18 +54,18 @@ describe("featurization module", () => {
 
 	it("handles edge cases consistently", () => {
 		// Empty input
-		const emptyChar = featurization.extractCharNgrams("");
-		const emptyWord = featurization.extractWordNgrams("");
-		const emptyMixed = featurization.extractMixedNgrams("");
+		const emptyWord = featurization.ngrams("");
+		const emptyChar = featurization.ngrams("", { type: "chars" });
+		const emptyMixed = featurization.ngrams("", { type: "mixed" });
 
-		deepStrictEqual(emptyChar, []);
 		deepStrictEqual(emptyWord, []);
+		deepStrictEqual(emptyChar, []);
 		deepStrictEqual(emptyMixed.char, []);
 		deepStrictEqual(emptyMixed.word, []);
 
 		// Single character/word
-		const singleChar = featurization.extractCharNgrams("x", 3);
-		const singleWord = featurization.extractWordNgrams("hello", 2);
+		const singleChar = featurization.ngrams("x", { type: "chars", n: 3 });
+		const singleWord = featurization.ngrams("hello", { n: 2 });
 
 		deepStrictEqual(singleChar, []);
 		deepStrictEqual(singleWord, []);
@@ -86,12 +75,16 @@ describe("featurization module", () => {
 		// Test that normalization options work through re-exports
 		const unnormalized = "CAFÉ";
 
-		const normalized = featurization.extractCharNgrams(unnormalized, 2, 1, {
+		const normalized = featurization.ngrams(unnormalized, {
+			type: "chars",
+			n: 2,
 			normalize: true,
 			lowercase: true,
 		});
 
-		const notNormalized = featurization.extractCharNgrams(unnormalized, 2, 1, {
+		const notNormalized = featurization.ngrams(unnormalized, {
+			type: "chars",
+			n: 2,
 			normalize: false,
 			lowercase: false,
 		});

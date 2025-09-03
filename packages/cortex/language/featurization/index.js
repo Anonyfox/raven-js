@@ -17,10 +17,6 @@
  */
 
 export { hashFeatures } from "./hash-features.js";
-export {
-	extractCharNgrams,
-	extractMixedNgrams,
-	extractWordNgrams,
-} from "./ngrams.js";
+export { ngrams } from "./ngrams.js";
 export { rake } from "./rake.js";
 export { textrank } from "./textrank.js";

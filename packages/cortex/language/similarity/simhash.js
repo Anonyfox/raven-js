@@ -16,10 +16,7 @@
  */
 
 import { fnv32 } from "../../primitives/index.js";
-import {
-	extractCharNgrams,
-	extractWordNgrams,
-} from "../featurization/ngrams.js";
+import { ngrams } from "../featurization/ngrams.js";
 import { foldCase, normalizeUnicode } from "../normalization/index.js";
 
 // Hash function now imported from primitives module
@@ -90,24 +87,24 @@ export class SimHasher {
 		// Extract n-grams based on configuration
 		let features;
 		if (this.useWordShingles) {
-			features = extractWordNgrams(
-				processedText,
-				this.wordShingleSize,
-				1, // stride
-				{
+			features = /** @type {string[]} */ (
+				ngrams(processedText, {
+					type: "words",
+					n: this.wordShingleSize,
+					stride: 1,
 					normalize: false, // Already handled above
 					lowercase: false, // Already handled above
-				},
+				})
 			);
 		} else {
-			features = extractCharNgrams(
-				processedText,
-				this.charShingleSize,
-				1, // stride
-				{
+			features = /** @type {string[]} */ (
+				ngrams(processedText, {
+					type: "chars",
+					n: this.charShingleSize,
+					stride: 1,
 					normalize: false, // Already handled above
 					lowercase: false, // Already handled above
-				},
+				})
 			);
 		}
 

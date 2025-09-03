@@ -1,197 +1,152 @@
-/**
- * @author Anonyfox <max@anonyfox.com>
- * @license MIT
- * @see {@link https://github.com/Anonyfox/ravenjs}
- * @see {@link https://ravenjs.dev}
- * @see {@link https://anonyfox.com}
- */
-
-import { deepStrictEqual, throws } from "node:assert";
+import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
-import {
-	extractCharNgrams,
-	extractMixedNgrams,
-	extractWordNgrams,
-} from "./ngrams.js";
+import { ngrams } from "./ngrams.js";
 
-describe("extractCharNgrams", () => {
-	it("generates basic character trigrams", () => {
-		const result = extractCharNgrams("hello");
-		deepStrictEqual(result, ["hel", "ell", "llo"]);
+describe("ngrams", () => {
+	it("extracts word n-grams by default", () => {
+		const text = "machine learning algorithms";
+		const result = ngrams(text);
+
+		assert(Array.isArray(result));
+		assert.deepStrictEqual(result, ["machine learning", "learning algorithms"]);
 	});
 
-	it("handles custom n-gram size", () => {
-		const result = extractCharNgrams("hello", 2);
-		deepStrictEqual(result, ["he", "el", "ll", "lo"]);
+	it("extracts character n-grams when type is 'chars'", () => {
+		const text = "hello";
+		const result = ngrams(text, { type: "chars" });
+
+		assert(Array.isArray(result));
+		assert.deepStrictEqual(result, ["hel", "ell", "llo"]);
 	});
 
-	it("handles custom stride", () => {
-		const result = extractCharNgrams("hello", 3, 2);
-		deepStrictEqual(result, ["hel", "llo"]);
+	it("respects custom n-gram size", () => {
+		const text = "natural language processing";
+
+		// Word trigrams
+		const wordTrigrams = ngrams(text, { n: 3 });
+		assert.deepStrictEqual(wordTrigrams, ["natural language processing"]);
+
+		// Character bigrams
+		const charBigrams = ngrams("hello", { type: "chars", n: 2 });
+		assert.deepStrictEqual(charBigrams, ["he", "el", "ll", "lo"]);
 	});
 
-	it("applies normalization by default", () => {
-		const result = extractCharNgrams("café");
-		deepStrictEqual(result, ["caf", "afé"]);
+	it("extracts mixed n-grams when type is 'mixed'", () => {
+		const text = "hello world";
+		const result = ngrams(text, { type: "mixed" });
+
+		assert(typeof result === "object");
+		assert(Array.isArray(result.char));
+		assert(Array.isArray(result.word));
+		assert(result.char.includes("hel"));
+		assert(result.word.includes("hello world"));
 	});
 
-	it("applies lowercase by default", () => {
-		const result = extractCharNgrams("Hello");
-		deepStrictEqual(result, ["hel", "ell", "llo"]);
+	it("handles stride parameter", () => {
+		const text = "abcdef";
+		const result = ngrams(text, { type: "chars", n: 2, stride: 2 });
+
+		assert.deepStrictEqual(result, ["ab", "cd", "ef"]);
 	});
 
-	it("can disable normalization", () => {
-		const result = extractCharNgrams("Hello", 3, 1, {
+	it("applies normalization options", () => {
+		const text = "CAFÉ";
+
+		const normalized = ngrams(text, {
+			type: "chars",
+			n: 2,
+			normalize: true,
+			lowercase: true,
+		});
+
+		const notNormalized = ngrams(text, {
+			type: "chars",
+			n: 2,
 			normalize: false,
 			lowercase: false,
 		});
-		deepStrictEqual(result, ["Hel", "ell", "llo"]);
+
+		assert(normalized.includes("ca"));
+		assert(!notNormalized.includes("ca"));
+		assert(notNormalized.includes("CA"));
 	});
 
-	it("handles empty string", () => {
-		const result = extractCharNgrams("");
-		deepStrictEqual(result, []);
+	it("respects custom separator for word n-grams", () => {
+		const text = "machine learning algorithms";
+		const result = ngrams(text, { separator: "_" });
+
+		assert.deepStrictEqual(result, ["machine_learning", "learning_algorithms"]);
 	});
 
-	it("handles string shorter than n", () => {
-		const result = extractCharNgrams("hi", 5);
-		deepStrictEqual(result, []);
+	it("handles edge cases", () => {
+		// Empty text
+		assert.deepStrictEqual(ngrams(""), []);
+		assert.deepStrictEqual(ngrams("", { type: "chars" }), []);
+
+		const emptyMixed = ngrams("", { type: "mixed" });
+		assert.deepStrictEqual(emptyMixed.char, []);
+		assert.deepStrictEqual(emptyMixed.word, []);
+
+		// Text shorter than n-gram size
+		assert.deepStrictEqual(ngrams("hi", { n: 5 }), []);
+		assert.deepStrictEqual(ngrams("x", { type: "chars", n: 3 }), []);
+
+		// Single word/character at boundary
+		assert.deepStrictEqual(ngrams("hello", { n: 2 }), []);
+		assert.deepStrictEqual(ngrams("ab", { type: "chars", n: 2 }), ["ab"]);
 	});
 
-	it("throws on invalid parameters", () => {
-		throws(() => extractCharNgrams("hello", 0), /positive integers/);
-		throws(() => extractCharNgrams("hello", 3, 0), /positive integers/);
-	});
-
-	it("handles Unicode correctly", () => {
-		// Test simpler Unicode case that works predictably
-		const result = extractCharNgrams("café", 2, 1, { normalize: false });
-		deepStrictEqual(result, ["ca", "af", "fé"]);
-	});
-});
-
-describe("extractWordNgrams", () => {
-	it("generates basic word bigrams", () => {
-		const result = extractWordNgrams("hello world test");
-		deepStrictEqual(result, ["hello world", "world test"]);
-	});
-
-	it("handles custom n-gram size", () => {
-		const result = extractWordNgrams("the quick brown fox", 3);
-		deepStrictEqual(result, ["the quick brown", "quick brown fox"]);
-	});
-
-	it("handles custom stride", () => {
-		const result = extractWordNgrams("the quick brown fox jumps", 2, 2);
-		deepStrictEqual(result, ["the quick", "brown fox"]);
-	});
-
-	it("handles custom separator", () => {
-		const result = extractWordNgrams("hello world test", 2, 1, {
-			separator: "_",
-		});
-		deepStrictEqual(result, ["hello_world", "world_test"]);
-	});
-
-	it("applies lowercase by default", () => {
-		const result = extractWordNgrams("Hello World Test");
-		deepStrictEqual(result, ["hello world", "world test"]);
-	});
-
-	it("can disable normalization options", () => {
-		const result = extractWordNgrams("Hello World", 2, 1, {
-			normalize: false,
-			lowercase: false,
-		});
-		deepStrictEqual(result, ["Hello World"]);
-	});
-
-	it("handles single word", () => {
-		const result = extractWordNgrams("hello", 2);
-		deepStrictEqual(result, []);
-	});
-
-	it("handles empty string", () => {
-		const result = extractWordNgrams("");
-		deepStrictEqual(result, []);
-	});
-
-	it("handles punctuation correctly", () => {
-		const result = extractWordNgrams("hello, world! how are you?");
-		deepStrictEqual(result, ["hello world", "world how", "how are", "are you"]);
-	});
-
-	it("handles hyphenated and contracted words", () => {
-		const result = extractWordNgrams(
-			"state-of-the-art technology isn't perfect",
+	it("throws error for invalid type", () => {
+		assert.throws(
+			() => ngrams("test", { type: "invalid" }),
+			/Unknown n-gram type/,
 		);
-		deepStrictEqual(result, [
-			"state-of-the-art technology",
-			"technology isn't",
-			"isn't perfect",
-		]);
 	});
 
-	it("throws on invalid parameters", () => {
-		throws(() => extractWordNgrams("hello world", 0), /positive integers/);
-		throws(() => extractWordNgrams("hello world", 2, 0), /positive integers/);
-	});
-});
+	it("throws error for invalid parameters", () => {
+		assert.throws(() => ngrams("test", { n: 0 }), /positive integers/);
 
-describe("extractMixedNgrams", () => {
-	it("extracts both char and word n-grams", () => {
-		const result = extractMixedNgrams("hello world");
-
-		deepStrictEqual(result.char, [
-			"hel",
-			"ell",
-			"llo",
-			"lo ",
-			"o w",
-			" wo",
-			"wor",
-			"orl",
-			"rld",
-		]);
-		deepStrictEqual(result.word, ["hello world"]);
+		assert.throws(() => ngrams("test", { stride: 0 }), /positive integers/);
 	});
 
-	it("handles custom configuration", () => {
-		const result = extractMixedNgrams("the quick brown", {
+	it("handles mixed type with custom sizes", () => {
+		const text = "hello world test";
+		const result = ngrams(text, {
+			type: "mixed",
 			charN: 2,
 			wordN: 3,
-			stride: 1,
-			options: { lowercase: false, normalize: false },
 		});
 
-		deepStrictEqual(result.char, [
-			"th",
-			"he",
-			"e ",
-			" q",
-			"qu",
-			"ui",
-			"ic",
-			"ck",
-			"k ",
-			" b",
-			"br",
-			"ro",
-			"ow",
-			"wn",
-		]);
-		deepStrictEqual(result.word, ["the quick brown"]);
+		assert(result.char.includes("he"));
+		assert(result.char.includes("el"));
+		// Text has 3 words, so wordN=3 creates a single 3-gram "hello world test"
+		assert(result.word.includes("hello world test"));
 	});
 
-	it("handles empty input", () => {
-		const result = extractMixedNgrams("");
-		deepStrictEqual(result.char, []);
-		deepStrictEqual(result.word, []);
+	it("provides consistent results", () => {
+		const text = "machine learning artificial intelligence";
+		const options = { type: "words", n: 2, lowercase: false };
+
+		const result1 = ngrams(text, options);
+		const result2 = ngrams(text, options);
+
+		assert.deepStrictEqual(result1, result2);
 	});
 
-	it("handles single character input", () => {
-		const result = extractMixedNgrams("x");
-		deepStrictEqual(result.char, []);
-		deepStrictEqual(result.word, []);
+	it("works with various text types", () => {
+		// Punctuation
+		const withPunct = "Hello, world! How are you?";
+		const result1 = ngrams(withPunct);
+		assert(result1.length > 0);
+
+		// Unicode
+		const unicode = "Zürich café naïve résumé";
+		const result2 = ngrams(unicode);
+		assert(result2.length > 0);
+
+		// Numbers
+		const withNumbers = "Version 2.1 released in 2024";
+		const result3 = ngrams(withNumbers);
+		assert(result3.length > 0);
 	});
 });

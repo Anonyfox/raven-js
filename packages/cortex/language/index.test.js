@@ -77,18 +77,7 @@ describe("language module", () => {
 
 	it("re-exports featurization functions", () => {
 		// Verify n-gram functions are available
-		assert.ok(
-			typeof language.extractCharNgrams === "function",
-			"Should export extractCharNgrams",
-		);
-		assert.ok(
-			typeof language.extractWordNgrams === "function",
-			"Should export extractWordNgrams",
-		);
-		assert.ok(
-			typeof language.extractMixedNgrams === "function",
-			"Should export extractMixedNgrams",
-		);
+		assert.ok(typeof language.ngrams === "function", "Should export ngrams");
 		// Note: TF-IDF is now a dedicated ML model in cortex/learning
 		// Use: import { Tfidf } from '@raven-js/cortex/learning'
 		assert.ok(
@@ -238,18 +227,12 @@ describe("language module", () => {
 	it("featurization functions are callable", () => {
 		const testText = "machine learning algorithms";
 
-		// Test character n-grams
-		const charNgrams = language.extractCharNgrams(testText, 3);
+		// Test default word n-grams
+		const wordNgrams = language.ngrams(testText);
 		assert.ok(
-			Array.isArray(charNgrams),
-			"Should return character n-grams array",
+			Array.isArray(wordNgrams),
+			"Should return word n-grams array by default",
 		);
-		assert.ok(charNgrams.length > 0, "Should extract character features");
-		assert.ok(charNgrams.includes("mac"), "Should contain expected trigram");
-
-		// Test word n-grams
-		const wordNgrams = language.extractWordNgrams(testText, 2);
-		assert.ok(Array.isArray(wordNgrams), "Should return word n-grams array");
 		assert.ok(
 			wordNgrams.includes("machine learning"),
 			"Should contain expected bigram",
@@ -259,8 +242,17 @@ describe("language module", () => {
 			"Should contain expected bigram",
 		);
 
+		// Test character n-grams
+		const charNgrams = language.ngrams(testText, { type: "chars", n: 3 });
+		assert.ok(
+			Array.isArray(charNgrams),
+			"Should return character n-grams array",
+		);
+		assert.ok(charNgrams.length > 0, "Should extract character features");
+		assert.ok(charNgrams.includes("mac"), "Should contain expected trigram");
+
 		// Test mixed n-grams
-		const mixedNgrams = language.extractMixedNgrams(testText);
+		const mixedNgrams = language.ngrams(testText, { type: "mixed" });
 		assert.ok(
 			typeof mixedNgrams === "object",
 			"Should return mixed features object",

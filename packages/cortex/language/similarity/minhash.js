@@ -15,10 +15,7 @@
  * large collections with bounded memory usage.
  */
 
-import {
-	extractCharNgrams,
-	extractWordNgrams,
-} from "../featurization/ngrams.js";
+import { ngrams } from "../featurization/ngrams.js";
 
 /**
  * Simple hash function based on the classic Java String.hashCode() algorithm.
@@ -119,28 +116,24 @@ export class MinHasher {
 		}
 
 		if (this.useWordShingles) {
-			const wordNgrams = extractWordNgrams(
-				processedText,
-				this.wordShingleSize,
-				1, // stride
-				{
-					normalize: this.normalize,
-					lowercase: false, // Already handled above
-				},
-			);
-			return new Set(wordNgrams);
-		}
-
-		const charNgrams = extractCharNgrams(
-			processedText,
-			this.shingleSize,
-			1, // stride
-			{
+			const wordNgrams = ngrams(processedText, {
+				type: "words",
+				n: this.wordShingleSize,
+				stride: 1,
 				normalize: this.normalize,
 				lowercase: false, // Already handled above
-			},
-		);
-		return new Set(charNgrams);
+			});
+			return new Set(/** @type {string[]} */ (wordNgrams));
+		}
+
+		const charNgrams = ngrams(processedText, {
+			type: "chars",
+			n: this.shingleSize,
+			stride: 1,
+			normalize: this.normalize,
+			lowercase: false, // Already handled above
+		});
+		return new Set(/** @type {string[]} */ (charNgrams));
 	}
 
 	/**

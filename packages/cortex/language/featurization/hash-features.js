@@ -15,11 +15,7 @@
  */
 
 import { fnv1a32 } from "../../primitives/index.js";
-import {
-	extractCharNgrams,
-	extractMixedNgrams,
-	extractWordNgrams,
-} from "./ngrams.js";
+import { ngrams } from "./ngrams.js";
 
 /**
  * Extract n-gram features from text using the specified strategy.
@@ -31,17 +27,14 @@ import {
  */
 function extractFeatures(text, featureType) {
 	switch (featureType) {
-		case "word":
-			return extractWordNgrams(text, 1, 1);
-		case "char":
-			return extractCharNgrams(text, 3, 1);
+		case "words":
+			return /** @type {string[]} */ (ngrams(text, { type: "words", n: 1 }));
+		case "chars":
+			return /** @type {string[]} */ (ngrams(text, { type: "chars", n: 3 }));
 		case "mixed": {
-			const mixed = extractMixedNgrams(text, {
-				charN: 3,
-				wordN: 1,
-				stride: 1,
-			});
-			// @ts-expect-error - mixed has char and word properties from extractMixedNgrams
+			const mixed = /** @type {{char: string[], word: string[]}} */ (
+				ngrams(text, { type: "mixed", charN: 3, wordN: 1 })
+			);
 			return [...mixed.char, ...mixed.word];
 		}
 		default:
