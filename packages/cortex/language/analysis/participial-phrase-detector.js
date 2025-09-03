@@ -13,7 +13,10 @@
  * content. Research shows AI systematically overuses participial phrase formulas (sentence-initial
  * participial constructions, mechanical templates) at rates 2-4x higher than human writers,
  * creating detectible syntactic uniformity in sentence structure and construction.
+ * Uses robust cortex building blocks for accurate sentence and word boundary detection.
  */
+
+import { tokenizeSentences, tokenizeWords } from "../segmentation/index.js";
 
 /**
  * Human baseline frequencies for participial phrase patterns per 1000 words in natural writing.
@@ -140,8 +143,8 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 		throw new Error("Parameter sensitivityThreshold must be a positive number");
 	}
 
-	// Count total words for frequency calculations
-	const words = text.split(/\s+/).filter((word) => word.length > 0);
+	// Count total words using robust Unicode-aware tokenization
+	const words = tokenizeWords(text);
 	const wordCount = words.length;
 
 	if (wordCount < minWordCount) {
@@ -159,14 +162,11 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 	const patterns = {
 		// Sentence-initial participial phrases
 		sentence_initial_ing: (/** @type {string} */ text) => {
-			const sentences = text
-				.split(/[.!?]+/)
-				.filter((/** @type {string} */ s) => s.trim().length > 0);
+			const sentences = tokenizeSentences(text);
 			let count = 0;
 			for (const sentence of sentences) {
-				const trimmed = sentence.trim();
 				// Match -ing words at sentence start
-				if (/^[A-Z][a-z]*ing\b/.test(trimmed)) {
+				if (/^[A-Z][a-z]*ing\b/.test(sentence)) {
 					count++;
 				}
 			}
@@ -174,14 +174,11 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 		},
 
 		sentence_initial_ed: (/** @type {string} */ text) => {
-			const sentences = text
-				.split(/[.!?]+/)
-				.filter((/** @type {string} */ s) => s.trim().length > 0);
+			const sentences = tokenizeSentences(text);
 			let count = 0;
 			for (const sentence of sentences) {
-				const trimmed = sentence.trim();
 				// Match -ed words at sentence start
-				if (/^[A-Z][a-z]*ed\b/.test(trimmed)) {
+				if (/^[A-Z][a-z]*ed\b/.test(sentence)) {
 					count++;
 				}
 			}
@@ -189,9 +186,7 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 		},
 
 		sentence_initial_irregular: (/** @type {string} */ text) => {
-			const sentences = text
-				.split(/[.!?]+/)
-				.filter((/** @type {string} */ s) => s.trim().length > 0);
+			const sentences = tokenizeSentences(text);
 			const irregularParticiples = [
 				"Built",
 				"Made",
@@ -218,9 +213,9 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 			];
 			let count = 0;
 			for (const sentence of sentences) {
-				const trimmed = sentence.trim();
-				const firstWord = trimmed.split(/\s+/)[0];
-				if (irregularParticiples.includes(firstWord)) {
+				const words = tokenizeWords(sentence);
+				const firstWord = words[0];
+				if (firstWord && irregularParticiples.includes(firstWord)) {
 					count++;
 				}
 			}
@@ -259,15 +254,12 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 
 		present_participle_actions: (/** @type {string} */ text) => {
 			// Only count sentence-initial present participle actions
-			const sentences = text
-				.split(/[.!?]+/)
-				.filter((/** @type {string} */ s) => s.trim().length > 0);
+			const sentences = tokenizeSentences(text);
 			let count = 0;
 			for (const sentence of sentences) {
-				const trimmed = sentence.trim();
 				if (
 					/^(?:Running|Working|Processing|Operating|Functioning|Performing)\b/.test(
-						trimmed,
+						sentence,
 					)
 				) {
 					count++;
@@ -278,15 +270,12 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 
 		present_participle_states: (/** @type {string} */ text) => {
 			// Only count sentence-initial present participle states
-			const sentences = text
-				.split(/[.!?]+/)
-				.filter((/** @type {string} */ s) => s.trim().length > 0);
+			const sentences = tokenizeSentences(text);
 			let count = 0;
 			for (const sentence of sentences) {
-				const trimmed = sentence.trim();
 				if (
 					/^(?:Being|Having|Considering|Maintaining|Ensuring|Providing)\b/.test(
-						trimmed,
+						sentence,
 					)
 				) {
 					count++;
@@ -297,15 +286,12 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 
 		past_participle_results: (/** @type {string} */ text) => {
 			// Only count sentence-initial past participle results
-			const sentences = text
-				.split(/[.!?]+/)
-				.filter((/** @type {string} */ s) => s.trim().length > 0);
+			const sentences = tokenizeSentences(text);
 			let count = 0;
 			for (const sentence of sentences) {
-				const trimmed = sentence.trim();
 				if (
 					/^(?:Completed|Finished|Accomplished|Achieved|Realized|Fulfilled)\b/.test(
-						trimmed,
+						sentence,
 					)
 				) {
 					count++;
@@ -386,14 +372,12 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 
 		mechanical_participle_sequences: (/** @type {string} */ text) => {
 			// Look for sequential sentences starting with similar participial constructions
-			const sentences = text
-				.split(/[.!?]+/)
-				.filter((/** @type {string} */ s) => s.trim().length > 10);
+			const sentences = tokenizeSentences(text).filter((s) => s.length > 10);
 
 			let sequenceCount = 0;
 			for (let i = 0; i < sentences.length - 1; i++) {
-				const current = sentences[i].trim();
-				const next = sentences[i + 1].trim();
+				const current = sentences[i];
+				const next = sentences[i + 1];
 
 				// Check if both start with participial constructions
 				const currentStartsParticiple =
@@ -414,15 +398,12 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 
 		academic_participles: (/** @type {string} */ text) => {
 			// Only count sentence-initial academic participles
-			const sentences = text
-				.split(/[.!?]+/)
-				.filter((/** @type {string} */ s) => s.trim().length > 0);
+			const sentences = tokenizeSentences(text);
 			let count = 0;
 			for (const sentence of sentences) {
-				const trimmed = sentence.trim();
 				if (
 					/^(?:Examining|Investigating|Exploring|Researching|Studying|Analyzing)\b/.test(
-						trimmed,
+						sentence,
 					)
 				) {
 					count++;
@@ -433,15 +414,12 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 
 		business_participles: (/** @type {string} */ text) => {
 			// Only count sentence-initial business participles
-			const sentences = text
-				.split(/[.!?]+/)
-				.filter((/** @type {string} */ s) => s.trim().length > 0);
+			const sentences = tokenizeSentences(text);
 			let count = 0;
 			for (const sentence of sentences) {
-				const trimmed = sentence.trim();
 				if (
 					/^(?:Streamlining|Optimizing|Enhancing|Improving|Maximizing|Increasing)\b/.test(
-						trimmed,
+						sentence,
 					)
 				) {
 					count++;
@@ -452,15 +430,12 @@ export function detectParticipalPhraseFormula(text, options = {}) {
 
 		marketing_participles: (/** @type {string} */ text) => {
 			// Only count sentence-initial marketing participles
-			const sentences = text
-				.split(/[.!?]+/)
-				.filter((/** @type {string} */ s) => s.trim().length > 0);
+			const sentences = tokenizeSentences(text);
 			let count = 0;
 			for (const sentence of sentences) {
-				const trimmed = sentence.trim();
 				if (
 					/^(?:Delivering|Providing|Offering|Presenting|Introducing|Showcasing)\b/.test(
-						trimmed,
+						sentence,
 					)
 				) {
 					count++;
