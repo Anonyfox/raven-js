@@ -15,8 +15,11 @@
  *
  * Human writing naturally contains small errors, inconsistencies, and imperfections,
  * while AI-generated text tends to be mechanically perfect in grammar, spelling,
- * and punctuation usage.
+ * and punctuation usage. Uses robust cortex building blocks for enhanced accuracy.
  */
+
+import { foldCase } from "../normalization/index.js";
+import { tokenizeSentences, tokenizeWords } from "../segmentation/index.js";
 
 /**
  * Human baseline error rates per 1000 words for different types of errors.
@@ -215,12 +218,12 @@ const errorPatterns = {
 	 */
 	pronoun_reference_errors: /** @type {(text: string) => number} */ (text) => {
 		// Simple detection of unclear pronoun references
-		const sentences = text.split(/[.!?]+/);
+		const sentences = tokenizeSentences(text);
 		let errors = 0;
 
 		for (const sentence of sentences) {
 			// Look for sentences starting with "it" or "this" without clear antecedent
-			if (/^\s*(it|this)\s+/i.test(sentence) && sentence.length < 50) {
+			if (/^(it|this)\s+/i.test(sentence) && sentence.length < 50) {
 				errors++;
 			}
 		}
@@ -315,8 +318,8 @@ const errorPatterns = {
 	 * @returns {number} Count of detected redundancies
 	 */
 	redundancy: /** @type {(text: string) => number} */ (text) => {
-		// Look for repeated words within close proximity
-		const words = text.toLowerCase().split(/\s+/);
+		// Look for repeated words within close proximity using international-aware processing
+		const words = tokenizeWords(foldCase(text));
 		let redundancies = 0;
 
 		for (let i = 0; i < words.length - 1; i++) {
@@ -385,7 +388,7 @@ const errorPatterns = {
 		];
 
 		// Also detect sentence fragments (sentences without verbs) but be more lenient
-		const sentences = text.split(/[.!?]+/).filter((s) => s.trim().length > 10);
+		const sentences = tokenizeSentences(text).filter((s) => s.length > 10);
 		let fragments = 0;
 
 		for (const sentence of sentences) {
@@ -508,7 +511,8 @@ export function detectPerfectGrammar(text, options = {}) {
 		);
 	}
 
-	const words = text.split(/\s+/).filter((word) => word.length > 0);
+	// Count total words using robust Unicode-aware tokenization
+	const words = tokenizeWords(text);
 	const wordCount = words.length;
 
 	if (wordCount < minWordCount) {
