@@ -29,12 +29,13 @@ Inspired by apex predators who survive through intelligence, not dependencies:
 - 🦜 **[Beak](packages/beak/README.md)** - Templates (4.2KB vs Pug's 201KB) • ✅ Production Ready
 - 🦅 **[Wings](packages/wings/README.md)** - Routing (Server + CLI) • ✅ Production Ready
 - ⚡ **[Reflex](packages/reflex/README.md)** - Reactivity (Universal SSR) • ✅ Production Ready
-- 🧠 **[Cortex](packages/cortex/README.md)** - ML & AI (Zero-dep Intelligence) • 🚧 In Development
+- 🧠 **[Cortex](packages/cortex/README.md)** - ML & AI (Zero-dep Intelligence) • ✅ Production Ready
+- 🦅 **[Talons](packages/talons/README.md)** - Data interaction patterns • 🚧 In Development
 
 ### Raven Actions (Tools)
 
 - 🥚 **Hatch** - Bootstrap new apps • 📋 Planned
-- 🐣 **Fledge** - Build & bundle • ✅ Production Ready
+- 🐣 **[Fledge](packages/fledge/README.md)** - Build & bundle • ✅ Production Ready
 - 🦅 **Soar** - Deploy anywhere • 📋 Planned
 - 🔍 **[Glean](packages/glean/README.md)** - JSDoc tools & MCP • ✅ Production Ready
 
