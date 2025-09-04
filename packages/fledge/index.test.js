@@ -11,11 +11,12 @@ import { describe, test } from "node:test";
 
 import {
 	Config,
+	createBinaryConfigFromFlags,
 	createConfigFromFlags,
+	generateBinaryExecutable,
 	generateScriptBundle,
 	generateStaticSite,
 } from "./index.js";
-import binary from "./src/binary/index.js";
 
 describe("Fledge package", () => {
 	test("exports static generation functions", () => {
@@ -28,11 +29,8 @@ describe("Fledge package", () => {
 		assert.strictEqual(typeof createConfigFromFlags, "function");
 	});
 
-	test("exports individual module functions", () => {
-		assert.strictEqual(typeof binary, "function");
-	});
-
-	test("binary module returns stub message", () => {
-		assert.strictEqual(binary(), "helloworld");
+	test("exports binary generation functions", () => {
+		assert.strictEqual(typeof generateBinaryExecutable, "function");
+		assert.strictEqual(typeof createBinaryConfigFromFlags, "function");
 	});
 });
