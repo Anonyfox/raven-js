@@ -8,7 +8,11 @@
     "noImplicitAny": true,
     "resolveJsonModule": true
   },
-  "include": ["**/*.js", "**/*.mjs"],
+  "include": [
+    "**/*.js",
+    "**/*.mjs",
+    "packages/soar/examples/static/raven.soar.static.js"
+  ],
   "exclude": [
     "docs/**",
     "examples/**",

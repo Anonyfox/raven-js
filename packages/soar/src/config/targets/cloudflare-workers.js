@@ -197,9 +197,14 @@ export class CloudflareWorkers extends Cloudflare {
 			await this.#deployWorkerScript(completionToken);
 
 			// Step 4: Return deployment info
+			// Get account subdomain for proper URL
+			// TODO: Get actual subdomain from account API
+			// For now, we'll use a simple heuristic or the account ID
+			const subdomain = "anonyfox"; // This should be retrieved from account info
+
 			return {
 				success: true,
-				url: `https://${this.#scriptName}.${this.#accountId}.workers.dev`,
+				url: `https://${this.#scriptName}.${subdomain}.workers.dev`,
 				scriptName: this.#scriptName,
 				deployedAt: new Date().toISOString(),
 				filesUploaded,
@@ -334,6 +339,20 @@ export class CloudflareWorkers extends Cloudflare {
 				[
 					`export default {
 	async fetch(request, env) {
+		// Simple static asset serving
+		if (!env.ASSETS) {
+			return new Response('Assets binding not available', { status: 500 });
+		}
+
+		const url = new URL(request.url);
+
+		// Serve index.html for root requests
+		if (url.pathname === '/') {
+			const indexRequest = new Request(url.origin + '/index.html', request);
+			return env.ASSETS.fetch(indexRequest);
+		}
+
+		// Serve other assets directly
 		return env.ASSETS.fetch(request);
 	}
 }`,

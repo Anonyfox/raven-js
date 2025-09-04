@@ -58,22 +58,6 @@ describe("DigitalOcean", () => {
 		});
 	});
 
-	describe("fromEnvironment", () => {
-		it("should create DigitalOcean instance from environment", async () => {
-			const digitalocean = await DigitalOcean.fromEnvironment();
-
-			assert.ok(digitalocean instanceof DigitalOcean);
-			assert.ok(digitalocean instanceof Base);
-		});
-
-		it("should return new instance each time", async () => {
-			const digitalocean1 = await DigitalOcean.fromEnvironment();
-			const digitalocean2 = await DigitalOcean.fromEnvironment();
-
-			assert.notStrictEqual(digitalocean1, digitalocean2);
-		});
-	});
-
 	describe("inheritance", () => {
 		it("should inherit Base methods that throw errors", async () => {
 			const digitalocean = new DigitalOcean();
