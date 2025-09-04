@@ -389,14 +389,17 @@ export class BinaryBundler {
 	async #injectSeaBlob() {
 		const blobContents = readFileSync(this.#seaBlobPath);
 
-		// Import postject (direct dependency) with explicit any cast to suppress TS errors
-		// NOTE: postject@1.0.0-alpha.6 has TypeScript definition issues in node_modules
-		// @ts-expect-error - Ignore all TypeScript errors for this postject import and usage
+		// Import postject (direct dependency)
 		const { inject } = await import("postject");
-		await inject(this.#executablePath, "NODE_SEA_BLOB", blobContents, {
-			sentinelFuse: "NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2",
-			machoSegmentName: "NODE_SEA",
-		});
+		await inject(
+			/** @type {string} */ (this.#executablePath),
+			"NODE_SEA_BLOB",
+			blobContents,
+			{
+				sentinelFuse: "NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2",
+				machoSegmentName: "NODE_SEA",
+			},
+		);
 	}
 
 	/**

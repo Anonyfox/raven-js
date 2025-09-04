@@ -17,7 +17,11 @@
     "noUnusedParameters": true,
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "postject": ["./types/postject-stub.d.ts"]
+    }
   },
   "include": ["**/*.js"],
   "exclude": ["node_modules/**", "./static/**", "**/*.min.js", "**/*.test.js"]
