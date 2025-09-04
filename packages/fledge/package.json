@@ -79,5 +79,8 @@
   },
   "dependencies": {
     "esbuild": "^0.25.9"
+  },
+  "optionalDependencies": {
+    "postject": "^1.0.0"
   }
 }

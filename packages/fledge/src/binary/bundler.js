@@ -389,13 +389,28 @@ export class BinaryBundler {
 	async #injectSeaBlob() {
 		const blobContents = readFileSync(this.#seaBlobPath);
 
-		// Dynamic import of postject (external dependency)
-		// @ts-expect-error - postject is an external dependency
-		const { inject } = await /** @type {any} */ (import("postject"));
-		await inject(this.#executablePath, "NODE_SEA_BLOB", blobContents, {
-			sentinelFuse: "NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2",
-			machoSegmentName: "NODE_SEA",
-		});
+		try {
+			// Dynamic import of postject (optional dependency)
+			// @ts-expect-error - postject is an optional dependency
+			const { inject } = await /** @type {any} */ (import("postject"));
+			await inject(this.#executablePath, "NODE_SEA_BLOB", blobContents, {
+				sentinelFuse: "NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2",
+				machoSegmentName: "NODE_SEA",
+			});
+		} catch (error) {
+			const err = /** @type {Error & {code?: string}} */ (error);
+			if (
+				err.code === "MODULE_NOT_FOUND" ||
+				err.message?.includes("postject")
+			) {
+				throw new Error(
+					'Binary mode requires the "postject" package for SEA blob injection.\n' +
+						"Install it with: npm install postject\n" +
+						'Or add to your package.json: "optionalDependencies": { "postject": "^1.0.0" }',
+				);
+			}
+			throw new Error(`Failed to inject SEA blob: ${err.message}`);
+		}
 	}
 
 	/**
