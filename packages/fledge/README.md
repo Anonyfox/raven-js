@@ -16,7 +16,7 @@ _Build & bundle tool for modern JavaScript applications_
 
 Transforms your development application into production-ready deployables across three distinct modes: static site generation, optimized script bundling, and standalone binary compilation. No framework lock-in, no complex build chains—Fledge operates at the protocol and filesystem level to prepare your code for any deployment target.
 
-Whether you need CDN-optimized static files, performance-tuned JavaScript bundles, or self-contained executables, Fledge systematically processes your application and delivers deployment artifacts. Your development workflow stays untouched—Fledge hunts at the boundaries where development ends and deployment begins.
+Whether you need CDN-optimized static files, performance-tuned JavaScript bundles, or self-contained native executables, Fledge systematically processes your application and delivers deployment artifacts. Your development workflow stays untouched—Fledge hunts at the boundaries where development ends and deployment begins.
 
 ## Installation
 
@@ -204,12 +204,165 @@ Generates single JavaScript files that include all dependencies and assets, runn
 
 Transform your Node.js application into native executables using Node.js SEA (Single Executable Applications) with embedded code and assets.
 
+#### Config-as-Code
+
+Binary configuration supports the same executable JavaScript pattern as other modes:
+
 ```bash
-# Coming soon - Native binary compilation with embedded Node.js runtime
-fledge binary src/server.js --target linux-x64 --out dist/myapp
+# 1. Pipe configuration (highest priority)
+echo "export default {entry: './src/server.js'}" | fledge binary --out dist/myapp
+
+# 2. Configuration file (second priority)
+fledge binary fledge.config.js --out dist/myapp
+
+# 3. Named export from config file
+fledge binary fledge.config.js:binary --out dist/myapp
+
+# 4. CLI flags only (lowest priority)
+fledge binary src/server.js --out dist/myapp
 ```
 
-Generates truly standalone executables containing the Node.js runtime, your application code, and all assets. Larger file size but zero external dependencies—works like Go or Rust binaries. Platform and architecture specific, perfect for VPS deployments that skip containerization entirely.
+**Configuration Example:**
+
+```javascript
+// fledge.config.js
+export const binary = {
+  // Entry point: your main server/application file
+  entry: "./src/server.js",
+
+  // Output: where to save the executable
+  output: "./dist/myapp",
+
+  // Client bundles: browser JavaScript to embed
+  bundles: {
+    "/app.js": "./src/client.js",
+    "/admin.js": "./src/admin.js",
+  },
+
+  // Assets: static files to embed in executable
+  assets: ["./public", "./templates", "./config.json"],
+
+  // Environment: variables to inject at build time
+  env: {
+    NODE_ENV: "production",
+    API_BASE: "https://api.example.com",
+  },
+
+  // SEA options: Node.js Single Executable Application settings
+  sea: {
+    disableExperimentalSEAWarning: true,
+    useSnapshot: false,
+    useCodeCache: true,
+  },
+
+  // Code signing: macOS executable signing
+  signing: {
+    enabled: true,
+    identity: "Developer ID Application: Your Name (XXXXXXXXXX)",
+  },
+
+  // Metadata: executable information
+  metadata: {
+    name: "My Application",
+    version: "1.0.0",
+    description: "Standalone server application",
+  },
+};
+
+// Dynamic configuration example
+export const productionBinary = {
+  entry: "./boot.js",
+  output: `./dist/myapp-${process.platform}-${process.arch}`,
+
+  bundles: async () => {
+    // Generate client bundles dynamically
+    const pages = await import("./src/pages.js");
+    return pages.getClientBundles();
+  },
+
+  assets: () => {
+    // Conditional assets based on environment
+    const base = ["./public", "./templates"];
+    if (process.env.INCLUDE_DOCS) {
+      base.push("./docs");
+    }
+    return base;
+  },
+
+  env: {
+    NODE_ENV: "production",
+    BUILD_TIME: new Date().toISOString(),
+  },
+};
+```
+
+#### Binary Generation Process
+
+The binary compilation process is systematic and comprehensive:
+
+1. **Configuration Loading**: Parse config from pipe, file, or CLI flags with named export support
+2. **Asset Resolution**: Resolve and validate all asset paths, compute file hashes
+3. **Client Bundling**: Use ESBuild to create optimized browser bundles with minification
+4. **Server Bundling**: Bundle your Node.js application with embedded asset references
+5. **SEA Configuration**: Generate Node.js SEA config with embedded assets and environment variables
+6. **Binary Creation**: Copy Node.js runtime and inject application blob using postject
+7. **Code Signing**: Sign macOS executables with developer certificates (optional)
+8. **Validation**: Test executable launch and report statistics
+
+**Generation Example:**
+
+```bash
+# Minimal binary generation
+fledge binary src/server.js --out dist/myapp
+
+# Full configuration with validation
+fledge binary config.js:binary --validate --verbose
+
+# Production build with signing
+fledge binary prod.config.js --out dist/myapp-v1.0.0
+```
+
+Generates truly standalone executables containing the Node.js runtime, your application code, and all assets. Larger file size (~100MB) but zero external dependencies—works like Go or Rust binaries. Current platform only, perfect for VPS deployments that skip containerization entirely.
+
+**Real-World Example:**
+
+```javascript
+// raven.fledge.js - HelloWorld app configuration
+export const binary = {
+  entry: "./boot.js",
+  output: "./dist/helloworld",
+
+  bundles: {
+    "/app.js": "./src/client.js",
+    "/admin.js": "./src/admin.js",
+  },
+
+  assets: ["./public", "./src/templates"],
+
+  env: {
+    NODE_ENV: "production",
+    PORT: "3000",
+  },
+
+  signing: { enabled: true },
+
+  metadata: {
+    name: "HelloWorld Server",
+    version: "1.0.0",
+  },
+};
+```
+
+```bash
+# Generate the binary
+npm run bundle:binary
+# → Creates ./dist/helloworld (~100MB)
+
+# Deploy and run anywhere
+scp dist/helloworld user@server:/opt/myapp/
+ssh user@server '/opt/myapp/helloworld'
+# → 🚀 Hello World server running at https://0.0.0.0:3000
+```
 
 **Target deployment scenarios:**
 
@@ -257,21 +410,23 @@ fledge script src/lambda.js --out dist/function.js
 --node <version>   Target Node.js version (default: 22)
 ```
 
-### Binary Mode (Coming Soon)
+### Binary Mode
 
 ```bash
-fledge binary <entry> [options]
+fledge binary [config.js[:exportName]] [options]
 
 # Examples:
-fledge binary src/server.js --target linux-x64 --out dist/myapp
-fledge binary src/cli.js --target darwin-arm64 --out dist/tool
-fledge binary src/app.js --assets public/ --target win32-x64 --out dist/app.exe
+echo "export default {entry: './src/server.js'}" | fledge binary --out dist/myapp
+fledge binary config.js --out dist/myapp
+fledge binary config.js:binary --validate --verbose
+fledge binary src/server.js --out dist/myapp
 
 # Options:
 --out <path>       Output executable file
---target <arch>    Target platform-architecture (linux-x64, darwin-arm64, win32-x64)
---assets <dir>     Directory to embed in executable
---name <string>    Executable name (default: entry basename)
+--export <name>    Named export from config file
+--validate         Validate config and exit
+--verbose, -v      Verbose output
+--help, -h         Show help
 ```
 
 ## Requirements
@@ -288,11 +443,13 @@ fledge binary src/app.js --assets public/ --target win32-x64 --out dist/app.exe
 - Server-side JavaScript entry point
 - Assets and dependencies accessible at build time
 
-### Binary Mode (Coming Soon)
+### Binary Mode
 
 - Node.js 22.5+
 - Node.js SEA (Single Executable Applications) support
-- Target platform development environment for cross-compilation
+- Current platform only (builds for the platform you're running on)
+- macOS: Xcode Command Line Tools (for code signing)
+- Sufficient disk space (~100MB per executable)
 
 ## The Raven's Fledgling
 

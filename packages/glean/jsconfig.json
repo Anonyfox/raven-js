@@ -5,7 +5,11 @@
     "moduleResolution": "NodeNext",
     "target": "ESNext",
     "noImplicitAny": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "postject": ["./types/postject-stub.d.ts"]
+    }
   },
   "include": ["**/*.js"],
   "exclude": ["**/*.test.js", "node_modules/**", "./static/**", "**/*.min.js"]
