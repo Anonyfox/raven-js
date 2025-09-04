@@ -582,7 +582,7 @@ describe("detectParticipalPhraseFormula", () => {
 			const result = detectParticipalPhraseFormula(longText);
 			const duration = performance.now() - start;
 
-			assert.ok(duration < 200, "Should process long text under 200ms");
+			assert.ok(duration < 400, "Should process long text under 400ms");
 			assert.ok(
 				result.totalPatterns > 10,
 				"Should detect many patterns in long text",

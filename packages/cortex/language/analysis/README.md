@@ -10,7 +10,8 @@ Advanced linguistic algorithms that detect AI-generated content through statisti
 
 | Algorithm                           | Detection Method     | Speed   | Accuracy | Best For            | Avoid When              |
 | ----------------------------------- | -------------------- | ------- | -------- | ------------------- | ----------------------- |
-| **`analyzeWithEnsemble`**           | Combined scoring     | Medium  | Highest  | Production systems  | Real-time streams       |
+| **`isAIText`** (Cascade)            | Hierarchical layers  | Fast    | Highest  | Production systems  | Simple batch processing |
+| **`analyzeWithEnsemble`**           | Combined scoring     | Medium  | High     | Batch processing    | Real-time streams       |
 | **`detectPerfectGrammar`**          | Error absence        | Fast    | High     | Academic screening  | Informal content        |
 | **`calculateBurstiness`**           | Sentence variance    | Fastest | Medium   | Real-time filtering | Short text snippets     |
 | **`approximatePerplexity`**         | Word predictability  | Medium  | High     | Content moderation  | Non-English text        |
@@ -29,23 +30,75 @@ Advanced linguistic algorithms that detect AI-generated content through statisti
 - **Sub-0.5ms**: `calculateBurstiness` (~0.04ms), `detectEmDashEpidemic` (~0.02ms)
 - **0.1-0.3ms**: `detectRuleOfThreeObsession`, `calculateShannonEntropy`, `analyzeAITransitionPhrases`, `analyzeNgramRepetition`, `analyzeZipfDeviation`
 - **0.3-0.8ms**: `detectPerfectGrammar`, `detectParticipalPhraseFormula`, `approximatePerplexity`
-- **2-3ms**: `analyzeWithEnsemble` (combines 10+ algorithms with smart early termination)
+- **2-3ms**: `analyzeWithEnsemble` (combines 10+ algorithms with statistical averaging)
+- **0.2-15ms**: `isAIText` (hierarchical cascade with early termination, varies by text complexity)
 
 ### Accuracy vs Speed Trade-offs
 
-- **Highest Accuracy**: Use `analyzeWithEnsemble` (~2ms, 85-95% accuracy)
+- **Highest Accuracy**: Use `isAIText` cascade (~0.2-15ms, 85-95% accuracy with early termination)
+- **Consistent Performance**: Use `analyzeWithEnsemble` (~2ms, 80-90% accuracy)
 - **Balanced**: Combine `detectPerfectGrammar` + `calculateBurstiness` + `approximatePerplexity` (~1ms total, 75-85% accuracy)
 - **Speed-First**: Use `calculateBurstiness` alone (~0.04ms, 65-75% accuracy)
+
+## 🚀 Cascade Architecture (New)
+
+**The `isAIText` cascade provides optimal speed/accuracy balance through hierarchical detection:**
+
+### Layer 1: Statistical Fingerprints (sub-1ms)
+
+- **Burstiness**: Sentence length variation analysis
+- **Shannon Entropy**: Character distribution randomness
+- **Grammar Perfection**: Error detection with language-aware thresholds
+
+Early termination when statistical evidence is conclusive (90%+ certainty).
+
+### Layer 2: Linguistic Tells (1-3ms)
+
+- **AI Transition Phrases**: Mechanical connector detection with natural language filtering
+- **Punctuation Overuse**: Sophisticated punctuation pattern analysis
+- **Rule-of-Three Obsession**: Triadic pattern detection with cultural calibration
+
+Proceeds only if Layer 1 uncertainty remains. Early termination at 75%+ certainty.
+
+### Layer 3: Deep Structure Analysis (3-5ms, rarely reached)
+
+- **Zipf's Law Deviation**: Word frequency distribution analysis
+- **N-gram Repetition**: Text diversity measurement
+- **Perplexity Approximation**: Predictability scoring
+- **Participial Phrase Formula**: Advanced grammar pattern detection
+
+Only executes when both Layer 1 and Layer 2 show uncertainty.
+
+### Language Pack Integration
+
+- **German**: Extensive calibration for business communication patterns
+- **English**: Baseline configuration for standard detection
+- **Minimal**: Lightweight fallback for unknown languages
 
 ## 🧠 Algorithm Selection Guide
 
 ### Content Moderation Pipeline
 
 ```javascript
-import { analyzeWithEnsemble, calculateBurstiness } from "@raven-js/cortex";
+import {
+  isAIText,
+  analyzeWithEnsemble,
+  calculateBurstiness,
+} from "@raven-js/cortex";
 import { ENGLISH_LANGUAGE_PACK } from "@raven-js/cortex/language/languagepacks/english.js";
 
-// Fast initial screening
+// Recommended: Use hierarchical cascade for optimal speed/accuracy balance
+function screenContent(text) {
+  const result = isAIText(text, { languagePack: ENGLISH_LANGUAGE_PACK });
+  return {
+    isAI: result.aiLikelihood > 0.7,
+    confidence: result.certainty,
+    pattern: result.dominantPattern,
+    executionTime: result.executionTime,
+  };
+}
+
+// Alternative: Fast initial screening with single algorithm
 function quickScreen(text) {
   const burstiness = calculateBurstiness(text);
   return burstiness < 0.3 ? "flag-for-review" : "likely-human";

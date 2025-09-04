@@ -84,11 +84,30 @@ const usHolidays = calculateHolidaysOfYear({
 console.log(usHolidays.length); // Federal + California state holidays
 ```
 
+```javascript
+// AI text detection with hierarchical cascade
+import { isAIText } from "@raven-js/cortex";
+import { GERMAN_LANGUAGE_PACK } from "@raven-js/cortex/language/languagepacks/german.js";
+
+const result = isAIText(
+  "Das System bietet umfassende Funktionalität für moderne Geschäftsanwendungen.",
+  { languagePack: GERMAN_LANGUAGE_PACK }
+);
+
+console.log({
+  aiLikelihood: result.aiLikelihood, // 0.0-1.0 probability score
+  certainty: result.certainty, // Detection confidence
+  dominantPattern: result.dominantPattern, // Primary detection signal
+  executionTime: result.executionTime, // Performance metrics
+});
+```
+
 ## Module Architecture
 
-Cortex organizes intelligence into three specialized modules:
+Cortex organizes intelligence into four specialized modules:
 
 - **Learning** - Neural networks, linear regression, and base model classes for machine learning tasks
+- **Language** - AI text detection with hierarchical cascade architecture and multi-language support
 - **Structures** - Matrix operations and schema validation for data manipulation and type safety
 - **Temporal** - Holiday calculations and date utilities covering 30+ countries with governmental precision
 
@@ -96,6 +115,7 @@ Each module can be imported individually for tree-shaking optimization:
 
 ```javascript
 import { NeuralNetwork } from "@raven-js/cortex/learning";
+import { isAIText } from "@raven-js/cortex/language";
 import { Matrix } from "@raven-js/cortex/structures";
 import { calculateEasterSunday } from "@raven-js/cortex/temporal";
 ```

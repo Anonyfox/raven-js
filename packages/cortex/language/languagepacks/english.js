@@ -130,6 +130,22 @@ export const ENGLISH_LANGUAGE_PACK = {
 		},
 	}),
 
+	entropy: {
+		// English baseline entropy thresholds
+		aiThreshold: 3.5, // Standard threshold for English
+		normalizationFactor: 5.0, // Standard normalization for English
+
+		// Language-specific entropy characteristics
+		baselineRange: {
+			human: { min: 3.8, max: 4.8 }, // English human text typically 3.8-4.8 bits
+			ai: { min: 3.0, max: 3.9 }, // English AI text typically 3.0-3.9 bits
+		},
+
+		// English has fewer compound words than German
+		compoundWordBonus: 0.05, // Minimal bonus for English compounds
+		technicalTermBonus: 0.05, // Technical English entropy boost
+	},
+
 	grammar: {
 		weight: 0.09,
 		errorPatterns: [

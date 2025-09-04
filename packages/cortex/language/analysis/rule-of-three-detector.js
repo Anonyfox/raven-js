@@ -210,19 +210,33 @@ export function detectRuleOfThreeObsession(text, options = {}) {
 			return matches.length;
 		},
 
-		first_second_third: (/** @type {string} */ text) => {
-			const pattern =
-				/\b(?:first|firstly).*?(?:second|secondly).*?(?:third|thirdly)\b/gi;
-			return (text.match(pattern) || []).length;
+		first_second_third: (
+			/** @type {string} */ text,
+			/** @type {any} */ languagePack,
+		) => {
+			// Use language-specific sequential patterns or fall back to English
+			const sequentialPatterns = languagePack?.ruleOfThree
+				?.sequentialPatterns || [
+				/\b(?:first|firstly).*?(?:second|secondly).*?(?:third|thirdly)\b/gi,
+			];
+			let count = 0;
+			for (const pattern of sequentialPatterns) {
+				count += (text.match(pattern) || []).length;
+			}
+			return count;
 		},
 
-		initially_then_finally: (/** @type {string} */ text) => {
-			const patterns = [
+		initially_then_finally: (
+			/** @type {string} */ text,
+			/** @type {any} */ languagePack,
+		) => {
+			// Use language-specific temporal patterns or fall back to English
+			const temporalPatterns = languagePack?.ruleOfThree?.temporalPatterns || [
 				/\b(?:initially|first).*?(?:then|next).*?(?:finally|lastly)\b/gi,
 				/\b(?:beginning|start).*?(?:middle|during).*?(?:end|conclusion)\b/gi,
 			];
 			let count = 0;
-			for (const pattern of patterns) {
+			for (const pattern of temporalPatterns) {
 				count += (text.match(pattern) || []).length;
 			}
 			return count;
@@ -240,61 +254,158 @@ export function detectRuleOfThreeObsession(text, options = {}) {
 			return count;
 		},
 
-		for_example_three: (/** @type {string} */ text) => {
-			const pattern = /\b(?:for example|e\.?g\.?).*?\w+,\s+\w+,?\s+and\s+\w+/gi;
-			return (text.match(pattern) || []).length;
+		for_example_three: (
+			/** @type {string} */ text,
+			/** @type {any} */ languagePack,
+		) => {
+			// Use language-specific example patterns
+			const examplePatterns = languagePack?.ruleOfThree?.examplePatterns || [
+				/\b(?:for example|e\.?g\.?).*?\w+,\s+\w+,?\s+and\s+\w+/gi,
+			];
+			let count = 0;
+			for (const pattern of examplePatterns) {
+				count += (text.match(pattern) || []).length;
+			}
+			return count;
 		},
 
-		such_as_three: (/** @type {string} */ text) => {
-			const pattern = /\bsuch as\b.*?\w+,\s+\w+,?\s+and\s+\w+/gi;
-			return (text.match(pattern) || []).length;
+		such_as_three: (
+			/** @type {string} */ text,
+			/** @type {any} */ languagePack,
+		) => {
+			// Use language-specific "such as" patterns
+			const suchAsPatterns = languagePack?.ruleOfThree?.suchAsPatterns || [
+				/\bsuch as\b.*?\w+,\s+\w+,?\s+and\s+\w+/gi,
+			];
+			let count = 0;
+			for (const pattern of suchAsPatterns) {
+				count += (text.match(pattern) || []).length;
+			}
+			return count;
 		},
 
-		including_three: (/** @type {string} */ text) => {
-			const pattern = /\bincluding\b.*?\w+,\s+\w+,?\s+and\s+\w+/gi;
-			return (text.match(pattern) || []).length;
+		including_three: (
+			/** @type {string} */ text,
+			/** @type {any} */ languagePack,
+		) => {
+			// Use language-specific "including" patterns
+			const includingPatterns = languagePack?.ruleOfThree
+				?.includingPatterns || [/\bincluding\b.*?\w+,\s+\w+,?\s+and\s+\w+/gi];
+			let count = 0;
+			for (const pattern of includingPatterns) {
+				count += (text.match(pattern) || []).length;
+			}
+			return count;
 		},
 
-		three_adjectives: (/** @type {string} */ text) => {
-			// Match patterns like "fast, efficient, and reliable"
-			const pattern =
-				/\b(?:[a-z]+ly\s+)?[a-z]+,\s+(?:[a-z]+ly\s+)?[a-z]+,?\s+and\s+(?:[a-z]+ly\s+)?[a-z]+\b/gi;
-			const matches = text.match(pattern) || [];
-			// Filter to likely adjective patterns
-			return matches.filter((/** @type {string} */ match) => match.length < 60)
-				.length;
+		three_adjectives: (
+			/** @type {string} */ text,
+			/** @type {any} */ languagePack,
+		) => {
+			// Use language-specific adjective patterns
+			const conjunctions =
+				languagePack?.ruleOfThree?.conjunctions || new Set(["and"]);
+			const separators = languagePack?.ruleOfThree?.separators || [/[,;]/g];
+
+			let count = 0;
+			for (const conjunction of conjunctions) {
+				for (const separator of separators) {
+					// Create pattern for three adjectives with this conjunction
+					const pattern = new RegExp(
+						`\\b(?:[a-z]+ly\\s+)?[a-z]+${separator.source}\\s+(?:[a-z]+ly\\s+)?[a-z]+${separator.source}?\\s+${conjunction}\\s+(?:[a-z]+ly\\s+)?[a-z]+\\b`,
+						"gi",
+					);
+					const matches = text.match(pattern) || [];
+					count += matches.filter(
+						(/** @type {string} */ match) => match.length < 60,
+					).length;
+				}
+			}
+			return count;
 		},
 
-		three_adverbs: (/** @type {string} */ text) => {
-			const pattern = /\b[a-z]+ly,\s+[a-z]+ly,?\s+and\s+[a-z]+ly\b/gi;
-			return (text.match(pattern) || []).length;
+		three_adverbs: (
+			/** @type {string} */ text,
+			/** @type {any} */ languagePack,
+		) => {
+			// Use language-specific adverb patterns
+			const conjunctions =
+				languagePack?.ruleOfThree?.conjunctions || new Set(["and"]);
+			const separators = languagePack?.ruleOfThree?.separators || [/[,;]/g];
+
+			let count = 0;
+			for (const conjunction of conjunctions) {
+				for (const separator of separators) {
+					const pattern = new RegExp(
+						`\\b[a-z]+ly${separator.source}\\s+[a-z]+ly${separator.source}?\\s+${conjunction}\\s+[a-z]+ly\\b`,
+						"gi",
+					);
+					count += (text.match(pattern) || []).length;
+				}
+			}
+			return count;
 		},
 
-		three_nouns: (/** @type {string} */ text) => {
-			// Simple noun pattern detection (imperfect but functional)
-			const pattern =
-				/\b[a-z]+(?:tion|ness|ment|ity|ance|ence|ing|ure|ism),\s+[a-z]+(?:tion|ness|ment|ity|ance|ence|ing|ure|ism),?\s+and\s+[a-z]+(?:tion|ness|ment|ity|ance|ence|ing|ure|ism)\b/gi;
-			return (text.match(pattern) || []).length;
+		three_nouns: (
+			/** @type {string} */ text,
+			/** @type {any} */ languagePack,
+		) => {
+			// Use language-specific noun patterns
+			const conjunctions =
+				languagePack?.ruleOfThree?.conjunctions || new Set(["and"]);
+			const separators = languagePack?.ruleOfThree?.separators || [/[,;]/g];
+
+			// Language-specific noun suffixes (fallback to English)
+			const nounSuffixes =
+				languagePack?.ruleOfThree?.nounSuffixes ||
+				"(?:tion|ness|ment|ity|ance|ence|ing|ure|ism)";
+
+			let count = 0;
+			for (const conjunction of conjunctions) {
+				for (const separator of separators) {
+					const pattern = new RegExp(
+						`\\b[a-z]+${nounSuffixes}${separator.source}\\s+[a-z]+${nounSuffixes}${separator.source}?\\s+${conjunction}\\s+[a-z]+${nounSuffixes}\\b`,
+						"gi",
+					);
+					count += (text.match(pattern) || []).length;
+				}
+			}
+			return count;
 		},
 
-		three_clause_sentences: (/** @type {string} */ text) => {
-			// Sentences with exactly three major clauses (simplified detection)
+		three_clause_sentences: (
+			/** @type {string} */ text,
+			/** @type {any} */ languagePack,
+		) => {
+			// Sentences with exactly three major clauses (use language-specific separators)
+			const separators = languagePack?.ruleOfThree?.separators || [/[;,]/g];
 			const sentences = tokenizeSentences(text);
 			let count = 0;
+
 			for (const sentence of sentences) {
+				// Combine all separators into one pattern
+				const allSeparators = separators
+					.map((/** @type {RegExp} */ s) => s.source)
+					.join("|");
+				const clausePattern = new RegExp(`[${allSeparators}]`, "g");
 				const clauses = sentence
-					.split(/[;,]/)
+					.split(clausePattern)
 					.filter((/** @type {string} */ c) => c.trim().length > 5);
 				if (clauses.length === 3) count++;
 			}
 			return count;
 		},
 
-		three_phrase_sentences: (/** @type {string} */ text) => {
-			// Sentences with three distinct phrases separated by commas
+		three_phrase_sentences: (
+			/** @type {string} */ text,
+			/** @type {any} */ _languagePack,
+		) => {
+			// Sentences with three distinct phrases separated by punctuation
 			const sentences = tokenizeSentences(text);
 			let count = 0;
+
 			for (const sentence of sentences) {
+				// Use comma as primary separator for phrases
 				const phrases = sentence
 					.split(",")
 					.filter((/** @type {string} */ p) => p.trim().length > 3);
@@ -303,46 +414,109 @@ export function detectRuleOfThreeObsession(text, options = {}) {
 			return count;
 		},
 
-		three_benefits: (/** @type {string} */ text) => {
-			const pattern =
-				/\bthree\s+(?:benefits|advantages|pros|positives|strengths)\b/gi;
-			return (text.match(pattern) || []).length;
+		three_benefits: (
+			/** @type {string} */ text,
+			/** @type {any} */ languagePack,
+		) => {
+			// Use language-specific "three X" patterns
+			const explicitPatterns = languagePack?.ruleOfThree?.explicitThreePatterns
+				?.benefits || [
+				/\bthree\s+(?:benefits|advantages|pros|positives|strengths)\b/gi,
+			];
+			let count = 0;
+			for (const pattern of explicitPatterns) {
+				count += (text.match(pattern) || []).length;
+			}
+			return count;
 		},
 
-		three_ways: (/** @type {string} */ text) => {
-			const pattern =
-				/\bthree\s+(?:ways|methods|approaches|techniques|strategies)\b/gi;
-			return (text.match(pattern) || []).length;
+		three_ways: (
+			/** @type {string} */ text,
+			/** @type {any} */ languagePack,
+		) => {
+			const explicitPatterns = languagePack?.ruleOfThree?.explicitThreePatterns
+				?.ways || [
+				/\bthree\s+(?:ways|methods|approaches|techniques|strategies)\b/gi,
+			];
+			let count = 0;
+			for (const pattern of explicitPatterns) {
+				count += (text.match(pattern) || []).length;
+			}
+			return count;
 		},
 
-		three_types: (/** @type {string} */ text) => {
-			const pattern =
-				/\bthree\s+(?:types|kinds|categories|forms|varieties)\b/gi;
-			return (text.match(pattern) || []).length;
+		three_types: (
+			/** @type {string} */ text,
+			/** @type {any} */ languagePack,
+		) => {
+			const explicitPatterns = languagePack?.ruleOfThree?.explicitThreePatterns
+				?.types || [/\bthree\s+(?:types|kinds|categories|forms|varieties)\b/gi];
+			let count = 0;
+			for (const pattern of explicitPatterns) {
+				count += (text.match(pattern) || []).length;
+			}
+			return count;
 		},
 
-		three_steps: (/** @type {string} */ text) => {
-			const pattern =
-				/\bthree\s+(?:steps|stages|phases|processes|procedures)\b/gi;
-			return (text.match(pattern) || []).length;
+		three_steps: (
+			/** @type {string} */ text,
+			/** @type {any} */ languagePack,
+		) => {
+			const explicitPatterns = languagePack?.ruleOfThree?.explicitThreePatterns
+				?.steps || [
+				/\bthree\s+(?:steps|stages|phases|processes|procedures)\b/gi,
+			];
+			let count = 0;
+			for (const pattern of explicitPatterns) {
+				count += (text.match(pattern) || []).length;
+			}
+			return count;
 		},
 
-		three_factors: (/** @type {string} */ text) => {
-			const pattern =
-				/\bthree\s+(?:factors|elements|components|aspects|features)\b/gi;
-			return (text.match(pattern) || []).length;
+		three_factors: (
+			/** @type {string} */ text,
+			/** @type {any} */ languagePack,
+		) => {
+			const explicitPatterns = languagePack?.ruleOfThree?.explicitThreePatterns
+				?.factors || [
+				/\bthree\s+(?:factors|elements|components|aspects|features)\b/gi,
+			];
+			let count = 0;
+			for (const pattern of explicitPatterns) {
+				count += (text.match(pattern) || []).length;
+			}
+			return count;
 		},
 
-		three_aspects: (/** @type {string} */ text) => {
-			const pattern =
-				/\bthree\s+(?:aspects|components|dimensions|facets|characteristics)\b/gi;
-			return (text.match(pattern) || []).length;
+		three_aspects: (
+			/** @type {string} */ text,
+			/** @type {any} */ languagePack,
+		) => {
+			const explicitPatterns = languagePack?.ruleOfThree?.explicitThreePatterns
+				?.aspects || [
+				/\bthree\s+(?:aspects|components|dimensions|facets|characteristics)\b/gi,
+			];
+			let count = 0;
+			for (const pattern of explicitPatterns) {
+				count += (text.match(pattern) || []).length;
+			}
+			return count;
 		},
 
-		firstly_secondly_thirdly: (/** @type {string} */ text) => {
-			const pattern =
-				/\b(?:firstly|first).*?(?:secondly|second).*?(?:thirdly|third)\b/gi;
-			return (text.match(pattern) || []).length;
+		firstly_secondly_thirdly: (
+			/** @type {string} */ text,
+			/** @type {any} */ languagePack,
+		) => {
+			// Use the same sequential patterns as first_second_third
+			const sequentialPatterns = languagePack?.ruleOfThree
+				?.sequentialPatterns || [
+				/\b(?:firstly|first).*?(?:secondly|second).*?(?:thirdly|third)\b/gi,
+			];
+			let count = 0;
+			for (const pattern of sequentialPatterns) {
+				count += (text.match(pattern) || []).length;
+			}
+			return count;
 		},
 
 		one_two_three: (/** @type {string} */ text) => {
@@ -357,30 +531,49 @@ export function detectRuleOfThreeObsession(text, options = {}) {
 			return count;
 		},
 
-		beginning_middle_end: (/** @type {string} */ text) => {
-			const pattern =
-				/\b(?:beginning|start).*?(?:middle|center).*?(?:end|conclusion|finish)\b/gi;
-			return (text.match(pattern) || []).length;
+		beginning_middle_end: (
+			/** @type {string} */ text,
+			/** @type {any} */ languagePack,
+		) => {
+			// Use language-specific structural patterns
+			const structuralPatterns = languagePack?.ruleOfThree
+				?.structuralPatterns || [
+				/\b(?:beginning|start).*?(?:middle|center).*?(?:end|conclusion|finish)\b/gi,
+			];
+			let count = 0;
+			for (const pattern of structuralPatterns) {
+				count += (text.match(pattern) || []).length;
+			}
+			return count;
 		},
 	};
+
+	// Apply language-specific sensitivity adjustment
+	const languageAdjustedSensitivity =
+		sensitivityThreshold * (profile?.sensitivityModifier ?? 1.0);
 
 	// Analyze each pattern type
 	for (const [patternName, humanBaseline] of Object.entries(
 		TRIADIC_BASELINES,
 	)) {
 		const patternFunction =
-			/** @type {((text: string) => number) | undefined} */ (
+			/** @type {((text: string, languagePack: any) => number) | undefined} */ (
 				patterns[/** @type {keyof typeof patterns} */ (patternName)]
 			);
 		if (patternFunction) {
-			const count = patternFunction(text);
+			const count = patternFunction(text, languagePack);
 
 			if (count > 0) {
-				const frequency = (count / wordCount) * 1000; // Per thousand words
-				const ratio = frequency / humanBaseline; // How much higher than human baseline
+				// Apply language-specific baseline multiplier
+				const baselineMultiplier =
+					profile?.baselineMultipliers?.[patternName] ?? 1.0;
+				const adjustedBaseline = humanBaseline * baselineMultiplier;
 
-				// Check if this pattern is overused beyond sensitivity threshold
-				if (ratio >= sensitivityThreshold) {
+				const frequency = (count / wordCount) * 1000; // Per thousand words
+				const ratio = frequency / adjustedBaseline; // How much higher than adjusted baseline
+
+				// Check if this pattern is overused beyond language-adjusted sensitivity threshold
+				if (ratio >= languageAdjustedSensitivity) {
 					totalPatterns += count;
 					weightedScore += ratio * count; // Weight by frequency
 
@@ -389,7 +582,7 @@ export function detectRuleOfThreeObsession(text, options = {}) {
 							pattern: patternName,
 							count,
 							frequency,
-							humanBaseline,
+							humanBaseline: adjustedBaseline, // Show adjusted baseline in details
 							ratio,
 							overuseLevel:
 								ratio >= 4.0 ? "severe" : ratio >= 3.0 ? "high" : "moderate",

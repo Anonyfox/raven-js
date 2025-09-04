@@ -18,26 +18,73 @@
  * @property {string[]} priority
  * @property {Record<string, LanguagePackCategory>} categories
  * @property {{
+ *   aiThreshold?: number,
+ *   normalizationFactor?: number,
+ *   baselineRange?: {
+ *     human?: { min: number, max: number },
+ *     ai?: { min: number, max: number }
+ *   },
+ *   compoundWordBonus?: number,
+ *   technicalTermBonus?: number
+ * }} entropy
+ * @property {{
  *   errorPatterns?: RegExp[],
  *   falsePositiveTokens?: Set<string>,
  *   contractions?: Set<string>,
  *   apostrophes?: string[],
  *   homophonePatterns?: RegExp[],
  *   capitalization?: { mustCapitalize?: Set<string> },
- *   weight?: number
+ *   weight?: number,
+ *   businessGrammarProfile?: {
+ *     baselinePerfectionScore?: number,
+ *     formalityBonus?: number,
+ *     technicalPrecisionBonus?: number,
+ *     compoundWordTolerance?: number,
+ *     acceptablePatterns?: RegExp[]
+ *   }
  * }} grammar
  * @property {{
  *   conjunctions?: Set<string>,
  *   separators?: RegExp[],
  *   minItemLength?: number,
  *   whitelistTokens?: Set<string>,
- *   weight?: number
+ *   weight?: number,
+ *   baselineMultipliers?: Record<string, number>,
+ *   sensitivityModifier?: number,
+ *   businessWhitelist?: Set<string>,
+ *   compoundWordPatterns?: RegExp[],
+ *   naturalTriadicPatterns?: RegExp[],
+ *   sequentialPatterns?: RegExp[],
+ *   temporalPatterns?: RegExp[],
+ *   examplePatterns?: RegExp[],
+ *   suchAsPatterns?: RegExp[],
+ *   includingPatterns?: RegExp[],
+ *   explicitThreePatterns?: {
+ *     benefits?: RegExp[],
+ *     ways?: RegExp[],
+ *     types?: RegExp[],
+ *     steps?: RegExp[],
+ *     factors?: RegExp[],
+ *     aspects?: RegExp[]
+ *   },
+ *   numericalPatterns?: RegExp[],
+ *   structuralPatterns?: RegExp[],
+ *   nounSuffixes?: string
  * }} ruleOfThree
  * @property {{
  *   phrases?: Set<string>,
  *   regex?: RegExp[],
  *   caseInsensitive?: boolean,
- *   weight?: number
+ *   weight?: number,
+ *   businessTransitionProfile?: {
+ *     baselineFrequency?: number,
+ *     explicitnessPreference?: string,
+ *     formalityLevel?: string,
+ *     naturalDensityMultiplier?: number,
+ *     naturalPatterns?: RegExp[],
+ *     naturalConnectors?: Set<string>,
+ *     mechanicalTransitions?: Set<string>
+ *   }
  * }} transitions
  * @property {{
  *   sentenceInitial?: { presentActions?: Set<string>, presentStates?: Set<string>, past?: Set<string>, irregular?: Set<string> },
@@ -61,6 +108,14 @@
  * @property {[Set<string>, Set<string>]} [cooccurrence]
  * @property {(string|RegExp)[]} [emojis]
  * @property {RegExp[]} [punctuation]
+ * @property {{
+ *   formalityLevel?: string,
+ *   averageSentenceLength?: number,
+ *   subordinateClauseFrequency?: number,
+ *   compoundWordFrequency?: number,
+ *   enumerationFrequency?: number,
+ *   transitionWordFrequency?: number
+ * }} [characteristics]
  */
 
 export {};

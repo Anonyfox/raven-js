@@ -186,12 +186,12 @@ describe("language module", () => {
 			"Should return certainty",
 		);
 		assert.ok(
-			typeof aiResult.combinedScore === "number",
-			"Should return combined score",
+			typeof aiResult.aiLikelihood === "number",
+			"Should return AI likelihood",
 		);
 		assert.ok(
-			typeof aiResult.classification === "string",
-			"Should return classification",
+			typeof aiResult.dominantPattern === "string",
+			"Should return dominant pattern",
 		);
 	});
 

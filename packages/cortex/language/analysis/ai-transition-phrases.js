@@ -104,16 +104,35 @@ export function analyzeAITransitionPhrases(text, options = {}) {
 		);
 	}
 
-	// Prepare phrases list strictly from language profile (no English fallback)
-	/** @type {Record<string, number>} */
+	// Prepare phrases list with proper baseline frequencies (no English fallback)
+	/** @type {Record<string, {humanBaseline: number, detectionWeight: number}>} */
 	const phrasesToSearch = {};
 	const profile = languagePack?.transitions;
+	const businessProfile = profile?.businessTransitionProfile;
+
 	if (
 		profile?.phrases &&
 		(Array.isArray(profile.phrases) || profile.phrases.size > 0)
 	) {
 		for (const p of Array.from(profile.phrases)) {
-			phrasesToSearch[caseSensitive ? p : foldCase(p)] = 0.3;
+			const normalizedPhrase = caseSensitive ? p : foldCase(p);
+
+			// Set appropriate human baseline and detection weight based on phrase type
+			let humanBaseline = 0.3; // Default expected frequency in human text (per 1000 words)
+			let detectionWeight = 1.0; // Default detection weight
+
+			// Natural German connectors are common in human text, should be ignored for AI detection
+			if (businessProfile?.naturalConnectors?.has(p)) {
+				humanBaseline = 10.0; // Very common in human German (10 per 1000 words)
+				detectionWeight = 0.1; // Almost ignore for AI detection
+			}
+			// Mechanical AI transitions are rare in human text, strong AI indicators
+			else if (businessProfile?.mechanicalTransitions?.has(p)) {
+				humanBaseline = 0.1; // Rare in human text (0.1 per 1000 words)
+				detectionWeight = 2.0; // Strong AI indicator
+			}
+
+			phrasesToSearch[normalizedPhrase] = { humanBaseline, detectionWeight };
 		}
 	}
 	// If no phrases defined, phrasesToSearch stays empty (neutral)
@@ -123,7 +142,7 @@ export function analyzeAITransitionPhrases(text, options = {}) {
 	let totalPhrases = 0;
 	let weightedScore = 0;
 
-	for (const [phrase, humanBaseline] of Object.entries(phrasesToSearch)) {
+	for (const [phrase, config] of Object.entries(phrasesToSearch)) {
 		// Create regex for phrase matching (word boundaries to avoid partial matches)
 		const regex = new RegExp(
 			`\\b${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
@@ -134,18 +153,21 @@ export function analyzeAITransitionPhrases(text, options = {}) {
 
 		if (count > 0) {
 			const frequency = (count / wordCount) * 1000; // Per thousand words
-			const ratio = frequency / humanBaseline; // How much higher than human baseline
+			const ratio = frequency / config.humanBaseline; // How much higher than human baseline
+			const weightedRatio = ratio * config.detectionWeight; // Apply detection weight
 
 			totalPhrases += count;
-			weightedScore += ratio * count; // Weight by frequency
+			weightedScore += weightedRatio * count; // Weight by frequency and detection importance
 
 			if (includeDetails) {
 				detectedPhrases.push({
 					phrase,
 					count,
 					frequency,
-					humanBaseline,
+					humanBaseline: config.humanBaseline,
+					detectionWeight: config.detectionWeight,
 					ratio,
+					weightedRatio,
 				});
 			}
 		}
@@ -154,12 +176,16 @@ export function analyzeAITransitionPhrases(text, options = {}) {
 	// Calculate metrics
 	const phrasesPerThousand = (totalPhrases / wordCount) * 1000;
 
-	// Calculate overall AI likelihood score
-	// Higher phrase density and ratios indicate more AI-like content
-	const densityScore = Math.min(phrasesPerThousand / 10, 1); // Cap at 10 phrases per 1000 words
+	// Calculate overall AI likelihood score with language-aware adjustments
+	// Apply language-specific density expectations
+	const naturalDensityMultiplier =
+		businessProfile?.naturalDensityMultiplier || 1.0;
+	const expectedDensity = 10 * naturalDensityMultiplier; // Adjust expected density for language
+
+	const densityScore = Math.min(phrasesPerThousand / expectedDensity, 1); // Language-adjusted density threshold
 	const ratioScore =
 		totalPhrases > 0 ? Math.min(weightedScore / totalPhrases / 3, 1) : 0; // Cap ratio at 3x human baseline
-	const aiLikelihood = densityScore * 0.6 + ratioScore * 0.4; // Weight density more heavily
+	const aiLikelihood = densityScore * 0.3 + ratioScore * 0.7; // Weight ratio more heavily than density
 
 	// Calculate overall score (average ratio across all detected phrases)
 	const overallScore = totalPhrases > 0 ? weightedScore / totalPhrases : 0;
