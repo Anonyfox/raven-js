@@ -323,3 +323,419 @@ Implement the modules above, export them with those subpaths, and keep the defau
 - SQLite-WASM-ready in browsers,
 - “just works” on local + RDS/Fly/etc.,
 - and fast/reliable with automatic pooling and cluster-aware sizing—**without** leaking engine-specific features into the public API.
+
+---
+
+Perfect—here’s a clean, **class-first** skeleton you can code against. It sticks to:
+
+- **Few JSDoc typedefs (only config objects)**
+- **Classes with `#private` fields** (no `_underscored` props)
+- **ESM, Node 22+, modern browsers (SQLite WASM path)**
+- **Tree-shakable modules** with driver subpaths
+- **Auto/transparent pooling** and cluster sizing
+
+I’m listing **signatures only** (no bodies), grouped per file you’ll ship under `@raven-js/talons/relational/*`.
+
+---
+
+# core (engine-agnostic; no `node:` imports)
+
+## `core/client.js`
+
+```js
+// JSDoc config typedefs (only for options)
+/**
+ * @typedef {Object} ConnectOptions
+ * @property {'auto'|false|{max?:number,min?:number,idleMs?:number,acquireMs?:number}} [pool='auto']
+ * @property {'object'|'array'} [shape='object']
+ * @property {boolean} [dateAsString=true]
+ * @property {'bigint'|'string'} [bigint='bigint']
+ * @property {'parse'|'string'} [json='parse']
+ * @property {number} [connectTimeoutMs=10000]
+ * @property {'disable'|'require'|'verify'} [tls] // heuristics if undefined
+ * @property {AbortSignal} [signal]
+ */
+
+/**
+ * @typedef {Object} QueryOptions
+ * @property {'object'|'array'} [shape]
+ * @property {boolean} [dateAsString]
+ * @property {'bigint'|'string'} [bigint]
+ * @property {'parse'|'string'} [json]
+ * @property {number} [timeoutMs]
+ * @property {boolean} [meta=false]
+ * @property {AbortSignal} [signal]
+ */
+
+/**
+ * @typedef {Object} TransactionOptions
+ * @property {'read committed'|'repeatable read'|'serializable'} [isolation]
+ * @property {number} [timeoutMs]
+ * @property {AbortSignal} [signal]
+ */
+
+export class Client {
+  /** @type {import('../drivers/base.js').DriverConnection} */ #conn;
+  /** @type {import('./pool.js').Pool|null} */ #pool;
+  /** @type {import('./codecs.js').CodecRegistry} */ #codecs;
+  /** @type {import('./row-shapes.js').RowShaperFactory} */ #shaper;
+  /** @type {ConnectOptions} */ #defaults;
+  /** @type {boolean} */ #closed;
+
+  /** @param {import('./config.js').NormalizedConfig} config */
+  constructor(config) {}
+
+  /** @param {string} sql @param {any[]} [params] @param {QueryOptions} [opts] */
+  async query(sql, params, opts) {}
+
+  /** @param {string} sql @param {any[]} [params] @param {QueryOptions} [opts] @returns {AsyncIterable<any>} */
+  stream(sql, params, opts) {}
+
+  /** @param {string} sql @param {{cache?: boolean}} [opts] @returns {Promise<Statement>} */
+  async prepare(sql, opts) {}
+
+  /** @template T @param {(trx: Client)=>Promise<T>} fn @param {TransactionOptions} [opts] @returns {Promise<T>} */
+  async transaction(fn, opts) {}
+
+  /** Close client (and pool if owned). */
+  async close() {}
+
+  // internal helpers for pool integration
+  /** @returns {Promise<import('../drivers/base.js').DriverConnection>} */
+  async #acquire() {}
+  /** @param {import('../drivers/base.js').DriverConnection} conn */
+  #release(conn) {}
+}
+
+/** @param {string|import('./config.js').ConnectConfig} dsnOrConfig @param {ConnectOptions} [opts] @returns {Promise<Client>} */
+export async function connect(dsnOrConfig, opts) {}
+```
+
+## `core/statement.js`
+
+```js
+export class Statement {
+  /** @type {Client} */ #client;
+  /** @type {string|number} */ #id;
+  /** @type {readonly string[]} */ #columns;
+  /** @type {boolean} */ #closed;
+
+  /** @param {Client} client @param {string|number} id @param {string[]} columns */
+  constructor(client, id, columns) {}
+
+  /** @param {any[]} [params] @param {import('./client.js').QueryOptions} [opts] */
+  async execute(params, opts) {}
+
+  /** @param {any[]} [params] @param {import('./client.js').QueryOptions} [opts] @returns {AsyncIterable<any>} */
+  stream(params, opts) {}
+
+  async close() {}
+}
+```
+
+## `core/pool.js`
+
+```js
+/**
+ * @typedef {Object} PoolOptions
+ * @property {number} [max=6]
+ * @property {number} [min=0]
+ * @property {number} [idleMs=30000]
+ * @property {number} [acquireMs=10000]
+ */
+
+export class Pool {
+  /** @type {PoolOptions} */ #opts;
+  /** @type {Set<any>} */ #idle;
+  /** @type {Set<any>} */ #borrowed;
+  /** @type {Array<{resolve:Function,reject:Function,deadline:number}>} */ #queue;
+  /** @type {boolean} */ #closed;
+  /** @type {Function} */ #factoryCreate;
+  /** @type {Function} */ #factoryDestroy;
+  /** @type {NodeJS.Timeout|null} */ #reaper;
+
+  /** @param {()=>Promise<any>} createFn @param {(res:any)=>Promise<void>} destroyFn @param {PoolOptions} [opts] */
+  constructor(createFn, destroyFn, opts) {}
+
+  /** @returns {Promise<any>} */ async acquire() {}
+  /** @param {any} res */ release(res) {}
+  async drain() {}
+  size() {}
+  idleCount() {}
+  borrowedCount() {}
+}
+```
+
+## `core/codecs.js`
+
+```js
+export class CodecRegistry {
+  /** @type {Map<string,Function>} */ #decoders; // key by logical type name
+  constructor() {}
+  /** @param {string} type @param {(v:any, opts?:any)=>any} decode */
+  register(type, decode) {}
+  /** @param {string} type @param {any} value @param {import('./client.js').QueryOptions|undefined} opts */
+  decode(type, value, opts) {}
+}
+```
+
+## `core/row-shapes.js`
+
+```js
+export class RowShaperFactory {
+  /** @param {string[]} columns @param {'object'|'array'} shape */
+  create(columns, shape) {}
+}
+
+export class ObjectRowShaper {
+  /** @type {string[]} */ #cols;
+  /** @param {string[]} cols */ constructor(cols) {}
+  /** @param {any[]} values @returns {Record<string,any>} */ shape(values) {}
+}
+
+export class ArrayRowShaper {
+  /** @param {any[]} values @returns {any[]} */ shape(values) {}
+}
+```
+
+## `core/errors.js`
+
+```js
+export class SqlError extends Error {
+  /** @type {string} */ code;
+  /** @type {'pg'|'mysql'|'sqlite'} */ driver;
+  /** @type {string|undefined} */ sqlState;
+  /** @type {string|undefined} */ detail;
+  constructor(message, code, driver, sqlState, detail) {
+    super(message);
+  }
+  /** @param {any} driverErr @param {'pg'|'mysql'|'sqlite'} driver @returns {SqlError} */
+  static normalize(driverErr, driver) {}
+}
+```
+
+## `core/cancel.js`
+
+```js
+export class Deadline {
+  /** @type {AbortController} */ #ac;
+  /** @type {number|undefined} */ #timer;
+  /** @param {AbortSignal} [signal] @param {number} [timeoutMs] */
+  constructor(signal, timeoutMs) {}
+  /** @returns {AbortSignal} */ signal() {}
+  cancel() {}
+}
+```
+
+## `core/config.js`
+
+```js
+/**
+ * @typedef {Object} ConnectConfig
+ * @property {'pg'|'mysql'|'sqlite-node'|'sqlite-wasm'} [driver]
+ * @property {string} [host]
+ * @property {number} [port]
+ * @property {string} [user]
+ * @property {string} [password]
+ * @property {string} [database]
+ * @property {'disable'|'require'|'verify'} [tls]
+ * @property {any} [wasm] // for sqlite-wasm: { engine: ... }
+ */
+
+/** @typedef {ConnectConfig & ConnectOptions} NormalizedConfig */
+
+export class Config {
+  /** @param {string|ConnectConfig} dsnOrConfig @param {ConnectOptions} [opts] */
+  static parse(dsnOrConfig, opts) {}
+  /** @param {NormalizedConfig} cfg */ static computeTLS(cfg) {}
+  /** @param {NormalizedConfig} cfg */ static driverSubpath(cfg) {}
+}
+```
+
+## `core/utils.js`
+
+```js
+export class LruCache {
+  /** @type {number} */ #cap;
+  /** @type {Map<any,any>} */ #map;
+  constructor(capacity) {}
+  get(k) {}
+  set(k, v) {}
+  delete(k) {}
+  clear() {}
+}
+
+export class StableObjectFactory {
+  /** @type {string[]} */ #keys;
+  constructor(keys) {}
+  /** @param {any[]} values */ make(values) {}
+}
+```
+
+## `core/metrics.js` (optional; no-ops by default)
+
+```js
+/**
+ * @typedef {Object} MetricsHooks
+ * @property {(ev:{name:string,at:number,data?:any})=>void} [emit]
+ */
+
+export class Metrics {
+  /** @type {MetricsHooks} */ #hooks;
+  /** @param {MetricsHooks} [hooks] */ constructor(hooks) {}
+  /** @param {string} name @param {any} [data] */ emit(name, data) {}
+}
+```
+
+---
+
+# drivers (one file per driver; only the Node drivers import `node:net/tls`)
+
+## `drivers/base.js` (abstract base for “implements interface via inheritance”)
+
+```js
+export class DriverConnection {
+  /** lifecycle */
+  async open() {}
+  async close() {}
+  /** simple query path */
+  /** @param {string} sql @param {any[]} params @param {import('../core/client.js').QueryOptions} opts */
+  async simpleQuery(sql, params, opts) {}
+  /** prepared statement lifecycle */
+  /** @param {string} sql @returns {Promise<{id:string|number,columns:string[]}>} */
+  async prepare(sql) {}
+  /** @param {string|number} id @param {any[]} params @param {import('../core/client.js').QueryOptions} opts */
+  async execPrepared(id, params, opts) {}
+  /** @param {string|number} id */ async closePrepared(id) {}
+  /** streaming */
+  /** @returns {AsyncIterable<{columns?:string[], values:any[]}>} */
+  streamQuery(sql, params, opts) {}
+  /** transactions */
+  async begin(isolation) {}
+  async commit() {}
+  async rollback() {}
+}
+```
+
+## `drivers/pg.js`
+
+```js
+import { DriverConnection } from "./base.js";
+export class PgDriver extends DriverConnection {
+  /** @param {import('../core/config.js').NormalizedConfig} cfg @param {import('../core/codecs.js').CodecRegistry} codecs */
+  constructor(cfg, codecs) {
+    super();
+  }
+}
+```
+
+## `drivers/mysql.js`
+
+```js
+import { DriverConnection } from "./base.js";
+export class MySqlDriver extends DriverConnection {
+  /** @param {import('../core/config.js').NormalizedConfig} cfg @param {import('../core/codecs.js').CodecRegistry} codecs */
+  constructor(cfg, codecs) {
+    super();
+  }
+}
+```
+
+## `drivers/sqlite-node.js`
+
+```js
+import { DriverConnection } from "./base.js";
+export class SqliteNodeDriver extends DriverConnection {
+  /** @param {import('../core/config.js').NormalizedConfig} cfg */
+  constructor(cfg) {
+    super();
+  }
+}
+```
+
+## `drivers/sqlite-wasm.js`
+
+```js
+import { DriverConnection } from "./base.js";
+/**
+ * @typedef {Object} WasmOptions
+ * @property {{ prepare(sql:string):any, exec(sql:string):any }} engine
+ */
+export class SqliteWasmDriver extends DriverConnection {
+  /** @param {import('../core/config.js').NormalizedConfig & WasmOptions} cfg */
+  constructor(cfg) {
+    super();
+  }
+}
+```
+
+---
+
+# extras (tree-shakable utilities)
+
+## `extras/cluster.js`
+
+```js
+/**
+ * @typedef {Object} ClusterSizingOptions
+ * @property {number} [poolTotalTarget=16]
+ * @property {number} [workers] // default: env/heuristic
+ */
+export class ClusterSizer {
+  /** @param {ClusterSizingOptions} [opts] @returns {{maxPerProcess:number,minPerProcess:number}} */
+  static derivePoolLimits(opts) {}
+}
+```
+
+## `extras/introspection.js`
+
+```js
+import { Client } from "../core/client.js";
+export class Introspection {
+  /** @param {Client} client */ constructor(client) {
+    this.client = client;
+  }
+  /** @param {string} sql */ async describe(sql) {}
+}
+```
+
+## `extras/diagnostics.js`
+
+```js
+export class Diagnostics {
+  /** @param {(msg:any)=>void} logger */ constructor(logger) {
+    this.#log = logger;
+  }
+  /** @param {import('../core/pool.js').Pool} pool */ attachPool(pool) {}
+  /** @param {import('../core/metrics.js').Metrics} metrics */ attachMetrics(
+    metrics
+  ) {}
+}
+```
+
+---
+
+# Root subpath exports (how this stays tree-shakeable)
+
+- `@raven-js/talons/relational` → `core/client.js` (exports `connect`, `Client`)
+- `@raven-js/talons/relational/pool` → `core/pool.js` (exports `Pool`)
+- `@raven-js/talons/relational/pg` → `drivers/pg.js` (exports `PgDriver`)
+- `@raven-js/talons/relational/mysql` → `drivers/mysql.js` (exports `MySqlDriver`)
+- `@raven-js/talons/relational/sqlite-node` → `drivers/sqlite-node.js` (exports `SqliteNodeDriver`)
+- `@raven-js/talons/relational/sqlite-wasm` → `drivers/sqlite-wasm.js` (exports `SqliteWasmDriver`)
+- `@raven-js/talons/relational/cluster` → `extras/cluster.js`
+- `@raven-js/talons/relational/introspection` → `extras/introspection.js`
+- `@raven-js/talons/relational/diagnostics` → `extras/diagnostics.js`
+- `@raven-js/talons/relational/metrics` → `core/metrics.js`
+
+---
+
+# How it all “clicks together”
+
+- **`connect()`** parses DSN via `Config.parse`, decides driver subpath (`Config.driverSubpath`), instantiates the driver (`PgDriver`/`MySqlDriver`/`Sqlite*Driver`), wraps it in a **`Client`** with shared defaults and **optional `Pool`**.
+- **`Client`** methods (`query`, `stream`, `prepare`, `transaction`) unify behavior: they acquire a driver connection (from pool or the single conn), set up **`Deadline`** for cancel/timeout, request rows, run them through **`CodecRegistry`** and **`RowShaperFactory`**, and return standardized results.
+- **`Statement`** owns a prepared statement id + columns on the driver; it uses the same shaping/codec path as `Client`.
+- **`Pool`** wraps driver connection creation/destruction with FIFO acquire + idle reaping; **`ClusterSizer`** returns `{maxPerProcess,minPerProcess}` when you want a total cap across workers.
+- **Drivers** subclass **`DriverConnection`** (your “interface via inheritance”) and implement wire/FFI specifics. The core never imports `node:`—only drivers do, and only the Node ones.
+
+This layout keeps typedefs limited to **config objects**, uses **classes with `#private`** state, and gives you a tight, modern, tree-shakable surface that maps naturally to JavaScript—ready to implement.
