@@ -55,8 +55,11 @@
     "packages/cortex",
     "packages/fledge",
     "packages/glean",
+    "packages/hatch",
     "packages/nest",
     "packages/reflex",
+    "packages/soar",
+    "packages/talons",
     "packages/wings"
   ],
   "engines": {
