@@ -20,6 +20,10 @@ import { resolve } from "node:path";
 import { stdin } from "node:process";
 import { parseArgs } from "node:util";
 import {
+	createBinaryConfigFromFlags,
+	generateBinaryExecutable,
+} from "../src/binary/index.js";
+import {
 	createConfigFromFlags,
 	generateScriptBundle,
 } from "../src/script/index.js";
@@ -59,7 +63,7 @@ async function readStdin() {
  * @property {string} [format] - Bundle format (script mode)
  * @property {string[]} [assets] - Asset paths (script mode)
  * @property {string[]} [nodeFlags] - Node.js flags (script mode)
- * @property {string} [export] - Named export from config
+ * @property {string|null} [export] - Named export from config
  */
 
 /**
@@ -89,10 +93,21 @@ function parseCliArgs(argv) {
 			allowPositionals: true,
 		});
 
+		// Handle config file with optional export syntax (file.js:exportName)
+		let configFile = positionals[1] || null;
+		let exportName = values.export || null;
+
+		if (configFile?.includes(":")) {
+			const [file, exportFromFile] = configFile.split(":", 2);
+			configFile = file || null;
+			exportName = exportFromFile || null; // Override --export flag if specified in file syntax
+		}
+
 		return {
 			command: positionals[0] || null,
-			configFile: positionals[1] || null,
+			configFile,
 			...values,
+			export: exportName,
 			nodeFlags: values["node-flags"] || [], // Map kebab-case to camelCase
 		};
 	} catch (error) {
@@ -114,6 +129,7 @@ Build & bundle tool for modern JavaScript applications
 USAGE:
   fledge static [config.js] [options]
   fledge script [config.js] [options]
+  fledge binary [config.js] [options]
 
 EXAMPLES:
   # Static site generation
@@ -125,6 +141,11 @@ EXAMPLES:
   echo "export default {entry: './app.js', output: './dist/app.js'}" | fledge script
   fledge script config.js --validate
   fledge script --entry ./app.js --output ./dist/app.js
+
+  # Binary executable generation
+  echo "export default {entry: './app.js', output: './dist/app'}" | fledge binary
+  fledge binary config.js:binary --verbose
+  fledge binary --entry ./app.js --output ./dist/app
 
 STATIC OPTIONS:
   --server <url>     Server origin (e.g. http://localhost:3000)
@@ -138,6 +159,11 @@ SCRIPT OPTIONS:
   --assets <path>    Asset file paths (can be used multiple times)
   --node-flags <f>   Node.js flags (can be used multiple times)
 
+BINARY OPTIONS:
+  --entry <file>     Entry point JavaScript file
+  --output <file>    Output executable path
+  --assets <path>    Asset file paths (can be used multiple times)
+
 SHARED OPTIONS:
   --export <name>    Use named export from config file
   --validate         Validate config and exit
@@ -147,6 +173,7 @@ SHARED OPTIONS:
 COMMANDS:
   static             Generate static site files
   script             Generate executable script bundle
+  binary             Generate native executable binary
 `);
 }
 
@@ -162,13 +189,16 @@ async function createStaticConfigFromSources(args, stdinConfig) {
 	try {
 		if (stdinConfig) {
 			// Highest priority: piped input
-			config = await Config.fromString(stdinConfig, args.export);
+			config = await Config.fromString(stdinConfig, args.export || undefined);
 		} else if (args.configFile) {
 			// Second priority: config file
 			if (!existsSync(args.configFile)) {
 				throw new Error(`Config file not found: ${args.configFile}`);
 			}
-			config = await Config.fromFile(resolve(args.configFile), args.export);
+			config = await Config.fromFile(
+				resolve(args.configFile),
+				args.export || undefined,
+			);
 		} else if (args.server) {
 			// Third priority: minimal CLI config
 			config = new Config({
@@ -216,14 +246,17 @@ async function createScriptConfigFromSources(args, stdinConfig) {
 		if (stdinConfig) {
 			// Highest priority: piped input
 			const { ScriptConfig } = await import("../src/script/config/config.js");
-			return ScriptConfig.fromString(stdinConfig, args.export);
+			return ScriptConfig.fromString(stdinConfig, args.export || undefined);
 		} else if (args.configFile) {
 			// Second priority: config file
 			if (!existsSync(args.configFile)) {
 				throw new Error(`Config file not found: ${args.configFile}`);
 			}
 			const { ScriptConfig } = await import("../src/script/config/config.js");
-			return ScriptConfig.fromFile(resolve(args.configFile), args.export);
+			return ScriptConfig.fromFile(
+				resolve(args.configFile),
+				args.export || undefined,
+			);
 		} else if (args.entry && args.output) {
 			// Third priority: minimal CLI config
 
@@ -233,6 +266,48 @@ async function createScriptConfigFromSources(args, stdinConfig) {
 				format: args.format,
 				assets: args.assets || [],
 				nodeFlags: args.nodeFlags,
+			});
+		} else {
+			throw new Error(
+				"No configuration provided. Use piped input, config file, or --entry/--output flags.",
+			);
+		}
+	} catch (error) {
+		console.error(
+			`Configuration error: ${/** @type {Error} */ (error).message}`,
+		);
+		process.exit(1);
+	}
+}
+
+/**
+ * Create binary config from various sources with proper precedence
+ * @param {ParsedArgs} args - Parsed CLI arguments
+ * @param {string | null} stdinConfig - Config from piped input
+ * @returns {Promise<import("../src/binary/config/config.js").BinaryConfig>} Validated config instance
+ */
+async function createBinaryConfigFromSources(args, stdinConfig) {
+	try {
+		if (stdinConfig) {
+			// Highest priority: piped input
+			const { BinaryConfig } = await import("../src/binary/config/config.js");
+			return BinaryConfig.fromString(stdinConfig, args.export || undefined);
+		} else if (args.configFile) {
+			// Second priority: config file
+			if (!existsSync(args.configFile)) {
+				throw new Error(`Config file not found: ${args.configFile}`);
+			}
+			const { BinaryConfig } = await import("../src/binary/config/config.js");
+			return BinaryConfig.fromFile(
+				resolve(args.configFile),
+				args.export || undefined,
+			);
+		} else if (args.entry && args.output) {
+			// Third priority: minimal CLI config
+			return createBinaryConfigFromFlags({
+				entry: args.entry,
+				output: args.output,
+				assets: args.assets || [],
 			});
 		} else {
 			throw new Error(
@@ -364,6 +439,70 @@ async function runScriptGeneration(config, args) {
 }
 
 /**
+ * Run binary executable generation
+ * @param {import("../src/binary/config/config.js").BinaryConfig} config - Validated configuration
+ * @param {ParsedArgs} args - CLI arguments
+ */
+async function runBinaryGeneration(config, args) {
+	const verbose = args.verbose || false;
+
+	if (verbose) {
+		console.log(`📋 Configuration:`);
+		console.log(`   Entry: ${config.getEntry()}`);
+		console.log(`   Output: ${resolve(config.getOutput())}`);
+		console.log(`   Platform: ${config.getPlatformTarget()}`);
+		console.log(`   Assets: ${config.getAssets().getFiles().length} files`);
+		console.log(
+			`   Bundles: ${Object.keys(config.getBundles()).length} client bundles`,
+		);
+		console.log(
+			`   Signing: ${/** @type {{enabled: boolean}} */ (config.getSigning()).enabled ? "enabled" : "disabled"}`,
+		);
+		console.log("");
+	}
+
+	console.log("🦅 Starting binary executable generation...");
+
+	try {
+		// Generate binary executable
+		const result = await generateBinaryExecutable(config, {
+			validate: false,
+		});
+
+		if (verbose) {
+			const stats =
+				/** @type {{executableSize: number, assetCount: number}} */ (
+					result.statistics
+				);
+			console.log(
+				`📦 Executable size: ${(stats.executableSize / 1024).toFixed(1)}KB`,
+			);
+			console.log(`📁 Assets embedded: ${stats.assetCount}`);
+		}
+
+		// Show final statistics
+		console.log("");
+		console.log(`✅ Binary executable generation complete!`);
+		console.log(`   🚀 Executable: ${result.executable}`);
+		const stats =
+			/** @type {{executableSize: number, totalTime: number, assetCount: number}} */ (
+				result.statistics
+			);
+		console.log(`   📦 Size: ${(stats.executableSize / 1024).toFixed(1)}KB`);
+		console.log(`   ⏱️  Build time: ${stats.totalTime}ms`);
+		if (stats.assetCount > 0) {
+			console.log(`   📁 Assets embedded: ${stats.assetCount}`);
+		}
+		console.log(`   🏃 Run with: ${result.executable}`);
+	} catch (error) {
+		console.error(
+			`❌ Binary generation failed: ${/** @type {Error} */ (error).message}`,
+		);
+		process.exit(1);
+	}
+}
+
+/**
  * Main CLI entry point
  */
 async function main() {
@@ -376,9 +515,9 @@ async function main() {
 	}
 
 	// Validate command
-	if (!["static", "script"].includes(args.command)) {
+	if (!["static", "script", "binary"].includes(args.command)) {
 		console.error(`Unknown command: ${args.command || "none"}`);
-		console.error("Available commands: static, script");
+		console.error("Available commands: static, script, binary");
 		process.exit(1);
 	}
 
@@ -438,6 +577,30 @@ async function main() {
 
 		// Run script generation
 		await runScriptGeneration(config, args);
+	} else if (args.command === "binary") {
+		// Create binary configuration from sources
+		const config = await createBinaryConfigFromSources(args, stdinConfig);
+
+		// Validate-only mode
+		if (args.validate) {
+			console.log("✅ Binary configuration validation successful!");
+			console.log("");
+			console.log("📋 Configuration summary:");
+			console.log(`   Entry: ${config.getEntry()}`);
+			console.log(`   Output: ${config.getOutput()}`);
+			console.log(`   Platform: ${config.getPlatformTarget()}`);
+			console.log(`   Assets: ${config.getAssets().getFiles().length} files`);
+			console.log(
+				`   Bundles: ${Object.keys(config.getBundles()).length} client bundles`,
+			);
+			console.log(
+				`   Signing: ${/** @type {{enabled: boolean}} */ (config.getSigning()).enabled ? "enabled" : "disabled"}`,
+			);
+			process.exit(0);
+		}
+
+		// Run binary generation
+		await runBinaryGeneration(config, args);
 	}
 }
 

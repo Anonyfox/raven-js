@@ -66,5 +66,8 @@
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/Anonyfox"
+  },
+  "dependencies": {
+    "postject": "^1.0.0-alpha.6"
   }
 }

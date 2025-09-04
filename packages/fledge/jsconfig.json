@@ -16,7 +16,8 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "allowUnreachableCode": false,
-    "allowUnusedLabels": false
+    "allowUnusedLabels": false,
+    "skipLibCheck": true
   },
   "include": ["**/*.js"],
   "exclude": ["node_modules/**", "./static/**", "**/*.min.js", "**/*.test.js"]

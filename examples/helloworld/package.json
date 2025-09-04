@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node --watch-path=./src --watch-path=./public boot.js",
     "build": "npx ../../packages/fledge/bin/fledge.js script raven.fledge.js --verbose",
+    "bundle:binary": "npx ../../packages/fledge/bin/fledge.js binary raven.fledge.js:binary --verbose",
     "lint": "npx biome lint .",
     "format": "npx biome format . --write"
   },

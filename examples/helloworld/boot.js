@@ -55,28 +55,35 @@ async function setupProduction() {
 	return server;
 }
 
-const server = isProduction()
-	? await setupProduction()
-	: await setupDevelopment();
+/**
+ * Main application entry point
+ */
+async function main() {
+	const server = isProduction() ? await setupProduction() : await setupDevelopment();
 
-await server.listen(port);
+	await server.listen(port);
 
-// Log server info using actual RAVENJS_ORIGIN set by Wings
-const origin = process.env.RAVENJS_ORIGIN || `http://localhost:${port}`;
+	// Log server info using actual RAVENJS_ORIGIN set by Wings
+	const origin = process.env.RAVENJS_ORIGIN || `http://localhost:${port}`;
 
-if (isProduction()) {
-	// Only log from the main process to avoid duplicate messages
-	if (server.isMainProcess) {
+	if (isProduction()) {
+		// Only log from the main process to avoid duplicate messages
+		if (server.isMainProcess) {
+			console.log(`🚀 Hello World server running at ${origin}`);
+			console.log(`🔒 HTTPS enabled with auto-generated certificate`);
+			console.log(`📊 Structured JSON logging enabled for compliance`);
+			console.log(`🔧 Environment: Production`);
+		}
+	} else {
 		console.log(`🚀 Hello World server running at ${origin}`);
-		console.log(`🔒 HTTPS enabled with auto-generated certificate`);
-		console.log(`📊 Structured JSON logging enabled for compliance`);
-		console.log(`🔧 Environment: Production`);
+		console.log(`📝 Edit examples/helloworld/src/index.js to see changes live`);
+		console.log(`📊 Request logging enabled with performance indicators (⚡🚀🐌)`);
+		console.log(`🔧 Environment: Development`);
 	}
-} else {
-	console.log(`🚀 Hello World server running at ${origin}`);
-	console.log(`📝 Edit examples/helloworld/src/index.js to see changes live`);
-	console.log(
-		`📊 Request logging enabled with performance indicators (⚡🚀🐌)`,
-	);
-	console.log(`🔧 Environment: Development`);
 }
+
+// Start the application
+main().catch((error) => {
+	console.error("💥 Failed to start Hello World server:", error);
+	process.exit(1);
+});

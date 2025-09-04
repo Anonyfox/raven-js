@@ -247,10 +247,12 @@ export class BinaryConfig {
 
 	/**
 	 * Get code signing configuration
-	 * @returns {object} Signing configuration
+	 * @returns {{enabled: boolean, identity?: string}} Signing configuration
 	 */
 	getSigning() {
-		return { ...this.signing };
+		return /** @type {{enabled: boolean, identity?: string}} */ ({
+			...this.signing,
+		});
 	}
 
 	/**

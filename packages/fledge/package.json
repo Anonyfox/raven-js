@@ -78,9 +78,7 @@
     "url": "https://github.com/sponsors/Anonyfox"
   },
   "dependencies": {
-    "esbuild": "^0.25.9"
-  },
-  "optionalDependencies": {
-    "postject": "^1.0.0"
+    "esbuild": "^0.25.9",
+    "postject": "^1.0.0-alpha.6"
   }
 }
