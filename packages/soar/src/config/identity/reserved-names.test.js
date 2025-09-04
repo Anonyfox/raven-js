@@ -10,8 +10,8 @@
  * @file Test suite for reserved names constant.
  */
 
-import { describe, it } from "node:test";
 import assert from "node:assert";
+import { describe, it } from "node:test";
 import { RESERVED_NAMES } from "./reserved-names.js";
 
 describe("RESERVED_NAMES", () => {
@@ -44,8 +44,16 @@ describe("RESERVED_NAMES", () => {
 
 	it("should only contain lowercase strings", () => {
 		for (const name of RESERVED_NAMES) {
-			assert.strictEqual(typeof name, "string", `Expected string, got ${typeof name}`);
-			assert.strictEqual(name, name.toLowerCase(), `Expected '${name}' to be lowercase`);
+			assert.strictEqual(
+				typeof name,
+				"string",
+				`Expected string, got ${typeof name}`,
+			);
+			assert.strictEqual(
+				name,
+				name.toLowerCase(),
+				`Expected '${name}' to be lowercase`,
+			);
 		}
 	});
 

@@ -85,13 +85,13 @@ describe("SoarConfig", () => {
 
 	describe("validation", () => {
 		it("should validate successfully with valid config", () => {
-			// Set required environment variables for CloudflarePages
+			// Set required environment variables for CloudflareWorkers
 			process.env.CF_API_TOKEN = "test-token";
 			process.env.CF_ACCOUNT_ID = "test-account";
 
 			const config = new SoarConfig({
 				artifact: { type: "static", path: "./dist" },
-				target: { name: "cloudflare-pages", projectName: "test-app" },
+				target: { name: "cloudflare-workers", scriptName: "test-app" },
 			});
 
 			const errors = config.validate();
@@ -159,13 +159,13 @@ describe("SoarConfig", () => {
 		});
 
 		it("should return null for valid config formatting", () => {
-			// Set required environment variables for CloudflarePages
+			// Set required environment variables for CloudflareWorkers
 			process.env.CF_API_TOKEN = "test-token";
 			process.env.CF_ACCOUNT_ID = "test-account";
 
 			const config = new SoarConfig({
 				artifact: { type: "static", path: "./dist" },
-				target: { name: "cloudflare-pages", projectName: "test-app" },
+				target: { name: "cloudflare-workers", scriptName: "test-app" },
 			});
 
 			const formatted = config.validateAndFormat();

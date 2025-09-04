@@ -70,7 +70,7 @@ export function suggest(name) {
 
 	// Ensure it ends with alphanumeric (not hyphen)
 	if (suggested.endsWith("-")) {
-		suggested = suggested.slice(0, -1) + "1";
+		suggested = `${suggested.slice(0, -1)}1`;
 	}
 
 	// Final validation - if still invalid, return fallback

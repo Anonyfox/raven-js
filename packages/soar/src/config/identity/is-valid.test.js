@@ -10,8 +10,8 @@
  * @file Test suite for non-throwing resource name validation.
  */
 
-import { describe, it } from "node:test";
 import assert from "node:assert";
+import { describe, it } from "node:test";
 import { isValid } from "./is-valid.js";
 
 describe("isValid", () => {
@@ -25,11 +25,7 @@ describe("isValid", () => {
 		];
 
 		for (const name of validNames) {
-			assert.strictEqual(
-				isValid(name),
-				true,
-				`Expected '${name}' to be valid`,
-			);
+			assert.strictEqual(isValid(name), true, `Expected '${name}' to be valid`);
 		}
 	});
 

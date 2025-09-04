@@ -13,14 +13,11 @@
  * Provider-level classes (Cloudflare, DigitalOcean) are internal abstractions.
  */
 
-export { CloudflarePages } from "./cloudflare-pages.js";
+export { CloudflareWorkers } from "./cloudflare-workers.js";
 export { selectTarget } from "./select.js";
-
-// TODO: Export other concrete product classes as they're implemented
-// export { CloudflareWorkers } from "./cloudflare-workers.js";
 // export { DigitalOceanDroplet } from "./digitalocean-droplet.js";
 // export { DigitalOceanFunctions } from "./digitalocean-functions.js";
 
 /**
- * @typedef {import('./cloudflare-pages.js').CloudflarePagesConfig} CloudflarePagesConfig
+ * @typedef {import('./cloudflare-workers.js').CloudflareWorkersConfig} CloudflareWorkersConfig
  */

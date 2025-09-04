@@ -14,7 +14,10 @@
  */
 
 import { strict as assert } from "node:assert";
-import { describe, it } from "node:test";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, it } from "node:test";
 import { Base } from "./base.js";
 import { BinaryArtifact } from "./binary.js";
 import { ScriptArtifact } from "./script.js";
@@ -22,6 +25,21 @@ import { selectArtifact } from "./select.js";
 import { StaticArtifact } from "./static.js";
 
 describe("selectArtifact", () => {
+	let tempDir;
+
+	beforeEach(() => {
+		// Create temporary directory for static tests
+		tempDir = mkdtempSync(join(tmpdir(), "soar-select-test-"));
+		// Create a test file so the directory isn't empty
+		writeFileSync(join(tempDir, "test.html"), "<html>test</html>");
+	});
+
+	afterEach(() => {
+		// Clean up temporary directory
+		if (tempDir) {
+			rmSync(tempDir, { recursive: true, force: true });
+		}
+	});
 	describe("input validation", () => {
 		it("should throw error when config is not an object", () => {
 			assert.throws(() => selectArtifact(null), {
@@ -319,7 +337,7 @@ describe("selectArtifact", () => {
 				},
 				{
 					type: "static",
-					path: "./dist",
+					path: tempDir, // Use temporary directory with actual files
 				},
 			];
 

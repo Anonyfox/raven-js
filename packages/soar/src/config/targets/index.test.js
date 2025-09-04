@@ -15,7 +15,6 @@
 
 import { strict as assert } from "node:assert";
 import { afterEach, beforeEach, describe, it } from "node:test";
-import { CloudflarePages } from "./cloudflare-pages.js";
 import * as targets from "./index.js";
 import { selectTarget } from "./select.js";
 
@@ -33,9 +32,8 @@ describe("targets module", () => {
 	});
 
 	describe("exports", () => {
-		it("should export CloudflarePages class", () => {
-			assert.ok(typeof targets.CloudflarePages === "function");
-			assert.strictEqual(targets.CloudflarePages, CloudflarePages);
+		it("should export CloudflareWorkers class", () => {
+			assert.ok(typeof targets.CloudflareWorkers === "function");
 		});
 
 		it("should export selectTarget function", () => {
@@ -55,50 +53,30 @@ describe("targets module", () => {
 
 			// Should only export concrete product classes and utility functions
 			assert.deepStrictEqual(exportNames.sort(), [
-				"CloudflarePages",
+				"CloudflareWorkers",
 				"selectTarget",
 			]);
 		});
 	});
 
-	describe("CloudflarePages export", () => {
-		it("should create working CloudflarePages instances", () => {
-			const config = {
-				name: "cloudflare-pages",
-				projectName: "test-project",
-			};
-
-			const pages = new targets.CloudflarePages(config);
-
-			assert.ok(pages instanceof CloudflarePages);
-			assert.strictEqual(pages.getName(), "cloudflare-pages");
-			assert.strictEqual(pages.getProjectName(), "test-project");
-		});
-
-		it("should have static methods available", () => {
-			assert.deepStrictEqual(
-				targets.CloudflarePages.getSupportedArtifactTypes(),
-				["static"],
-			);
-
-			assert.deepStrictEqual(targets.CloudflarePages.getSupportedTransports(), [
-				"http",
-			]);
-		});
-	});
-
 	describe("selectTarget export", () => {
-		it("should create CloudflarePages via selectTarget", () => {
+		it("should create CloudflareWorkers via selectTarget", () => {
+			// Set up environment for this test
+			const originalEnv = { ...process.env };
+			process.env.CF_API_TOKEN = "test-token-12345";
+			process.env.CF_ACCOUNT_ID = "test-account-12345";
+
 			const config = {
-				name: "cloudflare-pages",
-				projectName: "test-project",
+				name: "cloudflare-workers",
+				scriptName: "test-script",
 			};
 
 			const target = targets.selectTarget(config);
 
-			assert.ok(target instanceof CloudflarePages);
-			assert.strictEqual(target.getName(), "cloudflare-pages");
-			assert.strictEqual(target.getProjectName(), "test-project");
+			assert.ok(target.constructor.name === "CloudflareWorkers");
+
+			// Restore environment
+			process.env = originalEnv;
 		});
 
 		it("should throw error for unsupported targets", () => {
@@ -114,44 +92,49 @@ describe("targets module", () => {
 
 	describe("integration", () => {
 		it("should work together - selectTarget creates instances of exported classes", () => {
+			// Set up environment for this test
+			const originalEnv = { ...process.env };
+			process.env.CF_API_TOKEN = "test-token-12345";
+			process.env.CF_ACCOUNT_ID = "test-account-12345";
+
 			const config = {
-				name: "cloudflare-pages",
-				projectName: "integration-test",
-				region: "us-east-1",
-				environment: "testing",
+				name: "cloudflare-workers",
+				scriptName: "integration-test",
 			};
 
 			// Use selectTarget to create instance
 			const selectedTarget = targets.selectTarget(config);
 
 			// Create instance directly from exported class
-			const directTarget = new targets.CloudflarePages(config);
+			const directTarget = new targets.CloudflareWorkers(config);
 
 			// Both should be instances of the same class
-			assert.ok(selectedTarget instanceof targets.CloudflarePages);
-			assert.ok(directTarget instanceof targets.CloudflarePages);
+			assert.ok(selectedTarget instanceof targets.CloudflareWorkers);
+			assert.ok(directTarget instanceof targets.CloudflareWorkers);
 
-			// Both should have same configuration
-			assert.strictEqual(selectedTarget.getName(), directTarget.getName());
+			// Both should have same constructor
 			assert.strictEqual(
-				selectedTarget.getProjectName(),
-				directTarget.getProjectName(),
+				selectedTarget.constructor.name,
+				directTarget.constructor.name,
 			);
-			assert.strictEqual(selectedTarget.getRegion(), directTarget.getRegion());
-			assert.strictEqual(
-				selectedTarget.getEnvironment(),
-				directTarget.getEnvironment(),
-			);
+
+			// Restore environment
+			process.env = originalEnv;
 		});
 
 		it("should validate instances created through both methods", () => {
+			// Set up environment for this test
+			const originalEnv = { ...process.env };
+			process.env.CF_API_TOKEN = "test-token-12345";
+			process.env.CF_ACCOUNT_ID = "test-account-12345";
+
 			const config = {
-				name: "cloudflare-pages",
-				projectName: "validation-test",
+				name: "cloudflare-workers",
+				scriptName: "validation-test",
 			};
 
 			const selectedTarget = targets.selectTarget(config);
-			const directTarget = new targets.CloudflarePages(config);
+			const directTarget = new targets.CloudflareWorkers(config);
 
 			// Both should validate successfully
 			const selectedErrors = selectedTarget.validate();
@@ -159,13 +142,16 @@ describe("targets module", () => {
 
 			assert.strictEqual(selectedErrors.length, 0);
 			assert.strictEqual(directErrors.length, 0);
+
+			// Restore environment
+			process.env = originalEnv;
 		});
 	});
 
 	describe("future compatibility", () => {
 		it("should maintain stable API surface", () => {
 			// This test documents the current API and will catch breaking changes
-			const expectedExports = ["CloudflarePages", "selectTarget"];
+			const expectedExports = ["CloudflareWorkers", "selectTarget"];
 
 			const actualExports = Object.keys(targets).sort();
 
@@ -176,47 +162,37 @@ describe("targets module", () => {
 			);
 		});
 
-		it("should maintain CloudflarePages interface", () => {
+		it("should maintain CloudflareWorkers interface", () => {
+			// Set up environment for this test
+			const originalEnv = { ...process.env };
+			process.env.CF_API_TOKEN = "test-token-12345";
+			process.env.CF_ACCOUNT_ID = "test-account-12345";
+
 			const config = {
-				name: "cloudflare-pages",
-				projectName: "interface-test",
+				name: "cloudflare-workers",
+				scriptName: "interface-test",
 			};
 
-			const pages = new targets.CloudflarePages(config);
+			const workers = new targets.CloudflareWorkers(config);
 
 			// Document expected instance methods
 			const expectedInstanceMethods = [
-				"getName",
-				"getProjectName",
-				"getRegion",
-				"getEnvironment",
-				"getApiToken",
-				"getAccountId",
-				"getZoneId",
 				"validate",
 				"getCredentials",
 				"deploy",
-			];
-
-			for (const method of expectedInstanceMethods) {
-				assert.ok(
-					typeof pages[method] === "function",
-					`Expected instance method ${method} not found`,
-				);
-			}
-
-			// Document expected static methods
-			const expectedStaticMethods = [
 				"getSupportedArtifactTypes",
 				"getSupportedTransports",
 			];
 
-			for (const method of expectedStaticMethods) {
+			for (const method of expectedInstanceMethods) {
 				assert.ok(
-					typeof targets.CloudflarePages[method] === "function",
-					`Expected static method ${method} not found`,
+					typeof workers[method] === "function",
+					`Expected instance method ${method} not found`,
 				);
 			}
+
+			// Restore environment
+			process.env = originalEnv;
 		});
 	});
 });

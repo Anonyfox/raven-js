@@ -10,8 +10,8 @@
  * @file Test suite for resource name validation.
  */
 
-import { describe, it } from "node:test";
 import assert from "node:assert";
+import { describe, it } from "node:test";
 import { validate } from "./validate.js";
 
 describe("validate", () => {
@@ -73,18 +73,31 @@ describe("validate", () => {
 
 		it("should reject names too long", () => {
 			const longName = "a".repeat(64);
-			assert.throws(() => validate(longName), /must be 3-63 characters, got 64/);
+			assert.throws(
+				() => validate(longName),
+				/must be 3-63 characters, got 64/,
+			);
 		});
 	});
 
 	describe("invalid names - character constraints", () => {
 		it("should reject uppercase characters", () => {
 			assert.throws(() => validate("My-App"), /must be lowercase alphanumeric/);
-			assert.throws(() => validate("API-SERVER"), /must be lowercase alphanumeric/);
+			assert.throws(
+				() => validate("API-SERVER"),
+				/must be lowercase alphanumeric/,
+			);
 		});
 
 		it("should reject special characters", () => {
-			const invalidChars = ["my_app", "my.app", "my@app", "my app", "my+app", "my/app"];
+			const invalidChars = [
+				"my_app",
+				"my.app",
+				"my@app",
+				"my app",
+				"my+app",
+				"my/app",
+			];
 
 			for (const name of invalidChars) {
 				assert.throws(
@@ -104,8 +117,14 @@ describe("validate", () => {
 		});
 
 		it("should reject consecutive hyphens", () => {
-			assert.throws(() => validate("my--app"), /cannot contain consecutive hyphens/);
-			assert.throws(() => validate("my---app"), /cannot contain consecutive hyphens/);
+			assert.throws(
+				() => validate("my--app"),
+				/cannot contain consecutive hyphens/,
+			);
+			assert.throws(
+				() => validate("my---app"),
+				/cannot contain consecutive hyphens/,
+			);
 		});
 	});
 
@@ -134,10 +153,7 @@ describe("validate", () => {
 
 	describe("invalid names - internationalized domains", () => {
 		it("should reject xn-- prefix", () => {
-			assert.throws(
-				() => validate("xn--example"),
-				/cannot start with "xn--"/,
-			);
+			assert.throws(() => validate("xn--example"), /cannot start with "xn--"/);
 		});
 	});
 });

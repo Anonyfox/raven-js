@@ -16,10 +16,9 @@
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 import { Base } from "./base.js";
-import { CloudflarePages } from "./cloudflare-pages.js";
 import { selectTarget } from "./select.js";
 
-// Mock environment variables for CloudflarePages tests
+// Store original environment for tests
 const originalEnv = process.env;
 
 describe("selectTarget", () => {
@@ -77,45 +76,21 @@ describe("selectTarget", () => {
 	});
 
 	describe("target selection", () => {
-		it("should create CloudflarePages instance for cloudflare-pages", () => {
+		it("should create CloudflareWorkers instance for cloudflare-workers", () => {
 			// Set up environment for this test
 			process.env = { ...originalEnv };
 			process.env.CF_API_TOKEN = "test-token-12345";
+			process.env.CF_ACCOUNT_ID = "test-account-12345";
 
 			const config = {
-				name: "cloudflare-pages",
-				projectName: "test-project",
+				name: "cloudflare-workers",
+				scriptName: "test-script",
 			};
 
 			const target = selectTarget(config);
 
-			assert.ok(target instanceof CloudflarePages);
+			assert.ok(target.constructor.name === "CloudflareWorkers");
 			assert.ok(target instanceof Base);
-			assert.strictEqual(target.getName(), "cloudflare-pages");
-			assert.strictEqual(target.getProjectName(), "test-project");
-
-			// Restore environment
-			process.env = originalEnv;
-		});
-
-		it("should pass all config properties to CloudflarePages", () => {
-			// Set up environment for this test
-			process.env = { ...originalEnv };
-			process.env.CF_API_TOKEN = "test-token-12345";
-
-			const config = {
-				name: "cloudflare-pages",
-				projectName: "my-project",
-				region: "us-west-2",
-				environment: "production",
-			};
-
-			const target = selectTarget(config);
-
-			assert.strictEqual(target.getName(), "cloudflare-pages");
-			assert.strictEqual(target.getProjectName(), "my-project");
-			assert.strictEqual(target.getRegion(), "us-west-2");
-			assert.strictEqual(target.getEnvironment(), "production");
 
 			// Restore environment
 			process.env = originalEnv;
@@ -124,7 +99,6 @@ describe("selectTarget", () => {
 		it("should throw error for unsupported target names", () => {
 			const unsupportedTargets = [
 				"unknown-target",
-				"cloudflare-workers", // TODO: Not implemented yet
 				"digitalocean-droplet", // TODO: Not implemented yet
 				"digitalocean-functions", // TODO: Not implemented yet
 				"aws-s3",
@@ -150,11 +124,11 @@ describe("selectTarget", () => {
 			process.env = { ...originalEnv };
 			delete process.env.CF_API_TOKEN;
 			const config = {
-				name: "cloudflare-pages",
-				projectName: "test-project",
+				name: "cloudflare-workers",
+				scriptName: "test-script",
 			};
 
-			// CloudflarePages should throw error due to missing CF_API_TOKEN
+			// CloudflareWorkers should throw error due to missing CF_API_TOKEN
 			assert.throws(() => selectTarget(config), {
 				name: "Error",
 				message: /CF_API_TOKEN environment variable is required/,

@@ -13,9 +13,7 @@
  * Product classes handle their own validation and configuration.
  */
 
-import { CloudflarePages } from "./cloudflare-pages.js";
-// TODO: Import other target classes as they're implemented
-// import { CloudflareWorkers } from "./cloudflare-workers.js";
+import { CloudflareWorkers } from "./cloudflare-workers.js";
 // import { DigitalOceanDroplet } from "./digitalocean-droplet.js";
 // import { DigitalOceanFunctions } from "./digitalocean-functions.js";
 
@@ -24,16 +22,15 @@ import { CloudflarePages } from "./cloudflare-pages.js";
  * The config object must have a 'name' property that determines which target class to use.
  *
  * @param {object} targetConfig - Target configuration object with 'name' property
- * @param {string} targetConfig.name - Target name (e.g., 'cloudflare-pages', 'digitalocean-droplet')
+ * @param {string} targetConfig.name - Target name (e.g., 'cloudflare-workers', 'digitalocean-droplet')
  * @returns {import('./base.js').Base} Target instance
  * @throws {Error} When target name is not supported
  *
  * @example
  * ```javascript
  * const target = selectTarget({
- *   name: 'cloudflare-pages',
- *   projectName: 'my-pages-project',
- *   region: 'us-west-2'
+ *   name: 'cloudflare-workers',
+ *   scriptName: 'my-worker-script'
  * });
  * ```
  */
@@ -47,16 +44,12 @@ export function selectTarget(targetConfig) {
 	}
 
 	switch (targetConfig.name) {
-		case "cloudflare-pages":
-			return new CloudflarePages(
-				/** @type {import('./cloudflare-pages.js').CloudflarePagesConfig} */ (
+		case "cloudflare-workers":
+			return new CloudflareWorkers(
+				/** @type {import('./cloudflare-workers.js').CloudflareWorkersConfig} */ (
 					targetConfig
 				),
 			);
-
-		// TODO: Add other target types
-		// case 'cloudflare-workers':
-		//   return new CloudflareWorkers(targetConfig);
 		// case 'digitalocean-droplet':
 		//   return new DigitalOceanDroplet(targetConfig);
 		// case 'digitalocean-functions':

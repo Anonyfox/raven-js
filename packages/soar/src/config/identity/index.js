@@ -13,7 +13,7 @@
  * that work consistently across all deployment targets.
  */
 
-export { RESERVED_NAMES } from "./reserved-names.js";
-export { validate } from "./validate.js";
 export { isValid } from "./is-valid.js";
+export { RESERVED_NAMES } from "./reserved-names.js";
 export { suggest } from "./suggest.js";
+export { validate } from "./validate.js";

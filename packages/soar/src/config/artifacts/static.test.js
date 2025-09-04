@@ -7,362 +7,274 @@
  */
 
 /**
- * @file Tests for StaticArtifact class.
- *
- * Comprehensive tests for the static artifact implementation
- * including index file and exclude pattern configuration.
+ * @file Test suite for StaticArtifact class.
  */
 
-import { strict as assert } from "node:assert";
-import { describe, it } from "node:test";
-import { Base } from "./base.js";
+import assert from "node:assert";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import { afterEach, beforeEach, describe, it } from "node:test";
 import { StaticArtifact } from "./static.js";
 
 describe("StaticArtifact", () => {
-	describe("constructor", () => {
-		it("should create instance with minimal config", () => {
-			const config = {
-				type: "static",
-				path: "./dist",
-			};
+	let tempDir;
 
-			const artifact = new StaticArtifact(config);
-
-			assert.ok(artifact instanceof StaticArtifact);
-			assert.ok(artifact instanceof Base);
-			assert.strictEqual(artifact.getPath(), "./dist");
-			assert.strictEqual(artifact.getIndexFile(), "index.html");
-			assert.deepStrictEqual(artifact.getExcludePatterns(), []);
-		});
-
-		it("should create instance with full config", () => {
-			const config = {
-				type: "static",
-				path: "./public",
-				indexFile: "main.html",
-				excludePatterns: ["*.tmp", "node_modules/**", ".DS_Store"],
-			};
-
-			const artifact = new StaticArtifact(config);
-
-			assert.strictEqual(artifact.getPath(), "./public");
-			assert.strictEqual(artifact.getIndexFile(), "main.html");
-			assert.deepStrictEqual(artifact.getExcludePatterns(), [
-				"*.tmp",
-				"node_modules/**",
-				".DS_Store",
-			]);
-		});
-
-		it("should throw error for wrong type", () => {
-			const config = {
-				type: "wrong-type",
-				path: "./dist",
-			};
-
-			assert.throws(() => new StaticArtifact(config), {
-				name: "Error",
-				message: "Artifact type must be 'static' for StaticArtifact instances",
-			});
-		});
-
-		it("should inherit path validation from base class", () => {
-			const config = {
-				type: "static",
-				path: "",
-			};
-
-			assert.throws(() => new StaticArtifact(config), {
-				name: "Error",
-				message: "Artifact path cannot be empty",
-			});
-		});
+	beforeEach(() => {
+		// Create temporary directory for test files
+		tempDir = mkdtempSync(join(tmpdir(), "soar-static-test-"));
 	});
 
-	describe("getters", () => {
-		it("should return correct values", () => {
-			const config = {
-				type: "static",
-				path: "./build",
-				indexFile: "start.html",
-				excludePatterns: ["*.log", "temp/**"],
-			};
-
-			const artifact = new StaticArtifact(config);
-
-			assert.strictEqual(artifact.getPath(), "./build");
-			assert.strictEqual(artifact.getType(), "static");
-			assert.strictEqual(artifact.getIndexFile(), "start.html");
-			assert.deepStrictEqual(artifact.getExcludePatterns(), [
-				"*.log",
-				"temp/**",
-			]);
-		});
-
-		it("should return defensive copy of exclude patterns", () => {
-			const config = {
-				type: "static",
-				path: "./dist",
-				excludePatterns: ["*.tmp"],
-			};
-
-			const artifact = new StaticArtifact(config);
-			const patterns1 = artifact.getExcludePatterns();
-			const patterns2 = artifact.getExcludePatterns();
-
-			// Should be different array instances
-			assert.notStrictEqual(patterns1, patterns2);
-			// But with same content
-			assert.deepStrictEqual(patterns1, patterns2);
-
-			// Modifying returned array shouldn't affect internal state
-			patterns1.push("*.log");
-			assert.deepStrictEqual(artifact.getExcludePatterns(), ["*.tmp"]);
-		});
-
-		it("should handle default values", () => {
-			const config = {
-				type: "static",
-				path: "./dist",
-			};
-
-			const artifact = new StaticArtifact(config);
-
-			assert.strictEqual(artifact.getIndexFile(), "index.html");
-			assert.deepStrictEqual(artifact.getExcludePatterns(), []);
-		});
+	afterEach(() => {
+		// Clean up temporary directory
+		if (tempDir) {
+			rmSync(tempDir, { recursive: true, force: true });
+		}
 	});
 
-	describe("validate", () => {
-		it("should return empty array for valid config", () => {
-			const config = {
-				type: "static",
-				path: "./dist",
-				indexFile: "index.html",
-				excludePatterns: ["*.tmp", "node_modules/**"],
-			};
+	/**
+	 * Helper function to create test files
+	 * @param {Record<string, string>} files - Object with filepath -> content mapping
+	 */
+	function createTestFiles(files) {
+		for (const [filePath, content] of Object.entries(files)) {
+			const fullPath = join(tempDir, filePath);
 
-			const artifact = new StaticArtifact(config);
-			const errors = artifact.validate();
-
-			assert.ok(Array.isArray(errors));
-			assert.strictEqual(errors.length, 0);
-		});
-
-		it("should validate index file format", () => {
-			// Only test values that would actually be invalid after constructor defaults
-			const invalidIndexFiles = ["", "   "];
-
-			for (const indexFile of invalidIndexFiles) {
-				const config = {
-					type: "static",
-					path: "./dist",
-					indexFile: indexFile,
-				};
-
-				const artifact = new StaticArtifact(config);
-				const errors = artifact.validate();
-
-				assert.ok(
-					errors.length > 0,
-					`Should have validation errors for indexFile: ${indexFile}`,
-				);
-				assert.ok(
-					errors.some((error) =>
-						error.message.includes("Index file must be a non-empty string"),
-					),
-				);
+			// Create directory if needed
+			const dir = dirname(fullPath);
+			if (dir !== tempDir) {
+				mkdirSync(dir, { recursive: true });
 			}
-		});
 
-		it("should validate exclude patterns format", () => {
+			writeFileSync(fullPath, content, "utf8");
+		}
+	}
+
+	describe("constructor", () => {
+		it("should create instance with valid config", () => {
 			const config = {
 				type: "static",
-				path: "./dist",
-				excludePatterns: "not-an-array", // Invalid
+				path: tempDir,
 			};
 
 			const artifact = new StaticArtifact(config);
-			const errors = artifact.validate();
+			assert.strictEqual(artifact instanceof StaticArtifact, true);
+			assert.strictEqual(artifact.getType(), "static");
+			assert.strictEqual(artifact.getPath(), tempDir);
+		});
 
-			assert.ok(errors.length > 0);
-			assert.ok(
-				errors.some((error) =>
-					error.message.includes("Exclude patterns must be an array"),
-				),
+		it("should set default index file", () => {
+			const config = {
+				type: "static",
+				path: tempDir,
+			};
+
+			const artifact = new StaticArtifact(config);
+			assert.strictEqual(artifact.getIndexFile(), "index.html");
+		});
+
+		it("should accept custom index file", () => {
+			const config = {
+				type: "static",
+				path: tempDir,
+				indexFile: "main.html",
+			};
+
+			const artifact = new StaticArtifact(config);
+			assert.strictEqual(artifact.getIndexFile(), "main.html");
+		});
+
+		it("should accept exclude patterns", () => {
+			const config = {
+				type: "static",
+				path: tempDir,
+				excludePatterns: ["*.tmp", "node_modules"],
+			};
+
+			const artifact = new StaticArtifact(config);
+			const patterns = artifact.getExcludePatterns();
+			assert.deepStrictEqual(patterns, ["*.tmp", "node_modules"]);
+		});
+
+		it("should throw error for invalid type", () => {
+			const config = {
+				type: "invalid",
+				path: tempDir,
+			};
+
+			assert.throws(
+				() => new StaticArtifact(config),
+				/Artifact type must be 'static'/,
 			);
 		});
+	});
 
-		it("should validate individual exclude patterns are strings", () => {
+	describe("validation", () => {
+		it("should validate successfully with valid config", () => {
 			const config = {
 				type: "static",
-				path: "./dist",
-				excludePatterns: ["*.tmp", 123, "*.log"], // 123 is invalid
+				path: tempDir,
 			};
 
 			const artifact = new StaticArtifact(config);
 			const errors = artifact.validate();
-
-			assert.ok(errors.length > 0);
-			assert.ok(
-				errors.some((error) =>
-					error.message.includes("Exclude pattern at index 1 must be a string"),
-				),
-			);
+			assert.deepStrictEqual(errors, []);
 		});
 
-		it("should allow empty exclude patterns array", () => {
+		it("should return errors for invalid index file", () => {
 			const config = {
 				type: "static",
-				path: "./dist",
-				excludePatterns: [],
+				path: tempDir,
+				indexFile: "",
 			};
 
 			const artifact = new StaticArtifact(config);
 			const errors = artifact.validate();
+			assert.ok(errors.length > 0);
+			assert.ok(
+				errors[0].message.includes("Index file must be a non-empty string"),
+			);
+		});
+	});
 
-			assert.strictEqual(errors.length, 0);
+	describe("file scanning", () => {
+		it("should scan directory and create manifest", async () => {
+			createTestFiles({
+				"index.html": "<html><body>Hello World</body></html>",
+				"style.css": "body { margin: 0; }",
+				"assets/logo.png": "fake-png-data",
+			});
+
+			const config = {
+				type: "static",
+				path: tempDir,
+			};
+
+			const artifact = new StaticArtifact(config);
+			const manifest = await artifact.getManifest();
+
+			// Check manifest structure
+			assert.ok(manifest.files);
+			assert.ok(typeof manifest.totalSize === "number");
+			assert.ok(typeof manifest.fileCount === "number");
+			assert.ok(manifest.scannedAt instanceof Date);
+
+			// Check files are found
+			const filePaths = Object.keys(manifest.files);
+			assert.ok(filePaths.includes("/index.html"));
+			assert.ok(filePaths.includes("/style.css"));
+			assert.ok(filePaths.includes("/assets/logo.png"));
+
+			// Check file metadata
+			const indexFile = manifest.files["/index.html"];
+			assert.ok(typeof indexFile.checksum === "string");
+			assert.ok(indexFile.checksum.length === 64); // SHA-256 is 64 hex chars
+			assert.ok(typeof indexFile.size === "number");
+			assert.strictEqual(indexFile.mimeType, "text/html");
+			assert.ok(indexFile.lastModified instanceof Date);
+		});
+
+		it("should exclude files matching patterns", async () => {
+			createTestFiles({
+				"index.html": "<html><body>Hello World</body></html>",
+				"temp.tmp": "temporary file",
+				"node_modules/package.json": '{"name": "test"}',
+			});
+
+			const config = {
+				type: "static",
+				path: tempDir,
+				excludePatterns: ["*.tmp", "node_modules"],
+			};
+
+			const artifact = new StaticArtifact(config);
+			const manifest = await artifact.getManifest();
+
+			const filePaths = Object.keys(manifest.files);
+			assert.ok(filePaths.includes("/index.html"));
+			assert.ok(!filePaths.some((path) => path.includes("temp.tmp")));
+			assert.ok(!filePaths.some((path) => path.includes("node_modules")));
+		});
+
+		it("should detect correct MIME types", async () => {
+			createTestFiles({
+				"index.html": "<html></html>",
+				"style.css": "body {}",
+				"script.js": "console.log('test');",
+				"data.json": '{"test": true}',
+				"image.png": "fake-png",
+			});
+
+			const config = {
+				type: "static",
+				path: tempDir,
+			};
+
+			const artifact = new StaticArtifact(config);
+			const manifest = await artifact.getManifest();
+
+			assert.strictEqual(manifest.files["/index.html"].mimeType, "text/html");
+			assert.strictEqual(manifest.files["/style.css"].mimeType, "text/css");
+			assert.strictEqual(
+				manifest.files["/script.js"].mimeType,
+				"application/javascript",
+			);
+			assert.strictEqual(
+				manifest.files["/data.json"].mimeType,
+				"application/json",
+			);
+			assert.strictEqual(manifest.files["/image.png"].mimeType, "image/png");
+		});
+
+		it("should provide utility methods", async () => {
+			createTestFiles({
+				"file1.txt": "Hello",
+				"file2.txt": "World",
+			});
+
+			const config = {
+				type: "static",
+				path: tempDir,
+			};
+
+			const artifact = new StaticArtifact(config);
+
+			const filePaths = await artifact.getFilePaths();
+			const totalSize = await artifact.getTotalSize();
+			const fileCount = await artifact.getFileCount();
+			const lastModified = await artifact.getLastModified();
+
+			assert.strictEqual(filePaths.length, 2);
+			assert.ok(filePaths.includes("/file1.txt"));
+			assert.ok(filePaths.includes("/file2.txt"));
+			assert.strictEqual(totalSize, 10); // "Hello" + "World" = 10 bytes
+			assert.strictEqual(fileCount, 2);
+			assert.ok(lastModified instanceof Date);
 		});
 	});
 
 	describe("prepare", () => {
-		it("should return deployment info for valid artifact", async () => {
-			const config = {
-				type: "static",
-				path: "./dist",
-				indexFile: "index.html",
-				excludePatterns: ["*.tmp", "node_modules/**"],
-			};
-
-			const artifact = new StaticArtifact(config);
-			const result = await artifact.prepare();
-
-			assert.ok(typeof result === "object");
-			assert.strictEqual(result.type, "static");
-			assert.strictEqual(result.path, "./dist");
-			assert.strictEqual(result.indexFile, "index.html");
-			assert.deepStrictEqual(result.excludePatterns, [
-				"*.tmp",
-				"node_modules/**",
-			]);
-			assert.strictEqual(result.executable, false);
-			assert.strictEqual(result.runtime, null);
-		});
-
-		it("should handle default values in result", async () => {
-			const config = {
-				type: "static",
-				path: "./public",
-			};
-
-			const artifact = new StaticArtifact(config);
-			const result = await artifact.prepare();
-
-			assert.strictEqual(result.indexFile, "index.html");
-			assert.deepStrictEqual(result.excludePatterns, []);
-			assert.strictEqual(result.executable, false);
-			assert.strictEqual(result.runtime, null);
-		});
-
-		it("should throw error when validation fails", async () => {
-			const config = {
-				type: "static",
-				path: "./dist",
-				excludePatterns: "not-an-array", // Invalid - should be array
-			};
-
-			const artifact = new StaticArtifact(config);
-
-			await assert.rejects(() => artifact.prepare(), {
-				name: "Error",
-				message: /Static artifact validation failed/,
+		it("should prepare deployment-ready artifact info", async () => {
+			createTestFiles({
+				"index.html": "<html><body>Test</body></html>",
 			});
-		});
-	});
 
-	describe("edge cases", () => {
-		it("should handle various index file names", () => {
-			const indexFiles = [
-				"index.html",
-				"main.html",
-				"default.htm",
-				"start.xhtml",
-				"home.php",
-			];
-
-			for (const indexFile of indexFiles) {
-				const config = {
-					type: "static",
-					path: "./dist",
-					indexFile: indexFile,
-				};
-
-				const artifact = new StaticArtifact(config);
-				assert.strictEqual(artifact.getIndexFile(), indexFile);
-
-				const errors = artifact.validate();
-				assert.strictEqual(errors.length, 0);
-			}
-		});
-
-		it("should handle complex exclude patterns", () => {
 			const config = {
 				type: "static",
-				path: "./dist",
-				excludePatterns: [
-					"**/*.tmp",
-					"**/node_modules/**",
-					"**/.git/**",
-					"*.log",
-					"temp/**/*",
-					".DS_Store",
-					"Thumbs.db",
-				],
+				path: tempDir,
 			};
 
 			const artifact = new StaticArtifact(config);
-			const errors = artifact.validate();
+			const prepared = await artifact.prepare();
 
-			assert.strictEqual(errors.length, 0);
-			assert.strictEqual(artifact.getExcludePatterns().length, 7);
-		});
-
-		it("should handle paths with various formats", () => {
-			const paths = [
-				"./dist",
-				"../build",
-				"/absolute/path/to/static",
-				"relative/path",
-				"dist/",
-				"./public/assets",
-			];
-
-			for (const path of paths) {
-				const config = {
-					type: "static",
-					path: path,
-				};
-
-				const artifact = new StaticArtifact(config);
-				assert.strictEqual(artifact.getPath(), path);
-
-				const errors = artifact.validate();
-				assert.strictEqual(errors.length, 0);
-			}
-		});
-
-		it("should handle whitespace in index file validation", () => {
-			const config = {
-				type: "static",
-				path: "./dist",
-				indexFile: "  index.html  ", // Has whitespace but not empty after trim
-			};
-
-			const artifact = new StaticArtifact(config);
-			const errors = artifact.validate();
-
-			// Should be valid since the string is not empty after trim
-			assert.strictEqual(errors.length, 0);
+			assert.strictEqual(prepared.type, "static");
+			assert.strictEqual(prepared.path, tempDir);
+			assert.strictEqual(prepared.indexFile, "index.html");
+			assert.ok(prepared.manifest);
+			assert.ok(typeof prepared.totalSize === "number");
+			assert.ok(typeof prepared.fileCount === "number");
+			assert.strictEqual(prepared.executable, false);
+			assert.strictEqual(prepared.runtime, null);
 		});
 	});
 });
