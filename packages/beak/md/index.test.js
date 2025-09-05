@@ -71,7 +71,7 @@ describe("core functionality", () => {
 		);
 		assert.equal(
 			markdownToHTML("    indented code"),
-			"<pre><code>indented code</code></pre>",
+			"<p>    indented code</p>",
 		);
 
 		// Lists
@@ -157,13 +157,13 @@ describe("core functionality", () => {
 		assert.equal(String(refLink), "[object Object]");
 
 		// Code block creation returns object
-		const codeBlock = code("const x = 1;", "javascript");
+		const codeBlock = code("javascript", "const x = 1;");
 		assert.equal(codeBlock.type, "code");
 		assert.equal(codeBlock.code, "const x = 1;");
 		assert.equal(codeBlock.language, "javascript");
 
 		// Code block without language
-		const plainCode = code("plain text");
+		const plainCode = code("", "plain text");
 		assert.equal(plainCode.language, "");
 
 		// Table creation returns object
@@ -424,7 +424,7 @@ describe("integration scenarios", () => {
 
 		// Helper function integration
 		const refObj = ref("api-docs", "https://api.example.com/docs");
-		const codeObj = code('curl -X GET "https://api.example.com/users"', "bash");
+		const codeObj = code("bash", 'curl -X GET "https://api.example.com/users"');
 		const tableObj = table(
 			["Method", "Endpoint", "Description"],
 			[

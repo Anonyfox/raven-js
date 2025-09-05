@@ -21,21 +21,21 @@ import { html } from "@raven-js/beak";
  * @returns {string} Code block HTML
  */
 export const CodeBlock = ({ language, code, filename }) => {
-  // Escape HTML in code content
-  const escapedCode = code
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+	// Escape HTML in code content
+	const escapedCode = code
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#39;");
 
-  return html`
+	return html`
     <div class="code-block">
       ${
-        filename
-          ? html`<div class="code-block__filename">${filename}</div>`
-          : ""
-      }
+				filename
+					? html`<div class="code-block__filename">${filename}</div>`
+					: ""
+			}
       <pre class="code-block__pre"><code class="code-block__code language-${language}">${escapedCode}</code></pre>
     </div>
   `;

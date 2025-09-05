@@ -100,8 +100,12 @@ describe("markdownToHTML", () => {
 		assert.equal(markdownToHTML("\n\n"), "");
 	});
 
-	it("escapes HTML in content", () => {
-		assert.equal(markdownToHTML("< & >"), "<p>&lt; &amp; &gt;</p>");
+	it("preserves HTML by default, escapes when opt-in", () => {
+		assert.equal(markdownToHTML("< & >"), "<p>< & ></p>");
+		assert.equal(
+			markdownToHTML("< & >", { escapeHtml: true }),
+			"<p>&lt; &amp; &gt;</p>",
+		);
 	});
 
 	it("handles reference links", () => {
@@ -128,12 +132,22 @@ describe("markdownToHTML", () => {
 		assert(result.includes('style="text-align:right"'));
 	});
 
-	it("handles indented code blocks", () => {
+	it("treats indented content as paragraphs (indented code blocks disabled)", () => {
 		const code = "    console.log('indented');";
-		assert.equal(
-			markdownToHTML(code),
-			"<pre><code>console.log(&#39;indented&#39;);</code></pre>",
-		);
+		assert.equal(markdownToHTML(code), "<p>    console.log('indented');</p>");
+	});
+
+	it("preserves indented HTML components as HTML blocks", () => {
+		const htmlComponent = `<div class="hero">
+      <h1>Title</h1>
+      <p>Content</p>
+    </div>`;
+		const result = markdownToHTML(htmlComponent);
+		assert(result.includes('<div class="hero">'));
+		assert(result.includes("<h1>Title</h1>"));
+		assert(result.includes("<p>Content</p>"));
+		assert(result.includes("</div>"));
+		assert(!result.includes("<pre><code>"));
 	});
 
 	it("processes nested blockquotes", () => {

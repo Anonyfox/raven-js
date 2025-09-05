@@ -40,31 +40,39 @@
  * Single-pass AST construction optimized for performance and deterministic output.
  *
  * @param {string} markdown - Markdown source text to convert
+ * @param {Object} [options] - Conversion options
+ * @param {boolean} [options.escapeHtml=false] - Whether to escape raw HTML content
  * @returns {string} Generated HTML output
  *
  * @example
- * // Basic usage
- * markdownToHtml('# Hello\n\nThis is **bold** text.');
- * // → '<h1>Hello</h1><p>This is <strong>bold</strong> text.</p>'
+ * // Basic usage - HTML preserved by default (CommonMark compliant)
+ * markdownToHTML('# Hello\n\nThis is **bold** and <em>italic</em> text.');
+ * // → '<h1>Hello</h1><p>This is <strong>bold</strong> and <em>italic</em> text.</p>'
+ *
+ * @example
+ * // Escape HTML when needed for security
+ * markdownToHTML('User input: <script>alert("xss")</script>', { escapeHtml: true });
+ * // → '<p>User input: &lt;script&gt;alert("xss")&lt;/script&gt;</p>'
  *
  * @example
  * // Edge case: GitHub extensions
- * markdownToHtml('```js\nconsole.log("code");\n```');
+ * markdownToHTML('```js\nconsole.log("code");\n```');
  * // → '<pre><code class="language-js">console.log("code");</code></pre>'
  *
  * @example
  * // Edge case: empty input
- * markdownToHtml('');
+ * markdownToHTML('');
  * // → ''
  */
-export const markdownToHTML = (markdown) => {
+export const markdownToHTML = (markdown, options = {}) => {
 	if (typeof markdown !== "string" || !markdown.trim()) {
 		return "";
 	}
 
+	const { escapeHtml = false } = options;
 	const lines = markdown.split(/\r\n|\r|\n/);
 	const { ast, references } = parseToAST(lines);
-	return astToHTML(/** @type {ASTNode[]} */ (ast), references);
+	return astToHTML(/** @type {ASTNode[]} */ (ast), references, escapeHtml);
 };
 
 /**
@@ -167,33 +175,8 @@ const parseBlockElement = (lines, startIndex, references) => {
 		};
 	}
 
-	// Indented code block: 4+ spaces
-	if (/^ {4}/.test(line) || /^\t/.test(line)) {
-		const codeLines = [];
-		let i = startIndex;
-
-		while (
-			i < lines.length &&
-			(/^ {4}/.test(lines[i]) || /^\t/.test(lines[i]) || !lines[i].trim())
-		) {
-			if (lines[i].trim()) {
-				codeLines.push(lines[i].replace(/^ {4}|^\t/, ""));
-			} else if (codeLines.length > 0) {
-				codeLines.push("");
-			}
-			i++;
-		}
-
-		// Remove trailing empty lines
-		while (codeLines.length > 0 && !codeLines[codeLines.length - 1].trim()) {
-			codeLines.pop();
-		}
-
-		return {
-			node: { type: "code", lang: "", code: codeLines.join("\n") },
-			nextIndex: i,
-		};
-	}
+	// Indented code blocks disabled - use fenced code blocks (```) instead
+	// This allows HTML components with indentation to be preserved as HTML blocks
 
 	// Blockquote: > text
 	if (/^ {0,3}>/.test(line)) {
@@ -320,15 +303,40 @@ const parseBlockElement = (lines, startIndex, references) => {
 	) {
 		const htmlLines = [];
 		let i = startIndex;
-		let inBlock = true;
 
-		while (i < lines.length && inBlock) {
-			htmlLines.push(lines[i]);
+		// Extract the opening tag name to match with closing tag
+		const openTagMatch = line.match(/^ {0,3}<([a-zA-Z][a-zA-Z0-9]*)/);
+		const tagName = openTagMatch ? openTagMatch[1] : null;
+		let tagDepth = 0;
+		let foundOpeningTag = false;
 
-			// Simple heuristic: stop at blank line or when we see closing tag
-			if (!lines[i].trim() || lines[i].includes("</")) {
-				inBlock = false;
+		while (i < lines.length) {
+			const currentLine = lines[i];
+			htmlLines.push(currentLine);
+
+			// Track opening and closing tags for the specific tag
+			if (tagName) {
+				const openMatches =
+					currentLine.match(new RegExp(`<${tagName}\\b`, "gi")) || [];
+				const closeMatches =
+					currentLine.match(new RegExp(`</${tagName}>`, "gi")) || [];
+
+				tagDepth += openMatches.length;
+				if (tagDepth > 0) foundOpeningTag = true;
+				tagDepth -= closeMatches.length;
+
+				// Stop when we've closed all instances of the opening tag
+				if (foundOpeningTag && tagDepth <= 0) {
+					i++;
+					break;
+				}
 			}
+
+			// Stop at blank line if we haven't found proper tag structure
+			if (!currentLine.trim() && !foundOpeningTag) {
+				break;
+			}
+
 			i++;
 		}
 
@@ -382,35 +390,37 @@ const isBlockStart = (line) => {
  * Transform AST to HTML
  * @param {ASTNode[]} ast - Parsed AST
  * @param {Map<string, RefData>} references - Reference definitions
+ * @param {boolean} escapeHtml - Whether to escape HTML content
  * @returns {string} HTML output
  */
-const astToHTML = (ast, references) => {
-	return ast.map((node) => renderNode(node, references)).join("\n");
+const astToHTML = (ast, references, escapeHtml = false) => {
+	return ast.map((node) => renderNode(node, references, escapeHtml)).join("\n");
 };
 
 /**
  * Render single AST node to HTML
  * @param {ASTNode} node - AST node
  * @param {Map<string, RefData>} references - Reference definitions
+ * @param {boolean} escapeHtml - Whether to escape HTML content
  * @returns {string} HTML
  */
-const renderNode = (node, references) => {
+const renderNode = (node, references, escapeHtml = false) => {
 	switch (node.type) {
 		case "heading": {
-			const text = renderInline(node.text || "", references);
+			const text = renderInline(node.text || "", references, escapeHtml);
 			return `<h${node.level}>${text}</h${node.level}>`;
 		}
 
 		case "paragraph": {
-			const text = renderInline(node.text || "", references);
-			// Escape any remaining HTML in paragraph text
-			const escapedText = text.replace(
-				/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-				(match) => {
-					return escapeHTML(match);
-				},
-			);
-			return `<p>${escapedText}</p>`;
+			const text = renderInline(node.text || "", references, escapeHtml);
+			// Only escape scripts when HTML escaping is disabled for security
+			const safeText = escapeHtml
+				? text
+				: text.replace(
+						/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+						(match) => escapeHTML(match),
+					);
+			return `<p>${safeText}</p>`;
 		}
 
 		case "code": {
@@ -423,7 +433,7 @@ const renderNode = (node, references) => {
 
 		case "blockquote": {
 			const content = Array.isArray(node.content)
-				? astToHTML(node.content, references)
+				? astToHTML(node.content, references, escapeHtml)
 				: node.content || "";
 			return `<blockquote>\n${content}\n</blockquote>`;
 		}
@@ -433,7 +443,7 @@ const renderNode = (node, references) => {
 			const items = (node.items || [])
 				.map(
 					(/** @type {string} */ item) =>
-						`<li>${renderInline(item, references)}</li>`,
+						`<li>${renderInline(item, references, escapeHtml)}</li>`,
 				)
 				.join("\n");
 			return `<${tag}>\n${items}\n</${tag}>`;
@@ -450,7 +460,7 @@ const renderNode = (node, references) => {
 						alignments[i] !== "left"
 							? ` style="text-align:${alignments[i]}"`
 							: "";
-					return `<th${align}>${renderInline(header, references)}</th>`;
+					return `<th${align}>${renderInline(header, references, escapeHtml)}</th>`;
 				})
 				.join("");
 
@@ -462,7 +472,7 @@ const renderNode = (node, references) => {
 								alignments[i] !== "left"
 									? ` style="text-align:${alignments[i]}"`
 									: "";
-							return `<td${align}>${renderInline(cell || "", references)}</td>`;
+							return `<td${align}>${renderInline(cell || "", references, escapeHtml)}</td>`;
 						})
 						.join("");
 					return `<tr>${cells}</tr>`;
@@ -487,9 +497,10 @@ const renderNode = (node, references) => {
  * Render inline markdown elements
  * @param {string} text - Text with inline markdown
  * @param {Map<string, RefData>} references - Reference definitions
+ * @param {boolean} escapeHtml - Whether to escape HTML content
  * @returns {string} HTML with inline elements rendered
  */
-const renderInline = (text, references) => {
+const renderInline = (text, references, escapeHtml = false) => {
 	if (!text) return "";
 
 	// Process in order of precedence to avoid conflicts
@@ -537,7 +548,7 @@ const renderInline = (text, references) => {
 		/\[([^\]]+)\]\(([^\s)]+)(?:\s+"([^"]*)")?\)/g,
 		(_match, text, url, title) => {
 			const titleAttr = title ? ` title="${escapeHTML(title)}"` : "";
-			return `<a href="${escapeHTML(url)}"${titleAttr}>${renderInline(text, references)}</a>`;
+			return `<a href="${escapeHTML(url)}"${titleAttr}>${renderInline(text, references, escapeHtml)}</a>`;
 		},
 	);
 
@@ -549,7 +560,7 @@ const renderInline = (text, references) => {
 			const titleAttr = refData.title
 				? ` title="${escapeHTML(refData.title)}"`
 				: "";
-			return `<a href="${escapeHTML(refData.url)}"${titleAttr}>${renderInline(text, references)}</a>`;
+			return `<a href="${escapeHTML(refData.url)}"${titleAttr}>${renderInline(text, references, escapeHtml)}</a>`;
 		}
 		return match;
 	});
@@ -584,16 +595,31 @@ const renderInline = (text, references) => {
 	// Strikethrough: ~~text~~
 	result = result.replace(/~~([^~]+)~~/g, "<del>$1</del>");
 
-	// Preserve common inline HTML tags
+	// Handle HTML preservation vs escaping
 	/** @type {string[]} */ const htmlTags = [];
-	result = result.replace(/<(\/?)([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g, (match) => {
-		const placeholder = `__HTML_${htmlTags.length}__`;
-		htmlTags.push(match);
-		return placeholder;
-	});
-
-	// Handle hard line breaks: two or more spaces before newline (protect from escaping)
 	/** @type {string[]} */ const hardBreaks = [];
+
+	if (escapeHtml) {
+		// When escaping enabled, escape all HTML characters
+		result = result
+			.replace(/&(?![a-zA-Z][a-zA-Z0-9]*;|#[0-9]+;|#x[0-9a-fA-F]+;)/g, "&amp;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;")
+			.replace(/"/g, "&quot;")
+			.replace(/'/g, "&#39;");
+	} else {
+		// When escaping disabled (CommonMark default), preserve HTML tags
+		result = result.replace(
+			/<(\/?)([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g,
+			(match) => {
+				const placeholder = `__HTML_${htmlTags.length}__`;
+				htmlTags.push(match);
+				return placeholder;
+			},
+		);
+	}
+
+	// Handle hard line breaks: two or more spaces before newline
 	result = result.replace(/ {2,}\n/g, (_match) => {
 		const placeholder = `__BREAK_${hardBreaks.length}__`;
 		hardBreaks.push("<br>\n");
@@ -603,23 +629,17 @@ const renderInline = (text, references) => {
 	// Normalize single trailing spaces before newlines (CommonMark soft line break)
 	result = result.replace(/ \n/g, "\n");
 
-	// Escape remaining HTML characters (but avoid double-escaping entities)
-	result = result
-		.replace(/&(?![a-zA-Z][a-zA-Z0-9]*;|#[0-9]+;|#x[0-9a-fA-F]+;)/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#39;");
-
 	// Restore hard line breaks
 	hardBreaks.forEach((br, i) => {
 		result = result.replace(`__BREAK_${i}__`, br);
 	});
 
-	// Restore HTML tags
-	htmlTags.forEach((tag, i) => {
-		result = result.replace(`__HTML_${i}__`, tag);
-	});
+	// Restore HTML tags (only when not escaping)
+	if (!escapeHtml) {
+		htmlTags.forEach((tag, i) => {
+			result = result.replace(`__HTML_${i}__`, tag);
+		});
+	}
 
 	// Restore code blocks
 	codeBlocks.forEach((code, i) => {
