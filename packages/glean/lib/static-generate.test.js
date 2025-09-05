@@ -18,7 +18,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 test("generateStaticSite creates complete static documentation", async () => {
 	// Use beak package as test target (known good package structure)
 	const beakPath = path.resolve(__dirname, "../../beak");
-	const outputPath = path.join(__dirname, "test-output");
+	const outputPath = "/tmp/glean-static-generate-test";
 
 	// Clean up any existing test output
 	await fs.promises.rm(outputPath, { recursive: true, force: true });
@@ -107,7 +107,7 @@ test("generateStaticSite creates complete static documentation", async () => {
 
 test("generateStaticSite handles missing static assets gracefully", async () => {
 	const beakPath = path.resolve(__dirname, "../../beak");
-	const outputPath = path.join(__dirname, "test-output-no-assets");
+	const outputPath = "/tmp/glean-static-generate-test-no-assets";
 
 	// Clean up any existing test output
 	await fs.promises.rm(outputPath, { recursive: true, force: true });

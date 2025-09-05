@@ -26,7 +26,7 @@ function setToSortedArray(set) {
 }
 
 // Test directory structure setup
-const testDir = join(process.cwd(), "test-temp");
+const testDir = "/tmp/glean-list-files-test";
 
 function createTestStructure() {
 	// Clean up any existing test directory
