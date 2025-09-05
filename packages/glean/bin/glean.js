@@ -8,60 +8,52 @@
  */
 
 /**
- * @file Glean CLI entry point - JSDoc parsing, validation, and documentation generation.
+ * @file Glean CLI entry point - Wings Terminal powered JSDoc documentation tool.
  *
- * Command-line interface for the Glean documentation tool. Provides surgical
- * JSDoc analysis and beautiful documentation generation for modern JavaScript projects.
+ * Command-line interface for the Glean documentation tool. Uses Wings Terminal
+ * for surgical CLI routing, validation, and beautiful documentation generation.
  */
 
-import {
-	runServerCommand,
-	runSsgCommand,
-	runValidateCommand,
-	showBanner,
-	showHelp,
-} from "../index.js";
+import { Router } from "@raven-js/wings";
+import { Terminal } from "@raven-js/wings/terminal";
+import { ValidateCommand, ServerCommand, SsgCommand } from "../cmd/index.js";
+import { showBanner, showHelp } from "../index.js";
 
 /**
- * Main CLI execution
+ * Create and configure the Wings router with all commands
+ * @returns {Router} Configured router instance
+ */
+function createRouter() {
+	const router = new Router();
+
+	// Register CommandRoute classes
+	router.addRoute(new ValidateCommand());
+	router.addRoute(new ServerCommand());
+	router.addRoute(new SsgCommand());
+
+	// Global help routes
+	router.cmd("/help", () => {
+		showBanner();
+		showHelp();
+	});
+	router.cmd("/", () => {
+		showBanner();
+		showHelp();
+	});
+
+	return router;
+}
+
+/**
+ * Main CLI execution using Wings Terminal
  */
 async function main() {
 	try {
-		const rawArgs = process.argv.slice(2);
-
-		// Handle help
-		if (
-			rawArgs.length === 0 ||
-			rawArgs.includes("--help") ||
-			rawArgs.includes("-h")
-		) {
-			showBanner();
-			showHelp();
-			return;
-		}
-
-		// Parse subcommand
-		const subcommand = rawArgs[0];
-		const subArgs = rawArgs.slice(1);
+		const router = createRouter();
+		const terminal = new Terminal(router);
 
 		showBanner();
-
-		switch (subcommand) {
-			case "validate":
-				await runValidateCommand(subArgs);
-				break;
-			case "server":
-				await runServerCommand(subArgs);
-				break;
-			case "ssg":
-				await runSsgCommand(subArgs);
-				break;
-			default: {
-				console.error(`🚨 Unknown command: ${subcommand}`);
-				console.error(`💡 Use 'glean --help' to see available commands`);
-				process.exit(1);
-			}
-		}
+		await terminal.run(process.argv.slice(2));
 	} catch (error) {
 		console.error(`🚨 Error: ${error.message}`);
 		process.exit(1);

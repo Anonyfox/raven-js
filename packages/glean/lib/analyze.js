@@ -51,7 +51,7 @@ export async function runAnalyzeCommand(args) {
  * @param {import('./validate.js').ValidationReport} report - Analysis report from lib2 validate
  * @param {boolean} verbose - Show detailed output
  */
-function displayAnalysisReport(report, verbose) {
+export function displayAnalysisReport(report, verbose) {
 	const { summary, files } = report;
 
 	console.log(`\n📈 Analysis Results:`);

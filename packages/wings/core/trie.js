@@ -183,7 +183,7 @@ export class Trie {
 
 			// Optimize by avoiding object spread - clone once then set property
 			const newParams = Object.assign({}, params);
-			newParams[paramName] = segment;
+			newParams[paramName] = decodeURIComponent(segment);
 
 			const result = paramTrie.match(nextSegments, newParams);
 			if (result.id !== undefined) {
