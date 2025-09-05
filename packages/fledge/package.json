@@ -5,7 +5,7 @@
   "type": "module",
   "main": "index.js",
   "bin": {
-    "fledge": "bin/fledge.min.js"
+    "fledge": "bin/fledge.js"
   },
   "files": [
     "**/*.js",
@@ -78,6 +78,7 @@
     "url": "https://github.com/sponsors/Anonyfox"
   },
   "dependencies": {
+    "@raven-js/wings": "*",
     "esbuild": "^0.25.9",
     "postject": "^1.0.0-alpha.6"
   }

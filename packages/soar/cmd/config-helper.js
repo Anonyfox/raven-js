@@ -13,7 +13,6 @@
  * Provides intelligent deployment pattern detection and config object creation.
  */
 
-import { readFileSync } from "node:fs";
 import { stdin } from "node:process";
 
 /**
@@ -157,7 +156,7 @@ export async function createConfigFromSources({
 			}
 
 			return exportName ? configModule[exportName] : configModule.default;
-		} catch (error) {
+		} catch {
 			throw new Error(`Config file not found: ${configPath}`);
 		}
 	}
@@ -167,7 +166,7 @@ export async function createConfigFromSources({
 		// @ts-expect-error - Optional config file may not exist
 		const configModule = await import("./raven.soar.js");
 		return exportName ? configModule[exportName] : configModule.default;
-	} catch (error) {
+	} catch {
 		// Default config file doesn't exist, that's ok
 	}
 

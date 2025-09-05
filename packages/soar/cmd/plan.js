@@ -100,9 +100,9 @@ export class PlanCommand extends CommandRoute {
 	/**
 	 * Handle command errors
 	 * @param {Error} error - The error that occurred
-	 * @param {import('@raven-js/wings').Context} context - Wings context
+	 * @param {import('@raven-js/wings').Context} _context - Wings context
 	 */
-	async onError(error, context) {
+	async onError(error, _context) {
 		console.error(`❌ Error: ${error.message}`);
 		if (process.env.DEBUG) {
 			console.error(error.stack);

@@ -15,7 +15,6 @@
 
 import { match, strictEqual } from "node:assert";
 import { describe, it } from "node:test";
-import { Context } from "@raven-js/wings";
 import { DeployCommand } from "./deploy.js";
 
 describe("DeployCommand", () => {
