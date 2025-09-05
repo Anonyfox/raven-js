@@ -15,6 +15,8 @@
  */
 
 import net from "node:net";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
 	Config,
 	generateStaticSite as fledgeGenerateStaticSite,
@@ -28,6 +30,7 @@ import { createDocumentationServer } from "./server/index.js";
  * @param {Object} options - Generation options
  * @param {string} [options.domain] - Base domain for canonical URLs (used by glean server)
  * @param {string} [options.basePath] - Base path for URL prefixing (forwarded to fledge)
+ * @param {boolean} [options.useResolver=true] - Use resolver pattern for performance (default: true)
  * @returns {Promise<{totalFiles: number, totalBytes: number, generatedAt: string}>} Generation statistics
  */
 export async function generateStaticSite(
@@ -43,39 +46,40 @@ export async function generateStaticSite(
 		throw new Error("outputPath is required and must be a string");
 	}
 
-	// Find an available port for the background server
-	const port = await findAvailablePort(3001);
+	const useResolver = options.useResolver !== false; // Default to resolver mode
 
-	// Create documentation server instance (but don't start listening yet)
-	const server = createDocumentationServer(packagePath, {
-		enableLogging: false, // Silent background operation
-		domain: options.domain,
-	});
+	if (useResolver) {
+		// Use resolver pattern for maximum performance
+		// Calculate absolute paths for imports
+		const currentFile = fileURLToPath(import.meta.url);
+		const currentDir = path.dirname(currentFile);
+		const gleanPackageRoot = path.resolve(currentDir, "..");
+		const wingsPackageRoot = path.resolve(gleanPackageRoot, "../wings");
+		const routerModulePath = path.join(
+			gleanPackageRoot,
+			"lib/server/router.js",
+		);
+		const contextModulePath = path.join(wingsPackageRoot, "core/context.js");
 
-	// Start server in background
-	let serverStarted = false;
-	await new Promise((resolve, reject) => {
-		const timeoutId = setTimeout(() => {
-			reject(new Error(`Server startup timeout after 5 seconds`));
-		}, 5000);
-
-		try {
-			/** @type {any} */ (server).listen(port, "localhost", () => {
-				clearTimeout(timeoutId);
-				serverStarted = true;
-				resolve(undefined);
-			});
-		} catch (error) {
-			clearTimeout(timeoutId);
-			reject(new Error(`Failed to start background server: ${error.message}`));
-		}
-	});
-
-	try {
-		// Create fledge config as JS string
 		const configString = `
+			import { Context } from "file://${contextModulePath}";
+			import { createDocumentationRouter } from "file://${routerModulePath}";
+
+			// Create router inside the config scope
+			const router = createDocumentationRouter("${packagePath.replace(/\\/g, "\\\\")}", ${JSON.stringify(
+				{
+					domain: options.domain,
+					enableLogging: false,
+				},
+			)});
+
 			export default {
-				server: "http://localhost:${port}",
+				resolver: async (path) => {
+					const url = new URL(\`http://localhost\${path}\`);
+					const ctx = new Context('GET', url, new Headers());
+					await router.handleRequest(ctx);
+					return ctx.toResponse();
+				},
 				routes: ["/", "/sitemap.xml"],
 				discover: true,
 				continueOnError: true,
@@ -121,22 +125,107 @@ export async function generateStaticSite(
 			totalBytes,
 			generatedAt: new Date().toISOString(),
 		};
-	} finally {
-		// Always cleanup background server
-		if (serverStarted) {
-			try {
-				await new Promise((resolve) => {
-					const timeoutId = setTimeout(() => {
-						resolve(undefined); // Force resolve after timeout
-					}, 2000);
+	} else {
+		// Fallback to HTTP server mode for compatibility
+		// Find an available port for the background server
+		const port = await findAvailablePort(3001);
 
-					/** @type {any} */ (server).close(() => {
-						clearTimeout(timeoutId);
-						resolve(undefined);
-					});
+		// Create documentation server instance (but don't start listening yet)
+		const server = createDocumentationServer(packagePath, {
+			enableLogging: false, // Silent background operation
+			domain: options.domain,
+		});
+
+		// Start server in background
+		let serverStarted = false;
+		await new Promise((resolve, reject) => {
+			const timeoutId = setTimeout(() => {
+				reject(new Error(`Server startup timeout after 5 seconds`));
+			}, 5000);
+
+			try {
+				/** @type {any} */ (server).listen(port, "localhost", () => {
+					clearTimeout(timeoutId);
+					serverStarted = true;
+					resolve(undefined);
 				});
+			} catch (error) {
+				clearTimeout(timeoutId);
+				reject(
+					new Error(`Failed to start background server: ${error.message}`),
+				);
+			}
+		});
+
+		try {
+			// Create fledge config as JS string
+			const configString = `
+				export default {
+					server: "http://localhost:${port}",
+					routes: ["/", "/sitemap.xml"],
+					discover: true,
+					continueOnError: true,
+					timeout: 5000,
+					basePath: "${options.basePath || "/"}",
+					output: "${outputPath.replace(/\\/g, "\\\\")}"
+				};
+			`;
+
+			// Create fledge config from string
+			const config = await Config.fromString(configString);
+
+			// Generate static site using fledge
+			const result = await fledgeGenerateStaticSite(config, {
+				outputDir: outputPath,
+				verbose: false,
+			});
+
+			// Calculate total bytes by examining generated files
+			let totalBytes = 0;
+			try {
+				const fs = await import("node:fs");
+				const path = await import("node:path");
+				const files = await fs.promises.readdir(outputPath, {
+					recursive: true,
+				});
+				for (const file of files) {
+					try {
+						const filePath = path.join(outputPath, file);
+						const stats = await fs.promises.stat(filePath);
+						if (stats.isFile()) {
+							totalBytes += stats.size;
+						}
+					} catch {
+						// Skip files that can't be read
+					}
+				}
 			} catch {
-				// Ignore cleanup errors
+				// If we can't calculate bytes, use 0
+			}
+
+			// Return glean-compatible result format
+			return {
+				totalFiles: result.savedFiles,
+				totalBytes,
+				generatedAt: new Date().toISOString(),
+			};
+		} finally {
+			// Always cleanup background server
+			if (serverStarted) {
+				try {
+					await new Promise((resolve) => {
+						const timeoutId = setTimeout(() => {
+							resolve(undefined); // Force resolve after timeout
+						}, 2000);
+
+						/** @type {any} */ (server).close(() => {
+							clearTimeout(timeoutId);
+							resolve(undefined);
+						});
+					});
+				} catch {
+					// Ignore cleanup errors
+				}
 			}
 		}
 	}

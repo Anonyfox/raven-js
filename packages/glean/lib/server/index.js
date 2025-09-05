@@ -14,18 +14,11 @@
  * initialization for optimal performance.
  */
 
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { Router } from "@raven-js/wings";
-import { Assets, Logger, NodeHttp } from "@raven-js/wings/server";
-import { AssetRegistry, createAssetMiddleware } from "../assets/index.js";
-import { discover } from "../discover/index.js";
-import { extract } from "../extract/index.js";
-import { createEntityPageHandler } from "./routes/entity-page.js";
-import { createModuleDirectoryHandler } from "./routes/module-directory.js";
-import { createModuleOverviewHandler } from "./routes/module-overview.js";
-import { createPackageOverviewHandler } from "./routes/package-overview.js";
-import { createSitemapHandler } from "./routes/sitemap.js";
+import { NodeHttp } from "@raven-js/wings/server";
+import { createDocumentationRouter } from "./router.js";
+
+// Re-export router creation function for direct use
+export { createDocumentationRouter } from "./router.js";
 
 /**
  * Creates documentation server instance with routes, static assets, and middleware.
@@ -52,127 +45,16 @@ import { createSitemapHandler } from "./routes/sitemap.js";
  * });
  */
 export function createDocumentationServer(packagePath, options = {}) {
-	const { domain, enableLogging = false } = options;
-
-	// Validate required parameters
-	if (!packagePath || typeof packagePath !== "string") {
-		throw new Error("packagePath is required and must be a string");
-	}
-
-	// Load package data once at initialization
-	const packageMetadata = discover(packagePath);
-	const packageInstance = extract(packageMetadata);
-
-	// Validate extracted package data
-	if (!packageInstance || !packageInstance.name) {
-		throw new Error(
-			`Failed to extract valid package data from: ${packagePath}`,
-		);
-	}
-
-	// Create asset registry and register discovered image assets
-	const assetRegistry = new AssetRegistry();
-
-	// Register package-level image assets (from discovery phase)
-	if (packageMetadata.imageAssets) {
-		for (const asset of packageMetadata.imageAssets) {
-			assetRegistry.register(/** @type {any} */ (asset));
-		}
-	}
-
-	// Register module-level image assets (from discovery phase)
-	for (const module of packageMetadata.modules) {
-		if (module.imageAssets) {
-			for (const asset of module.imageAssets) {
-				assetRegistry.register(/** @type {any} */ (asset));
-			}
-		}
-	}
-
-	// Create Wings router instance
-	const router = new Router();
-
-	// Add Wings middlewares
-
-	// Optional request logging middleware
-	if (enableLogging) {
-		router.useEarly(new Logger());
-	}
-
-	// Static assets middleware (serves from glean package static/ directory)
-	// Calculate absolute path to static directory within glean package
-	const currentFileUrl = import.meta.url;
-	const currentFilePath = fileURLToPath(currentFileUrl);
-	const currentDir = path.dirname(currentFilePath);
-
-	// Different paths for development vs production (bundled)
-	// Development: lib/server/index.js -> ../../static
-	// Production: bin/glean.min.js -> ../static
-	const isBundled =
-		currentFilePath.includes("bin/") && currentFilePath.includes(".min.js");
-	const staticDir = path.resolve(
-		currentDir,
-		isBundled ? "../static" : "../../static",
-	);
-
-	router.use(new Assets({ assetsDir: staticDir }));
-
-	// Register asset serving route for local image assets
-	router.get(
-		"/assets/:filename",
-		/** @type {any} */ (createAssetMiddleware(assetRegistry)),
-	);
-
-	// Create route handlers with package data and asset registry
-	const packageOverviewHandler = createPackageOverviewHandler(
-		packageInstance,
-		assetRegistry,
-	);
-	const moduleDirectoryHandler = createModuleDirectoryHandler(packageInstance);
-	const moduleOverviewHandler = createModuleOverviewHandler(
-		packageInstance,
-		assetRegistry,
-	);
-	const entityPageHandler = createEntityPageHandler(packageInstance);
-	const sitemapHandler = createSitemapHandler(packageInstance, {
-		baseUrl: domain ? `https://${domain}` : "https://docs.example.com",
-	});
-
-	// Register all documentation routes
-
-	// Package overview route (homepage)
-	router.get("/", /** @type {any} */ (packageOverviewHandler));
-
-	// Module directory route (all modules overview)
-	router.get("/modules/", /** @type {any} */ (moduleDirectoryHandler));
-
-	// Module overview route (specific module documentation)
-	router.get(
-		"/modules/:moduleName/",
-		/** @type {any} */ (moduleOverviewHandler),
-	);
-
-	// Entity documentation route (specific API documentation)
-	router.get(
-		"/modules/:moduleName/:entityName/",
-		/** @type {any} */ (entityPageHandler),
-	);
-
-	// Sitemap route (SEO optimization)
-	router.get("/sitemap.xml", /** @type {any} */ (sitemapHandler));
-
-	// Wings router handles 404s automatically when no routes match
+	// Create router using the extracted router creation logic
+	const router = createDocumentationRouter(packagePath, options);
 
 	// Create HTTP server with router
 	const server = new NodeHttp(router);
 
-	// Attach package metadata for external access (cast to bypass TypeScript)
-	/** @type {any} */ (server).packageInstance = packageInstance;
-	/** @type {any} */ (server).assetRegistry = assetRegistry;
+	// Attach metadata for external access (cast to bypass TypeScript)
 	/** @type {any} */ (server).serverOptions = {
 		packagePath,
-		domain,
-		enableLogging,
+		...options,
 	};
 
 	return server;
@@ -215,17 +97,10 @@ export async function startDocumentationServer(packagePath, options = {}) {
 	return new Promise((resolve, reject) => {
 		try {
 			/** @type {any} */ (server).listen(port, host, () => {
-				const pkg = /** @type {any} */ (server).packageInstance;
-				const registry = /** @type {any} */ (server).assetRegistry;
 				console.log(
 					`📚 Documentation server running on http://${host}:${port}`,
 				);
-				console.log(`📦 Package: ${pkg.name} v${pkg.version}`);
-				console.log(`📄 Modules: ${pkg.modules.length}`);
-				console.log(`🔗 Entities: ${pkg.allEntities.length}`);
-				if (registry.size > 0) {
-					console.log(`🖼️  Assets: ${registry.size} images`);
-				}
+				console.log(`📦 Package: ${packagePath}`);
 				resolve(server);
 			});
 		} catch (error) {
