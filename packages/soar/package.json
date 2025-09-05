@@ -28,7 +28,7 @@
     "nest:docs": "node ../nest/bin/nest.js build-docs",
     "prepublishOnly": "npm run test && npm run test:style",
     "test": "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
-    "test:code": "node --no-warnings --test --test-reporter=dot",
+    "test:code": "timeout 20s node --no-warnings --test --test-concurrency=1 --test-reporter=dot --test-force-exit",
     "test:coverage": "node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
     "test:style": "npx biome lint --error-on-warnings index.js",
     "test:types": "tsc --noEmit --project jsconfig.json"

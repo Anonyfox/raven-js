@@ -24,14 +24,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const packagePath = join(__dirname, "..", "package.json");
 const { version } = JSON.parse(readFileSync(packagePath, "utf8"));
 
-// Import the CLI functions for testing
 import {
 	createConfigFromFlags,
-	notImplemented,
-	parseCliArgs,
+	parseConfigArg,
 	readStdin,
-	showHelp,
-} from "./soar.js";
+} from "../cmd/config-helper.js";
+// Import the CLI functions for testing
+import { notImplemented } from "./soar.js";
 
 // Mock console methods to capture output
 let consoleOutput = [];
@@ -70,82 +69,42 @@ describe("Soar CLI", () => {
 		console.error = originalConsoleError;
 	});
 
-	describe("parseCliArgs", () => {
-		it("should parse basic deploy command", () => {
-			const args = parseCliArgs(["node", "soar.js", "deploy"]);
-			assert.strictEqual(args.command, "deploy");
-			assert.strictEqual(args.help, false);
-			assert.strictEqual(args.verbose, false);
+	describe("parseConfigArg", () => {
+		it("should parse config file with named export", () => {
+			const result = parseConfigArg("soar.config.js:production", null);
+			assert.strictEqual(result.configPath, "soar.config.js");
+			assert.strictEqual(result.exportName, "production");
 		});
 
-		it("should parse help flags", () => {
-			const args1 = parseCliArgs(["node", "soar.js", "--help"]);
-			assert.strictEqual(args1.help, true);
-
-			const args2 = parseCliArgs(["node", "soar.js", "-h"]);
-			assert.strictEqual(args2.help, true);
+		it("should handle config file without export", () => {
+			const result = parseConfigArg("soar.config.js", null);
+			assert.strictEqual(result.configPath, "soar.config.js");
+			assert.strictEqual(result.exportName, null);
 		});
 
-		it("should parse quick deployment flags", () => {
-			const args = parseCliArgs([
-				"node",
-				"soar.js",
-				"deploy",
-				"--static",
-				"./dist",
-				"--cloudflare-workers",
-				"my-app",
-				"--cf-token",
-				"fake-token",
-				"--verbose",
-			]);
-
-			assert.strictEqual(args.command, "deploy");
-			assert.strictEqual(args.static, "./dist");
-			assert.strictEqual(args.cloudflareWorkers, "my-app");
-			assert.strictEqual(args.cfToken, "fake-token");
-			assert.strictEqual(args.verbose, true);
+		it("should use export flag when no colon in config", () => {
+			const result = parseConfigArg("soar.config.js", "staging");
+			assert.strictEqual(result.configPath, "soar.config.js");
+			assert.strictEqual(result.exportName, "staging");
 		});
 
-		it("should handle config file with named export", () => {
-			const args = parseCliArgs([
-				"node",
-				"soar.js",
-				"deploy",
-				"soar.config.js:production",
-			]);
-
-			assert.strictEqual(args.command, "deploy");
-			assert.strictEqual(args.configFile, "soar.config.js");
-			assert.strictEqual(args.exportName, "production");
-		});
-
-		it("should handle cf-workers alias", () => {
-			const args = parseCliArgs([
-				"node",
-				"soar.js",
-				"deploy",
-				"--static",
-				"./dist",
-				"--cf-workers",
-				"my-app",
-			]);
-
-			assert.strictEqual(args.cloudflareWorkers, "my-app");
+		it("should prioritize colon syntax over export flag", () => {
+			const result = parseConfigArg("soar.config.js:production", "staging");
+			assert.strictEqual(result.configPath, "soar.config.js");
+			assert.strictEqual(result.exportName, "production");
 		});
 	});
 
 	describe("createConfigFromFlags", () => {
 		it("should create valid config from static + cloudflare-workers flags", () => {
-			const flags = {
-				static: "./dist",
-				cloudflareWorkers: "my-app",
-				cfToken: "fake-token",
-				cfAccount: "fake-account",
-				cfCompatibility: "2024-01-01",
-			};
+			const queryParams = new URLSearchParams();
+			queryParams.set("static", "./dist");
+			queryParams.set("cf-workers", "my-app");
+			queryParams.set("cf-token", "fake-token");
+			queryParams.set("cf-account", "fake-account");
+			queryParams.set("cf-compatibility", "2024-01-01");
 
-			const config = createConfigFromFlags(flags);
+			const config = createConfigFromFlags(queryParams);
 
 			assert.deepStrictEqual(config, {
 				artifact: {
@@ -164,16 +123,18 @@ describe("Soar CLI", () => {
 
 		it("should return null for invalid flag combinations", () => {
 			// No static path
-			const flags1 = { cloudflareWorkers: "my-app" };
-			assert.strictEqual(createConfigFromFlags(flags1), null);
+			const queryParams1 = new URLSearchParams();
+			queryParams1.set("cf-workers", "my-app");
+			assert.strictEqual(createConfigFromFlags(queryParams1), null);
 
 			// No worker name
-			const flags2 = { static: "./dist" };
-			assert.strictEqual(createConfigFromFlags(flags2), null);
+			const queryParams2 = new URLSearchParams();
+			queryParams2.set("static", "./dist");
+			assert.strictEqual(createConfigFromFlags(queryParams2), null);
 
 			// Empty flags
-			const flags3 = {};
-			assert.strictEqual(createConfigFromFlags(flags3), null);
+			const queryParams3 = new URLSearchParams();
+			assert.strictEqual(createConfigFromFlags(queryParams3), null);
 		});
 
 		it("should use environment variables when flags are missing", () => {
@@ -183,12 +144,11 @@ describe("Soar CLI", () => {
 			process.env.CF_API_TOKEN = "env-token";
 			process.env.CF_ACCOUNT_ID = "env-account";
 
-			const flags = {
-				static: "./dist",
-				cloudflareWorkers: "my-app",
-			};
+			const queryParams = new URLSearchParams();
+			queryParams.set("static", "./dist");
+			queryParams.set("cf-workers", "my-app");
 
-			const config = createConfigFromFlags(flags);
+			const config = createConfigFromFlags(queryParams);
 
 			assert.strictEqual(config.target.apiToken, "env-token");
 			assert.strictEqual(config.target.accountId, "env-account");
@@ -199,40 +159,6 @@ describe("Soar CLI", () => {
 			else delete process.env.CF_API_TOKEN;
 			if (originalCfAccount) process.env.CF_ACCOUNT_ID = originalCfAccount;
 			else delete process.env.CF_ACCOUNT_ID;
-		});
-	});
-
-	describe("showHelp", () => {
-		it("should show general help", () => {
-			showHelp();
-
-			const output = consoleOutput.join("\n");
-			assert.ok(
-				output.includes(`Soar v${version} - Zero-dependency deployment tool`),
-			);
-			assert.ok(output.includes("USAGE:"));
-			assert.ok(output.includes("COMMANDS:"));
-			assert.ok(output.includes("deploy"));
-			assert.ok(output.includes("plan"));
-		});
-
-		it("should show command-specific help for deploy", () => {
-			showHelp("deploy");
-
-			const output = consoleOutput.join("\n");
-			assert.ok(output.includes("soar deploy - Deploy artifacts to targets"));
-			assert.ok(output.includes("USAGE:"));
-			assert.ok(output.includes("EXAMPLES:"));
-		});
-
-		it("should show command-specific help for plan", () => {
-			showHelp("plan");
-
-			const output = consoleOutput.join("\n");
-			assert.ok(
-				output.includes("soar plan - Plan deployment without executing"),
-			);
-			assert.ok(output.includes("dry-run"));
 		});
 	});
 
@@ -265,13 +191,6 @@ describe("Soar CLI", () => {
 	});
 
 	describe("integration scenarios", () => {
-		it("should handle invalid arguments gracefully", () => {
-			// This test checks that parseCliArgs handles invalid arguments
-			// The function calls process.exit internally, so we can't easily test this
-			// without mocking process.exit. For now, we'll just verify the function exists.
-			assert.strictEqual(typeof parseCliArgs, "function");
-		});
-
 		it("should create config files in temp directory", () => {
 			// Test that we can create config files for integration testing
 			const configPath = join(tempDir, "test.config.js");
@@ -291,16 +210,23 @@ export default {
 
 		it("should handle various flag combinations", () => {
 			// Test flag combinations that should work
-			const validFlags = [
-				{ static: "./dist", cloudflareWorkers: "app1" },
-				{ static: "/abs/path", cloudflareWorkers: "app2", cfToken: "token" },
+			const validFlagSets = [
+				new URLSearchParams([
+					["static", "./dist"],
+					["cf-workers", "app1"],
+				]),
+				new URLSearchParams([
+					["static", "/abs/path"],
+					["cf-workers", "app2"],
+					["cf-token", "token"],
+				]),
 			];
 
-			for (const flags of validFlags) {
-				const config = createConfigFromFlags(flags);
+			for (const queryParams of validFlagSets) {
+				const config = createConfigFromFlags(queryParams);
 				assert.ok(
 					config !== null,
-					`Should create config for flags: ${JSON.stringify(flags)}`,
+					`Should create config for flags: ${Array.from(queryParams.entries())}`,
 				);
 				assert.strictEqual(config.artifact.type, "static");
 				assert.strictEqual(config.target.name, "cloudflare-workers");
