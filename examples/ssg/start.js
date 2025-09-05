@@ -17,19 +17,20 @@ import { router } from "./src/routes.js";
  * Start development server
  */
 async function startServer() {
-  // Add logging middleware
-  router.useEarly(new Logger());
+	// Add logging middleware
+	router.useEarly(new Logger());
 
-  // Create development server
-  const server = new DevServer(router);
+	// Create development server
+	const server = new DevServer(router);
 
-  // Start server
-  const port = Number(process.env.PORT) || 3000;
-  await server.listen(port);
+	// Start server
+	const port = Number(process.env.PORT) || 3000;
+	await server.listen(port);
 
-  console.log(`🦅 RavenJS SSG development server running at:`);
-  console.log(`   http://localhost:${port}`);
-  console.log(`
+	console.log(
+		`🦅 RavenJS SSG development server running at: http://localhost:${port}`,
+	);
+	console.log(`
 📝 Content As Code:
    • Edit pages in src/pages/
    • Components in src/components/
@@ -37,12 +38,11 @@ async function startServer() {
 
 🚀 Ready to build:
    • npm run build (generate static site)
-   • This dev server shows exactly what gets built!
   `);
 }
 
 // Start server
 startServer().catch((error) => {
-  console.error("Failed to start server:", error);
-  process.exit(1);
+	console.error("Failed to start server:", error);
+	process.exit(1);
 });

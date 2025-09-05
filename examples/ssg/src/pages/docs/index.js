@@ -10,190 +10,106 @@
  * @file Documentation page - demonstrates advanced markdown with multiple components
  */
 
-import { md } from "@raven-js/beak";
+import { code, md } from "@raven-js/beak";
 import { Callout } from "../../components/callout.js";
-import { CodeBlock } from "../../components/code-block.js";
-import { Layout } from "../../components/layout.js";
 import { TableOfContents } from "../../components/table-of-contents.js";
+import {
+	buildSnippet,
+	componentSnippet,
+	deploySnippet,
+	installSnippet,
+	pageStructureSnippet,
+	routingSnippet,
+} from "./snippets.js";
 
 /**
- * Docs page handler function
- * @param {import('@raven-js/wings').Context} ctx - Request context
+ * Documentation page title
  */
-export const handler = (ctx) => {
-  const page = Layout({
-    title: meta.title,
-    description: meta.description,
-    content,
-  });
-  ctx.html(page);
-};
+export const title = "Documentation - RavenJS SSG";
 
 /**
- * Docs page metadata
+ * Documentation page description
  */
-export const meta = {
-  title: "Documentation - RavenJS SSG",
-  description: "Complete guide to building static sites with RavenJS",
-  path: "/docs",
-};
+export const description =
+	"Complete guide to building static sites with RavenJS";
 
 /**
  * Documentation sections for table of contents
  */
 const sections = [
-  { id: "getting-started", title: "Getting Started" },
-  { id: "page-structure", title: "Page Structure" },
-  { id: "components", title: "Components" },
-  { id: "routing", title: "Routing" },
-  { id: "building", title: "Building" },
-  { id: "deployment", title: "Deployment" },
+	{ id: "getting-started", title: "Getting Started" },
+	{ id: "page-structure", title: "Page Structure" },
+	{ id: "components", title: "Components" },
+	{ id: "routing", title: "Routing" },
+	{ id: "building", title: "Building" },
+	{ id: "deployment", title: "Deployment" },
 ];
 
 /**
- * Documentation content
+ * Documentation page content using markdown with embedded components
  */
-const content = md`
+export const body = md`
 # Documentation
 
 ${TableOfContents({ sections })}
 
 ${Callout({
-  type: "info",
-  content:
-    "This documentation is itself built using RavenJS SSG - pure JavaScript everywhere!",
+	type: "info",
+	content:
+		"This documentation is itself built using RavenJS SSG - pure JavaScript everywhere!",
 })}
 
 ## Getting Started {#getting-started}
 
-RavenJS SSG uses a **Content As Code** approach. Every page is a JavaScript module that exports a handler function.
+RavenJS SSG uses a **Content As Code** approach. Every page is a JavaScript module that exports three things: \`title\`, \`description\`, and \`body\`.
 
-${CodeBlock({
-  language: "bash",
-  code: `# Clone and install
-git clone https://github.com/Anonyfox/ravenjs.git
-cd ravenjs/examples/ssg
-npm install
-
-# Start development server
-npm run dev
-
-# Build static site
-npm run build`,
-})}
+${code(installSnippet, "bash")}
 
 ## Page Structure {#page-structure}
 
-Each page lives in its own folder under \`src/pages/\`:
+Each page lives in its own folder under \`src/pages/\`. Pages export metadata and content, while the router handles the plumbing:
 
-${CodeBlock({
-  language: "text",
-  code: `src/pages/
-├── home/
-│   └── index.js        # Exports handler function
-├── about/
-│   └── index.js        # Can import local components
-├── blog/
-│   ├── index.js        # Blog listing page
-│   ├── components/     # Page-specific components
-│   └── data/          # Page-specific data
-└── docs/
-    └── index.js        # This page!`,
-})}
+${code(pageStructureSnippet, "text")}
 
 ${Callout({
-  type: "tip",
-  content:
-    "Each page folder can contain its own components, data, and assets. This keeps related code together and makes refactoring easier.",
+	type: "tip",
+	content:
+		"Each page folder can contain its own components, data, and assets. This keeps related code together and makes refactoring easier.",
 })}
 
 ## Components {#components}
 
 Components are just functions that return HTML strings using Beak's tagged templates:
 
-${CodeBlock({
-  language: "javascript",
-  code: `import { html } from "@raven-js/beak";
-
-export const Button = ({ text, href, variant = "primary" }) => {
-  return html\`
-    <a href="\${href}" class="btn btn--\${variant}">
-      \${text}
-    </a>
-  \`;
-};
-
-// Use in markdown
-const content = md\`
-# My Page
-Check out this button: \${Button({ text: "Click me", href: "/about" })}
-\`;`,
-})}
+${code(componentSnippet, "javascript")}
 
 ## Routing {#routing}
 
-Routes are defined in \`src/routes.js\` by importing page handlers:
+Routes are defined in \`src/routes.js\` using dynamic imports. The router automatically wraps page exports in the Layout component:
 
-${CodeBlock({
-  language: "javascript",
-  code: `import { Router } from "@raven-js/wings/core";
-import { handler as homeHandler } from "./pages/home/index.js";
-import { handler as aboutHandler } from "./pages/about/index.js";
-
-const router = new Router();
-
-// Mount page handlers
-router.get("/", homeHandler);
-router.get("/about", aboutHandler);
-
-export { router };`,
-})}
+${code(routingSnippet, "javascript")}
 
 ${Callout({
-  type: "warning",
-  content:
-    "For now, routes must be defined manually. Future versions may include automatic route discovery.",
+	type: "tip",
+	content:
+		"The router uses dynamic imports to load pages on-demand. This keeps the initial bundle small and eliminates import ceremony.",
 })}
 
 ## Building {#building}
 
 The build process uses Fledge to generate static files:
 
-${CodeBlock({
-  language: "javascript",
-  code: `// build.js
-import { static as fledgeStatic } from "@raven-js/fledge";
-
-await fledgeStatic({
-  server: "http://localhost:3000",
-  routes: ["/", "/about", "/docs"],
-  output: "./dist",
-  discover: true, // Find linked pages automatically
-});`,
-})}
+${code(buildSnippet, "javascript")}
 
 ## Deployment {#deployment}
 
 Deploy anywhere static files are supported:
 
-${CodeBlock({
-  language: "bash",
-  code: `# Build first
-npm run build
-
-# Deploy with Soar to Cloudflare Workers
-npx @raven-js/soar deploy --static ./dist --cf-workers my-site
-
-# Or copy to any static host
-rsync -av dist/ user@server:/var/www/html/
-
-# Or use any static hosting service
-# Netlify, Vercel, GitHub Pages, etc.`,
-})}
+${code(deploySnippet, "bash")}
 
 ${Callout({
-  type: "success",
-  content:
-    "The generated site is just HTML, CSS, and JavaScript - it works everywhere!",
+	type: "success",
+	content:
+		"The generated site is just HTML, CSS, and JavaScript - it works everywhere!",
 })}
 `;

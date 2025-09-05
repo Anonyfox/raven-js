@@ -10,42 +10,26 @@
  * @file Home page - demonstrates markdown content with component integration
  */
 
-import { code, js, markdownToHTML, md } from "@raven-js/beak";
+import { code, md } from "@raven-js/beak";
 import { FeatureGrid } from "../../components/feature-grid.js";
 import { Hero } from "../../components/hero.js";
-import { Layout } from "../../components/layout.js";
+import { homeHandlerSnippet, routeRegistrationSnippet } from "./snippets.js";
 
 /**
- * Home page handler function
- * @param {import('@raven-js/wings').Context} ctx - Request context
+ * Home page title
  */
-export const handler = (ctx) => {
-	const page = Layout({
-		title: "RavenJS SSG - Content As Code",
-		description:
-			"Build static sites with pure JavaScript - no magic, just code",
-		content,
-	});
-	ctx.html(page);
-};
+export const title = "RavenJS SSG - Content As Code";
 
-const homeHandlerSnippet = js`
-  // src/pages/home/index.js
-  export const handler = (ctx) => {
-    const content = md\`# Welcome to RavenJS SSG\nPure JavaScript content...\`;
-    return ctx.html(Layout({ title: "Home", content }));
-  };
-`;
-
-const routeRegistrationSnippet = js`
-  import { handler as homeHandler } from "./pages/home/index.js";
-  router.get("/", homeHandler);
-`;
+/**
+ * Home page description
+ */
+export const description =
+	"Build static sites with pure JavaScript - no magic, just code";
 
 /**
  * Home page content using markdown with embedded components
  */
-const content = markdownToHTML(md`
+export const body = md`
 # Welcome to RavenJS SSG
 
 ${Hero({
@@ -94,4 +78,4 @@ ${code(routeRegistrationSnippet, "javascript")}
 4. **Scale up**: Deploy to Cloudflare Workers, AWS Lambda, or VPS
 
 Same codebase, same patterns, seamless evolution.
-`);
+`;

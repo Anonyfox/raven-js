@@ -10,36 +10,24 @@
  * @file About page - demonstrates simple markdown content
  */
 
-import { md } from "@raven-js/beak";
-import { CodeBlock } from "../../components/code-block.js";
-import { Layout } from "../../components/layout.js";
+import { code, md } from "@raven-js/beak";
+import { pageExampleSnippet } from "./snippets.js";
 
 /**
- * Docs page handler function
- * @param {import('@raven-js/wings').Context} ctx - Request context
+ * About page title
  */
-export const handler = (ctx) => {
-  const page = Layout({
-    title: meta.title,
-    description: meta.description,
-    content,
-  });
-  ctx.html(page);
-};
+export const title = "About - RavenJS SSG";
 
 /**
- * About page metadata
+ * About page description
  */
-export const meta = {
-  title: "About - RavenJS SSG",
-  description: "Learn about the RavenJS approach to static site generation",
-  path: "/about",
-};
+export const description =
+	"Learn about the RavenJS approach to static site generation";
 
 /**
- * About page content
+ * About page content using markdown with embedded components
  */
-const content = md`
+export const body = md`
 # About RavenJS SSG
 
 RavenJS SSG represents a fundamental shift in how we think about static site generation. Instead of learning new templating languages or dealing with complex build systems, you work with pure JavaScript.
@@ -48,14 +36,7 @@ RavenJS SSG represents a fundamental shift in how we think about static site gen
 
 Ravens are apex predators of intelligence—ancient survivors who've mastered thriving in hostile environments through cunning, adaptability, and ruthless efficiency. RavenJS embodies this dark intelligence: surgical problem-solving, creative repurposing, and institutional memory.
 
-${CodeBlock({
-  language: "javascript",
-  code: `// Every page is just a JavaScript module
-export const handler = (ctx) => {
-  const content = md\`# My Page\nContent here...\`;
-  return ctx.html(Layout({ content }));
-};`,
-})}
+${code(pageExampleSnippet, "javascript")}
 
 ## Zero Dependencies
 
