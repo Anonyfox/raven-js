@@ -14,10 +14,15 @@
  */
 
 import assert from "node:assert";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const packagePath = join(__dirname, "..", "package.json");
+const { version } = JSON.parse(readFileSync(packagePath, "utf8"));
 
 // Import the CLI functions for testing
 import {
@@ -203,7 +208,7 @@ describe("Soar CLI", () => {
 
 			const output = consoleOutput.join("\n");
 			assert.ok(
-				output.includes("Soar v0.4.23 - Zero-dependency deployment tool"),
+				output.includes(`Soar v${version} - Zero-dependency deployment tool`),
 			);
 			assert.ok(output.includes("USAGE:"));
 			assert.ok(output.includes("COMMANDS:"));
@@ -237,7 +242,7 @@ describe("Soar CLI", () => {
 
 			const output = consoleOutput.join("\n");
 			assert.ok(output.includes("🚧 Binary deployment - Not implemented yet"));
-			assert.ok(output.includes("Current version (0.4.23) supports:"));
+			assert.ok(output.includes(`Current version (${version}) supports:`));
 			assert.ok(
 				output.includes("✅ Static site deployment to Cloudflare Workers"),
 			);
