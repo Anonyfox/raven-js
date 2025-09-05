@@ -14,7 +14,6 @@
  * for building CLI commands with zero boilerplate.
  */
 
-import { HTTP_METHODS } from "../core/http-methods.js";
 import { Route } from "../core/route.js";
 
 /**
