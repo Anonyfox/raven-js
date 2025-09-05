@@ -1,0 +1,20 @@
+{
+  "name": "@raven-js/ssg-example",
+  "version": "1.0.0",
+  "description": "Static Site Generator example using RavenJS building blocks",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node --watch-path=./src start.js",
+    "build": "npx @raven-js/fledge static ./raven.config.js:build",
+    "format": "npx @biomejs/biome format --write .",
+    "lint": "npx @biomejs/biome lint ."
+  },
+  "dependencies": {
+    "@raven-js/wings": "*",
+    "@raven-js/beak": "*"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.8.0"
+  }
+}
