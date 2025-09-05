@@ -5,7 +5,7 @@
   "type": "module",
   "main": "index.js",
   "bin": {
-    "glean": "bin/glean.min.js"
+    "glean": "bin/glean.js"
   },
   "files": [
     "**/*.js",
@@ -26,8 +26,7 @@
   "scripts": {
     "nest:validate": "node ../nest/bin/nest.js validate",
     "nest:docs": "node ../nest/bin/nest.js build-docs",
-    "build": "esbuild bin/glean.js --bundle --minify --platform=node --format=esm --external:esbuild --outfile=bin/glean.min.js",
-    "test": "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code && npm run build",
+    "test": "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
     "test:code": "timeout 20s node --no-warnings --test --test-concurrency=1 --test-reporter=dot",
     "test:coverage": "timeout 10s node --no-warnings --test --test-concurrency=1 --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
     "test:style": "npx biome lint --error-on-warnings .",
@@ -77,9 +76,6 @@
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/Anonyfox"
-  },
-  "devDependencies": {
-    "esbuild": "^0.25.9"
   },
   "dependencies": {
     "@raven-js/beak": "*",

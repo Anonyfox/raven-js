@@ -240,8 +240,19 @@ async function handleDocsCommand(_args, _options) {
  */
 async function handleBuildDocsCommand(args, _options) {
 	const [targetPath = "."] = args;
-	const resolvedPath =
-		targetPath === "." ? process.cwd() : join(process.cwd(), targetPath);
+	let resolvedPath;
+
+	if (targetPath === ".") {
+		resolvedPath = process.cwd();
+	} else {
+		// Check if it's a package name in a workspace
+		const potentialPackagePath = join(process.cwd(), "packages", targetPath);
+		if (existsSync(potentialPackagePath)) {
+			resolvedPath = potentialPackagePath;
+		} else {
+			resolvedPath = join(process.cwd(), targetPath);
+		}
+	}
 
 	console.log(`🦅 Building documentation: ${targetPath}`);
 
