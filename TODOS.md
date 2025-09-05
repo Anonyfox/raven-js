@@ -2,8 +2,6 @@
 
 simple task list file what to implement next for short term goals.
 
-- [ ] extend fledge static builder with new configurable "resolver" function option that
-      can be used instead of making http requests to a real webserver (iE use wings-router directly)
 - [ ] identify potential issues of beak from the glean project since this
       type of project should uncover lots of rendering edgecases
 - [ ] implement an MCP server as glean subcommand to make agents use raven packages (or everything using JS + JSDoc) seamlessly
