@@ -16,6 +16,8 @@ _Build & bundle tool for modern JavaScript applications_
 
 Transforms your development application into production-ready deployables across three distinct modes: static site generation, optimized script bundling, and standalone binary compilation. No framework lock-in, no complex build chains—Fledge operates at the protocol and filesystem level to prepare your code for any deployment target.
 
+Built on **Wings Terminal** for surgical CLI precision with automatic flag validation, comprehensive error handling, and intuitive command routing.
+
 Whether you need CDN-optimized static files, performance-tuned JavaScript bundles, or self-contained native executables, Fledge systematically processes your application and delivers deployment artifacts. Your development workflow stays untouched—Fledge hunts at the boundaries where development ends and deployment begins.
 
 ## Installation

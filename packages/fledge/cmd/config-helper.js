@@ -22,7 +22,7 @@ import { resolve } from "node:path";
  * @param {string|null} options.configPath - Path to config file
  * @param {string|null} options.stdinConfig - Config from piped input
  * @param {string|null} options.exportName - Named export to use
- * @param {Function} options.ConfigClass - Configuration class constructor
+ * @param {any} options.ConfigClass - Configuration class constructor
  * @param {Function} options.createFromFlags - Function to create config from CLI flags
  * @param {URLSearchParams} options.queryParams - CLI flags as query params
  * @param {string} options.mode - Command mode for error messages
@@ -41,7 +41,7 @@ export async function createConfigFromSources({
 	try {
 		if (stdinConfig) {
 			// Highest priority: piped input
-			return await ConfigClass.fromString(stdinConfig, exportName);
+			return await ConfigClass.fromString(stdinConfig, exportName || undefined);
 		}
 
 		if (configPath) {
@@ -49,7 +49,10 @@ export async function createConfigFromSources({
 			if (!existsSync(configPath)) {
 				throw new Error(`Config file not found: ${configPath}`);
 			}
-			return await ConfigClass.fromFile(resolve(configPath), exportName);
+			return await ConfigClass.fromFile(
+				resolve(configPath),
+				exportName || undefined,
+			);
 		}
 
 		// Third priority: CLI flags (mode-specific logic)
