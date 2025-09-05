@@ -37,5 +37,6 @@
  */
 
 export * from "./actions/index.js";
+export { CommandRoute, ValidationError } from "./command-route.js";
 export { Terminal } from "./runtime.js";
 export { ArgsToUrl, UrlToArgs } from "./transform-pattern.js";
