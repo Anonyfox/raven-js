@@ -1,6 +1,6 @@
 {
   "name": "@raven-js/fledge",
-  "version": "0.4.25",
+  "version": "0.4.26",
   "description": "From nestling to flight-ready - Build & bundle tool for modern JavaScript apps",
   "type": "module",
   "main": "index.js",

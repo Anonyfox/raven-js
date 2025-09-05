@@ -1,7 +1,7 @@
 {
   "name": "@raven-js/beak",
   "description": "Zero-dependency templating library for modern JavaScript - HTML, CSS, SQL, Markdown and more",
-  "version": "0.4.25",
+  "version": "0.4.26",
   "type": "module",
   "files": [
     "**/*.js",
