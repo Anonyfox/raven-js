@@ -31,6 +31,14 @@ export const body = md`
 # About RavenJS SSG
 
 RavenJS SSG represents a fundamental shift in how we think about static site generation. Instead of learning new templating languages or dealing with complex build systems, you work with pure JavaScript.
+Including seamless reactivity in automatically bundled client-side Apps like this one:
+
+<div id="counter-app"></div>
+<script type="module">
+	import { mount } from "@raven-js/reflex/dom";
+	import { Counter } from "/apps/counter.js";
+	mount(Counter, "#counter-app", { replace: true });
+</script>
 
 ## The Philosophy
 

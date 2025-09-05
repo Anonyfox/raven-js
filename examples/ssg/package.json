@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@raven-js/wings": "*",
-    "@raven-js/beak": "*"
+    "@raven-js/beak": "*",
+    "@raven-js/reflex": "*"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.0"
