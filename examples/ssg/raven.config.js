@@ -18,23 +18,28 @@ import { router } from "./src/routes.js";
  * Uses resolver mode for direct function calls (no HTTP overhead)
  */
 export const build = {
-  // Direct resolver - no HTTP server needed, just function calls
-  resolver: async (/** @type {string} */ path) => {
-    const ctx = new Context(
-      "GET",
-      new URL(`http://localhost${path}`),
-      new Headers(),
-    );
-    await router.handleRequest(ctx);
-    return ctx.toResponse();
-  },
+	// Direct resolver - no HTTP server needed, just function calls
+	resolver: async (/** @type {string} */ path) => {
+		const ctx = new Context(
+			"GET",
+			new URL(`http://localhost${path}`),
+			new Headers(),
+		);
+		await router.handleRequest(ctx);
+		return ctx.toResponse();
+	},
 
-  // Routes to start crawling from
-  routes: ["/", "/about", "/docs"],
+	// Routes to start crawling from
+	routes: ["/", "/about", "/docs"],
 
-  // Copy static assets
-  assets: "./public",
+	// Copy static assets
+	assets: "./public",
 
-  // Output directory
-  output: "./dist",
+	// Include client-side apps (automatically bundled)
+	bundles: {
+		"/apps/counter.js": "./src/apps/counter.js",
+	},
+
+	// Output directory
+	output: "./dist",
 };

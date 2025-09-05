@@ -59,12 +59,17 @@ export async function generateStaticSite(config, options) {
 			validateBundleConfig(bundlesConfig);
 
 			// Build all bundles in-memory
-			const serverConfig = config.getServer();
-			const baseUrl = new URL(
-				typeof serverConfig === "string"
-					? serverConfig
-					: "http://localhost:3000",
-			);
+			const resolver = config.getResolver();
+			const baseUrl = resolver
+				? new URL("http://localhost:3000") // Dummy URL for resolver mode
+				: (() => {
+						const serverConfig = config.getServer();
+						return new URL(
+							typeof serverConfig === "string"
+								? serverConfig
+								: "http://localhost:3000",
+						);
+					})();
 
 			const bundleResources = await buildBundles(bundlesConfig, baseUrl);
 

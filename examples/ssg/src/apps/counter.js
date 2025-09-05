@@ -12,6 +12,7 @@
 
 import { html } from "@raven-js/beak";
 import { signal } from "@raven-js/reflex";
+import { mount } from "@raven-js/reflex/dom";
 
 /**
  * Create interactive counter component with reactive state
@@ -130,3 +131,5 @@ export const Counter = ({ initial = 0 } = {}) => {
 		</style>
 	`;
 };
+
+mount(Counter, "#counter-app", { replace: true });

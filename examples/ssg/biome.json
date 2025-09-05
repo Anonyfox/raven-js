@@ -24,5 +24,17 @@
       "bracketSameLine": false,
       "quoteStyle": "double"
     }
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "includes": [
+      "**",
+      "!docs",
+      "!plugins/vscode",
+      "!**/bin/*.min.js",
+      "!**/static",
+      "!**/bundles",
+      "!dist"
+    ]
   }
 }

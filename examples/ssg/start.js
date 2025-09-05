@@ -10,7 +10,7 @@
  * @file Development server - starts Wings DevServer with auto-reload
  */
 
-import { DevServer, Logger } from "@raven-js/wings/server";
+import { DevServer, Logger, Resolve } from "@raven-js/wings/server";
 import { router } from "./src/routes.js";
 
 /**
@@ -19,6 +19,7 @@ import { router } from "./src/routes.js";
 async function startServer() {
 	// Add logging middleware
 	router.useEarly(new Logger());
+	router.use(new Resolve({ sourceFolder: "src" }));
 
 	// Create development server
 	const server = new DevServer(router);

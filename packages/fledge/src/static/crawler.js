@@ -233,10 +233,18 @@ export class Crawler {
 			return;
 		}
 
+		// Get bundle paths to exclude from discovery
+		const bundlePaths = new Set(Object.keys(this.#config.getBundles()));
+
 		// Get relative (same-origin) URLs only
 		const relativeUrls = resource.getRelativeUrls();
 
 		for (const url of relativeUrls) {
+			// Skip bundle paths - they're pre-built, never discovered
+			if (bundlePaths.has(url.pathname)) {
+				continue;
+			}
+
 			// Apply discovery rules if Discover instance is configured
 			if (discover instanceof Discover) {
 				if (discover.shouldIgnore(url.pathname)) {
@@ -382,8 +390,19 @@ export class Crawler {
 			throw new Error("Cannot add visited resources after crawler is started");
 		}
 
-		// Create URL from path for frontier tracking
-		const url = new URL(urlPath, "http://localhost");
+		// Create URL from path for frontier tracking - use same base URL logic as start()
+		const resolver = this.#config.getResolver();
+		const baseUrl = resolver
+			? new URL("http://localhost:0") // Match the dummy URL used in start()
+			: (() => {
+					const serverConfig = this.#config.getServer();
+					return new URL(
+						typeof serverConfig === "string"
+							? serverConfig
+							: "http://localhost:3000",
+					);
+				})();
+		const url = new URL(urlPath, baseUrl);
 
 		// Add to frontier as discovered then mark as crawled
 		this.#frontier.discover(url);

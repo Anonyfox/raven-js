@@ -12,7 +12,7 @@
 
 import { markdownToHTML } from "@raven-js/beak";
 import { Router } from "@raven-js/wings";
-import { Assets, Resolve } from "@raven-js/wings/server";
+import { Assets } from "@raven-js/wings/server";
 import { Layout } from "./components/layout.js";
 
 /**
@@ -24,7 +24,6 @@ const router = new Router();
  * Static asset handling - automatically serves files from public/ directory
  */
 router.use(new Assets({ assetsDir: "public" }));
-router.use(new Resolve({ sourceFolder: "src" }));
 
 /**
  * Route definitions - dynamic imports eliminate repetitive import statements
