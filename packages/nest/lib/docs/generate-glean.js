@@ -31,10 +31,11 @@ export async function generateGleanDocs(packagePath, outputPath) {
 		// Build the glean ssg command with domain and base path flags
 		const command = `npx glean ssg "${packagePath}" "${outputPath}" --domain docs.ravenjs.dev --base /${packageName}`;
 
-		// Execute the command
+		// Execute the command with timeout to prevent hanging
 		execSync(command, {
-			stdio: "inherit",
+			stdio: "pipe", // Changed from "inherit" to "pipe" to avoid output in tests
 			cwd: process.cwd(),
+			timeout: 30000, // 30 second timeout
 		});
 
 		return true;

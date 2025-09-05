@@ -20,18 +20,18 @@ describe("Command exports", () => {
 	it("exports StaticCommand class", () => {
 		strictEqual(typeof StaticCommand, "function");
 		const instance = new StaticCommand();
-		strictEqual(instance.pattern, "/static/:config?");
+		strictEqual(instance.path, "/static/:config?");
 	});
 
 	it("exports ScriptCommand class", () => {
 		strictEqual(typeof ScriptCommand, "function");
 		const instance = new ScriptCommand();
-		strictEqual(instance.pattern, "/script/:config?");
+		strictEqual(instance.path, "/script/:config?");
 	});
 
 	it("exports BinaryCommand class", () => {
 		strictEqual(typeof BinaryCommand, "function");
 		const instance = new BinaryCommand();
-		strictEqual(instance.pattern, "/binary/:config?");
+		strictEqual(instance.path, "/binary/:config?");
 	});
 });

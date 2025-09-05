@@ -13,9 +13,12 @@
  * all Fledge command classes.
  */
 
-import { deepStrictEqual, strictEqual, throws } from "node:assert";
+import { deepStrictEqual, rejects, strictEqual } from "node:assert";
 import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 import { createConfigFromSources, parseConfigArg } from "./config-helper.js";
+
+const __filename = fileURLToPath(import.meta.url);
 
 describe("parseConfigArg", () => {
 	it("returns null config path when no argument provided", () => {
@@ -115,33 +118,31 @@ describe("createConfigFromSources", () => {
 	});
 
 	it("throws error when config file not found", async () => {
-		await throws(
-			() =>
-				createConfigFromSources({
-					configPath: "nonexistent.js",
-					stdinConfig: null,
-					exportName: null,
-					ConfigClass: null,
-					createFromFlags: null,
-					queryParams: new URLSearchParams(),
-					mode: "test",
-				}),
+		await rejects(
+			createConfigFromSources({
+				configPath: "nonexistent.js",
+				stdinConfig: null,
+				exportName: null,
+				ConfigClass: null,
+				createFromFlags: null,
+				queryParams: new URLSearchParams(),
+				mode: "test",
+			}),
 			/Config file not found: nonexistent.js/,
 		);
 	});
 
 	it("throws error when no configuration sources available", async () => {
-		await throws(
-			() =>
-				createConfigFromSources({
-					configPath: null,
-					stdinConfig: null,
-					exportName: null,
-					ConfigClass: null,
-					createFromFlags: null,
-					queryParams: new URLSearchParams(),
-					mode: "test",
-				}),
+		await rejects(
+			createConfigFromSources({
+				configPath: null,
+				stdinConfig: null,
+				exportName: null,
+				ConfigClass: null,
+				createFromFlags: null,
+				queryParams: new URLSearchParams(),
+				mode: "test",
+			}),
 			/No configuration provided for test/,
 		);
 	});

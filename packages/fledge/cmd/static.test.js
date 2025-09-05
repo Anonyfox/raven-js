@@ -14,29 +14,30 @@
  */
 
 import { match, strictEqual } from "node:assert";
-import { describe, it, mock } from "node:test";
+import { describe, it } from "node:test";
+import { Context } from "@raven-js/wings";
 import { StaticCommand } from "./static.js";
 
 describe("StaticCommand", () => {
 	it("creates command with correct route pattern", () => {
 		const command = new StaticCommand();
-		strictEqual(command.pattern, "/static/:config?");
+		strictEqual(command.path, "/static/:config?");
 		strictEqual(command.description, "Generate static site from server");
 	});
 
 	it("declares all required flags", () => {
 		const command = new StaticCommand();
-		const flags = command.flags;
+		const flags = command.getFlags();
 
 		// Check flag existence and types
-		strictEqual(flags.server?.type, "string");
-		strictEqual(flags.out?.type, "string");
-		strictEqual(flags.out?.default, "./dist");
-		strictEqual(flags.base?.type, "string");
-		strictEqual(flags.base?.default, "/");
-		strictEqual(flags.export?.type, "string");
-		strictEqual(flags.validate?.type, "boolean");
-		strictEqual(flags.verbose?.type, "boolean");
+		strictEqual(flags.get("server")?.type, "string");
+		strictEqual(flags.get("out")?.type, "string");
+		strictEqual(flags.get("out")?.default, "./dist");
+		strictEqual(flags.get("base")?.type, "string");
+		strictEqual(flags.get("base")?.default, "/");
+		strictEqual(flags.get("export")?.type, "string");
+		strictEqual(flags.get("validate")?.type, "boolean");
+		strictEqual(flags.get("verbose")?.type, "boolean");
 	});
 
 	it("creates config from server flag", () => {
@@ -93,32 +94,24 @@ describe("StaticCommand", () => {
 		// Mock console.log
 		const originalLog = console.log;
 		console.log = (...args) => {
-							consoleOutput += `${args.join(" ")}\n`;
+			consoleOutput += `${args.join(" ")}\n`;
 		};
 
 		try {
-			// Mock context for validation
-			const mockContext = {
-				pathParams: { config: null },
-				queryParams: new URLSearchParams(
-					"validate=true&server=http://localhost:3000",
-				),
-				requestBody: () => null,
-			};
+			// Create real Wings context for validation
+			const url = new URL(
+				"http://localhost/static?validate=true&server=http://localhost:3000",
+			);
+			const context = new Context("COMMAND", url, new Headers());
 
-			// Mock success function
-			mock.method(global, "success", () => {
-				consoleOutput += "✅ Static configuration validation successful!\n";
-			});
+			await command.execute(context);
 
-			await command.execute(mockContext);
-
-			match(consoleOutput, /Static configuration validation successful/);
+			// Check that validation output was generated (from console.log in the command)
+			match(consoleOutput, /Configuration summary/);
 			match(consoleOutput, /Server: http:\/\/localhost:3000/);
 			match(consoleOutput, /Routes: \//);
 		} finally {
 			console.log = originalLog;
-			mock.restoreAll();
 		}
 	});
 });

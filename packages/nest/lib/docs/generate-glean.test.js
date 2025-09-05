@@ -7,7 +7,7 @@
  */
 
 import assert from "node:assert";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
@@ -34,12 +34,18 @@ describe("generateGleanDocs", () => {
 		assert.strictEqual(result, false);
 	});
 
-	it("should handle temporary directory paths", async () => {
+	it("should handle real temporary directory paths", async () => {
 		const tempDir = mkdtempSync(join(tmpdir(), "nest-test-"));
 		const outputDir = mkdtempSync(join(tmpdir(), "nest-output-"));
 
-		// This will likely fail due to missing glean, but should not throw
-		const result = await generateGleanDocs(tempDir, outputDir);
-		assert.strictEqual(typeof result, "boolean");
+		try {
+			// This will likely fail due to no valid package.json or JS files, but should not hang
+			const result = await generateGleanDocs(tempDir, outputDir);
+			assert.strictEqual(typeof result, "boolean");
+		} finally {
+			// Clean up temp directories
+			rmSync(tempDir, { recursive: true, force: true });
+			rmSync(outputDir, { recursive: true, force: true });
+		}
 	});
 });
