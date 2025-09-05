@@ -1599,4 +1599,61 @@ export class Context {
 		);
 		return this;
 	}
+
+	/**
+	 * Creates a native Response object from the current context state.
+	 *
+	 * This method provides a clean bridge between wings Context and native
+	 * Web API Response objects, enabling direct integration with static site
+	 * generators and other systems that expect standard Response objects.
+	 *
+	 * **Response Construction**:
+	 * - Status code from responseStatusCode
+	 * - Headers from responseHeaders (automatically converted)
+	 * - Body from responseBody (string or Buffer)
+	 *
+	 * **Performance**: Direct object construction without HTTP serialization overhead.
+	 * **Standards Compliant**: Creates standard Response objects compatible with
+	 * Fetch API, Service Workers, and other Web APIs.
+	 *
+	 * @returns {Response} Standard Response object with context data
+	 *
+	 * @example
+	 * ```javascript
+	 * // Create context and set response data
+	 * const ctx = new Context('GET', new URL('http://localhost/'), new Headers());
+	 * ctx.json({ message: 'Hello World' });
+	 *
+	 * // Convert to native Response
+	 * const response = ctx.toResponse();
+	 * console.log(response.status); // 200
+	 * console.log(response.headers.get('content-type')); // 'application/json'
+	 * console.log(await response.text()); // '{"message":"Hello World"}'
+	 *
+	 * // Use with static site generation
+	 * const resolver = async (path) => {
+	 *   const ctx = await router.resolve(path);
+	 *   return ctx.toResponse(); // Direct Response for SSG
+	 * };
+	 *
+	 * // Error responses
+	 * ctx.notFound('Page not found');
+	 * const errorResponse = ctx.toResponse();
+	 * console.log(errorResponse.status); // 404
+	 * ```
+	 */
+	toResponse() {
+		// Convert Headers object to plain object for Response constructor
+		/** @type {Record<string, string>} */
+		const headersInit = {};
+		for (const [key, value] of this.responseHeaders.entries()) {
+			headersInit[key] = value;
+		}
+
+		// Create Response with current context state
+		return new Response(this.responseBody, {
+			status: this.responseStatusCode,
+			headers: headersInit,
+		});
+	}
 }

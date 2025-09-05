@@ -25,6 +25,10 @@ import { importConfig } from "./import-config.js";
  */
 
 /**
+ * @typedef {function(string): Promise<Response>} ResolverFunction
+ */
+
+/**
  * Static site generator configuration
  */
 export class Config {
@@ -33,6 +37,12 @@ export class Config {
 	 * @type {string | ServerBootFunction | null}
 	 */
 	server = null;
+
+	/**
+	 * Direct resolver function - alternative to server for lean SSG
+	 * @type {ResolverFunction | null}
+	 */
+	resolver = null;
 
 	/**
 	 * Starting routes for crawling
@@ -163,6 +173,14 @@ export class Config {
 	}
 
 	/**
+	 * Get resolver function
+	 * @returns {ResolverFunction | null} Resolver function if configured
+	 */
+	getResolver() {
+		return this.resolver;
+	}
+
+	/**
 	 * Get routes with defaults
 	 * @returns {string[] | RouteGeneratorFunction} Routes configuration
 	 */
@@ -215,36 +233,58 @@ export class Config {
 	 * @throws {Error} If required configuration is missing or invalid
 	 */
 	validate() {
-		// Server is required
-		if (!this.server) {
-			throw new Error("Server configuration is required");
+		// Exactly one of server OR resolver must be configured
+		const hasServer = !!this.server;
+		const hasResolver = !!this.resolver;
+
+		if (!hasServer && !hasResolver) {
+			throw new Error("Either server or resolver configuration is required");
 		}
 
-		// Server must be string (origin) or function
-		if (typeof this.server !== "string" && typeof this.server !== "function") {
+		if (hasServer && hasResolver) {
 			throw new Error(
-				"Server must be origin URL string or async boot function",
+				"Cannot specify both server and resolver - choose exactly one",
 			);
 		}
 
-		// If server is string, must be valid origin
-		if (typeof this.server === "string") {
-			try {
-				const url = new URL(this.server);
-				if (!url.protocol.startsWith("http")) {
-					throw new Error("Server URL must use http or https protocol");
-				}
-			} catch (error) {
-				const err = /** @type {any} */ (error);
-				// Re-throw specific protocol errors
-				if (
-					err.message.includes("Server URL must use http or https protocol")
-				) {
-					throw error;
-				}
+		// Validate server if provided
+		if (hasServer) {
+			// Server must be string (origin) or function
+			if (
+				typeof this.server !== "string" &&
+				typeof this.server !== "function"
+			) {
 				throw new Error(
-					"Server must be valid origin URL (http://localhost:3000)",
+					"Server must be origin URL string or async boot function",
 				);
+			}
+
+			// If server is string, must be valid origin
+			if (typeof this.server === "string") {
+				try {
+					const url = new URL(this.server);
+					if (!url.protocol.startsWith("http")) {
+						throw new Error("Server URL must use http or https protocol");
+					}
+				} catch (error) {
+					const err = /** @type {any} */ (error);
+					// Re-throw specific protocol errors
+					if (
+						err.message.includes("Server URL must use http or https protocol")
+					) {
+						throw error;
+					}
+					throw new Error(
+						"Server must be valid origin URL (http://localhost:3000)",
+					);
+				}
+			}
+		}
+
+		// Validate resolver if provided
+		if (hasResolver) {
+			if (typeof this.resolver !== "function") {
+				throw new Error("Resolver must be an async function");
 			}
 		}
 

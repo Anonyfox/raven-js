@@ -62,6 +62,49 @@ export class Resource {
 	}
 
 	/**
+	 * Create resource from resolver function (lean SSG alternative to HTTP)
+	 * @param {string | URL} path - Resource path
+	 * @param {string | URL} baseUrl - Base URL for resolving relative paths
+	 * @param {function(string): Promise<Response>} resolver - Resolver function
+	 * @returns {Promise<Resource>} Resource instance with direct resolution
+	 * @throws {Error} If resolver fails
+	 */
+	static async fromResolver(path, baseUrl, resolver) {
+		// Resolve URL for consistent path handling
+		const resolvedBaseUrl = baseUrl instanceof URL ? baseUrl : new URL(baseUrl);
+		const resolvedUrl = normalizeUrl(path, resolvedBaseUrl);
+
+		const startTime = Date.now();
+
+		try {
+			// Call resolver with pathname only (clean path)
+			const response = await resolver(resolvedUrl.pathname);
+			const responseTime = Date.now() - startTime;
+
+			// Create attempt for tracking (resolver always succeeds if no error thrown)
+			const attempt = Attempt.fromResponse(
+				resolvedUrl,
+				response,
+				responseTime,
+				startTime,
+			);
+
+			// Read response body
+			const buffer = await response.arrayBuffer();
+
+			// Create resource with proper constructor parameters
+			return new Resource(resolvedUrl, response, buffer, resolvedBaseUrl, [
+				attempt,
+			]);
+		} catch (error) {
+			const err = /** @type {any} */ (error);
+			throw new Error(
+				`Resolver failed for ${resolvedUrl.pathname}: ${err.message}`,
+			);
+		}
+	}
+
+	/**
 	 * Fetch resource with attempt tracking and sane defaults
 	 * @param {string | URL} path - URL path to fetch (resolved against baseUrl if relative)
 	 * @param {string | URL} baseUrl - Base URL for resolution and domain scope

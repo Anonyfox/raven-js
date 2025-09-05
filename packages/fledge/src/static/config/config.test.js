@@ -15,14 +15,14 @@ import { Config } from "./config.js";
 import { Discover } from "./discover.js";
 
 describe("Config", () => {
-	const tempDir = join(process.cwd(), "test-config-temp");
+	const tempDir = "/tmp/fledge-config-test";
 
 	before(async () => {
 		await mkdir(tempDir, { recursive: true });
 
 		// Create test config files
 		await writeFile(
-			join(tempDir, "simple-config.js"),
+			join(tempDir, "simple-config.mjs"),
 			`
 			export default {
 				server: "http://localhost:3000",
@@ -32,7 +32,22 @@ describe("Config", () => {
 		);
 
 		await writeFile(
-			join(tempDir, "complex-config.js"),
+			join(tempDir, "resolver-config.mjs"),
+			`
+			export default {
+				resolver: async (path) => {
+					return new Response("Test content", {
+						status: 200,
+						headers: { "content-type": "text/html" }
+					});
+				},
+				routes: ["/", "/about"],
+			};
+		`,
+		);
+
+		await writeFile(
+			join(tempDir, "complex-config.mjs"),
 			`
 			export default {
 				server: "https://api.example.com",
@@ -50,7 +65,7 @@ describe("Config", () => {
 		);
 
 		await writeFile(
-			join(tempDir, "invalid-config.js"),
+			join(tempDir, "invalid-config.mjs"),
 			`
 			export default {
 				server: 123, // Invalid server type
@@ -105,6 +120,17 @@ describe("Config", () => {
 	test("getServer throws when not configured", () => {
 		const config = new Config();
 		assert.throws(() => config.getServer(), /Server configuration is required/);
+	});
+
+	test("getResolver returns configured resolver", () => {
+		const resolver = async (_path) => new Response("test");
+		const config = new Config({ resolver });
+		assert.strictEqual(config.getResolver(), resolver);
+	});
+
+	test("getResolver returns null when not configured", () => {
+		const config = new Config({ server: "http://localhost:3000" });
+		assert.strictEqual(config.getResolver(), null);
 	});
 
 	test("getRoutes returns configured routes", () => {
@@ -189,7 +215,38 @@ describe("Config", () => {
 
 	test("validate throws when server missing", () => {
 		const config = new Config();
-		assert.throws(() => config.validate(), /Server configuration is required/);
+		assert.throws(
+			() => config.validate(),
+			/Either server or resolver configuration is required/,
+		);
+	});
+
+	test("validate throws when both server and resolver provided", () => {
+		const config = new Config({
+			server: "http://localhost:3000",
+			resolver: async () => new Response("test"),
+		});
+		assert.throws(
+			() => config.validate(),
+			/Cannot specify both server and resolver - choose exactly one/,
+		);
+	});
+
+	test("validate accepts resolver configuration", () => {
+		const config = new Config({
+			resolver: async (_path) => new Response("test"),
+		});
+		assert.doesNotThrow(() => config.validate());
+	});
+
+	test("validate throws when resolver is not a function", () => {
+		const config = new Config({
+			resolver: "not-a-function",
+		});
+		assert.throws(
+			() => config.validate(),
+			/Resolver must be an async function/,
+		);
 	});
 
 	test("validate throws when server invalid type", () => {
@@ -277,7 +334,7 @@ describe("Config", () => {
 	});
 
 	test("fromFile loads default export", async () => {
-		const config = await Config.fromFile(join(tempDir, "simple-config.js"));
+		const config = await Config.fromFile(join(tempDir, "simple-config.mjs"));
 
 		assert.strictEqual(config.server, "http://localhost:3000");
 		assert.deepStrictEqual(config.routes, ["/", "/about"]);
@@ -287,7 +344,7 @@ describe("Config", () => {
 
 	test("fromFile loads named export", async () => {
 		const config = await Config.fromFile(
-			join(tempDir, "complex-config.js"),
+			join(tempDir, "complex-config.mjs"),
 			"production",
 		);
 
@@ -296,7 +353,7 @@ describe("Config", () => {
 	});
 
 	test("fromFile loads complex configuration", async () => {
-		const config = await Config.fromFile(join(tempDir, "complex-config.js"));
+		const config = await Config.fromFile(join(tempDir, "complex-config.mjs"));
 
 		assert.strictEqual(config.server, "https://api.example.com");
 		assert.deepStrictEqual(config.routes, ["/api", "/docs"]);
@@ -307,16 +364,29 @@ describe("Config", () => {
 		assert.strictEqual(config.basePath, "/my-app");
 	});
 
+	test("fromFile loads resolver configuration", async () => {
+		const config = await Config.fromFile(join(tempDir, "resolver-config.mjs"));
+
+		assert.strictEqual(config.server, null);
+		assert.strictEqual(typeof config.resolver, "function");
+		assert.deepStrictEqual(config.routes, ["/", "/about"]);
+
+		// Test resolver function works
+		const response = await config.resolver("/test");
+		assert.strictEqual(response.status, 200);
+		assert.strictEqual(response.headers.get("content-type"), "text/html");
+	});
+
 	test("fromFile validates loaded configuration", async () => {
 		await assert.rejects(
-			async () => await Config.fromFile(join(tempDir, "invalid-config.js")),
+			async () => await Config.fromFile(join(tempDir, "invalid-config.mjs")),
 			/Server must be origin URL string or async boot function/,
 		);
 	});
 
 	test("fromFile throws for missing file", async () => {
 		await assert.rejects(
-			async () => await Config.fromFile(join(tempDir, "nonexistent.js")),
+			async () => await Config.fromFile(join(tempDir, "nonexistent.mjs")),
 			/Config file not found:/,
 		);
 	});
@@ -324,7 +394,10 @@ describe("Config", () => {
 	test("fromFile throws for missing export", async () => {
 		await assert.rejects(
 			async () =>
-				await Config.fromFile(join(tempDir, "simple-config.js"), "nonexistent"),
+				await Config.fromFile(
+					join(tempDir, "simple-config.mjs"),
+					"nonexistent",
+				),
 			/Export 'nonexistent' not found/,
 		);
 	});

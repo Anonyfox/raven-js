@@ -90,6 +90,62 @@ export const productionConfig = {
 };
 ```
 
+#### Lean Resolver Mode (Advanced)
+
+For maximum performance, bypass HTTP entirely with direct function resolution. Perfect for wings/core Context integration or custom routing systems:
+
+```javascript
+// fledge.config.js - Resolver mode (no HTTP overhead)
+export default {
+  // Resolver: direct function instead of server
+  resolver: async (path) => {
+    // Use your router directly (wings example)
+    const ctx = await myRouter.resolve(path);
+    return ctx.toResponse(); // wings Context -> native Response
+  },
+
+  routes: ["/", "/about", "/api/data"],
+  discover: false, // Often disabled for predictable resolver routes
+  output: "./dist",
+};
+
+// Custom resolver example
+export const customResolver = {
+  resolver: async (path) => {
+    // Direct route handling without HTTP server
+    const routes = {
+      "/": "<html><body><h1>Home</h1></body></html>",
+      "/about": "<html><body><h1>About</h1></body></html>",
+      "/api/data": JSON.stringify({ message: "Hello API" }),
+    };
+
+    const content = routes[path] || "<html><body>404 Not Found</body></html>";
+    const contentType = path.startsWith("/api/")
+      ? "application/json"
+      : "text/html";
+    const status = routes[path] ? 200 : 404;
+
+    return new Response(content, {
+      status,
+      headers: { "content-type": contentType },
+    });
+  },
+
+  routes: ["/", "/about", "/api/data"],
+};
+```
+
+**Resolver vs Server Mode:**
+
+| Feature         | Server Mode                | Resolver Mode                           |
+| --------------- | -------------------------- | --------------------------------------- |
+| **Performance** | HTTP overhead              | Direct function calls                   |
+| **Setup**       | Requires running server    | Zero server boot time                   |
+| **Flexibility** | Any HTTP server            | JavaScript function only                |
+| **Use Case**    | Existing apps, dev servers | Performance-critical, wings integration |
+
+**Note:** Specify exactly one of `server` OR `resolver`—not both. Resolver mode eliminates HTTP serialization overhead for maximum static generation performance.
+
 #### Blackbox Server Integration
 
 Fledge treats your server as a blackbox—it doesn't care about your framework, build tools, or internal architecture. Just serve HTTP responses:

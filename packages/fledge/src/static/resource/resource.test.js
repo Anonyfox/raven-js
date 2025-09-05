@@ -15,6 +15,91 @@ describe("Resource", () => {
 	// Mock fetch globally for tests
 	const originalFetch = globalThis.fetch;
 
+	describe("fromResolver", () => {
+		test("creates resource from resolver function", async () => {
+			const resolver = async (_path) => {
+				return new Response("<html><body>Test content</body></html>", {
+					status: 200,
+					headers: { "content-type": "text/html" },
+				});
+			};
+
+			const resource = await Resource.fromResolver(
+				"/test",
+				"http://localhost:3000",
+				resolver,
+			);
+
+			assert(resource instanceof Resource);
+			assert.strictEqual(resource.getUrl().pathname, "/test");
+			assert.strictEqual(resource.isHtml(), true);
+			assert.strictEqual(
+				resource.getContent().toString(),
+				"<html><body>Test content</body></html>",
+			);
+		});
+
+		test("handles resolver that returns JSON", async () => {
+			const resolver = async (path) => {
+				const data = { path, message: "Hello from resolver" };
+				return new Response(JSON.stringify(data), {
+					status: 200,
+					headers: { "content-type": "application/json" },
+				});
+			};
+
+			const resource = await Resource.fromResolver(
+				"/api/test",
+				"http://localhost:3000",
+				resolver,
+			);
+
+			assert.strictEqual(resource.getUrl().pathname, "/api/test");
+			assert.strictEqual(resource.getContentType(), "application/json");
+			assert.strictEqual(resource.isAsset(), true); // JSON is not HTML, so it's an asset
+			const content = JSON.parse(Buffer.from(resource.getBuffer()).toString());
+			assert.strictEqual(content.path, "/api/test");
+			assert.strictEqual(content.message, "Hello from resolver");
+		});
+
+		test("throws error when resolver fails", async () => {
+			const resolver = async (_path) => {
+				throw new Error("Resolver error");
+			};
+
+			await assert.rejects(
+				async () =>
+					await Resource.fromResolver(
+						"/error",
+						"http://localhost:3000",
+						resolver,
+					),
+				/Resolver failed for \/error: Resolver error/,
+			);
+		});
+
+		test("resolves relative paths correctly", async () => {
+			const resolver = async (path) => {
+				return new Response(`Path: ${path}`, {
+					status: 200,
+					headers: { "content-type": "text/plain" },
+				});
+			};
+
+			const resource = await Resource.fromResolver(
+				"relative/path",
+				"http://example.com/base/",
+				resolver,
+			);
+
+			assert.strictEqual(resource.getUrl().pathname, "/base/relative/path");
+			assert.strictEqual(resource.getContentType(), "text/plain");
+			assert.strictEqual(resource.isAsset(), true); // text/plain is not HTML
+			const content = Buffer.from(resource.getBuffer()).toString();
+			assert.strictEqual(content, "Path: /base/relative/path");
+		});
+	});
+
 	function mockFetch(url, _options) {
 		// Simple mock that returns based on URL
 		const urlStr = url.toString();

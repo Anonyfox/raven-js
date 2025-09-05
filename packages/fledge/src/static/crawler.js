@@ -68,10 +68,13 @@ export class Crawler {
 		// Initialize frontier without base URL (set during start)
 		this.#frontier = new Frontier();
 
-		// Create server if config uses function-based server
-		const serverConfig = this.#config.getServer();
-		if (typeof serverConfig === "function") {
-			this.#server = new Server(serverConfig);
+		// Create server if config uses function-based server (not resolver)
+		const resolver = this.#config.getResolver();
+		if (!resolver) {
+			const serverConfig = this.#config.getServer();
+			if (typeof serverConfig === "function") {
+				this.#server = new Server(serverConfig);
+			}
 		}
 	}
 
@@ -90,8 +93,13 @@ export class Crawler {
 		const { serverTimeout = 30000 } = options;
 
 		try {
-			// Boot server if needed
-			if (this.#server) {
+			// Set up base URL based on configuration type
+			const resolver = this.#config.getResolver();
+			if (resolver) {
+				// For resolver mode, use a dummy base URL (not used for actual requests)
+				this.#baseUrl = new URL("http://localhost:0");
+			} else if (this.#server) {
+				// Boot function-based server
 				await this.#server.boot({ timeout: serverTimeout });
 				this.#baseUrl = new URL(
 					/** @type {string} */ (this.#server.getOrigin()),
@@ -161,14 +169,21 @@ export class Crawler {
 				if (!url) break; // Safety check
 
 				try {
-					// Fetch resource with timeout
-					const resource = await Resource.fetch(
-						url,
-						/** @type {string | URL} */ (this.#baseUrl),
-						{
-							timeout: requestTimeout,
-						},
-					);
+					// Get resource via resolver or HTTP fetch
+					const resolver = this.#config.getResolver();
+					const resource = resolver
+						? await Resource.fromResolver(
+								url,
+								/** @type {string | URL} */ (this.#baseUrl),
+								resolver,
+							)
+						: await Resource.fetch(
+								url,
+								/** @type {string | URL} */ (this.#baseUrl),
+								{
+									timeout: requestTimeout,
+								},
+							);
 
 					// Mark as successfully crawled
 					this.#frontier.markCrawled(url);

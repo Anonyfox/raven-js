@@ -1163,4 +1163,130 @@ describe("Context", () => {
 			assert.equal(ctx.isNotFound(), false);
 		});
 	});
+
+	describe("toResponse", () => {
+		it("should create Response with text content", async () => {
+			await ctx.text("Hello World");
+			const response = ctx.toResponse();
+
+			assert.equal(response.status, 200);
+			assert.equal(response.headers.get("content-type"), "text/plain");
+			assert.equal(response.headers.get("content-length"), "11");
+		});
+
+		it("should create Response with JSON content", async () => {
+			const data = { message: "Hello", count: 42 };
+			await ctx.json(data);
+			const response = ctx.toResponse();
+
+			assert.equal(response.status, 200);
+			assert.equal(response.headers.get("content-type"), "application/json");
+
+			const responseData = await response.json();
+			assert.equal(responseData.message, "Hello");
+			assert.equal(responseData.count, 42);
+		});
+
+		it("should create Response with HTML content", async () => {
+			const html = "<h1>Title</h1><p>Content</p>";
+			await ctx.html(html);
+			const response = ctx.toResponse();
+
+			assert.equal(response.status, 200);
+			assert.equal(response.headers.get("content-type"), "text/html");
+
+			const responseText = await response.text();
+			assert.equal(responseText, html);
+		});
+
+		it("should create Response with XML content", async () => {
+			const xml = "<root><item>value</item></root>";
+			await ctx.xml(xml);
+			const response = ctx.toResponse();
+
+			assert.equal(response.status, 200);
+			assert.equal(response.headers.get("content-type"), "application/xml");
+
+			const responseText = await response.text();
+			assert.equal(responseText, xml);
+		});
+
+		it("should create Response with JavaScript content", async () => {
+			const js = 'console.log("Hello");';
+			await ctx.js(js);
+			const response = ctx.toResponse();
+
+			assert.equal(response.status, 200);
+			assert.equal(
+				response.headers.get("content-type"),
+				"application/javascript",
+			);
+
+			const responseText = await response.text();
+			assert.equal(responseText, js);
+		});
+
+		it("should create Response with custom status codes", async () => {
+			await ctx.notFound("Resource not found");
+			const notFoundResponse = ctx.toResponse();
+			assert.equal(notFoundResponse.status, 404);
+
+			await ctx.error("Server error");
+			const errorResponse = ctx.toResponse();
+			assert.equal(errorResponse.status, 500);
+		});
+
+		it("should create Response with custom headers", async () => {
+			await ctx.text("Test");
+			ctx.responseHeaders.set("x-custom-header", "custom-value");
+			ctx.responseHeaders.set("cache-control", "no-cache");
+
+			const response = ctx.toResponse();
+			assert.equal(response.headers.get("x-custom-header"), "custom-value");
+			assert.equal(response.headers.get("cache-control"), "no-cache");
+		});
+
+		it("should handle empty response body", async () => {
+			await ctx.text("");
+			const response = ctx.toResponse();
+
+			assert.equal(response.status, 200);
+			assert.equal(response.headers.get("content-length"), "0");
+		});
+
+		it("should handle null response body", () => {
+			// Default state - no response set
+			const response = ctx.toResponse();
+
+			assert.equal(response.status, 200); // Default status
+			assert.equal(response.body, null);
+		});
+
+		it("should preserve all headers from responseHeaders", async () => {
+			await ctx.text("Test content");
+			ctx.responseHeaders.set("x-test-1", "value1");
+			ctx.responseHeaders.set("x-test-2", "value2");
+			ctx.responseHeaders.set("x-test-3", "value3");
+
+			const response = ctx.toResponse();
+			assert.equal(response.headers.get("x-test-1"), "value1");
+			assert.equal(response.headers.get("x-test-2"), "value2");
+			assert.equal(response.headers.get("x-test-3"), "value3");
+			assert.equal(response.headers.get("content-type"), "text/plain");
+		});
+
+		it("should work with Buffer response body", () => {
+			const bufferContent = Buffer.from("Binary content", "utf8");
+			ctx.responseBody = bufferContent;
+			ctx.responseStatusCode = 200;
+			ctx.responseHeaders.set("content-type", "application/octet-stream");
+
+			const response = ctx.toResponse();
+			assert.equal(response.status, 200);
+			assert.equal(
+				response.headers.get("content-type"),
+				"application/octet-stream",
+			);
+		});
+	});
 });
