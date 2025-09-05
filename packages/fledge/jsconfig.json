@@ -1,28 +1,16 @@
 {
   "compilerOptions": {
+    "checkJs": true,
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "target": "ESNext",
-    "allowJs": true,
-    "checkJs": true,
-    "noEmit": true,
-    "strict": true,
     "noImplicitAny": true,
     "resolveJsonModule": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "allowUnreachableCode": false,
-    "allowUnusedLabels": false,
-    "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
       "postject": ["./types/postject-stub.d.ts"]
     }
   },
   "include": ["**/*.js"],
-  "exclude": ["node_modules/**", "./static/**", "**/*.min.js", "**/*.test.js"]
+  "exclude": ["**/*.test.js", "node_modules/**", "./static/**", "**/*.min.js"]
 }

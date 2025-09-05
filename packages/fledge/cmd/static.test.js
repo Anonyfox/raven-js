@@ -93,7 +93,7 @@ describe("StaticCommand", () => {
 		// Mock console.log
 		const originalLog = console.log;
 		console.log = (...args) => {
-			consoleOutput += args.join(" ") + "\n";
+							consoleOutput += `${args.join(" ")}\n`;
 		};
 
 		try {

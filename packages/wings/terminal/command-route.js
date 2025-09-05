@@ -94,6 +94,13 @@ export class ValidationError extends Error {
  */
 export class CommandRoute extends Route {
 	/**
+	 * HTTP method for this route (always COMMAND for CLI routes).
+	 * @override
+	 * @type {import('../core/http-methods.js').HttpMethod}
+	 */
+	method = "COMMAND";
+
+	/**
 	 * Internal storage for flag configurations.
 	 * @type {Map<string, FlagConfig>}
 	 */
@@ -107,7 +114,6 @@ export class CommandRoute extends Route {
 	 */
 	constructor(path, description = "") {
 		super();
-		this.method = HTTP_METHODS.COMMAND;
 		this.path = path;
 		this.description = description;
 		this.handler = this.#createHandler();

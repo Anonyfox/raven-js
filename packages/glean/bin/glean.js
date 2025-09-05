@@ -16,7 +16,7 @@
 
 import { Router } from "@raven-js/wings";
 import { Terminal } from "@raven-js/wings/terminal";
-import { ValidateCommand, ServerCommand, SsgCommand } from "../cmd/index.js";
+import { ServerCommand, SsgCommand, ValidateCommand } from "../cmd/index.js";
 import { showBanner, showHelp } from "../index.js";
 
 /**
