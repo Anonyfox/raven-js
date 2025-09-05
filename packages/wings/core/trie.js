@@ -7,11 +7,33 @@
  */
 
 /**
- * @file Trie data structure for route matching with support for static paths, named parameters, and wildcards.
+ * @file Trie data structure for route matching with support for static paths, named parameters, optional parameters, and wildcards.
  *
  * Provides tree-based route storage and matching with priority-ordered resolution:
  * fixed segments > named parameters > wildcards. Uses Object.create(null) for performance.
+ * Supports optional parameters (:param?) through dual registration pattern.
  */
+
+/**
+ * Check if a segment represents an optional parameter
+ * @param {string} segment - Path segment to check
+ * @returns {boolean} True if segment is an optional parameter (:param?)
+ */
+function isOptionalParameter(segment) {
+	return segment.startsWith(":") && segment.endsWith("?");
+}
+
+/**
+ * Extract parameter name from a segment
+ * @param {string} segment - Path segment (:param or :param?)
+ * @returns {string} Parameter name without : and ? prefixes/suffixes
+ */
+function getParameterName(segment) {
+	if (isOptionalParameter(segment)) {
+		return segment.slice(1, -1); // Remove : and ?
+	}
+	return segment.startsWith(":") ? segment.slice(1) : segment;
+}
 /**
  * Trie data structure for route matching with support for wildcards and named parameters.
  *
@@ -128,9 +150,23 @@ export class Trie {
 			return;
 		}
 
-		// handle named parameter segment
+		// handle optional parameter segment - dual registration pattern
+		if (isOptionalParameter(segment)) {
+			const paramName = getParameterName(segment);
+
+			// Register route at CURRENT node (for missing optional parameter)
+			this.id = id;
+
+			// ALSO register at dynamic node (for provided optional parameter)
+			if (!this.dynamic[paramName])
+				this.dynamic[paramName] = new Trie(paramName);
+			this.dynamic[paramName].register(pathSegments, id, startIndex + 1);
+			return;
+		}
+
+		// handle regular named parameter segment
 		if (segment.startsWith(":") || segment.startsWith("*")) {
-			const name = segment.slice(1); // empty string for wildcards suffices here
+			const name = getParameterName(segment);
 			if (!this.dynamic[name]) this.dynamic[name] = new Trie(name);
 			this.dynamic[name].register(pathSegments, id, startIndex + 1);
 			return;
@@ -164,7 +200,7 @@ export class Trie {
 	match(remainingPathSegments, params = {}) {
 		// stop recursion if there are no more path segments, this is a leaf node then
 		if (remainingPathSegments.length === 0) {
-			return { id: this.id, params };
+			return { id: this.id >= 0 ? this.id : undefined, params };
 		}
 
 		// handle the next path segment

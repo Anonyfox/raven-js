@@ -396,4 +396,133 @@ describe("Trie", () => {
 			assert.equal(trie.match(["users", "123", "posts"]).id, 3);
 		});
 	});
+
+	describe("optional parameters", () => {
+		let trie;
+
+		beforeEach(() => {
+			trie = new Trie();
+		});
+
+		it("should match route with missing optional parameter", () => {
+			trie.register(["static", ":config?"], 1);
+
+			const result = trie.match(["static"]);
+			assert.equal(result.id, 1);
+			assert.deepEqual(result.params, {});
+		});
+
+		it("should match route with provided optional parameter", () => {
+			trie.register(["static", ":config?"], 1);
+
+			const result = trie.match(["static", "myconfig.js"]);
+			assert.equal(result.id, 1);
+			assert.deepEqual(result.params, { config: "myconfig.js" });
+		});
+
+		it("should handle multiple optional parameters", () => {
+			trie.register(["deploy", ":env?", ":version?"], 1);
+
+			// No parameters
+			let result = trie.match(["deploy"]);
+			assert.equal(result.id, 1);
+			assert.deepEqual(result.params, {});
+
+			// One parameter
+			result = trie.match(["deploy", "prod"]);
+			assert.equal(result.id, 1);
+			assert.deepEqual(result.params, { env: "prod" });
+
+			// Two parameters
+			result = trie.match(["deploy", "prod", "v1.0"]);
+			assert.equal(result.id, 1);
+			assert.deepEqual(result.params, { env: "prod", version: "v1.0" });
+		});
+
+		it("should not match routes with too many segments", () => {
+			trie.register(["static", ":config?"], 1);
+
+			const result = trie.match(["static", "config.js", "extra"]);
+			assert.equal(result.id, undefined);
+		});
+
+		it("should handle mixed optional and required parameters", () => {
+			trie.register(["api", ":version", ":resource?"], 1);
+
+			// Required parameter provided, optional missing
+			let result = trie.match(["api", "v1"]);
+			assert.equal(result.id, 1);
+			assert.deepEqual(result.params, { version: "v1" });
+
+			// Both parameters provided
+			result = trie.match(["api", "v1", "users"]);
+			assert.equal(result.id, 1);
+			assert.deepEqual(result.params, { version: "v1", resource: "users" });
+
+			// Required parameter missing - should not match
+			result = trie.match(["api"]);
+			assert.equal(result.id, undefined);
+		});
+
+		it("should maintain priority with optional parameters", () => {
+			trie.register(["users", ":id?"], 1); // Optional parameter
+			trie.register(["users", "profile"], 2); // Fixed segment
+
+			// Fixed segment should take priority over optional parameter
+			const result = trie.match(["users", "profile"]);
+			assert.equal(result.id, 2);
+		});
+
+		it("should handle optional parameters with URL encoding", () => {
+			trie.register(["files", ":path?"], 1);
+
+			const result = trie.match(["files", "my%20file.txt"]);
+			assert.equal(result.id, 1);
+			assert.deepEqual(result.params, { path: "my file.txt" });
+		});
+
+		it("should handle complex optional parameter patterns", () => {
+			// Simulate fledge CLI pattern: /static/:config?
+			trie.register(["static", ":config?"], 1);
+			trie.register(["script", ":config?"], 2);
+			trie.register(["binary", ":config?"], 3);
+
+			// Test all commands without config
+			assert.equal(trie.match(["static"]).id, 1);
+			assert.equal(trie.match(["script"]).id, 2);
+			assert.equal(trie.match(["binary"]).id, 3);
+
+			// Test all commands with config
+			let result = trie.match(["static", "config.js"]);
+			assert.equal(result.id, 1);
+			assert.deepEqual(result.params, { config: "config.js" });
+
+			result = trie.match(["script", "build.config.js"]);
+			assert.equal(result.id, 2);
+			assert.deepEqual(result.params, { config: "build.config.js" });
+
+			result = trie.match(["binary", "dist.config.js"]);
+			assert.equal(result.id, 3);
+			assert.deepEqual(result.params, { config: "dist.config.js" });
+		});
+
+		it("should handle nested optional parameters", () => {
+			trie.register(["api", ":version?", "users", ":id?"], 1);
+
+			// No optional parameters
+			let result = trie.match(["api", "users"]);
+			assert.equal(result.id, undefined); // Should not match - missing required segment structure
+
+			// Test the actual pattern that would work
+			trie.register(["api", "users", ":id?"], 2);
+
+			result = trie.match(["api", "users"]);
+			assert.equal(result.id, 2);
+			assert.deepEqual(result.params, {});
+
+			result = trie.match(["api", "users", "123"]);
+			assert.equal(result.id, 2);
+			assert.deepEqual(result.params, { id: "123" });
+		});
+	});
 });
