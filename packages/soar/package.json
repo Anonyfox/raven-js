@@ -1,7 +1,7 @@
 {
   "name": "@raven-js/soar",
   "description": "Zero-dependency deployment tool for modern JavaScript - deploy any artifact to any target",
-  "version": "0.4.31",
+  "version": "0.4.32",
   "type": "module",
   "main": "index.js",
   "bin": {
