@@ -20,7 +20,7 @@ import { findBlogPost } from "../../../collections/blog-posts.js";
 
 /**
  * @typedef {Object} BlogPostData
- * @property {BlogPost|null} post - Blog post from collection
+ * @property {BlogPost|undefined} post - Blog post from collection
  * @property {string} slug - Blog post slug
  */
 
@@ -30,9 +30,9 @@ import { findBlogPost } from "../../../collections/blog-posts.js";
  * @returns {Promise<BlogPostData>} Page data
  */
 export async function loadDynamicData(ctx) {
-	const { slug } = ctx.pathParams;
-	const post = findBlogPost(slug);
-	return { post, slug };
+  const { slug } = ctx.pathParams;
+  const post = findBlogPost(slug);
+  return { post, slug };
 }
 
 /**
@@ -41,7 +41,7 @@ export async function loadDynamicData(ctx) {
  * @returns {Promise<string>} Page title
  */
 export const title = async (data) => {
-	return data.post?.title || "Blog Post Not Found";
+  return data.post?.title || "Blog Post Not Found";
 };
 
 /**
@@ -50,7 +50,7 @@ export const title = async (data) => {
  * @returns {Promise<string>} Page description
  */
 export const description = async (data) => {
-	return data.post?.description || "The requested blog post could not be found";
+  return data.post?.description || "The requested blog post could not be found";
 };
 
 /**
@@ -59,15 +59,15 @@ export const description = async (data) => {
  * @returns {Promise<string>} Page body content
  */
 export const body = async (data) => {
-	if (!data.post) {
-		return md`
+  if (!data.post) {
+    return md`
 # Blog Post Not Found
 
 The blog post with slug **${data.slug}** could not be found.
 
 [← Back to Blog](/blog)
 		`;
-	}
+  }
 
-	return md`${data.post.content}`;
+  return md`${data.post.content}`;
 };
