@@ -224,32 +224,41 @@ export const NewsletterSignup = ({ title = "Stay Updated" }) => {
 When you're ready for interactivity, add **Reflex** signals:
 
 ```javascript
-// Add to your page
-import { signal, computed, effect } from "@raven-js/reflex";
+// Create interactive component (src/apps/counter.js)
+import { html } from "@raven-js/beak";
+import { signal } from "@raven-js/reflex";
+import { mount } from "@raven-js/reflex/dom";
 
-const count = signal(0);
-const doubled = computed(() => count() * 2);
+export const Counter = ({ initial = 0 } = {}) => {
+  // Create reactive signal for counter state
+  const count = signal(initial);
 
+  // Event handlers
+  const increment = () => count.update((n) => n + 1);
+  const decrement = () => count.update((n) => n - 1);
+
+  return html`
+    <div class="counter">
+      <button onclick=${decrement}>-</button>
+      <div class="counter__display">${count()}</div>
+      <button onclick=${increment}>+</button>
+    </div>
+  `;
+};
+
+// Mount to DOM
+mount(Counter, "#counter-app", { replace: true });
+```
+
+Then include in your page:
+
+```javascript
+// In your page content
 const content = md`
 # Interactive Counter
 
-<div id="counter">
-  <p>Count: <span id="count">${count()}</span></p>
-  <p>Doubled: <span id="doubled">${doubled()}</span></p>
-  <button onclick="increment()">+1</button>
-</div>
-
-<script>
-  // Client-side reactivity
-  effect(() => {
-    document.getElementById('count').textContent = count();
-    document.getElementById('doubled').textContent = doubled();
-  });
-
-  function increment() {
-    count.set(count() + 1);
-  }
-</script>
+<div id="counter-app"></div>
+<script type="module" src="/apps/counter.js"></script>
 `;
 ```
 
