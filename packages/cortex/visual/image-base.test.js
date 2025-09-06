@@ -91,7 +91,7 @@ describe("Image Base Class", () => {
     });
 
     it("crop returns this for chaining", () => {
-      const result = image.crop(10, 20, 100, 200);
+      const result = image.crop(2, 2, 5, 5);
       assert.equal(result, image);
     });
 

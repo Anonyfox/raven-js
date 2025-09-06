@@ -42,14 +42,14 @@ export async function compressWithDEFLATE(data, level = 6) {
     throw new Error("level must be an integer between 0 and 9");
   }
 
-  // Try browser CompressionStream first
-  if (typeof CompressionStream !== "undefined") {
-    return compressWithCompressionStream(data, level);
-  }
-
-  // Fall back to Node.js zlib
+  // Use Node.js zlib in Node.js environment (more reliable)
   if (typeof window === "undefined") {
     return compressWithNodeZlib(data, level);
+  }
+
+  // Use browser CompressionStream in browser
+  if (typeof CompressionStream !== "undefined") {
+    return compressWithCompressionStream(data, level);
   }
 
   throw new Error("No DEFLATE compression available in this environment");

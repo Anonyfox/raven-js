@@ -14,6 +14,7 @@
  * behavior across PNG, JPEG, WebP, and GIF formats.
  */
 
+import { cropPixels, getCropInfo } from "./crop/index.js";
 import { resizePixels } from "./resize/index.js";
 
 /**
@@ -71,14 +72,36 @@ export class Image {
   /**
    * Crop image to specified rectangle.
    *
-   * @param {number} _x - Left offset in pixels
-   * @param {number} _y - Top offset in pixels
-   * @param {number} _width - Crop width in pixels
-   * @param {number} _height - Crop height in pixels
+   * @param {number} x - Left offset in pixels
+   * @param {number} y - Top offset in pixels
+   * @param {number} width - Crop width in pixels
+   * @param {number} height - Crop height in pixels
    * @returns {Image} This instance for chaining
    */
-  crop(_x, _y, _width, _height) {
-    // Stub implementation
+  crop(x, y, width, height) {
+    if (!this.pixels) {
+      throw new Error("Image not decoded yet - no pixel data available for cropping");
+    }
+
+    try {
+      // Get crop information to determine actual output dimensions
+      const cropInfo = getCropInfo(this._width, this._height, x, y, width, height);
+
+      if (!cropInfo.isValid) {
+        throw new Error(`Invalid crop region (${x}, ${y}, ${width}x${height})`);
+      }
+
+      // Perform crop operation
+      const croppedPixels = cropPixels(this.pixels, this._width, this._height, x, y, width, height);
+
+      // Update image state with actual dimensions
+      this.pixels = croppedPixels;
+      this._width = cropInfo.effectiveBounds.width;
+      this._height = cropInfo.effectiveBounds.height;
+    } catch (error) {
+      throw new Error(`Crop failed: ${error.message}`);
+    }
+
     return this;
   }
 
