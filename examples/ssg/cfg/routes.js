@@ -35,7 +35,7 @@ const router = new Router();
 async function setupRoutes() {
 	try {
 		// Add static assets middleware
-		router.use(new Assets({ assetsDir: "../public" }));
+		router.use(new Assets({ assetsDir: "./public" }));
 
 		// Register routes using Wings file-routes with custom SSG handler
 		const routes = await registerFileRoutes(router, "src/pages", {

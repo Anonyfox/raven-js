@@ -304,35 +304,73 @@ const parseBlockElement = (lines, startIndex, references) => {
 		const htmlLines = [];
 		let i = startIndex;
 
-		// Extract the opening tag name to match with closing tag
-		const openTagMatch = line.match(/^ {0,3}<([a-zA-Z][a-zA-Z0-9]*)/);
-		const tagName = openTagMatch ? openTagMatch[1] : null;
-		let tagDepth = 0;
+		// Track all unclosed tags, not just the first one
+		const unclosedTags = new Map(); // tagName -> count
 		let foundOpeningTag = false;
 
 		while (i < lines.length) {
 			const currentLine = lines[i];
 			htmlLines.push(currentLine);
 
-			// Track opening and closing tags for the specific tag
-			if (tagName) {
-				const openMatches =
-					currentLine.match(new RegExp(`<${tagName}\\b`, "gi")) || [];
-				const closeMatches =
-					currentLine.match(new RegExp(`</${tagName}>`, "gi")) || [];
+			// Track all opening and closing tags on this line
+			const allOpenTags =
+				currentLine.match(/<([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g) || [];
+			const allCloseTags =
+				currentLine.match(/<\/([a-zA-Z][a-zA-Z0-9]*)\s*>/g) || [];
 
-				tagDepth += openMatches.length;
-				if (tagDepth > 0) foundOpeningTag = true;
-				tagDepth -= closeMatches.length;
-
-				// Stop when we've closed all instances of the opening tag
-				if (foundOpeningTag && tagDepth <= 0) {
-					i++;
-					break;
+			// Process opening tags
+			for (const openTag of allOpenTags) {
+				const tagMatch = openTag.match(/<([a-zA-Z][a-zA-Z0-9]*)/);
+				if (tagMatch) {
+					const tagName = tagMatch[1].toLowerCase();
+					// Skip self-closing tags and void elements
+					if (
+						!openTag.endsWith("/>") &&
+						![
+							"area",
+							"base",
+							"br",
+							"col",
+							"embed",
+							"hr",
+							"img",
+							"input",
+							"link",
+							"meta",
+							"param",
+							"source",
+							"track",
+							"wbr",
+						].includes(tagName)
+					) {
+						unclosedTags.set(tagName, (unclosedTags.get(tagName) || 0) + 1);
+						foundOpeningTag = true;
+					}
 				}
 			}
 
-			// Stop at blank line if we haven't found proper tag structure
+			// Process closing tags
+			for (const closeTag of allCloseTags) {
+				const tagMatch = closeTag.match(/<\/([a-zA-Z][a-zA-Z0-9]*)/);
+				if (tagMatch) {
+					const tagName = tagMatch[1].toLowerCase();
+					const count = unclosedTags.get(tagName) || 0;
+					if (count > 1) {
+						unclosedTags.set(tagName, count - 1);
+					} else {
+						unclosedTags.delete(tagName);
+					}
+				}
+			}
+
+			// Stop when all tags are closed
+			if (foundOpeningTag && unclosedTags.size === 0) {
+				i++;
+				break;
+			}
+
+			// Only stop at blank lines if we haven't found an opening tag yet
+			// Once we have an opening tag, continue until closing tag is found
 			if (!currentLine.trim() && !foundOpeningTag) {
 				break;
 			}

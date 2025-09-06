@@ -11,6 +11,8 @@
  */
 
 import { code, md } from "@raven-js/beak";
+import { Counter } from "../../apps/counter.js";
+import { island } from "../../components/island.js";
 import { pageExampleSnippet } from "./snippets.js";
 
 /**
@@ -31,10 +33,19 @@ export const body = md`
 # About RavenJS SSG
 
 RavenJS SSG represents a fundamental shift in how we think about static site generation. Instead of learning new templating languages or dealing with complex build systems, you work with pure JavaScript.
-Including seamless reactivity in automatically bundled client-side Apps like this one:
 
-<div id="counter-app"></div>
-<script type="module" src="/apps/counter.js"></script>
+## Islands Architecture Demo
+
+Including seamless reactivity with **selective hydration** - interactive components on static pages:
+
+### Load Strategy (immediate)
+${island(Counter, { initial: 0 })}
+
+### Idle Strategy (when browser idle)
+${island(Counter, { initial: 10 }, { client: "idle" })}
+
+### Visible Strategy (when scrolled into view)
+${island(Counter, { initial: 100 }, { client: "visible" })}
 
 ## The Philosophy
 

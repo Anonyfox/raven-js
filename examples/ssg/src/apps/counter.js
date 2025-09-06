@@ -132,4 +132,11 @@ export const Counter = ({ initial = 0 } = {}) => {
 	`;
 };
 
-mount(Counter, "#counter-app", { replace: true });
+/**
+ * Hydrate counter component to DOM element
+ * @param {string} selector - CSS selector for target element
+ * @param {Object} [props={}] - Component props
+ */
+export const hydrate = (selector, props = {}) => {
+	mount(() => Counter(props), selector, { replace: true });
+};

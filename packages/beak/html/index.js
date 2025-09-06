@@ -118,19 +118,32 @@ function processValueFast(value) {
 let handlerCounter = 0;
 
 /**
- * Event attribute processor - transparently binds functions to global scope.
- * Enables isomorphic event handlers without manual registration.
+ * Event attribute processor - uses unique global names with timestamp to prevent collisions.
+ * Enables isomorphic event handlers without namespace pollution between component instances.
  *
  * @param {any} value - Value to process
  * @returns {string} Processed string value
  */
 function processEventAttr(value) {
 	if (typeof value === "function") {
-		const name =
+		const baseName =
 			value.name && /^[A-Za-z_$][\w$]*$/.test(value.name)
 				? value.name
 				: `__h${++handlerCounter}`;
-		if (typeof window !== "undefined") window[name] = value; // expose globally in browser
+
+		// For named functions, check if already exists and make unique if needed
+		let name = baseName;
+		if (typeof window !== "undefined") {
+			if (
+				/** @type {any} */ (window)[name] &&
+				/** @type {any} */ (window)[name] !== value
+			) {
+				// Name collision with different function - make unique
+				const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+				name = `${baseName}_${uniqueId}`;
+			}
+			/** @type {any} */ (window)[name] = value; // expose globally
+		}
 		return `${name}(event)`; // make the attribute call it
 	}
 	return processValueFast(value);

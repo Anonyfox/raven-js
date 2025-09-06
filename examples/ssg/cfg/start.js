@@ -19,7 +19,7 @@ import { router } from "./routes.js";
 async function startServer() {
 	// Add logging middleware
 	router.useEarly(new Logger());
-	router.use(new Resolve({ sourceFolder: "../src" }));
+	router.use(new Resolve({ sourceFolder: "./src" }));
 
 	// Create development server
 	const server = new DevServer(router);
