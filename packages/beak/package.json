@@ -6,7 +6,6 @@
   "files": [
     "**/*.js",
     "*.d.ts",
-    "types.*.d.ts",
     "**/README.md",
     "LICENSE",
     "media/**/*",

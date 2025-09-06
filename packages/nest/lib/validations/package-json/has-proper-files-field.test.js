@@ -120,8 +120,6 @@ describe("HasProperFilesField", () => {
 			version: "1.0.0",
 			files: [
 				"**/*.js",
-				"*.d.ts",
-				"types.*.d.ts",
 				"**/README.md",
 				"LICENSE",
 				"media/**/*",
@@ -143,8 +141,6 @@ describe("HasProperFilesField", () => {
 			version: "1.0.0",
 			files: [
 				"**/*.js",
-				"*.d.ts",
-				"types.*.d.ts",
 				"**/README.md",
 				"LICENSE",
 				"media/**/*",
@@ -154,6 +150,8 @@ describe("HasProperFilesField", () => {
 				"templates/**/*",
 				"docs/**/*",
 				"*.json",
+				"*.d.ts",
+				"types.*.d.ts",
 			],
 		};
 
@@ -196,8 +194,6 @@ describe("HasProperFilesField", () => {
 			version: "1.0.0",
 			files: [
 				"**/*.js",
-				"*.d.ts",
-				"types.*.d.ts",
 				"**/README.md",
 				"LICENSE",
 				"media/**/*",

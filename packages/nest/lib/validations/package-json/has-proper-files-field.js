@@ -19,8 +19,6 @@ import { join } from "node:path";
  */
 const CANONICAL_FILES_PATTERNS = [
 	"**/*.js",
-	"*.d.ts",
-	"types.*.d.ts",
 	"**/README.md",
 	"LICENSE",
 	"media/**/*",

@@ -1,16 +1,9 @@
 /**
- * Clean TypeScript stub for postject to bypass broken package definitions
- * This overrides the problematic postject types with clean, working definitions
+ * Type stub for postject module
+ * @see {@link https://github.com/nodejs/postject}
  */
 
 declare module "postject" {
-	/**
-	 * Inject a resource into a binary executable
-	 * @param filename - Path to the executable file
-	 * @param resourceName - Name of the resource to inject
-	 * @param resourceData - Binary data to inject
-	 * @param options - Injection options
-	 */
 	export function inject(
 		filename: string,
 		resourceName: string,
