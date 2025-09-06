@@ -157,13 +157,13 @@ describe("core functionality", () => {
 		assert.equal(String(refLink), "[object Object]");
 
 		// Code block creation returns object
-		const codeBlock = code("javascript", "const x = 1;");
+		const codeBlock = code("const x = 1;", "javascript");
 		assert.equal(codeBlock.type, "code");
 		assert.equal(codeBlock.code, "const x = 1;");
 		assert.equal(codeBlock.language, "javascript");
 
 		// Code block without language
-		const plainCode = code("", "plain text");
+		const plainCode = code("plain text");
 		assert.equal(plainCode.language, "");
 
 		// Table creation returns object
