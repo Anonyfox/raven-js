@@ -6,86 +6,13 @@ Ravens build what conquers. Each feature preserves zero dependencies, maintains 
 
 ---
 
-## Phase 1: Routing Evolution (High Priority)
+## Phase 1: Routing Evolution ✅ **ACHIEVED**
 
-### 1.1 File-Based Routing with Dynamic Parameters
+**File-based routing with dynamic parameters fully operational.** Wings file-routes automatically discovers `src/pages/**/*.js` structure, generating routes with dynamic segments (`[slug]`, `[category]/[item]`, `[...path]`). Zero-config routing for content sites while preserving explicit `cfg/routes.js` for complex logic. Dynamic parameters accessible via Wings Context in `loadDynamicData()` functions. **Algorithm over patches** - filesystem defines routes, eliminating manual maintenance.
 
-**What:** Automatic route generation from filesystem structure with support for dynamic segments.
+## Phase 2: Content Infrastructure ✅ **ACHIEVED**
 
-**Why:**
-
-- Eliminates manual `routes.js` maintenance for simple cases
-- Matches developer expectations from Next.js/Nuxt/SvelteKit
-- Reduces cognitive overhead for content-heavy sites
-- Enables dynamic routes for collections (blog posts, docs)
-
-**How:**
-
-- Scan `src/pages/**/*.js` during build/dev startup
-- Generate route manifest: `src/pages/blog/[slug]/index.js` → `/blog/:slug`
-- Support nested dynamic routes: `[category]/[slug]` → `/:category/:slug`
-- Preserve explicit `routes.js` for complex routing logic
-- Emit `.raven/routes.mjs` for dev server consumption
-
-**Success Criteria:**
-
-- Zero config routing for 80% of use cases
-- Dynamic params accessible in page `load()` functions
-- Backward compatibility with manual routing
-
----
-
-## Phase 2: Content Infrastructure (Medium Priority)
-
-### 2.1 Collections API for Structured Content
-
-**What:** Define and query collections of related content (posts, docs, products) with schema validation.
-
-**Why:**
-
-- Blog sites need post listings, pagination, taxonomies
-- Documentation needs section organization and navigation
-- E-commerce needs product catalogs with filtering
-- Type safety for content structure prevents runtime errors
-
-**How:**
-
-- `defineCollection(name, schema)` in config for content validation
-- `getCollection(name, options)` for querying with filter/sort/limit
-- Auto-discovery of collection items from filesystem
-- Build-time validation of content against schemas
-- Generate collection index pages and pagination
-
-**Success Criteria:**
-
-- Blog with post listings and tags works out of box
-- Documentation with auto-generated navigation
-- Type-safe content queries with JSDoc annotations
-
-### 2.2 Build-Time Data Loading
-
-**What:** `load()` function hook for pages to fetch data during build process.
-
-**Why:**
-
-- Static sites need external data (APIs, databases, files)
-- Build-time fetching enables truly static output
-- Centralized data loading prevents scattered fetch logic
-- Enables content validation and transformation
-
-**How:**
-
-- `export async function load({ params, fetch, env })` in page modules
-- Execute during build, pass results as props to page component
-- Cache results with dependency tracking for incremental builds
-- Dev server mirrors build-time behavior for consistency
-- Support for environment-specific data sources
-
-**Success Criteria:**
-
-- External API data rendered statically
-- Fast dev server with cached data loading
-- Clear error messages for failed data fetches
+**Collections and build-time data loading surgically implemented.** Cortex Dataset provides O(1) content lookups with JSDoc type safety - no schema bloat needed. Collections manually curated as JavaScript modules (blog-posts.js, doc-pages.js) with instant performance eliminating pagination requirements. Build-time data loading via `loadDynamicData(ctx)` leverages Wings Context for external APIs, databases, file reads. **Platform mastery over abstraction layers** - native async functions handle any data source without framework wrapper complexity.
 
 ---
 
