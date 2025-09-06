@@ -16,19 +16,19 @@
   "exports": {
     ".": {
       "import": "./core/index.js",
-      "types": "./types.core.d.ts"
+      "types": "./core/index.js"
     },
     "./server": {
       "import": "./server/index.js",
-      "types": "./types.server.d.ts"
+      "types": "./server/index.js"
     },
     "./terminal": {
       "import": "./terminal/index.js",
-      "types": "./types.terminal.d.ts"
+      "types": "./terminal/index.js"
     },
     "./file-routes": {
       "import": "./file-routes/index.js",
-      "types": "./types.file-routes.d.ts"
+      "types": "./file-routes/index.js"
     }
   },
   "scripts": {

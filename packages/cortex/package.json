@@ -16,27 +16,27 @@
   "exports": {
     ".": {
       "import": "./index.js",
-      "types": "./types.d.ts"
+      "types": "./index.js"
     },
     "./learning": {
       "import": "./learning/index.js",
-      "types": "./types.learning.d.ts"
+      "types": "./learning/index.js"
     },
     "./structures": {
       "import": "./structures/index.js",
-      "types": "./types.structures.d.ts"
+      "types": "./structures/index.js"
     },
     "./temporal": {
       "import": "./temporal/index.js",
-      "types": "./types.temporal.d.ts"
+      "types": "./temporal/index.js"
     },
     "./language": {
       "import": "./language/index.js",
-      "types": "./types.language.d.ts"
+      "types": "./language/index.js"
     },
     "./primitives": {
       "import": "./primitives/index.js",
-      "types": "./types.primitives.d.ts"
+      "types": "./primitives/index.js"
     }
   },
   "scripts": {

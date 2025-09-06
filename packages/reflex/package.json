@@ -16,15 +16,15 @@
   "exports": {
     ".": {
       "import": "./index.js",
-      "types": "./types.d.ts"
+      "types": "./index.js"
     },
     "./dom": {
       "import": "./dom/index.js",
-      "types": "./types.dom.d.ts"
+      "types": "./dom/index.js"
     },
     "./ssr": {
       "import": "./ssr/index.js",
-      "types": "./types.ssr.d.ts"
+      "types": "./ssr/index.js"
     }
   },
   "scripts": {

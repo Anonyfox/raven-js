@@ -21,7 +21,7 @@
   "exports": {
     ".": {
       "import": "./index.js",
-      "types": "./types.d.ts"
+      "types": "./index.js"
     }
   },
   "scripts": {

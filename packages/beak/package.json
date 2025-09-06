@@ -16,43 +16,43 @@
   "exports": {
     ".": {
       "import": "./index.js",
-      "types": "./types.d.ts"
+      "types": "./index.js"
     },
     "./css": {
       "import": "./css/index.js",
-      "types": "./types.css.d.ts"
+      "types": "./css/index.js"
     },
     "./html": {
       "import": "./html/index.js",
-      "types": "./types.html.d.ts"
+      "types": "./html/index.js"
     },
     "./js": {
       "import": "./js/index.js",
-      "types": "./types.js.d.ts"
+      "types": "./js/index.js"
     },
     "./md": {
       "import": "./md/index.js",
-      "types": "./types.md.d.ts"
+      "types": "./md/index.js"
     },
     "./sql": {
       "import": "./sql/index.js",
-      "types": "./types.sql.d.ts"
+      "types": "./sql/index.js"
     },
     "./seo": {
       "import": "./seo/index.js",
-      "types": "./types.seo.d.ts"
+      "types": "./seo/index.js"
     },
     "./highlight": {
       "import": "./highlight/index.js",
-      "types": "./types.highlight.d.ts"
+      "types": "./highlight/index.js"
     },
     "./xml": {
       "import": "./xml/index.js",
-      "types": "./types.xml.d.ts"
+      "types": "./xml/index.js"
     },
     "./sh": {
       "import": "./sh/index.js",
-      "types": "./types.sh.d.ts"
+      "types": "./sh/index.js"
     }
   },
   "scripts": {
