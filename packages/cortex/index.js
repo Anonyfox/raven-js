@@ -7,11 +7,12 @@
  */
 
 /**
- * @file Machine learning, data structures, temporal computation, and language analysis using platform-native algorithms.
+ * @file Machine learning, data structures, temporal computation, language analysis, and image processing using platform-native algorithms.
  *
- * Neural networks, matrix operations, schema validation, holiday calculations, and text analysis
- * using pure JavaScript primitives and Node.js built-ins. Exports learning algorithms,
- * structural primitives, temporal functions, and language processing tools for cognitive tasks.
+ * Neural networks, matrix operations, schema validation, holiday calculations, text analysis,
+ * and image manipulation using pure JavaScript primitives and Node.js built-ins. Exports learning
+ * algorithms, structural primitives, temporal functions, language processing tools, and visual
+ * processing capabilities for cognitive and media tasks.
  *
  * @example
  * // Neural networks and machine learning
@@ -41,6 +42,14 @@
  * const text = "This varies. This is a longer sentence. Short.";
  * const burstiness = calculateBurstiness(text);
  * console.log(burstiness > 0.5 ? 'human-like' : 'ai-like');
+ *
+ * @example
+ * // Image processing and format conversion
+ * import { createImage } from "@raven-js/cortex";
+ *
+ * const image = createImage(buffer, 'image/png');
+ * const resized = image.resize(800, 600).crop(0, 0, 400, 300);
+ * const webpBuffer = resized.toBuffer('image/webp');
  */
 
 /**
@@ -55,34 +64,34 @@
  * console.log(greeting); // "Hello, Developer! The raven's mind awakens."
  */
 export function hello(name) {
-	if (typeof name !== "string") {
-		throw new TypeError("Expected name to be a string");
-	}
+  if (typeof name !== "string") {
+    throw new TypeError("Expected name to be a string");
+  }
 
-	return `Hello, ${name}! The raven's mind awakens.`;
+  return `Hello, ${name}! The raven's mind awakens.`;
 }
 
 // Export language analysis functions
 export {
-	analyzeAITransitionPhrases,
-	analyzeNgramRepetition,
-	analyzeWithEnsemble,
-	analyzeZipfDeviation,
-	approximatePerplexity,
-	calculateBurstiness,
-	calculateShannonEntropy,
-	detectEmDashEpidemic,
-	detectParticipalPhraseFormula,
-	detectPerfectGrammar,
-	detectRuleOfThreeObsession,
-	isAIText,
+  analyzeAITransitionPhrases,
+  analyzeNgramRepetition,
+  analyzeWithEnsemble,
+  analyzeZipfDeviation,
+  approximatePerplexity,
+  calculateBurstiness,
+  calculateShannonEntropy,
+  detectEmDashEpidemic,
+  detectParticipalPhraseFormula,
+  detectPerfectGrammar,
+  detectRuleOfThreeObsession,
+  isAIText,
 } from "./language/index.js";
 // Export learning algorithms
 export {
-	LinearRegression,
-	Model,
-	NeuralNetwork,
-	Tfidf,
+  LinearRegression,
+  Model,
+  NeuralNetwork,
+  Tfidf,
 } from "./learning/index.js";
 // Export primitive functions
 export { fnv1a32, fnv1a64, fnv32 } from "./primitives/index.js";
@@ -90,8 +99,17 @@ export { fnv1a32, fnv1a64, fnv32 } from "./primitives/index.js";
 export { Matrix, Schema } from "./structures/index.js";
 // Export temporal functions and classes
 export {
-	calculateEasterSunday,
-	calculateHolidaysOfYear,
-	Holiday,
-	NaiveDateTime,
+  calculateEasterSunday,
+  calculateHolidaysOfYear,
+  Holiday,
+  NaiveDateTime,
 } from "./temporal/index.js";
+// Export visual processing functions and classes
+export {
+  createImage,
+  GIFImage,
+  Image,
+  JPEGImage,
+  PNGImage,
+  WebPImage,
+} from "./visual/index.js";
