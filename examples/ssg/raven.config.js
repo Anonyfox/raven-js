@@ -11,7 +11,10 @@
  */
 
 import { Context } from "@raven-js/wings";
-import { router } from "./src/routes.js";
+import { router } from "./cfg/routes.js";
+import { getBlogUrls } from "./src/collections/blog-posts.js";
+import { getDocUrls } from "./src/collections/doc-pages.js";
+import { getShopUrls } from "./src/collections/shop-products.js";
 
 /**
  * Static site generation configuration
@@ -29,8 +32,18 @@ export const build = {
 		return ctx.toResponse();
 	},
 
-	// Routes to start crawling from
-	routes: ["/", "/about", "/docs"],
+	// Routes to start crawling from (including sample dynamic routes)
+	routes: [
+		// Static pages
+		"/",
+		"/about",
+		"/docs",
+		"/home",
+		// Dynamic pages from collections
+		...getBlogUrls(),
+		...getShopUrls(),
+		...getDocUrls(),
+	],
 
 	// Copy static assets
 	assets: "./public",
