@@ -90,7 +90,7 @@ test("buildBundle success", async () => {
 		assert(bundle instanceof BundleResource);
 		assert.equal(bundle.getUrl().pathname, "/js/app.js");
 		assert.equal(bundle.getContentType(), "application/javascript");
-		assert.equal(bundle.hasSourcemap(), false); // Inline sourcemaps don't have separate buffer
+		assert.equal(bundle.hasSourcemap(), true); // External sourcemaps have separate buffer
 
 		// Verify bundle content is processed and contains our code
 		const bundleContent = new TextDecoder().decode(bundle.getBuffer());

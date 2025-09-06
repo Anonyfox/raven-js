@@ -44,6 +44,9 @@ export async function buildBundles(bundlesConfig, baseUrl) {
  */
 export async function buildBundle(mountPath, sourcePath, baseUrl) {
 	try {
+		// Extract filename from mount path for proper sourcemap naming
+		const bundleFilename = mountPath.split("/").pop();
+
 		const buildResult = await build({
 			entryPoints: [sourcePath],
 			bundle: true,
@@ -52,16 +55,19 @@ export async function buildBundle(mountPath, sourcePath, baseUrl) {
 			target: "es2022",
 			platform: "browser",
 			write: false, // Keep in memory
-			outfile: "bundle.js", // Required for proper file naming in outputFiles
-			sourcemap: true, // Inline sourcemaps for in-memory builds
+			outfile: bundleFilename, // Use actual bundle filename
+			sourcemap: "external", // Generate separate .map files
 			metafile: false, // Reduce overhead
 			treeShaking: true,
 			legalComments: "none",
 		});
 
-		// Extract bundle from build result (sourcemap is inline)
+		// Extract bundle and sourcemap from build result
 		const bundleFile = buildResult.outputFiles.find((file) =>
 			file.path.endsWith(".js"),
+		);
+		const sourcemapFile = buildResult.outputFiles.find((file) =>
+			file.path.endsWith(".js.map"),
 		);
 
 		if (!bundleFile) {
@@ -71,10 +77,10 @@ export async function buildBundle(mountPath, sourcePath, baseUrl) {
 		// Create bundle URL
 		const bundleUrl = new URL(mountPath, baseUrl);
 
-		// Create BundleResource instance (no separate sourcemap file with inline maps)
+		// Create BundleResource instance with external sourcemap
 		return new BundleResource(
 			bundleFile.contents.slice().buffer,
-			null, // Sourcemap is inline in the bundle
+			sourcemapFile ? sourcemapFile.contents.slice().buffer : null,
 			bundleUrl,
 			baseUrl,
 		);
