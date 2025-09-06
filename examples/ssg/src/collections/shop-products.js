@@ -11,8 +11,19 @@
  */
 
 /**
+ * @typedef {Object} Product
+ * @property {string} category - Product category
+ * @property {string} item - Product item ID
+ * @property {string} name - Product name
+ * @property {number} price - Product price
+ * @property {string} description - Product description
+ * @property {string[]} [features] - Product features
+ * @property {boolean} [inStock] - Stock status
+ */
+
+/**
  * Shop products data collection
- * @type {Array<{category: string, item: string, name: string, price: number, description: string, features?: string[], inStock?: boolean}>}
+ * @type {Product[]}
  */
 export const shopProducts = [
 	{
@@ -62,7 +73,7 @@ export const shopProducts = [
  * Find product by category and item
  * @param {string} category - Product category
  * @param {string} item - Product item ID
- * @returns {Object|null} Product or null if not found
+ * @returns {Product|null} Product or null if not found
  */
 export const findProduct = (category, item) => {
 	return (
@@ -75,7 +86,7 @@ export const findProduct = (category, item) => {
 /**
  * Get products by category
  * @param {string} category - Product category
- * @returns {Object[]} Array of products in category
+ * @returns {Product[]} Array of products in category
  */
 export const getProductsByCategory = (category) => {
 	return shopProducts.filter((product) => product.category === category);

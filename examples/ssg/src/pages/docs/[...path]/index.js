@@ -11,12 +11,23 @@
  */
 
 import { md } from "@raven-js/beak";
+import { Context } from "@raven-js/wings";
 import { findDocPageByPath } from "../../../collections/doc-pages.js";
 
 /**
+ * @typedef {import("../../../collections/doc-pages.js").DocPage} DocPage
+ */
+
+/**
+ * @typedef {Object} DocsData
+ * @property {DocPage|null} docPage - Documentation page from collection
+ * @property {string} pathString - Documentation path string
+ */
+
+/**
  * Load dynamic data for this page
- * @param {Object} ctx - Request context with pathParams
- * @returns {Promise<Object>} Page data
+ * @param {Context} ctx - Wings request context
+ * @returns {Promise<DocsData>} Page data
  */
 export async function loadDynamicData(ctx) {
 	// Extract path from catch-all parameter
@@ -28,7 +39,7 @@ export async function loadDynamicData(ctx) {
 
 /**
  * Doc page title - dynamic from collection
- * @param {Object} data - Data from loadDynamicData
+ * @param {DocsData} data - Data from loadDynamicData
  * @returns {Promise<string>} Page title
  */
 export const title = async (data) => {
@@ -37,7 +48,7 @@ export const title = async (data) => {
 
 /**
  * Doc page description - dynamic from collection
- * @param {Object} data - Data from loadDynamicData
+ * @param {DocsData} data - Data from loadDynamicData
  * @returns {Promise<string>} Page description
  */
 export const description = async (data) => {
@@ -49,7 +60,7 @@ export const description = async (data) => {
 
 /**
  * Doc page content - dynamic from collection
- * @param {Object} data - Data from loadDynamicData
+ * @param {DocsData} data - Data from loadDynamicData
  * @returns {Promise<string>} Page body content
  */
 export const body = async (data) => {

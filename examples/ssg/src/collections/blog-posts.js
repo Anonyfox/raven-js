@@ -11,8 +11,18 @@
  */
 
 /**
+ * @typedef {Object} BlogPost
+ * @property {string} slug - Blog post slug
+ * @property {string} title - Blog post title
+ * @property {string} description - Blog post description
+ * @property {string} publishDate - Publication date
+ * @property {string[]} tags - Blog post tags
+ * @property {string} content - Blog post content
+ */
+
+/**
  * Blog posts data collection
- * @type {Array<{slug: string, title: string, description: string, publishDate: string, tags: string[], content: string}>}
+ * @type {BlogPost[]}
  */
 export const blogPosts = [
 	{
@@ -104,7 +114,7 @@ Achieve **surgical performance** with zero-dependency optimization.
 /**
  * Find blog post by slug
  * @param {string} slug - Post slug
- * @returns {Object|null} Blog post or null if not found
+ * @returns {BlogPost|null} Blog post or null if not found
  */
 export const findBlogPost = (slug) => {
 	return blogPosts.find((post) => post.slug === slug) || null;

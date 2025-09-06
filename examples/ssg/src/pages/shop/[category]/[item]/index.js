@@ -11,12 +11,24 @@
  */
 
 import { md } from "@raven-js/beak";
+import { Context } from "@raven-js/wings";
 import { findProduct } from "../../../../collections/shop-products.js";
 
 /**
+ * @typedef {import("../../../../collections/shop-products.js").Product} Product
+ */
+
+/**
+ * @typedef {Object} ShopData
+ * @property {Product|null} product - Product from collection
+ * @property {string} category - Product category
+ * @property {string} item - Product item ID
+ */
+
+/**
  * Load dynamic data for this page
- * @param {Object} ctx - Request context with pathParams
- * @returns {Promise<Object>} Page data
+ * @param {Context} ctx - Wings request context
+ * @returns {Promise<ShopData>} Page data
  */
 export async function loadDynamicData(ctx) {
 	const { category, item } = ctx.pathParams;
@@ -26,7 +38,7 @@ export async function loadDynamicData(ctx) {
 
 /**
  * Product title - dynamic from collection
- * @param {Object} data - Data from loadDynamicData
+ * @param {ShopData} data - Data from loadDynamicData
  * @returns {Promise<string>} Page title
  */
 export const title = async (data) => {
@@ -35,7 +47,7 @@ export const title = async (data) => {
 
 /**
  * Product description - dynamic from collection
- * @param {Object} data - Data from loadDynamicData
+ * @param {ShopData} data - Data from loadDynamicData
  * @returns {Promise<string>} Page description
  */
 export const description = async (data) => {
@@ -46,7 +58,7 @@ export const description = async (data) => {
 
 /**
  * Product content - dynamic from collection
- * @param {Object} data - Data from loadDynamicData
+ * @param {ShopData} data - Data from loadDynamicData
  * @returns {Promise<string>} Page body content
  */
 export const body = async (data) => {

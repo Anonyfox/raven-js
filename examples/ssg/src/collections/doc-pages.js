@@ -11,8 +11,17 @@
  */
 
 /**
+ * @typedef {Object} DocPage
+ * @property {string[]} path - Documentation path segments
+ * @property {string} title - Documentation page title
+ * @property {string} description - Documentation page description
+ * @property {string} content - Documentation page content
+ * @property {string} [section] - Documentation section
+ */
+
+/**
  * Documentation pages data collection
- * @type {Array<{path: string[], title: string, description: string, content: string, section?: string}>}
+ * @type {DocPage[]}
  */
 export const docPages = [
 	{
@@ -162,7 +171,7 @@ export const build = {
 /**
  * Find documentation page by path array
  * @param {string[]} pathArray - Path segments array
- * @returns {Object|null} Doc page or null if not found
+ * @returns {DocPage|null} Doc page or null if not found
  */
 export const findDocPage = (pathArray) => {
 	return (
@@ -177,7 +186,7 @@ export const findDocPage = (pathArray) => {
 /**
  * Find documentation page by path string
  * @param {string} pathString - Path string (e.g., "guides/deployment/cloudflare")
- * @returns {Object|null} Doc page or null if not found
+ * @returns {DocPage|null} Doc page or null if not found
  */
 export const findDocPageByPath = (pathString) => {
 	const pathArray = pathString.split("/").filter(Boolean);
@@ -195,7 +204,7 @@ export const getDocUrls = () => {
 /**
  * Get pages by section
  * @param {string} section - Section name
- * @returns {Object[]} Array of pages in section
+ * @returns {DocPage[]} Array of pages in section
  */
 export const getPagesBySection = (section) => {
 	return docPages.filter((page) => page.section === section);

@@ -17,7 +17,7 @@
  */
 
 import { readdir, stat } from "node:fs/promises";
-import { join, relative, resolve, sep } from "node:path";
+import { join, resolve } from "node:path";
 
 /**
  * Scanner configuration options
@@ -25,7 +25,7 @@ import { join, relative, resolve, sep } from "node:path";
  * @property {string} pagesDir - Directory to scan for pages (default: "../src/pages")
  * @property {string} indexFile - Index file name (default: "index.js")
  * @property {boolean} includeNested - Include nested index files (default: true)
- * @property {string} [baseDir] - Base directory for resolving absolute paths (default: process.cwd())
+ * @property {string} baseDir - Base directory for resolving absolute paths (default: process.cwd())
  */
 
 /**
@@ -56,30 +56,33 @@ import { join, relative, resolve, sep } from "node:path";
  * // File: pages/blog/[slug]/index.js
  * // Returns: { path: "/blog/:slug", page: "../src/pages/blog/[slug]/index.js", params: ["slug"], catchAll: false }
  */
-export async function scanPages(options = {}) {
-	const {
-		pagesDir = "../src/pages",
-		indexFile = "index.js",
-		includeNested = true,
-		baseDir = process.cwd(),
-	} = options;
+export async function scanPages(
+	/** @type {Partial<ScannerOptions>} */ options = {},
+) {
+	/** @type {ScannerOptions} */
+	const defaultOptions = {
+		pagesDir: "../src/pages",
+		indexFile: "index.js",
+		includeNested: true,
+		baseDir: process.cwd(),
+	};
+
+	const config = { ...defaultOptions, ...options };
 
 	try {
+		/** @type {RouteDefinition[]} */
 		const routes = [];
-		const resolvedPagesDir = resolve(baseDir, pagesDir);
-		await scanDirectory(resolvedPagesDir, "", routes, {
-			indexFile,
-			includeNested,
-			baseDir,
-		});
+		const resolvedPagesDir = resolve(config.baseDir, config.pagesDir);
+		await scanDirectory(resolvedPagesDir, "", routes, config);
 
 		// Sort routes by specificity (static routes first, then dynamic, catch-all last)
 		routes.sort(compareRouteSpecificity);
 
 		return routes;
 	} catch (error) {
+		const errorMessage = error instanceof Error ? error.message : String(error);
 		throw new Error(
-			`Failed to scan pages directory "${pagesDir}": ${error.message}`,
+			`Failed to scan pages directory "${config.pagesDir}": ${errorMessage}`,
 		);
 	}
 }
@@ -90,14 +93,14 @@ export async function scanPages(options = {}) {
  * @param {string} dirPath - Current directory path
  * @param {string} urlPath - Current URL path being built
  * @param {RouteDefinition[]} routes - Routes array to populate
- * @param {Object} options - Scanner options
+ * @param {ScannerOptions} options - Scanner options
  */
 async function scanDirectory(dirPath, urlPath, routes, options) {
 	let entries;
 
 	try {
 		entries = await readdir(dirPath);
-	} catch (error) {
+	} catch {
 		// Directory doesn't exist or can't be read - not an error for optional directories
 		return;
 	}

@@ -17,6 +17,14 @@ import { Layout } from "../src/components/layout.js";
 import { scanPages } from "./page-scanner.js";
 
 /**
+ * @typedef {Object} PageModule
+ * @property {Function} [loadDynamicData] - Optional async data loader
+ * @property {string|Function} title - Page title (static or async function)
+ * @property {string|Function} description - Page description (static or async function)
+ * @property {string|Function} body - Page body content (static or async function)
+ */
+
+/**
  * Wings router instance
  */
 const router = new Router();
@@ -27,46 +35,55 @@ const router = new Router();
 async function setupRoutes() {
 	try {
 		// Add static assets middleware
-		router.use(new Assets("../public"));
+		router.use(new Assets({ assetsDir: "../public" }));
 
 		// Scan pages directory for routes
-		const routes = await scanPages({ pagesDir: "src/pages" });
+		const routes = await scanPages({
+			pagesDir: "src/pages",
+			indexFile: "index.js",
+			includeNested: true,
+		});
 		console.log(`🔍 Discovered ${routes.length} routes from filesystem`);
 
 		// Register each route with dynamic data orchestration
 		for (const route of routes) {
-			router.get(route.path, async (ctx) => {
-				const pageModule = await import(route.page);
+			router.get(
+				route.path,
+				async (/** @type {import("@raven-js/wings").Context} */ ctx) => {
+					/** @type {PageModule} */
+					const pageModule = await import(route.page);
 
-				// 1. Load dynamic data if loader exists
-				const data = pageModule.loadDynamicData
-					? await pageModule.loadDynamicData(ctx)
-					: {};
+					// 1. Load dynamic data if loader exists
+					const data = pageModule.loadDynamicData
+						? await pageModule.loadDynamicData(ctx)
+						: {};
 
-				// 2. Resolve each export (static string OR async function)
-				const title =
-					typeof pageModule.title === "function"
-						? await pageModule.title(data)
-						: pageModule.title;
+					// 2. Resolve each export (static string OR async function)
+					const title =
+						typeof pageModule.title === "function"
+							? await pageModule.title(data)
+							: pageModule.title;
 
-				const description =
-					typeof pageModule.description === "function"
-						? await pageModule.description(data)
-						: pageModule.description;
+					const description =
+						typeof pageModule.description === "function"
+							? await pageModule.description(data)
+							: pageModule.description;
 
-				const body =
-					typeof pageModule.body === "function"
-						? await pageModule.body(data)
-						: pageModule.body;
+					const body =
+						typeof pageModule.body === "function"
+							? await pageModule.body(data)
+							: pageModule.body;
 
-				// 3. Render page with resolved data
-				const content = markdownToHTML(body);
-				const page = Layout({ title, description, content });
-				ctx.html(page);
-			});
+					// 3. Render page with resolved data
+					const content = markdownToHTML(body);
+					const page = Layout({ title, description, content });
+					ctx.html(page);
+				},
+			);
 		}
 	} catch (error) {
-		console.error("❌ Failed to setup routes:", error.message);
+		const errorMessage = error instanceof Error ? error.message : String(error);
+		console.error("❌ Failed to setup routes:", errorMessage);
 		throw error;
 	}
 }
