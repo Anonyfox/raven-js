@@ -164,18 +164,23 @@ export class PNGImage extends Image {
     // Use imported encoding modules
 
     try {
-      // Step 1: Create IHDR chunk
+      // Step 1: Detect actual pixel format and create IHDR chunk
+      // After resize operations, we always have RGBA pixels, so adjust color type accordingly
+      const actualChannels = this.pixels.length / (this.width * this.height);
+      const actualColorType = actualChannels === 4 ? 6 : this.colorType; // 6 = RGBA
+      const actualBitDepth = 8; // Our pixels are always 8-bit after processing
+
       const ihdrData = createIHDRFromImageInfo({
         width: this.width,
         height: this.height,
-        bitDepth: this.bitDepth,
-        colorType: this.colorType,
+        bitDepth: actualBitDepth,
+        colorType: actualColorType,
         interlaceMethod: this.interlaceMethod || 0,
       });
 
       // Step 2: Convert RGBA pixels back to raw format for filtering
       // Note: This assumes pixels are in RGBA format, may need conversion for other formats
-      const bytesPerPixel = this.channels;
+      const bytesPerPixel = actualChannels;
       const rawPixelData = this.pixels;
 
       // Step 3: Apply scanline filters
