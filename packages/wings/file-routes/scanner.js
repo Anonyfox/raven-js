@@ -137,7 +137,7 @@ async function scanDirectory(dirPath, urlPath, routes, config) {
  */
 function createRouteFromPath(urlPath, filePath) {
 	const segments = urlPath.split("/").filter(Boolean);
-	const params = [];
+	/** @type {string[]} */ const params = [];
 	let catchAll = false;
 
 	// Convert filesystem patterns to URL patterns

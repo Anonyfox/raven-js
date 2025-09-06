@@ -18,6 +18,14 @@ import { scanRoutes } from "./scanner.js";
  */
 
 /**
+ * Scanner options (from scanner.js)
+ * @typedef {Object} ScanOptions
+ * @property {string} indexFile - Index file name (default: "index.js")
+ * @property {boolean} includeNested - Include nested index files (default: true)
+ * @property {string} baseDir - Base directory for resolving absolute paths
+ */
+
+/**
  * Registration options
  * @typedef {Object} RegisterOptions
  * @property {RouteHandler} [handler] - Custom route handler function
@@ -29,7 +37,7 @@ import { scanRoutes } from "./scanner.js";
  *
  * @param {import("../core/router.js").Router} router - Wings router instance
  * @param {string|object} pagesDir - Pages directory or scan options
- * @param {RegisterOptions & import("./scanner.js").ScanOptions} [options] - Registration and scan options
+ * @param {Partial<RegisterOptions & ScanOptions>} [options] - Registration and scan options
  * @returns {Promise<import("./file-route.js").FileRoute[]>} Array of registered routes
  *
  * @example
@@ -61,15 +69,23 @@ export async function registerFileRoutes(router, pagesDir, options = {}) {
 	const {
 		handler = defaultRouteHandler,
 		method = "GET",
-		...scanOptions
+		indexFile = "index.js",
+		includeNested = true,
+		baseDir = process.cwd(),
+		...otherOptions
 	} = options;
+
+	/** @type {ScanOptions} */
+	const scanOptions = { indexFile, includeNested, baseDir, ...otherOptions };
 
 	// Scan for routes
 	const routes = await scanRoutes(pagesDir, scanOptions);
 
 	// Register each route with the router
 	for (const route of routes) {
-		const routeHandler = async (ctx) => {
+		const routeHandler = async (
+			/** @type {import("../core/context.js").Context} */ ctx,
+		) => {
 			// For catch-all routes, manually extract the wildcard path
 			if (route.catchAll && route.params.length > 0) {
 				const wildcardParam = route.params[0]; // e.g., "*path"
