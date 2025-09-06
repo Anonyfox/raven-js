@@ -25,6 +25,10 @@
     "./terminal": {
       "import": "./terminal/index.js",
       "types": "./types.terminal.d.ts"
+    },
+    "./file-routes": {
+      "import": "./file-routes/index.js",
+      "types": "./types.file-routes.d.ts"
     }
   },
   "scripts": {
