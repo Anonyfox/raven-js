@@ -13,5 +13,6 @@
  * data structure validation. Used by learning algorithms and application code.
  */
 
+export { Dataset, dataset } from "./dataset.js";
 export { Matrix } from "./matrix.js";
 export { Schema } from "./schema.js";
