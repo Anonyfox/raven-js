@@ -14,6 +14,7 @@
  * behavior across PNG, JPEG, WebP, and GIF formats.
  */
 
+import { adjustBrightness, adjustContrast, getColorAdjustmentInfo } from "./color/index.js";
 import { cropPixels, getCropInfo } from "./crop/index.js";
 import { flipPixels, getFlipInfo } from "./flip/index.js";
 import { resizePixels } from "./resize/index.js";
@@ -180,22 +181,70 @@ export class Image {
   /**
    * Adjust image brightness.
    *
-   * @param {number} _factor - Brightness multiplier (1.0 = no change)
+   * @param {number} factor - Brightness multiplier (1.0 = no change, >1.0 = brighter, <1.0 = darker)
+   * @param {boolean} [inPlace=true] - Whether to modify pixels in-place for performance
    * @returns {Image} This instance for chaining
    */
-  adjustBrightness(_factor) {
-    // Stub implementation
+  adjustBrightness(factor, inPlace = true) {
+    if (!this.pixels) {
+      throw new Error("Image not decoded yet - no pixel data available for brightness adjustment");
+    }
+
+    try {
+      // Get adjustment information to validate parameters
+      const adjustmentInfo = getColorAdjustmentInfo(this._width, this._height, factor, "brightness");
+
+      if (!adjustmentInfo.isValid) {
+        throw new Error(`Invalid brightness factor: ${factor}`);
+      }
+
+      // Perform brightness adjustment
+      const adjustedResult = adjustBrightness(this.pixels, this._width, this._height, factor, inPlace);
+
+      // Update image state with adjusted data
+      this.pixels = adjustedResult.pixels;
+      // Note: dimensions don't change for color adjustments
+      this._width = adjustedResult.width;
+      this._height = adjustedResult.height;
+    } catch (error) {
+      throw new Error(`Brightness adjustment failed: ${error.message}`);
+    }
+
     return this;
   }
 
   /**
    * Adjust image contrast.
    *
-   * @param {number} _factor - Contrast multiplier (1.0 = no change)
+   * @param {number} factor - Contrast multiplier (1.0 = no change, >1.0 = more contrast, <1.0 = less contrast)
+   * @param {boolean} [inPlace=true] - Whether to modify pixels in-place for performance
    * @returns {Image} This instance for chaining
    */
-  adjustContrast(_factor) {
-    // Stub implementation
+  adjustContrast(factor, inPlace = true) {
+    if (!this.pixels) {
+      throw new Error("Image not decoded yet - no pixel data available for contrast adjustment");
+    }
+
+    try {
+      // Get adjustment information to validate parameters
+      const adjustmentInfo = getColorAdjustmentInfo(this._width, this._height, factor, "contrast");
+
+      if (!adjustmentInfo.isValid) {
+        throw new Error(`Invalid contrast factor: ${factor}`);
+      }
+
+      // Perform contrast adjustment
+      const adjustedResult = adjustContrast(this.pixels, this._width, this._height, factor, inPlace);
+
+      // Update image state with adjusted data
+      this.pixels = adjustedResult.pixels;
+      // Note: dimensions don't change for color adjustments
+      this._width = adjustedResult.width;
+      this._height = adjustedResult.height;
+    } catch (error) {
+      throw new Error(`Contrast adjustment failed: ${error.message}`);
+    }
+
     return this;
   }
 
