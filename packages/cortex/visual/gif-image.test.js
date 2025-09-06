@@ -213,6 +213,12 @@ describe("GIF Image", () => {
     });
 
     it("supports method chaining from base class", () => {
+      // Set up pixel data for resize test
+      gifImage._width = 10;
+      gifImage._height = 10;
+      gifImage.pixels = new Uint8Array(10 * 10 * 4); // 10x10 RGBA
+      gifImage.pixels.fill(128); // Fill with gray
+
       const result = gifImage.resize(800, 600).crop(0, 0, 400, 300).rotate(90);
 
       assert.equal(result, gifImage);

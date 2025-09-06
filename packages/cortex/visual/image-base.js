@@ -14,6 +14,8 @@
  * behavior across PNG, JPEG, WebP, and GIF formats.
  */
 
+import { resizePixels } from "./resize/index.js";
+
 /**
  * Base class for image processing operations.
  *
@@ -42,13 +44,27 @@ export class Image {
   /**
    * Resize image to specified dimensions.
    *
-   * @param {number} _width - Target width in pixels
-   * @param {number} _height - Target height in pixels
-   * @param {string} _algorithm - Resampling algorithm ('nearest'|'bilinear'|'bicubic'|'lanczos')
+   * @param {number} width - Target width in pixels
+   * @param {number} height - Target height in pixels
+   * @param {string} algorithm - Resampling algorithm ('nearest'|'bilinear'|'bicubic'|'lanczos')
    * @returns {Image} This instance for chaining
    */
-  resize(_width, _height, _algorithm = "bilinear") {
-    // Stub implementation
+  resize(width, height, algorithm = "bilinear") {
+    if (!this.pixels) {
+      throw new Error("Image not decoded yet - no pixel data available for resizing");
+    }
+
+    try {
+      // Perform resize operation
+      this.pixels = resizePixels(this.pixels, this._width, this._height, width, height, algorithm);
+
+      // Update dimensions
+      this._width = width;
+      this._height = height;
+    } catch (error) {
+      throw new Error(`Resize failed: ${error.message}`);
+    }
+
     return this;
   }
 

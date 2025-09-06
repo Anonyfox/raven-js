@@ -16,13 +16,18 @@
  */
 
 import { Image } from "../image-base.js";
+import { applyFilters } from "./apply-filters.js";
+import { compressToIDATChunks } from "./compress-idat.js";
 import { decodeIHDR } from "./decode-ihdr.js";
 import { decompressIDAT } from "./decompress-idat.js";
+import { createIHDRFromImageInfo } from "./encode-ihdr.js";
+import { encodeMetadataChunks } from "./encode-metadata.js";
 import { extractMetadata } from "./extract-metadata.js";
 import { findChunksByType, parseChunks } from "./parse-chunks.js";
 import { reconstructPixels } from "./reconstruct-pixels.js";
 import { reverseFilters } from "./reverse-filters.js";
 import { validatePNGSignature } from "./validate-signature.js";
+import { writePNGFile } from "./write-chunks.js";
 
 /**
  * PNG format image implementation.
@@ -156,12 +161,7 @@ export class PNGImage extends Image {
       throw new Error("No pixel data available for encoding");
     }
 
-    // Import encoding modules
-    const { createIHDRFromImageInfo } = await import("./encode-ihdr.js");
-    const { applyFilters } = await import("./apply-filters.js");
-    const { compressToIDATChunks } = await import("./compress-idat.js");
-    const { writePNGFile } = await import("./write-chunks.js");
-    const { encodeMetadataChunks } = await import("./encode-metadata.js");
+    // Use imported encoding modules
 
     try {
       // Step 1: Create IHDR chunk

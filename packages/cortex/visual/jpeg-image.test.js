@@ -137,6 +137,12 @@ describe("JPEG Image", () => {
     });
 
     it("supports method chaining from base class", () => {
+      // Set up pixel data for resize test
+      jpegImage._width = 10;
+      jpegImage._height = 10;
+      jpegImage.pixels = new Uint8Array(10 * 10 * 4); // 10x10 RGBA
+      jpegImage.pixels.fill(128); // Fill with gray
+
       const result = jpegImage.resize(800, 600).crop(0, 0, 400, 300).adjustContrast(1.1);
 
       assert.equal(result, jpegImage);

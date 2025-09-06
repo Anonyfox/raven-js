@@ -61,14 +61,31 @@ describe("Image Base Class", () => {
 
     beforeEach(() => {
       image = new Image(new Uint8Array(100), "image/test");
+      // Set up minimal pixel data for resize tests
+      image._width = 10;
+      image._height = 10;
+      image.pixels = new Uint8Array(10 * 10 * 4); // 10x10 RGBA
+      image.pixels.fill(128); // Fill with gray
     });
 
     it("resize returns this for chaining", () => {
+      // Set up pixel data for resize test
+      image._width = 10;
+      image._height = 10;
+      image.pixels = new Uint8Array(10 * 10 * 4); // 10x10 RGBA
+      image.pixels.fill(128); // Fill with gray
+
       const result = image.resize(800, 600);
       assert.equal(result, image);
     });
 
     it("resize accepts algorithm parameter", () => {
+      // Set up pixel data for resize test
+      image._width = 10;
+      image._height = 10;
+      image.pixels = new Uint8Array(10 * 10 * 4); // 10x10 RGBA
+      image.pixels.fill(128); // Fill with gray
+
       const result = image.resize(800, 600, "bicubic");
       assert.equal(result, image);
     });
@@ -107,6 +124,12 @@ describe("Image Base Class", () => {
     });
 
     it("supports method chaining", () => {
+      // Set up pixel data for resize test
+      image._width = 10;
+      image._height = 10;
+      image.pixels = new Uint8Array(10 * 10 * 4); // 10x10 RGBA
+      image.pixels.fill(128); // Fill with gray
+
       const result = image
         .resize(800, 600)
         .crop(0, 0, 400, 300)

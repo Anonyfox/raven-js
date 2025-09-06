@@ -83,6 +83,12 @@ describe("Visual Module", () => {
     });
 
     it("supports method chaining for transformations", () => {
+      // Set up pixel data for resize test
+      image._width = 10;
+      image._height = 10;
+      image.pixels = new Uint8Array(10 * 10 * 4); // 10x10 RGBA
+      image.pixels.fill(128); // Fill with gray
+
       const result = image
         .resize(800, 600)
         .crop(0, 0, 400, 300)

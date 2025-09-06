@@ -166,6 +166,12 @@ describe("WebP Image", () => {
     });
 
     it("supports method chaining from base class", () => {
+      // Set up pixel data for resize test
+      webpImage._width = 10;
+      webpImage._height = 10;
+      webpImage.pixels = new Uint8Array(10 * 10 * 4); // 10x10 RGBA
+      webpImage.pixels.fill(128); // Fill with gray
+
       const result = webpImage.resize(800, 600).crop(0, 0, 400, 300).grayscale();
 
       assert.equal(result, webpImage);

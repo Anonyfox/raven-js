@@ -464,8 +464,8 @@ describe("PNG Metadata Extraction", () => {
       fakeProfile[19] = 0x20; // "RGB "
 
       // Compress the fake profile using Node.js zlib (for testing)
-      const zlib = await import("node:zlib");
-      const compressedProfile = zlib.deflateSync(fakeProfile);
+      const { deflateSync } = await import("node:zlib");
+      const compressedProfile = deflateSync(fakeProfile);
 
       // Build iCCP chunk data
       const chunkData = new Uint8Array(profileName.length + 1 + 1 + compressedProfile.length);
