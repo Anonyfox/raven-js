@@ -25,6 +25,7 @@ export class Dataset extends Array {
 	static get [Symbol.species]() {
 		return Array;
 	}
+
 	/**
 	 * Create a new Dataset with configurable key and URL functions
 	 *
@@ -35,6 +36,10 @@ export class Dataset extends Array {
 	 */
 	constructor(items = [], options = {}) {
 		super();
+
+		// Private key index for O(1) lookups
+		this.#keyIndex = new Map();
+		this.#indexValid = false;
 
 		// Handle both array and non-array inputs
 		if (Array.isArray(items)) {
@@ -49,7 +54,7 @@ export class Dataset extends Array {
 		// Default key function tries common identifier fields
 		this.keyFn =
 			options.keyFn ||
-			((item) => {
+			((/** @type {T} */ item) => {
 				if (item.id !== undefined) return String(item.id);
 				if (item.slug !== undefined) return String(item.slug);
 				if (item.key !== undefined) return String(item.key);
@@ -60,6 +65,42 @@ export class Dataset extends Array {
 
 		// Default URL function uses key with leading slash
 		this.urlFn = options.urlFn || ((item) => `/${this.keyFn(item)}`);
+
+		// Index will be built lazily when first needed
+	}
+
+	// Private fields for performance optimization
+	#keyIndex;
+	#indexValid;
+
+	/**
+	 * Build key index for O(1) lookups
+	 */
+	#buildIndex() {
+		this.#keyIndex.clear();
+		const keyFn = this.keyFn; // Cache function reference to avoid property lookup
+		for (let i = 0; i < this.length; i++) {
+			const item = this[i];
+			const key = keyFn(item);
+			this.#keyIndex.set(key, item);
+		}
+		this.#indexValid = true;
+	}
+
+	/**
+	 * Invalidate index when array is modified
+	 */
+	#invalidateIndex() {
+		this.#indexValid = false;
+	}
+
+	/**
+	 * Ensure index is valid, rebuild if necessary
+	 */
+	#ensureIndex() {
+		if (!this.#indexValid) {
+			this.#buildIndex();
+		}
 	}
 
 	/**
@@ -69,7 +110,8 @@ export class Dataset extends Array {
 	 * @returns {T|undefined} The matching item or undefined if not found
 	 */
 	get(key) {
-		return this.find((item) => this.keyFn(item) === key);
+		this.#ensureIndex();
+		return this.#keyIndex.get(key);
 	}
 
 	/**
@@ -79,11 +121,39 @@ export class Dataset extends Array {
 	 * @returns {Dataset<T>} New Dataset containing matching items
 	 */
 	match(matcher) {
-		const filtered = Array.prototype.filter.call(
-			this,
-			(/** @type {T} */ item) =>
-				Object.entries(matcher).every(([key, value]) => item[key] === value),
-		);
+		const filtered = [];
+		const matcherKeys = Object.keys(matcher);
+		const matcherLength = matcherKeys.length;
+
+		// Fast path for single property matching (most common case)
+		if (matcherLength === 1) {
+			const key = matcherKeys[0];
+			const value = matcher[key];
+			for (let i = 0; i < this.length; i++) {
+				const item = this[i];
+				if (item[key] === value) {
+					filtered.push(item);
+				}
+			}
+		} else {
+			// Multi-property matching
+			for (let i = 0; i < this.length; i++) {
+				const item = this[i];
+				let matches = true;
+
+				for (let j = 0; j < matcherLength; j++) {
+					const key = matcherKeys[j];
+					if (item[key] !== matcher[key]) {
+						matches = false;
+						break;
+					}
+				}
+
+				if (matches) {
+					filtered.push(item);
+				}
+			}
+		}
 
 		return new Dataset(filtered, {
 			keyFn: this.keyFn,
@@ -97,9 +167,11 @@ export class Dataset extends Array {
 	 * @returns {string[]} Array of URLs generated from all items
 	 */
 	urls() {
-		const result = [];
+		// Pre-allocate array to avoid dynamic growth and reallocations
+		const result = new Array(this.length);
+		const urlFn = this.urlFn; // Cache function reference
 		for (let i = 0; i < this.length; i++) {
-			result.push(this.urlFn(this[i]));
+			result[i] = urlFn(this[i]);
 		}
 		return result;
 	}
@@ -113,7 +185,9 @@ export class Dataset extends Array {
 	 * @returns {Dataset<T>} New Dataset with updated configuration
 	 */
 	using(options) {
-		return new Dataset(Array.from(this), {
+		// Direct slice is faster than Array.from for copying
+		const copy = this.slice();
+		return new Dataset(copy, {
 			keyFn: options.keyFn || this.keyFn,
 			urlFn: options.urlFn || this.urlFn,
 		});
@@ -137,7 +211,9 @@ export class Dataset extends Array {
 						return 0;
 					};
 
-		return new Dataset(Array.from(this).sort(compareFn), {
+		// Direct slice and sort is faster than Array.from
+		const sorted = this.slice().sort(compareFn);
+		return new Dataset(sorted, {
 			keyFn: this.keyFn,
 			urlFn: this.urlFn,
 		});
@@ -154,7 +230,8 @@ export class Dataset extends Array {
 		const start = (page - 1) * size;
 		const end = start + size;
 
-		return new Dataset(Array.prototype.slice.call(this, start, end), {
+		// Direct slice is more efficient than Array.prototype.slice.call
+		return new Dataset(this.slice(start, end), {
 			keyFn: this.keyFn,
 			urlFn: this.urlFn,
 		});
@@ -194,11 +271,82 @@ export class Dataset extends Array {
 	 * @returns {Array<any>} Array of unique values for the field
 	 */
 	pluck(field) {
-		const values = [];
+		// Use Set directly to avoid intermediate array allocation
+		const uniqueValues = new Set();
 		for (let i = 0; i < this.length; i++) {
-			values.push(this[i][field]);
+			uniqueValues.add(this[i][field]);
 		}
-		return [...new Set(values)];
+		return Array.from(uniqueValues);
+	}
+
+	// Override array mutation methods to invalidate index
+	/**
+	 * @param {...T} items
+	 * @returns {number}
+	 */
+	push(...items) {
+		const result = super.push(...items);
+		this.#invalidateIndex();
+		return result;
+	}
+
+	/**
+	 * @returns {T|undefined}
+	 */
+	pop() {
+		const result = super.pop();
+		this.#invalidateIndex();
+		return result;
+	}
+
+	/**
+	 * @returns {T|undefined}
+	 */
+	shift() {
+		const result = super.shift();
+		this.#invalidateIndex();
+		return result;
+	}
+
+	/**
+	 * @param {...T} items
+	 * @returns {number}
+	 */
+	unshift(...items) {
+		const result = super.unshift(...items);
+		this.#invalidateIndex();
+		return result;
+	}
+
+	/**
+	 * @param {number} start
+	 * @param {number} deleteCount
+	 * @param {...T} items
+	 * @returns {T[]}
+	 */
+	splice(start, deleteCount, ...items) {
+		const result = super.splice(start, deleteCount, ...items);
+		this.#invalidateIndex();
+		return result;
+	}
+
+	/**
+	 * @param {(a: T, b: T) => number} [compareFn]
+	 * @returns {this}
+	 */
+	sort(compareFn) {
+		super.sort(compareFn);
+		this.#invalidateIndex();
+		return this;
+	}
+
+	/**
+	 * @returns {this}
+	 */
+	reverse() {
+		super.reverse();
+		this.#invalidateIndex();
+		return this;
 	}
 }
 

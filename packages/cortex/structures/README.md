@@ -9,9 +9,9 @@ Data structures and validation primitives for computational operations.
 
 ## Purpose
 
-Matrix operations for linear algebra and Schema classes for type-safe data validation. Build neural network computations and validate structured data using Float32Array storage and JSDoc type annotations.
+Matrix operations for linear algebra, Schema classes for type-safe data validation, and Dataset containers for structured content operations. Build neural network computations, validate data structures, and query collections using Float32Array storage and JSDoc type annotations.
 
-High-performance building blocks optimized for V8 engine. Matrix operations support in-place modifications for memory efficiency. Schema validation provides compile-time safety through JSDoc typing with runtime verification.
+High-performance building blocks optimized for V8 engine. Matrix operations support in-place modifications for memory efficiency. Schema validation provides compile-time safety through JSDoc typing with runtime verification. Dataset containers offer O(1) lookups and efficient filtering for static site generation and content management.
 
 ## Install
 
@@ -20,6 +20,38 @@ npm install @raven-js/cortex
 ```
 
 ## Usage
+
+```javascript
+// Dataset containers for structured content
+import { Dataset } from "@raven-js/cortex/structures";
+
+// Create typed collections with O(1) lookups
+const posts = new Dataset([
+  { id: 1, slug: "hello-world", title: "Hello World", category: "tutorial" },
+  { id: 2, slug: "advanced-js", title: "Advanced JS", category: "guide" },
+  {
+    id: 3,
+    slug: "performance",
+    title: "Performance Tips",
+    category: "tutorial",
+  },
+]);
+
+// Fast key-based retrieval
+const post = posts.get("hello-world");
+console.log(post.title); // "Hello World"
+
+// Efficient filtering and querying
+const tutorials = posts.match({ category: "tutorial" });
+const urls = posts.urls(); // ["/hello-world", "/advanced-js", "/performance"]
+const categories = posts.pluck("category"); // ["tutorial", "guide"]
+
+// Chainable operations for complex queries
+const recentTutorials = posts
+  .match({ category: "tutorial" })
+  .sortBy("publishDate", "desc")
+  .paginate(0, 5);
+```
 
 ```javascript
 // Matrix operations for linear algebra
@@ -69,32 +101,6 @@ try {
 } catch (error) {
   console.log(error.message); // Validation error details
 }
-```
-
-```javascript
-// Nested schemas and complex validation
-import { Schema } from "@raven-js/cortex/structures";
-
-class Address extends Schema {
-  street = Schema.field("", { description: "Street address" });
-  city = Schema.field("", { description: "City name" });
-  zip = Schema.field("", { description: "ZIP code" });
-}
-
-class Company extends Schema {
-  name = Schema.field("", { description: "Company name" });
-  address = Schema.field(new Address(), { description: "Company address" });
-  employees = Schema.field([], { description: "Employee count" });
-}
-
-const company = new Company();
-const companyData = {
-  name: "Tech Corp",
-  address: { street: "123 Main St", city: "San Francisco", zip: "94105" },
-  employees: 50,
-};
-
-console.log(company.validate(companyData)); // true
 ```
 
 ## Requirements
