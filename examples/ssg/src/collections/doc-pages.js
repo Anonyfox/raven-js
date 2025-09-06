@@ -7,8 +7,10 @@
  */
 
 /**
- * @file Documentation pages collection - pure data export
+ * @file Documentation pages collection - Dataset container with path-based keys
  */
+
+import { Dataset } from "@raven-js/cortex/structures";
 
 /**
  * @typedef {Object} DocPage
@@ -20,16 +22,17 @@
  */
 
 /**
- * Documentation pages data collection
- * @type {DocPage[]}
+ * Documentation pages data collection with O(1) path-based lookups
+ * @type {Dataset<DocPage>}
  */
-export const docPages = [
-	{
-		path: ["installation"],
-		title: "Installation Guide",
-		description: "Get RavenJS up and running in minutes",
-		section: "Getting Started",
-		content: `
+export const docPages = new Dataset(
+	[
+		{
+			path: ["installation"],
+			title: "Installation Guide",
+			description: "Get RavenJS up and running in minutes",
+			section: "Getting Started",
+			content: `
 # Installation Guide
 
 Install RavenJS packages individually based on your needs.
@@ -52,13 +55,13 @@ npm install @raven-js/reflex  # Reactivity
 
 **Zero dependencies, maximum control.**
 		`.trim(),
-	},
-	{
-		path: ["getting-started", "first-project"],
-		title: "Your First RavenJS Project",
-		description: "Build your first static site with RavenJS",
-		section: "Getting Started",
-		content: `
+		},
+		{
+			path: ["getting-started", "first-project"],
+			title: "Your First RavenJS Project",
+			description: "Build your first static site with RavenJS",
+			section: "Getting Started",
+			content: `
 # Your First RavenJS Project
 
 Create a **Content As Code** static site in 5 minutes.
@@ -89,13 +92,13 @@ export const body = md\`# Hello, World!\`;
 
 **Surgical simplicity meets infinite flexibility.**
 		`.trim(),
-	},
-	{
-		path: ["api", "routing"],
-		title: "Routing API Reference",
-		description: "Complete Wings router API documentation",
-		section: "API Reference",
-		content: `
+		},
+		{
+			path: ["api", "routing"],
+			title: "Routing API Reference",
+			description: "Complete Wings router API documentation",
+			section: "API Reference",
+			content: `
 # Routing API Reference
 
 Master the **Wings** router for isomorphic routing.
@@ -126,13 +129,13 @@ router.get('/blog/:slug', (ctx) => {
 
 **Trie-based matching for surgical performance.**
 		`.trim(),
-	},
-	{
-		path: ["guides", "deployment", "cloudflare"],
-		title: "Deploy to Cloudflare Pages",
-		description: "Deploy your RavenJS site to Cloudflare Pages",
-		section: "Deployment Guides",
-		content: `
+		},
+		{
+			path: ["guides", "deployment", "cloudflare"],
+			title: "Deploy to Cloudflare Pages",
+			description: "Deploy your RavenJS site to Cloudflare Pages",
+			section: "Deployment Guides",
+			content: `
 # Deploy to Cloudflare Pages
 
 Deploy your **static site** to Cloudflare's global edge network.
@@ -165,32 +168,31 @@ export const build = {
 
 **Ravens soar on the edge.**
 		`.trim(),
+		},
+	],
+	{
+		keyFn: (page) => page.path.join("/"),
+		urlFn: (page) => `/docs/${page.path.join("/")}`,
 	},
-];
+);
 
 /**
- * Find documentation page by path array
+ * Find documentation page by path array (O(1) lookup)
  * @param {string[]} pathArray - Path segments array
- * @returns {DocPage|null} Doc page or null if not found
+ * @returns {DocPage|undefined} Doc page or undefined if not found
  */
 export const findDocPage = (pathArray) => {
-	return (
-		docPages.find(
-			(page) =>
-				page.path.length === pathArray.length &&
-				page.path.every((segment, index) => segment === pathArray[index]),
-		) || null
-	);
+	return docPages.get(pathArray.join("/"));
 };
 
 /**
- * Find documentation page by path string
+ * Find documentation page by path string (O(1) lookup)
  * @param {string} pathString - Path string (e.g., "guides/deployment/cloudflare")
- * @returns {DocPage|null} Doc page or null if not found
+ * @returns {DocPage|undefined} Doc page or undefined if not found
  */
 export const findDocPageByPath = (pathString) => {
-	const pathArray = pathString.split("/").filter(Boolean);
-	return findDocPage(pathArray);
+	const normalizedPath = pathString.split("/").filter(Boolean).join("/");
+	return docPages.get(normalizedPath);
 };
 
 /**
@@ -198,7 +200,7 @@ export const findDocPageByPath = (pathString) => {
  * @returns {string[]} Array of documentation URLs
  */
 export const getDocUrls = () => {
-	return docPages.map((page) => `/docs/${page.path.join("/")}`);
+	return docPages.urls();
 };
 
 /**
@@ -207,5 +209,5 @@ export const getDocUrls = () => {
  * @returns {DocPage[]} Array of pages in section
  */
 export const getPagesBySection = (section) => {
-	return docPages.filter((page) => page.section === section);
+	return docPages.match({ section });
 };

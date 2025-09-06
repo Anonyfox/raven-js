@@ -7,8 +7,10 @@
  */
 
 /**
- * @file Blog posts collection - pure data export
+ * @file Blog posts collection - Dataset container with O(1) lookups
  */
+
+import { Dataset } from "../../../../packages/cortex/structures/dataset.js";
 
 /**
  * @typedef {Object} BlogPost
@@ -21,17 +23,18 @@
  */
 
 /**
- * Blog posts data collection
- * @type {BlogPost[]}
+ * Blog posts data collection with O(1) slug-based lookups
+ * @type {Dataset<BlogPost>}
  */
-export const blogPosts = [
-	{
-		slug: "getting-started",
-		title: "Getting Started with RavenJS SSG",
-		description: "Learn how to build static sites with Content As Code",
-		publishDate: "2024-01-15",
-		tags: ["tutorial", "getting-started"],
-		content: `
+export const blogPosts = new Dataset(
+  [
+    {
+      slug: "getting-started",
+      title: "Getting Started with RavenJS SSG",
+      description: "Learn how to build static sites with Content As Code",
+      publishDate: "2024-01-15",
+      tags: ["tutorial", "getting-started"],
+      content: `
 # Getting Started with RavenJS SSG
 
 Welcome to the **Content As Code** approach to static site generation.
@@ -52,14 +55,14 @@ Welcome to the **Content As Code** approach to static site generation.
 
 **Ravens build what conquers.**
 		`.trim(),
-	},
-	{
-		slug: "advanced-routing",
-		title: "Advanced Routing Patterns",
-		description: "Dynamic routes, catch-all patterns, and nested parameters",
-		publishDate: "2024-01-20",
-		tags: ["routing", "advanced"],
-		content: `
+    },
+    {
+      slug: "advanced-routing",
+      title: "Advanced Routing Patterns",
+      description: "Dynamic routes, catch-all patterns, and nested parameters",
+      publishDate: "2024-01-20",
+      tags: ["routing", "advanced"],
+      content: `
 # Advanced Routing Patterns
 
 Master **file-based routing** with dynamic segments and catch-all patterns.
@@ -80,14 +83,14 @@ Perfect for:
 
 **Algorithm over patches** - let the filesystem define your routes.
 		`.trim(),
-	},
-	{
-		slug: "performance-optimization",
-		title: "Performance Optimization Tips",
-		description: "Make your static site blazingly fast",
-		publishDate: "2024-01-25",
-		tags: ["performance", "optimization"],
-		content: `
+    },
+    {
+      slug: "performance-optimization",
+      title: "Performance Optimization Tips",
+      description: "Make your static site blazingly fast",
+      publishDate: "2024-01-25",
+      tags: ["performance", "optimization"],
+      content: `
 # Performance Optimization Tips
 
 Achieve **surgical performance** with zero-dependency optimization.
@@ -108,16 +111,21 @@ Achieve **surgical performance** with zero-dependency optimization.
 
 **Performance is a feature, not an afterthought.**
 		`.trim(),
-	},
-];
+    },
+  ],
+  {
+    keyFn: (post) => post.slug,
+    urlFn: (post) => `/blog/${post.slug}`,
+  },
+);
 
 /**
- * Find blog post by slug
+ * Find blog post by slug (O(1) lookup)
  * @param {string} slug - Post slug
- * @returns {BlogPost|null} Blog post or null if not found
+ * @returns {BlogPost|undefined} Blog post or undefined if not found
  */
 export const findBlogPost = (slug) => {
-	return blogPosts.find((post) => post.slug === slug) || null;
+  return blogPosts.get(slug);
 };
 
 /**
@@ -125,5 +133,5 @@ export const findBlogPost = (slug) => {
  * @returns {string[]} Array of blog post URLs
  */
 export const getBlogUrls = () => {
-	return blogPosts.map((post) => `/blog/${post.slug}`);
+  return blogPosts.urls();
 };

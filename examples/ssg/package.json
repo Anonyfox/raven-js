@@ -13,7 +13,8 @@
   "dependencies": {
     "@raven-js/wings": "*",
     "@raven-js/beak": "*",
-    "@raven-js/reflex": "*"
+    "@raven-js/reflex": "*",
+    "@raven-js/cortex": "file:../../packages/cortex"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.0"
