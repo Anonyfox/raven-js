@@ -11,6 +11,7 @@ simple task list file what to implement next for short term goals.
 - [ ] wings browser router (path + hash)
 - [ ] wings automatic secondary trie registers (head, options, ...)
 - [ ] hatch incremental project creation with different template choices
+- [ ] make the wings/server boot in http2 mode when certificate provided
 
 - initial set of soar targets:
 
