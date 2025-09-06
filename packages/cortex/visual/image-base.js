@@ -15,7 +15,9 @@
  */
 
 import { cropPixels, getCropInfo } from "./crop/index.js";
+import { flipPixels, getFlipInfo } from "./flip/index.js";
 import { resizePixels } from "./resize/index.js";
+import { getRotationInfo, rotatePixels } from "./rotate/index.js";
 
 /**
  * Base class for image processing operations.
@@ -108,22 +110,70 @@ export class Image {
   /**
    * Rotate image by specified degrees.
    *
-   * @param {number} _degrees - Rotation angle (90, 180, 270, or arbitrary)
+   * @param {number} degrees - Rotation angle in degrees (positive = clockwise)
+   * @param {string} [algorithm="bilinear"] - Interpolation algorithm for arbitrary angles
+   * @param {[number, number, number, number]} [fillColor=[0, 0, 0, 0]] - RGBA fill color for empty areas
    * @returns {Image} This instance for chaining
    */
-  rotate(_degrees) {
-    // Stub implementation
+  rotate(degrees, algorithm = "bilinear", fillColor = [0, 0, 0, 0]) {
+    if (!this.pixels) {
+      throw new Error("Image not decoded yet - no pixel data available for rotation");
+    }
+
+    try {
+      // Get rotation information to determine actual output dimensions
+      const rotationInfo = getRotationInfo(this._width, this._height, degrees);
+
+      if (!rotationInfo.outputDimensions.width || !rotationInfo.outputDimensions.height) {
+        throw new Error(`Invalid rotation angle: ${degrees}`);
+      }
+
+      // Perform rotation operation
+      const rotatedResult = rotatePixels(this.pixels, this._width, this._height, degrees, algorithm, fillColor);
+
+      // Update image state with rotated data
+      this.pixels = rotatedResult.pixels;
+      this._width = rotatedResult.width;
+      this._height = rotatedResult.height;
+    } catch (error) {
+      throw new Error(`Rotation failed: ${error.message}`);
+    }
+
     return this;
   }
 
   /**
    * Flip image horizontally or vertically.
    *
-   * @param {'horizontal'|'vertical'} _direction - Flip direction
+   * @param {'horizontal'|'vertical'} direction - Flip direction
+   * @param {boolean} [inPlace=true] - Whether to modify pixels in-place for performance
    * @returns {Image} This instance for chaining
    */
-  flip(_direction) {
-    // Stub implementation
+  flip(direction, inPlace = true) {
+    if (!this.pixels) {
+      throw new Error("Image not decoded yet - no pixel data available for flipping");
+    }
+
+    try {
+      // Get flip information to validate parameters
+      const flipInfo = getFlipInfo(this._width, this._height, direction);
+
+      if (!flipInfo.isValid) {
+        throw new Error(`Invalid flip direction: ${direction}`);
+      }
+
+      // Perform flip operation
+      const flippedResult = flipPixels(this.pixels, this._width, this._height, direction, inPlace);
+
+      // Update image state with flipped data
+      this.pixels = flippedResult.pixels;
+      // Note: dimensions don't change for flipping
+      this._width = flippedResult.width;
+      this._height = flippedResult.height;
+    } catch (error) {
+      throw new Error(`Flip failed: ${error.message}`);
+    }
+
     return this;
   }
 
