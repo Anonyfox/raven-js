@@ -2,7 +2,7 @@
 
 **Content As Code** - Build static sites with pure JavaScript, no magic syntax to learn.
 
-This example demonstrates how to create a static site generator using RavenJS building blocks. Each page is a JavaScript module that exports a handler function - familiar, powerful, and infinitely flexible.
+This example demonstrates how to create a static site generator using RavenJS building blocks. Each page is a JavaScript module that exports content data - familiar, powerful, and infinitely flexible.
 
 ## 🎯 Perfect For
 
@@ -51,7 +51,7 @@ This isn't just a static site generator - it's your **growth path from static to
 src/
 ├── pages/              # Each page = folder + index.js
 │   ├── home/
-│   │   └── index.js    # Exports handler function
+│   │   └── index.js    # Exports title, description, body
 │   ├── about/
 │   │   └── index.js    # Pure JavaScript, no magic
 │   └── docs/
@@ -86,29 +86,23 @@ npm run dev
 
 ### Pages as JavaScript Modules
 
-Each page is a folder with an `index.js` that exports a handler function:
+Each page is a folder with an `index.js` that exports content data:
 
 ```javascript
 // src/pages/about/index.js
 import { md } from "@raven-js/beak";
-import { Layout } from "../../components/layout.js";
+import { MyComponent } from "../../components/my-component.js";
 
-export const handler = (ctx) => {
-  const content = md`
-    # About Us
+export const title = "About Us";
+export const description = "Learn about our Content As Code approach";
 
-    We build **Content As Code** - no magic, just JavaScript.
+export const body = md`
+  # About Us
 
-    ${MyComponent({ data: "example" })}
-  `;
+  We build **Content As Code** - no magic, just JavaScript.
 
-  return ctx.html(
-    Layout({
-      title: "About",
-      content,
-    })
-  );
-};
+  ${MyComponent({ data: "example" })}
+`;
 ```
 
 ### Components in Markdown
@@ -135,19 +129,22 @@ ${Callout({
 
 ### Central Route Mounting
 
-Mount page handlers in `src/routes.js`:
+Mount page data in `src/routes.js`:
 
 ```javascript
-import { handler as homeHandler } from "./pages/home/index.js";
-import { handler as aboutHandler } from "./pages/about/index.js";
-
 const routes = [
-  { path: "/", handler: homeHandler },
-  { path: "/about", handler: aboutHandler },
+  { path: "/", page: "./pages/home/index.js" },
+  { path: "/about", page: "./pages/about/index.js" },
 ];
 
+// Dynamic imports with centralized processing
 for (const route of routes) {
-  router.get(route.path, route.handler);
+  router.get(route.path, async (ctx) => {
+    const { title, description, body } = await import(route.page);
+    const content = markdownToHTML(body);
+    const page = Layout({ title, description, content });
+    ctx.html(page);
+  });
 }
 ```
 
@@ -183,21 +180,22 @@ rsync -av dist/ user@server:/var/www/html/
 ### Add a New Page
 
 1. Create page folder: `src/pages/contact/`
-2. Add handler: `src/pages/contact/index.js`
+2. Add page data: `src/pages/contact/index.js`
 3. Mount route in `src/routes.js`
 
 ```javascript
 // src/pages/contact/index.js
-export const handler = (ctx) => {
-  const content = md`
-# Contact Us
-  `;
-  return ctx.html(Layout({ title: "Contact", content }));
-};
+export const title = "Contact Us";
+export const description = "Get in touch with our team";
+
+export const body = md`
+  # Contact Us
+
+  Reach out to us for any questions or support.
+`;
 
 // src/routes.js
-import { handler as contactHandler } from "./pages/contact/index.js";
-// Add to routes array: { path: "/contact", handler: contactHandler }
+// Add to routes array: { path: "/contact", page: "./pages/contact/index.js" }
 ```
 
 ### Create Components
