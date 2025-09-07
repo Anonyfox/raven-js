@@ -53,6 +53,7 @@
   "workspaces": [
     "packages/beak",
     "packages/cortex",
+    "packages/eye",
     "packages/fledge",
     "packages/glean",
     "packages/hatch",
