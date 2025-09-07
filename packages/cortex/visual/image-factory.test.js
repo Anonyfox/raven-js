@@ -11,7 +11,7 @@ import { describe, it } from "node:test";
 import { GIFImage } from "./gif-image.js";
 import { Image } from "./image-base.js";
 import { createImage } from "./image-factory.js";
-import { JPEGImage } from "./jpeg-image.js";
+import { JPEGImage } from "./jpeg/index.js";
 import { PNGImage } from "./png/index.js";
 import { WebPImage } from "./webp-image.js";
 

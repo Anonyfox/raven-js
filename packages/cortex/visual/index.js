@@ -31,6 +31,6 @@
 export { GIFImage } from "./gif-image.js";
 export { Image } from "./image-base.js";
 export { createImage } from "./image-factory.js";
-export { JPEGImage } from "./jpeg-image.js";
+export { JPEGImage } from "./jpeg/index.js";
 export { PNGImage } from "./png/index.js";
 export { WebPImage } from "./webp-image.js";

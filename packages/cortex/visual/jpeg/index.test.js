@@ -8,8 +8,8 @@
 
 import { strict as assert } from "node:assert";
 import { beforeEach, describe, it } from "node:test";
-import { Image } from "./image-base.js";
-import { JPEGImage } from "./jpeg/index.js";
+import { Image } from "../image-base.js";
+import { JPEGImage } from "./index.js";
 
 describe("JPEG Image", () => {
   describe("Constructor", () => {
