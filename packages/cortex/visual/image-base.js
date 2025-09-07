@@ -14,7 +14,13 @@
  * behavior across PNG, JPEG, WebP, and GIF formats.
  */
 
-import { adjustBrightness, adjustContrast, getColorAdjustmentInfo } from "./color/index.js";
+import {
+  adjustBrightness,
+  adjustContrast,
+  convertToGrayscale,
+  getColorAdjustmentInfo,
+  getGrayscaleInfo,
+} from "./color/index.js";
 import { cropPixels, getCropInfo } from "./crop/index.js";
 import { flipPixels, getFlipInfo } from "./flip/index.js";
 import { resizePixels } from "./resize/index.js";
@@ -251,10 +257,35 @@ export class Image {
   /**
    * Convert image to grayscale.
    *
+   * @param {string} [method="luminance"] - Conversion method ("luminance", "average", "desaturate", "max", "min")
+   * @param {boolean} [inPlace=true] - Whether to modify pixels in-place for performance
    * @returns {Image} This instance for chaining
    */
-  grayscale() {
-    // Stub implementation
+  grayscale(method = "luminance", inPlace = true) {
+    if (!this.pixels) {
+      throw new Error("Image not decoded yet - no pixel data available for grayscale conversion");
+    }
+
+    try {
+      // Get grayscale information to validate parameters
+      const grayscaleInfo = getGrayscaleInfo(this._width, this._height, method);
+
+      if (!grayscaleInfo.isValid) {
+        throw new Error(`Invalid grayscale method: ${method}`);
+      }
+
+      // Perform grayscale conversion
+      const grayscaleResult = convertToGrayscale(this.pixels, this._width, this._height, method, inPlace);
+
+      // Update image state with grayscale data
+      this.pixels = grayscaleResult.pixels;
+      // Note: dimensions don't change for grayscale conversion
+      this._width = grayscaleResult.width;
+      this._height = grayscaleResult.height;
+    } catch (error) {
+      throw new Error(`Grayscale conversion failed: ${error.message}`);
+    }
+
     return this;
   }
 

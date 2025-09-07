@@ -17,8 +17,12 @@ import {
   adjustBrightnessContrast,
   adjustContrast,
   analyzeBrightness,
+  compareGrayscaleMethods,
+  convertToGrayscale,
   createColorAdjustmentPreview,
+  createGrayscalePreview,
   getColorAdjustmentInfo,
+  getGrayscaleInfo,
 } from "./index.js";
 
 describe("Main Color Adjustment Functions", () => {
@@ -350,6 +354,266 @@ describe("Main Color Adjustment Functions", () => {
       assert.equal(result.pixels, pixels);
       assert.equal(result.width, 100);
       assert.equal(result.height, 100);
+    });
+  });
+
+  describe("convertToGrayscale", () => {
+    it("converts color image to grayscale using luminance", () => {
+      const result = convertToGrayscale(testPixels, 2, 2, "luminance", false);
+
+      assert.equal(result.width, 2);
+      assert.equal(result.height, 2);
+      assert.equal(result.pixels.length, 2 * 2 * 4);
+
+      // Check that RGB channels are equal (grayscale)
+      for (let i = 0; i < result.pixels.length; i += 4) {
+        const r = result.pixels[i];
+        const g = result.pixels[i + 1];
+        const b = result.pixels[i + 2];
+        const a = result.pixels[i + 3];
+
+        assert.equal(r, g); // R = G
+        assert.equal(g, b); // G = B
+        assert.equal(a, 255); // Alpha preserved
+      }
+    });
+
+    it("supports different conversion methods", () => {
+      const methods = ["luminance", "average", "desaturate", "max", "min"];
+
+      for (const method of methods) {
+        const result = convertToGrayscale(testPixels, 2, 2, method, false);
+
+        assert.equal(result.width, 2);
+        assert.equal(result.height, 2);
+        assert.equal(result.pixels.length, 2 * 2 * 4);
+
+        // Should be grayscale (R = G = B)
+        for (let i = 0; i < result.pixels.length; i += 4) {
+          assert.equal(result.pixels[i], result.pixels[i + 1]);
+          assert.equal(result.pixels[i + 1], result.pixels[i + 2]);
+        }
+      }
+    });
+
+    it("produces different results for different methods", () => {
+      // Use a colorful pixel to see differences
+      const colorPixels = new Uint8Array([255, 100, 50, 255]); // Bright red-orange
+
+      const luminance = convertToGrayscale(colorPixels, 1, 1, "luminance", false);
+      const average = convertToGrayscale(colorPixels, 1, 1, "average", false);
+      const max = convertToGrayscale(colorPixels, 1, 1, "max", false);
+      const min = convertToGrayscale(colorPixels, 1, 1, "min", false);
+
+      // Results should be different
+      assert.notEqual(luminance.pixels[0], average.pixels[0]);
+      assert.notEqual(average.pixels[0], max.pixels[0]);
+      assert.notEqual(max.pixels[0], min.pixels[0]);
+
+      // Max should be brightest, min should be darkest
+      assert.equal(max.pixels[0], 255); // Max of (255, 100, 50)
+      assert.equal(min.pixels[0], 50); // Min of (255, 100, 50)
+    });
+
+    it("supports in-place modification", () => {
+      // Use colorful pixels that will actually change when converted to grayscale
+      const colorPixels = new Uint8Array([
+        255,
+        100,
+        50,
+        255, // Red-orange
+        50,
+        200,
+        100,
+        255, // Green
+        100,
+        50,
+        255,
+        255, // Blue
+        200,
+        200,
+        50,
+        255, // Yellow
+      ]);
+      const original = new Uint8Array(colorPixels);
+      const result = convertToGrayscale(colorPixels, 2, 2, "luminance", true);
+
+      // Should return the same array reference
+      assert.equal(result.pixels, colorPixels);
+
+      // Original array should be modified
+      assert.notDeepEqual(colorPixels, original);
+    });
+
+    it("supports creating new array", () => {
+      const original = new Uint8Array(testPixels);
+      const result = convertToGrayscale(testPixels, 2, 2, "luminance", false);
+
+      // Should return a different array reference
+      assert.notEqual(result.pixels, testPixels);
+
+      // Original array should be unchanged
+      assert.deepEqual(testPixels, original);
+    });
+
+    it("validates parameters", () => {
+      assert.throws(() => convertToGrayscale([], 2, 2, "luminance"), /Pixels must be a Uint8Array/);
+      assert.throws(() => convertToGrayscale(testPixels, 2, 2, "invalid"), /Invalid grayscale method/);
+    });
+  });
+
+  describe("getGrayscaleInfo", () => {
+    it("returns correct info for grayscale conversion", () => {
+      const info = getGrayscaleInfo(800, 600, "luminance");
+
+      assert.equal(info.method, "luminance");
+      assert.equal(info.isLossless, false); // Color information is lost
+      assert.equal(info.isValid, true);
+      assert.deepEqual(info.outputDimensions, { width: 800, height: 600 });
+      assert.equal(info.outputSize, 800 * 600 * 4);
+      assert(info.description.includes("ITU-R BT.709"));
+    });
+
+    it("provides descriptions for all methods", () => {
+      const methods = ["luminance", "average", "desaturate", "max", "min"];
+
+      for (const method of methods) {
+        const info = getGrayscaleInfo(800, 600, method);
+        assert.equal(info.method, method);
+        assert(info.description.length > 0);
+        assert.equal(info.isValid, true);
+      }
+    });
+
+    it("handles invalid parameters gracefully", () => {
+      const info = getGrayscaleInfo(-1, 600, "luminance");
+
+      assert.equal(info.isValid, false);
+      assert.equal(info.outputSize, 0);
+    });
+
+    it("handles invalid methods gracefully", () => {
+      const info = getGrayscaleInfo(800, 600, "invalid");
+
+      assert.equal(info.isValid, false);
+    });
+  });
+
+  describe("createGrayscalePreview", () => {
+    it("creates preview for small samples", () => {
+      const smallSample = new Uint8Array([255, 100, 50, 255]); // 1x1 colorful pixel
+      const preview = createGrayscalePreview(smallSample, 1, 1, "luminance");
+
+      assert.equal(preview.width, 1);
+      assert.equal(preview.height, 1);
+      assert.equal(preview.pixels.length, 4);
+
+      // Should be grayscale
+      assert.equal(preview.pixels[0], preview.pixels[1]);
+      assert.equal(preview.pixels[1], preview.pixels[2]);
+      assert.equal(preview.pixels[3], 255); // Alpha preserved
+    });
+
+    it("rejects samples that are too large", () => {
+      const largeSample = new Uint8Array(65 * 65 * 4); // Too large
+
+      assert.throws(() => createGrayscalePreview(largeSample, 65, 65, "luminance"), /Sample too large for preview/);
+    });
+  });
+
+  describe("compareGrayscaleMethods", () => {
+    it("compares all grayscale methods", () => {
+      const results = compareGrayscaleMethods(testPixels, 2, 2);
+
+      const expectedMethods = ["luminance", "average", "desaturate", "max", "min"];
+
+      // Should have results for all methods
+      for (const method of expectedMethods) {
+        assert(results[method] instanceof Uint8Array);
+        assert.equal(results[method].length, 2 * 2 * 4);
+      }
+    });
+
+    it("produces different results for different methods", () => {
+      // Use colorful test data
+      const colorPixels = new Uint8Array([
+        255,
+        100,
+        50,
+        255, // Bright red-orange
+        50,
+        200,
+        100,
+        255, // Green-ish
+        100,
+        50,
+        255,
+        255, // Blue-ish
+        200,
+        200,
+        50,
+        255, // Yellow-ish
+      ]);
+
+      const results = compareGrayscaleMethods(colorPixels, 2, 2);
+
+      // Results should be different for at least some pixels
+      let foundDifference = false;
+      for (let i = 0; i < colorPixels.length; i += 4) {
+        const luminance = results.luminance[i];
+        const average = results.average[i];
+        const max = results.max[i];
+
+        if (luminance !== average || average !== max) {
+          foundDifference = true;
+          break;
+        }
+      }
+
+      assert(foundDifference, "Different methods should produce different results");
+    });
+  });
+
+  describe("Grayscale Integration", () => {
+    it("grayscale conversion preserves alpha channel", () => {
+      const withAlpha = new Uint8Array([255, 100, 50, 128]); // Semi-transparent
+
+      const result = convertToGrayscale(withAlpha, 1, 1, "luminance", false);
+
+      // Alpha should be preserved
+      assert.equal(result.pixels[3], 128);
+    });
+
+    it("supports method chaining pattern", () => {
+      // Simulate chaining by using result of one operation as input to next
+      const step1 = adjustBrightness(testPixels, 2, 2, 1.2, false);
+      const step2 = convertToGrayscale(step1.pixels, step1.width, step1.height, "luminance", false);
+
+      // Should have valid dimensions
+      assert.equal(step2.width, 2);
+      assert.equal(step2.height, 2);
+      assert.equal(step2.pixels.length, 2 * 2 * 4);
+
+      // Should be grayscale
+      for (let i = 0; i < step2.pixels.length; i += 4) {
+        assert.equal(step2.pixels[i], step2.pixels[i + 1]);
+        assert.equal(step2.pixels[i + 1], step2.pixels[i + 2]);
+      }
+    });
+
+    it("luminance method produces perceptually accurate results", () => {
+      // Test with pure colors - green should be brightest in luminance
+      const pureRed = new Uint8Array([255, 0, 0, 255]);
+      const pureGreen = new Uint8Array([0, 255, 0, 255]);
+      const pureBlue = new Uint8Array([0, 0, 255, 255]);
+
+      const redGray = convertToGrayscale(pureRed, 1, 1, "luminance", false);
+      const greenGray = convertToGrayscale(pureGreen, 1, 1, "luminance", false);
+      const blueGray = convertToGrayscale(pureBlue, 1, 1, "luminance", false);
+
+      // Green should be brightest, blue should be darkest (human eye sensitivity)
+      assert(greenGray.pixels[0] > redGray.pixels[0]);
+      assert(redGray.pixels[0] > blueGray.pixels[0]);
     });
   });
 });

@@ -216,3 +216,135 @@ export function validateFactorBounds(factor, min = 0, max = 10) {
     throw new Error(`Factor ${factor} is outside valid range [${min}, ${max}]`);
   }
 }
+
+/**
+ * Converts RGB values to grayscale using standard luminance weights.
+ * Uses the ITU-R BT.709 standard for accurate perceptual brightness.
+ *
+ * @param {number} r - Red channel value [0-255]
+ * @param {number} g - Green channel value [0-255]
+ * @param {number} b - Blue channel value [0-255]
+ * @returns {number} Grayscale value [0-255]
+ */
+export function rgbToGrayscale(r, g, b) {
+  // ITU-R BT.709 standard luminance weights
+  // These weights account for human eye sensitivity to different colors
+  return Math.round(0.2126 * r + 0.7152 * g + 0.0722 * b);
+}
+
+/**
+ * Alternative grayscale conversion using simple average.
+ * Faster but less perceptually accurate than luminance-based conversion.
+ *
+ * @param {number} r - Red channel value [0-255]
+ * @param {number} g - Green channel value [0-255]
+ * @param {number} b - Blue channel value [0-255]
+ * @returns {number} Grayscale value [0-255]
+ */
+export function rgbToGrayscaleAverage(r, g, b) {
+  return Math.round((r + g + b) / 3);
+}
+
+/**
+ * Alternative grayscale conversion using desaturation (min-max average).
+ * Takes the average of the minimum and maximum RGB values.
+ *
+ * @param {number} r - Red channel value [0-255]
+ * @param {number} g - Green channel value [0-255]
+ * @param {number} b - Blue channel value [0-255]
+ * @returns {number} Grayscale value [0-255]
+ */
+export function rgbToGrayscaleDesaturate(r, g, b) {
+  const min = Math.min(r, g, b);
+  const max = Math.max(r, g, b);
+  return Math.round((min + max) / 2);
+}
+
+/**
+ * Alternative grayscale conversion using maximum RGB value.
+ * Preserves highlights but may appear too bright.
+ *
+ * @param {number} r - Red channel value [0-255]
+ * @param {number} g - Green channel value [0-255]
+ * @param {number} b - Blue channel value [0-255]
+ * @returns {number} Grayscale value [0-255]
+ */
+export function rgbToGrayscaleMax(r, g, b) {
+  return Math.max(r, g, b);
+}
+
+/**
+ * Alternative grayscale conversion using minimum RGB value.
+ * Preserves shadows but may appear too dark.
+ *
+ * @param {number} r - Red channel value [0-255]
+ * @param {number} g - Green channel value [0-255]
+ * @param {number} b - Blue channel value [0-255]
+ * @returns {number} Grayscale value [0-255]
+ */
+export function rgbToGrayscaleMin(r, g, b) {
+  return Math.min(r, g, b);
+}
+
+/**
+ * Validates grayscale conversion parameters.
+ *
+ * @param {Uint8Array} pixels - Source RGBA pixel data
+ * @param {number} width - Image width in pixels
+ * @param {number} height - Image height in pixels
+ * @param {string} method - Conversion method
+ * @throws {Error} If any parameter is invalid
+ */
+export function validateGrayscaleParameters(pixels, width, height, method) {
+  // Reuse existing color parameter validation
+  validateColorParameters(pixels, width, height, 1.0);
+
+  // Validate method
+  const validMethods = ["luminance", "average", "desaturate", "max", "min"];
+  if (!validMethods.includes(method)) {
+    throw new Error(`Invalid grayscale method: ${method}. Must be one of: ${validMethods.join(", ")}`);
+  }
+}
+
+/**
+ * Gets the appropriate grayscale conversion function for a method.
+ *
+ * @param {string} method - Conversion method name
+ * @returns {function(number, number, number): number} Conversion function
+ */
+export function getGrayscaleConverter(method) {
+  switch (method) {
+    case "luminance":
+      return rgbToGrayscale;
+    case "average":
+      return rgbToGrayscaleAverage;
+    case "desaturate":
+      return rgbToGrayscaleDesaturate;
+    case "max":
+      return rgbToGrayscaleMax;
+    case "min":
+      return rgbToGrayscaleMin;
+    default:
+      return rgbToGrayscale; // Default to luminance
+  }
+}
+
+/**
+ * Applies grayscale conversion to RGB channels of a pixel, preserving alpha.
+ *
+ * @param {Uint8Array} pixels - RGBA pixel data
+ * @param {number} index - Pixel byte index
+ * @param {function(number, number, number): number} converter - Grayscale conversion function
+ */
+export function applyGrayscaleToPixel(pixels, index, converter) {
+  const r = pixels[index];
+  const g = pixels[index + 1];
+  const b = pixels[index + 2];
+  const gray = converter(r, g, b);
+
+  // Set RGB channels to grayscale value, preserve alpha
+  pixels[index] = gray; // Red
+  pixels[index + 1] = gray; // Green
+  pixels[index + 2] = gray; // Blue
+  // Alpha (index + 3) is preserved unchanged
+}

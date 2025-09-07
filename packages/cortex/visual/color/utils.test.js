@@ -16,15 +16,23 @@ import {
   applyBrightness,
   applyBrightnessContrast,
   applyContrast,
+  applyGrayscaleToPixel,
   applyLookupTableToRGB,
   applyToRGBAChannels,
   applyToRGBChannels,
   clampColor,
   createColorLookupTable,
+  getGrayscaleConverter,
   getPixelIndex,
   isIdentityFactor,
+  rgbToGrayscale,
+  rgbToGrayscaleAverage,
+  rgbToGrayscaleDesaturate,
+  rgbToGrayscaleMax,
+  rgbToGrayscaleMin,
   validateColorParameters,
   validateFactorBounds,
+  validateGrayscaleParameters,
 } from "./utils.js";
 
 describe("Color Adjustment Utilities", () => {
@@ -247,6 +255,125 @@ describe("Color Adjustment Utilities", () => {
     });
   });
 
+  describe("rgbToGrayscale", () => {
+    it("converts RGB to grayscale using luminance", () => {
+      // Pure colors
+      assert.equal(rgbToGrayscale(255, 0, 0), 54); // Red: 0.2126 * 255 ≈ 54
+      assert.equal(rgbToGrayscale(0, 255, 0), 182); // Green: 0.7152 * 255 ≈ 182
+      assert.equal(rgbToGrayscale(0, 0, 255), 18); // Blue: 0.0722 * 255 ≈ 18
+
+      // Grayscale values
+      assert.equal(rgbToGrayscale(128, 128, 128), 128); // Middle gray
+      assert.equal(rgbToGrayscale(0, 0, 0), 0); // Black
+      assert.equal(rgbToGrayscale(255, 255, 255), 255); // White
+    });
+
+    it("uses correct ITU-R BT.709 weights", () => {
+      // Test with known values
+      const result = rgbToGrayscale(100, 150, 200);
+      const expected = Math.round(0.2126 * 100 + 0.7152 * 150 + 0.0722 * 200);
+      assert.equal(result, expected);
+    });
+  });
+
+  describe("rgbToGrayscaleAverage", () => {
+    it("converts RGB to grayscale using simple average", () => {
+      assert.equal(rgbToGrayscaleAverage(255, 0, 0), 85); // (255 + 0 + 0) / 3 = 85
+      assert.equal(rgbToGrayscaleAverage(0, 255, 0), 85); // (0 + 255 + 0) / 3 = 85
+      assert.equal(rgbToGrayscaleAverage(0, 0, 255), 85); // (0 + 0 + 255) / 3 = 85
+      assert.equal(rgbToGrayscaleAverage(100, 150, 200), 150); // (100 + 150 + 200) / 3 = 150
+    });
+  });
+
+  describe("rgbToGrayscaleDesaturate", () => {
+    it("converts RGB to grayscale using min-max average", () => {
+      assert.equal(rgbToGrayscaleDesaturate(100, 150, 200), 150); // (100 + 200) / 2 = 150
+      assert.equal(rgbToGrayscaleDesaturate(50, 100, 75), 75); // (50 + 100) / 2 = 75
+      assert.equal(rgbToGrayscaleDesaturate(255, 255, 255), 255); // (255 + 255) / 2 = 255
+    });
+  });
+
+  describe("rgbToGrayscaleMax", () => {
+    it("converts RGB to grayscale using maximum value", () => {
+      assert.equal(rgbToGrayscaleMax(100, 150, 200), 200);
+      assert.equal(rgbToGrayscaleMax(255, 100, 50), 255);
+      assert.equal(rgbToGrayscaleMax(0, 0, 0), 0);
+    });
+  });
+
+  describe("rgbToGrayscaleMin", () => {
+    it("converts RGB to grayscale using minimum value", () => {
+      assert.equal(rgbToGrayscaleMin(100, 150, 200), 100);
+      assert.equal(rgbToGrayscaleMin(255, 100, 50), 50);
+      assert.equal(rgbToGrayscaleMin(255, 255, 255), 255);
+    });
+  });
+
+  describe("validateGrayscaleParameters", () => {
+    let validPixels;
+
+    beforeEach(() => {
+      validPixels = new Uint8Array(800 * 600 * 4);
+    });
+
+    it("accepts valid parameters", () => {
+      assert.doesNotThrow(() => {
+        validateGrayscaleParameters(validPixels, 800, 600, "luminance");
+      });
+    });
+
+    it("rejects invalid methods", () => {
+      assert.throws(
+        () => validateGrayscaleParameters(validPixels, 800, 600, "invalid"),
+        /Invalid grayscale method.*Must be one of/
+      );
+    });
+
+    it("accepts all valid methods", () => {
+      const validMethods = ["luminance", "average", "desaturate", "max", "min"];
+      for (const method of validMethods) {
+        assert.doesNotThrow(() => {
+          validateGrayscaleParameters(validPixels, 800, 600, method);
+        });
+      }
+    });
+  });
+
+  describe("getGrayscaleConverter", () => {
+    it("returns correct converter functions", () => {
+      assert.equal(getGrayscaleConverter("luminance"), rgbToGrayscale);
+      assert.equal(getGrayscaleConverter("average"), rgbToGrayscaleAverage);
+      assert.equal(getGrayscaleConverter("desaturate"), rgbToGrayscaleDesaturate);
+      assert.equal(getGrayscaleConverter("max"), rgbToGrayscaleMax);
+      assert.equal(getGrayscaleConverter("min"), rgbToGrayscaleMin);
+    });
+
+    it("defaults to luminance for unknown methods", () => {
+      assert.equal(getGrayscaleConverter("unknown"), rgbToGrayscale);
+    });
+  });
+
+  describe("applyGrayscaleToPixel", () => {
+    it("applies grayscale conversion to RGB channels", () => {
+      const pixels = new Uint8Array([100, 150, 200, 255]); // RGBA
+      const converter = rgbToGrayscale;
+
+      applyGrayscaleToPixel(pixels, 0, converter);
+
+      const expectedGray = rgbToGrayscale(100, 150, 200);
+      assert.deepEqual(Array.from(pixels), [expectedGray, expectedGray, expectedGray, 255]);
+    });
+
+    it("preserves alpha channel", () => {
+      const pixels = new Uint8Array([100, 150, 200, 128]); // Semi-transparent
+      const converter = rgbToGrayscaleAverage;
+
+      applyGrayscaleToPixel(pixels, 0, converter);
+
+      assert.equal(pixels[3], 128); // Alpha preserved
+    });
+  });
+
   describe("Performance", () => {
     it("handles medium images efficiently", () => {
       const mediumPixels = new Uint8Array(200 * 200 * 4);
@@ -255,6 +382,7 @@ describe("Color Adjustment Utilities", () => {
       // Test validation
       assert.doesNotThrow(() => {
         validateColorParameters(mediumPixels, 200, 200, 1.2);
+        validateGrayscaleParameters(mediumPixels, 200, 200, "luminance");
       });
 
       // Test lookup table creation
@@ -264,6 +392,12 @@ describe("Color Adjustment Utilities", () => {
       // Test applying to all pixels
       for (let i = 0; i < mediumPixels.length; i += 4) {
         applyLookupTableToRGB(mediumPixels, i, lut);
+      }
+
+      // Test grayscale conversion
+      const converter = getGrayscaleConverter("luminance");
+      for (let i = 0; i < mediumPixels.length; i += 4) {
+        applyGrayscaleToPixel(mediumPixels, i, converter);
       }
 
       // Should complete without issues

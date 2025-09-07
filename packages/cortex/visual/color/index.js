@@ -28,11 +28,14 @@ import {
   applyBrightness,
   applyBrightnessContrast,
   applyContrast,
+  applyGrayscaleToPixel,
   applyLookupTableToRGB,
   createColorLookupTable,
+  getGrayscaleConverter,
   isIdentityFactor,
   validateColorParameters,
   validateFactorBounds,
+  validateGrayscaleParameters,
 } from "./utils.js";
 
 /**
@@ -335,4 +338,173 @@ export function analyzeBrightness(pixels, width, height) {
     maxBrightness,
     histogram,
   };
+}
+
+/**
+ * Converts RGBA pixel data to grayscale.
+ *
+ * Supports multiple conversion methods for different visual effects.
+ * The luminance method provides the most perceptually accurate results.
+ * Alpha channel is preserved in all methods.
+ *
+ * @param {Uint8Array} pixels - Source RGBA pixel data (4 bytes per pixel)
+ * @param {number} width - Image width in pixels
+ * @param {number} height - Image height in pixels
+ * @param {string} [method="luminance"] - Conversion method ("luminance", "average", "desaturate", "max", "min")
+ * @param {boolean} [inPlace=true] - Whether to modify the original array
+ * @returns {{pixels: Uint8Array, width: number, height: number}} Grayscale image data
+ * @throws {Error} If parameters are invalid
+ *
+ * @example
+ * // Convert to grayscale using luminance (most accurate)
+ * const result = convertToGrayscale(pixels, 800, 600, "luminance");
+ *
+ * // Convert using simple average (faster)
+ * const result = convertToGrayscale(pixels, 800, 600, "average");
+ *
+ * // Convert using desaturation
+ * const result = convertToGrayscale(pixels, 800, 600, "desaturate");
+ *
+ * // Create new array instead of modifying original
+ * const result = convertToGrayscale(pixels, 800, 600, "luminance", false);
+ */
+export function convertToGrayscale(pixels, width, height, method = "luminance", inPlace = true) {
+  // Validate all parameters
+  validateGrayscaleParameters(pixels, width, height, method);
+
+  const output = inPlace ? pixels : new Uint8Array(pixels);
+  const converter = getGrayscaleConverter(method);
+
+  // Process all pixels
+  for (let i = 0; i < output.length; i += 4) {
+    applyGrayscaleToPixel(output, i, converter);
+  }
+
+  return {
+    pixels: output,
+    width,
+    height,
+  };
+}
+
+/**
+ * Gets information about a grayscale conversion operation without performing it.
+ * Useful for validation and UI feedback.
+ *
+ * @param {number} width - Image width in pixels
+ * @param {number} height - Image height in pixels
+ * @param {string} method - Conversion method
+ * @returns {{
+ *   method: string,
+ *   isLossless: boolean,
+ *   outputDimensions: {width: number, height: number},
+ *   outputSize: number,
+ *   description: string,
+ *   isValid: boolean
+ * }} Grayscale conversion operation information
+ */
+export function getGrayscaleInfo(width, height, method = "luminance") {
+  try {
+    // Basic validation
+    if (!Number.isInteger(width) || width <= 0) {
+      throw new Error("Invalid width");
+    }
+    if (!Number.isInteger(height) || height <= 0) {
+      throw new Error("Invalid height");
+    }
+
+    const validMethods = ["luminance", "average", "desaturate", "max", "min"];
+    if (!validMethods.includes(method)) {
+      throw new Error("Invalid method");
+    }
+
+    // Grayscale conversion never changes dimensions
+    const outputDimensions = { width, height };
+    const outputSize = width * height * 4;
+
+    // Method descriptions
+    /** @type {Record<string, string>} */
+    const descriptions = {
+      luminance: "ITU-R BT.709 standard luminance weights (most perceptually accurate)",
+      average: "Simple RGB average (fastest, less accurate)",
+      desaturate: "Average of min and max RGB values (preserves contrast)",
+      max: "Maximum RGB value (preserves highlights)",
+      min: "Minimum RGB value (preserves shadows)",
+    };
+
+    return {
+      method,
+      isLossless: false, // Color information is lost
+      outputDimensions,
+      outputSize,
+      description: descriptions[method] || "Unknown method",
+      isValid: true,
+    };
+  } catch (_error) {
+    return {
+      method: "luminance",
+      isLossless: false,
+      outputDimensions: { width: 0, height: 0 },
+      outputSize: 0,
+      description: "",
+      isValid: false,
+    };
+  }
+}
+
+/**
+ * Creates a preview of grayscale conversion effects on a small sample.
+ * Useful for real-time UI feedback without processing the entire image.
+ *
+ * @param {Uint8Array} samplePixels - Small sample of RGBA pixel data
+ * @param {number} sampleWidth - Sample width in pixels
+ * @param {number} sampleHeight - Sample height in pixels
+ * @param {string} method - Conversion method
+ * @returns {{pixels: Uint8Array, width: number, height: number}} Preview result
+ */
+export function createGrayscalePreview(samplePixels, sampleWidth, sampleHeight, method = "luminance") {
+  // Validate sample size (should be small for performance)
+  if (samplePixels.length > 64 * 64 * 4) {
+    throw new Error("Sample too large for preview (max 64x64 pixels)");
+  }
+
+  return convertToGrayscale(
+    samplePixels,
+    sampleWidth,
+    sampleHeight,
+    method,
+    false // Always create new array for preview
+  );
+}
+
+/**
+ * Compares different grayscale conversion methods on the same image data.
+ * Returns results from all methods for visual comparison.
+ *
+ * @param {Uint8Array} pixels - Source RGBA pixel data
+ * @param {number} width - Image width in pixels
+ * @param {number} height - Image height in pixels
+ * @returns {{
+ *   luminance: Uint8Array,
+ *   average: Uint8Array,
+ *   desaturate: Uint8Array,
+ *   max: Uint8Array,
+ *   min: Uint8Array
+ * }} Results from all conversion methods
+ */
+export function compareGrayscaleMethods(pixels, width, height) {
+  validateGrayscaleParameters(pixels, width, height, "luminance");
+
+  const methods = ["luminance", "average", "desaturate", "max", "min"];
+  /** @type {Record<string, Uint8Array>} */
+  const results = {};
+
+  for (const method of methods) {
+    const result = convertToGrayscale(pixels, width, height, method, false);
+    results[method] = result.pixels;
+  }
+
+  return /** @type {{luminance: Uint8Array, average: Uint8Array, desaturate: Uint8Array, max: Uint8Array, min: Uint8Array}} */ (
+    results
+  );
 }
