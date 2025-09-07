@@ -15,24 +15,35 @@ import { beforeEach, describe, it } from "node:test";
 import {
   applyBrightness,
   applyBrightnessContrast,
+  applyColorInversionToPixel,
   applyContrast,
   applyGrayscaleToPixel,
+  applyHslAdjustmentToPixel,
   applyLookupTableToRGB,
+  applySepia,
+  applySepiaToPixel,
   applyToRGBAChannels,
   applyToRGBChannels,
   clampColor,
   createColorLookupTable,
   getGrayscaleConverter,
   getPixelIndex,
+  hslToRgb,
+  invertColor,
   isIdentityFactor,
   rgbToGrayscale,
   rgbToGrayscaleAverage,
   rgbToGrayscaleDesaturate,
   rgbToGrayscaleMax,
   rgbToGrayscaleMin,
+  rgbToHsl,
+  validateColorInversionParameters,
   validateColorParameters,
   validateFactorBounds,
   validateGrayscaleParameters,
+  validateHslAdjustmentParameters,
+  validateHslValues,
+  validateSepiaParameters,
 } from "./utils.js";
 
 describe("Color Adjustment Utilities", () => {
@@ -398,6 +409,626 @@ describe("Color Adjustment Utilities", () => {
       const converter = getGrayscaleConverter("luminance");
       for (let i = 0; i < mediumPixels.length; i += 4) {
         applyGrayscaleToPixel(mediumPixels, i, converter);
+      }
+
+      // Should complete without issues
+      assert.equal(mediumPixels.length, 200 * 200 * 4);
+    });
+  });
+
+  describe("invertColor", () => {
+    it("inverts color values correctly", () => {
+      assert.equal(invertColor(0), 255); // Black -> White
+      assert.equal(invertColor(255), 0); // White -> Black
+      assert.equal(invertColor(128), 127); // Middle gray -> slightly darker
+      assert.equal(invertColor(100), 155); // Dark -> Light
+      assert.equal(invertColor(200), 55); // Light -> Dark
+    });
+
+    it("is reversible", () => {
+      const testValues = [0, 50, 100, 128, 200, 255];
+      for (const value of testValues) {
+        const inverted = invertColor(value);
+        const restored = invertColor(inverted);
+        assert.equal(restored, value);
+      }
+    });
+  });
+
+  describe("applyColorInversionToPixel", () => {
+    it("inverts RGB channels and preserves alpha", () => {
+      const pixels = new Uint8Array([100, 150, 200, 255]); // RGBA
+
+      applyColorInversionToPixel(pixels, 0);
+
+      assert.deepEqual(Array.from(pixels), [155, 105, 55, 255]); // RGB inverted, A preserved
+    });
+
+    it("preserves alpha channel with different alpha values", () => {
+      const pixels = new Uint8Array([100, 150, 200, 128]); // Semi-transparent
+
+      applyColorInversionToPixel(pixels, 0);
+
+      assert.equal(pixels[3], 128); // Alpha preserved
+      assert.equal(pixels[0], 155); // Red inverted: 255 - 100 = 155
+      assert.equal(pixels[1], 105); // Green inverted: 255 - 150 = 105
+      assert.equal(pixels[2], 55); // Blue inverted: 255 - 200 = 55
+    });
+
+    it("handles edge cases", () => {
+      // Pure black
+      const blackPixel = new Uint8Array([0, 0, 0, 255]);
+      applyColorInversionToPixel(blackPixel, 0);
+      assert.deepEqual(Array.from(blackPixel), [255, 255, 255, 255]); // Black -> White
+
+      // Pure white
+      const whitePixel = new Uint8Array([255, 255, 255, 255]);
+      applyColorInversionToPixel(whitePixel, 0);
+      assert.deepEqual(Array.from(whitePixel), [0, 0, 0, 255]); // White -> Black
+    });
+  });
+
+  describe("validateColorInversionParameters", () => {
+    let validPixels;
+
+    beforeEach(() => {
+      validPixels = new Uint8Array(800 * 600 * 4);
+    });
+
+    it("accepts valid parameters", () => {
+      assert.doesNotThrow(() => {
+        validateColorInversionParameters(validPixels, 800, 600);
+      });
+    });
+
+    it("rejects invalid parameters", () => {
+      assert.throws(() => validateColorInversionParameters([], 800, 600), /Pixels must be a Uint8Array/);
+      assert.throws(() => validateColorInversionParameters(validPixels, 0, 600), /Invalid width/);
+      assert.throws(() => validateColorInversionParameters(validPixels, 800, -1), /Invalid height/);
+    });
+  });
+
+  describe("Performance", () => {
+    it("handles medium images efficiently", () => {
+      const mediumPixels = new Uint8Array(200 * 200 * 4);
+      mediumPixels.fill(128);
+
+      // Test validation
+      assert.doesNotThrow(() => {
+        validateColorParameters(mediumPixels, 200, 200, 1.2);
+        validateGrayscaleParameters(mediumPixels, 200, 200, "luminance");
+        validateColorInversionParameters(mediumPixels, 200, 200);
+      });
+
+      // Test lookup table creation
+      const lut = createColorLookupTable((value) => applyBrightness(value, 1.2));
+      assert.equal(lut.length, 256);
+
+      // Test applying to all pixels
+      for (let i = 0; i < mediumPixels.length; i += 4) {
+        applyLookupTableToRGB(mediumPixels, i, lut);
+      }
+
+      // Test grayscale conversion
+      const converter = getGrayscaleConverter("luminance");
+      for (let i = 0; i < mediumPixels.length; i += 4) {
+        applyGrayscaleToPixel(mediumPixels, i, converter);
+      }
+
+      // Test color inversion
+      for (let i = 0; i < mediumPixels.length; i += 4) {
+        applyColorInversionToPixel(mediumPixels, i);
+      }
+
+      // Should complete without issues
+      assert.equal(mediumPixels.length, 200 * 200 * 4);
+    });
+  });
+
+  describe("applySepia", () => {
+    it("applies sepia transformation correctly", () => {
+      // Test with pure white (should become sepia white)
+      const [r, g, b] = applySepia(255, 255, 255);
+
+      // Calculate expected sepia values for white
+      const expectedR = Math.round(0.393 * 255 + 0.769 * 255 + 0.189 * 255); // ~255 (clamped)
+      const expectedG = Math.round(0.349 * 255 + 0.686 * 255 + 0.168 * 255); // ~255 (clamped)
+      const expectedB = Math.round(0.272 * 255 + 0.534 * 255 + 0.131 * 255); // ~239
+
+      // For white input, sepia produces very light values that may be clamped
+      assert.equal(r, Math.min(255, expectedR));
+      assert.equal(g, Math.min(255, expectedG));
+      assert.equal(b, Math.min(255, expectedB));
+
+      // Blue should be less than red and green (warmer tone)
+      assert(b < Math.max(r, g));
+
+      // All values should be valid
+      assert(r >= 0 && r <= 255);
+      assert(g >= 0 && g <= 255);
+      assert(b >= 0 && b <= 255);
+    });
+
+    it("applies sepia transformation to pure colors", () => {
+      // Pure red
+      const [redR, redG, redB] = applySepia(255, 0, 0);
+      assert.equal(redR, Math.round(0.393 * 255)); // Should be ~100
+      assert.equal(redG, Math.round(0.349 * 255)); // Should be ~89
+      assert.equal(redB, Math.round(0.272 * 255)); // Should be ~69
+
+      // Pure green
+      const [greenR, greenG, greenB] = applySepia(0, 255, 0);
+      assert.equal(greenR, Math.round(0.769 * 255)); // Should be ~196
+      assert.equal(greenG, Math.round(0.686 * 255)); // Should be ~175
+      assert.equal(greenB, Math.round(0.534 * 255)); // Should be ~136
+    });
+
+    it("handles black correctly", () => {
+      const [r, g, b] = applySepia(0, 0, 0);
+      assert.equal(r, 0);
+      assert.equal(g, 0);
+      assert.equal(b, 0);
+    });
+
+    it("preserves luminance characteristics", () => {
+      // Sepia should maintain relative brightness
+      const [darkR, darkG, darkB] = applySepia(50, 50, 50);
+      const [lightR, lightG, lightB] = applySepia(200, 200, 200);
+
+      // Light sepia should be brighter than dark sepia
+      assert(lightR > darkR);
+      assert(lightG > darkG);
+      assert(lightB > darkB);
+    });
+
+    it("clamps values to valid range", () => {
+      // Test with values that might overflow
+      const [r, g, b] = applySepia(255, 255, 255);
+
+      assert(r >= 0 && r <= 255);
+      assert(g >= 0 && g <= 255);
+      assert(b >= 0 && b <= 255);
+    });
+  });
+
+  describe("applySepiaToPixel", () => {
+    it("applies sepia to RGB channels and preserves alpha", () => {
+      const pixels = new Uint8Array([100, 150, 200, 255]); // RGBA
+
+      applySepiaToPixel(pixels, 0);
+
+      // Should have sepia-toned RGB values
+      const expectedR = Math.round(0.393 * 100 + 0.769 * 150 + 0.189 * 200);
+      const expectedG = Math.round(0.349 * 100 + 0.686 * 150 + 0.168 * 200);
+      const expectedB = Math.round(0.272 * 100 + 0.534 * 150 + 0.131 * 200);
+
+      assert.equal(pixels[0], expectedR);
+      assert.equal(pixels[1], expectedG);
+      assert.equal(pixels[2], expectedB);
+      assert.equal(pixels[3], 255); // Alpha preserved
+    });
+
+    it("preserves alpha channel with different alpha values", () => {
+      const pixels = new Uint8Array([100, 150, 200, 128]); // Semi-transparent
+
+      applySepiaToPixel(pixels, 0);
+
+      assert.equal(pixels[3], 128); // Alpha preserved
+      // RGB should be transformed
+      assert.notEqual(pixels[0], 100);
+      assert.notEqual(pixels[1], 150);
+      assert.notEqual(pixels[2], 200);
+    });
+
+    it("creates warm brown tones", () => {
+      const pixels = new Uint8Array([128, 128, 128, 255]); // Middle gray
+
+      applySepiaToPixel(pixels, 0);
+
+      // Sepia should create warm tones (more red/yellow, less blue)
+      assert(pixels[0] >= pixels[1]); // Red >= Green
+      assert(pixels[1] >= pixels[2]); // Green >= Blue
+    });
+  });
+
+  describe("validateSepiaParameters", () => {
+    let validPixels;
+
+    beforeEach(() => {
+      validPixels = new Uint8Array(800 * 600 * 4);
+    });
+
+    it("accepts valid parameters", () => {
+      assert.doesNotThrow(() => {
+        validateSepiaParameters(validPixels, 800, 600);
+      });
+    });
+
+    it("rejects invalid parameters", () => {
+      assert.throws(() => validateSepiaParameters([], 800, 600), /Pixels must be a Uint8Array/);
+      assert.throws(() => validateSepiaParameters(validPixels, 0, 600), /Invalid width/);
+      assert.throws(() => validateSepiaParameters(validPixels, 800, -1), /Invalid height/);
+    });
+  });
+
+  describe("Performance", () => {
+    it("handles medium images efficiently", () => {
+      const mediumPixels = new Uint8Array(200 * 200 * 4);
+      mediumPixels.fill(128);
+
+      // Test validation
+      assert.doesNotThrow(() => {
+        validateColorParameters(mediumPixels, 200, 200, 1.2);
+        validateGrayscaleParameters(mediumPixels, 200, 200, "luminance");
+        validateColorInversionParameters(mediumPixels, 200, 200);
+        validateSepiaParameters(mediumPixels, 200, 200);
+      });
+
+      // Test lookup table creation
+      const lut = createColorLookupTable((value) => applyBrightness(value, 1.2));
+      assert.equal(lut.length, 256);
+
+      // Test applying to all pixels
+      for (let i = 0; i < mediumPixels.length; i += 4) {
+        applyLookupTableToRGB(mediumPixels, i, lut);
+      }
+
+      // Test grayscale conversion
+      const converter = getGrayscaleConverter("luminance");
+      for (let i = 0; i < mediumPixels.length; i += 4) {
+        applyGrayscaleToPixel(mediumPixels, i, converter);
+      }
+
+      // Test color inversion
+      for (let i = 0; i < mediumPixels.length; i += 4) {
+        applyColorInversionToPixel(mediumPixels, i);
+      }
+
+      // Test sepia effect
+      for (let i = 0; i < mediumPixels.length; i += 4) {
+        applySepiaToPixel(mediumPixels, i);
+      }
+
+      // Should complete without issues
+      assert.equal(mediumPixels.length, 200 * 200 * 4);
+    });
+  });
+
+  describe("rgbToHsl", () => {
+    it("converts pure colors correctly", () => {
+      // Pure red
+      const [redH, redS, redL] = rgbToHsl(255, 0, 0);
+      assert.equal(redH, 0); // Red is at 0 degrees
+      assert.equal(redS, 100); // Fully saturated
+      assert.equal(redL, 50); // Middle lightness
+
+      // Pure green
+      const [greenH, greenS, greenL] = rgbToHsl(0, 255, 0);
+      assert.equal(greenH, 120); // Green is at 120 degrees
+      assert.equal(greenS, 100);
+      assert.equal(greenL, 50);
+
+      // Pure blue
+      const [blueH, blueS, blueL] = rgbToHsl(0, 0, 255);
+      assert.equal(blueH, 240); // Blue is at 240 degrees
+      assert.equal(blueS, 100);
+      assert.equal(blueL, 50);
+    });
+
+    it("converts grayscale colors correctly", () => {
+      // Black
+      const [blackH, blackS, blackL] = rgbToHsl(0, 0, 0);
+      assert.equal(blackH, 0);
+      assert.equal(blackS, 0); // No saturation
+      assert.equal(blackL, 0); // No lightness
+
+      // White
+      const [whiteH, whiteS, whiteL] = rgbToHsl(255, 255, 255);
+      assert.equal(whiteH, 0);
+      assert.equal(whiteS, 0); // No saturation
+      assert.equal(whiteL, 100); // Full lightness
+
+      // Middle gray
+      const [grayH, grayS, grayL] = rgbToHsl(128, 128, 128);
+      assert.equal(grayH, 0);
+      assert.equal(grayS, 0); // No saturation
+      assert.equal(grayL, 50); // Middle lightness
+    });
+
+    it("handles intermediate colors", () => {
+      // Orange (255, 128, 0)
+      const [orangeH, orangeS, orangeL] = rgbToHsl(255, 128, 0);
+      assert.equal(orangeH, 30); // Orange is around 30 degrees
+      assert.equal(orangeS, 100); // Fully saturated
+      assert.equal(orangeL, 50); // Middle lightness
+    });
+  });
+
+  describe("hslToRgb", () => {
+    it("converts pure hues correctly", () => {
+      // Pure red (0°, 100%, 50%)
+      const [redR, redG, redB] = hslToRgb(0, 100, 50);
+      assert.equal(redR, 255);
+      assert.equal(redG, 0);
+      assert.equal(redB, 0);
+
+      // Pure green (120°, 100%, 50%)
+      const [greenR, greenG, greenB] = hslToRgb(120, 100, 50);
+      assert.equal(greenR, 0);
+      assert.equal(greenG, 255);
+      assert.equal(greenB, 0);
+
+      // Pure blue (240°, 100%, 50%)
+      const [blueR, blueG, blueB] = hslToRgb(240, 100, 50);
+      assert.equal(blueR, 0);
+      assert.equal(blueG, 0);
+      assert.equal(blueB, 255);
+    });
+
+    it("converts grayscale correctly", () => {
+      // Black (any hue, 0%, 0%)
+      const [blackR, blackG, blackB] = hslToRgb(0, 0, 0);
+      assert.equal(blackR, 0);
+      assert.equal(blackG, 0);
+      assert.equal(blackB, 0);
+
+      // White (any hue, 0%, 100%)
+      const [whiteR, whiteG, whiteB] = hslToRgb(0, 0, 100);
+      assert.equal(whiteR, 255);
+      assert.equal(whiteG, 255);
+      assert.equal(whiteB, 255);
+
+      // Gray (any hue, 0%, 50%)
+      const [grayR, grayG, grayB] = hslToRgb(0, 0, 50);
+      assert.equal(grayR, 128);
+      assert.equal(grayG, 128);
+      assert.equal(grayB, 128);
+    });
+
+    it("handles hue wrapping", () => {
+      // 360° should be same as 0°
+      const [red360R, red360G, red360B] = hslToRgb(360, 100, 50);
+      const [red0R, red0G, red0B] = hslToRgb(0, 100, 50);
+      assert.equal(red360R, red0R);
+      assert.equal(red360G, red0G);
+      assert.equal(red360B, red0B);
+
+      // Negative hue should wrap
+      const [redNegR, redNegG, redNegB] = hslToRgb(-120, 100, 50);
+      const [redPosR, redPosG, redPosB] = hslToRgb(240, 100, 50);
+      assert.equal(redNegR, redPosR);
+      assert.equal(redNegG, redPosG);
+      assert.equal(redNegB, redPosB);
+    });
+
+    it("clamps saturation and lightness", () => {
+      // Over-saturated should clamp to 100%
+      const [overSatR, overSatG, overSatB] = hslToRgb(0, 150, 50);
+      const [normalSatR, normalSatG, normalSatB] = hslToRgb(0, 100, 50);
+      assert.equal(overSatR, normalSatR);
+      assert.equal(overSatG, normalSatG);
+      assert.equal(overSatB, normalSatB);
+
+      // Over-lightness should clamp to 100%
+      const [overLightR, overLightG, overLightB] = hslToRgb(0, 100, 150);
+      assert.equal(overLightR, 255);
+      assert.equal(overLightG, 255);
+      assert.equal(overLightB, 255);
+    });
+  });
+
+  describe("RGB ↔ HSL Conversion Roundtrip", () => {
+    it("is reversible for pure colors", () => {
+      const testColors = [
+        [255, 0, 0], // Red
+        [0, 255, 0], // Green
+        [0, 0, 255], // Blue
+        [255, 255, 0], // Yellow
+        [255, 0, 255], // Magenta
+        [0, 255, 255], // Cyan
+      ];
+
+      for (const [r, g, b] of testColors) {
+        const [h, s, l] = rgbToHsl(r, g, b);
+        const [newR, newG, newB] = hslToRgb(h, s, l);
+
+        // Allow small rounding errors
+        assert(Math.abs(newR - r) <= 1, `Red: expected ${r}, got ${newR}`);
+        assert(Math.abs(newG - g) <= 1, `Green: expected ${g}, got ${newG}`);
+        assert(Math.abs(newB - b) <= 1, `Blue: expected ${b}, got ${newB}`);
+      }
+    });
+
+    it("is reversible for grayscale", () => {
+      const grayValues = [0, 64, 128, 192, 255];
+
+      for (const gray of grayValues) {
+        const [h, s, l] = rgbToHsl(gray, gray, gray);
+        const [newR, newG, newB] = hslToRgb(h, s, l);
+
+        // Allow small rounding errors for grayscale
+        assert(Math.abs(newR - gray) <= 1, `Red: expected ${gray}, got ${newR}`);
+        assert(Math.abs(newG - gray) <= 1, `Green: expected ${gray}, got ${newG}`);
+        assert(Math.abs(newB - gray) <= 1, `Blue: expected ${gray}, got ${newB}`);
+      }
+    });
+  });
+
+  describe("validateHslValues", () => {
+    it("accepts valid HSL values", () => {
+      assert.doesNotThrow(() => validateHslValues(0, 0, 0));
+      assert.doesNotThrow(() => validateHslValues(360, 100, 100));
+      assert.doesNotThrow(() => validateHslValues(180, 50, 50));
+    });
+
+    it("rejects invalid hue", () => {
+      assert.throws(() => validateHslValues(NaN, 50, 50), /Hue must be a valid number/);
+      assert.throws(() => validateHslValues("red", 50, 50), /Hue must be a valid number/);
+    });
+
+    it("rejects invalid saturation", () => {
+      assert.throws(() => validateHslValues(0, -1, 50), /Saturation must be a number between 0 and 100/);
+      assert.throws(() => validateHslValues(0, 101, 50), /Saturation must be a number between 0 and 100/);
+      assert.throws(() => validateHslValues(0, NaN, 50), /Saturation must be a number between 0 and 100/);
+    });
+
+    it("rejects invalid lightness", () => {
+      assert.throws(() => validateHslValues(0, 50, -1), /Lightness must be a number between 0 and 100/);
+      assert.throws(() => validateHslValues(0, 50, 101), /Lightness must be a number between 0 and 100/);
+      assert.throws(() => validateHslValues(0, 50, NaN), /Lightness must be a number between 0 and 100/);
+    });
+  });
+
+  describe("validateHslAdjustmentParameters", () => {
+    let validPixels;
+
+    beforeEach(() => {
+      validPixels = new Uint8Array(800 * 600 * 4);
+    });
+
+    it("accepts valid parameters", () => {
+      assert.doesNotThrow(() => {
+        validateHslAdjustmentParameters(validPixels, 800, 600, 0, 1.0);
+        validateHslAdjustmentParameters(validPixels, 800, 600, 180, 1.5);
+        validateHslAdjustmentParameters(validPixels, 800, 600, -90, 0.5);
+      });
+    });
+
+    it("rejects invalid hue shift", () => {
+      assert.throws(
+        () => validateHslAdjustmentParameters(validPixels, 800, 600, 361, 1.0),
+        /Hue shift must be a number between -360 and 360/
+      );
+      assert.throws(
+        () => validateHslAdjustmentParameters(validPixels, 800, 600, -361, 1.0),
+        /Hue shift must be a number between -360 and 360/
+      );
+      assert.throws(
+        () => validateHslAdjustmentParameters(validPixels, 800, 600, NaN, 1.0),
+        /Hue shift must be a number between -360 and 360/
+      );
+    });
+
+    it("rejects invalid saturation factor", () => {
+      assert.throws(
+        () => validateHslAdjustmentParameters(validPixels, 800, 600, 0, -0.1),
+        /Saturation factor must be a number between 0.0 and 2.0/
+      );
+      assert.throws(
+        () => validateHslAdjustmentParameters(validPixels, 800, 600, 0, 2.1),
+        /Saturation factor must be a number between 0.0 and 2.0/
+      );
+      assert.throws(
+        () => validateHslAdjustmentParameters(validPixels, 800, 600, 0, NaN),
+        /Saturation factor must be a number between 0.0 and 2.0/
+      );
+    });
+  });
+
+  describe("applyHslAdjustmentToPixel", () => {
+    it("adjusts hue correctly", () => {
+      const pixels = new Uint8Array([255, 0, 0, 255]); // Pure red
+
+      // Shift hue by 120 degrees (red -> green)
+      applyHslAdjustmentToPixel(pixels, 0, 120, 1.0);
+
+      // Should be close to pure green
+      assert(pixels[0] < 50); // Red should be low
+      assert(pixels[1] > 200); // Green should be high
+      assert(pixels[2] < 50); // Blue should be low
+      assert.equal(pixels[3], 255); // Alpha preserved
+    });
+
+    it("adjusts saturation correctly", () => {
+      const pixels = new Uint8Array([255, 128, 128, 255]); // Light red
+      const originalG = pixels[1];
+      const originalB = pixels[2];
+
+      // Increase saturation
+      applyHslAdjustmentToPixel(pixels, 0, 0, 1.5);
+
+      // Should be more saturated (more red, less green/blue)
+      assert(pixels[0] > 200); // Red should remain high
+      assert(pixels[1] <= originalG); // Green should not increase
+      assert(pixels[2] <= originalB); // Blue should not increase
+      assert.equal(pixels[3], 255); // Alpha preserved
+    });
+
+    it("preserves alpha channel", () => {
+      const pixels = new Uint8Array([100, 150, 200, 128]); // Semi-transparent
+
+      applyHslAdjustmentToPixel(pixels, 0, 45, 1.2);
+
+      assert.equal(pixels[3], 128); // Alpha preserved
+    });
+
+    it("handles grayscale pixels", () => {
+      const pixels = new Uint8Array([128, 128, 128, 255]); // Gray
+
+      // Hue shift on gray should have no effect
+      applyHslAdjustmentToPixel(pixels, 0, 180, 1.0);
+
+      assert.equal(pixels[0], 128);
+      assert.equal(pixels[1], 128);
+      assert.equal(pixels[2], 128);
+      assert.equal(pixels[3], 255);
+    });
+
+    it("handles desaturation", () => {
+      const pixels = new Uint8Array([255, 0, 0, 255]); // Pure red
+
+      // Complete desaturation
+      applyHslAdjustmentToPixel(pixels, 0, 0, 0.0);
+
+      // Should become gray
+      assert.equal(pixels[0], pixels[1]);
+      assert.equal(pixels[1], pixels[2]);
+      assert.equal(pixels[3], 255); // Alpha preserved
+    });
+  });
+
+  describe("Performance", () => {
+    it("handles medium images efficiently", () => {
+      const mediumPixels = new Uint8Array(200 * 200 * 4);
+      mediumPixels.fill(128);
+
+      // Test validation
+      assert.doesNotThrow(() => {
+        validateColorParameters(mediumPixels, 200, 200, 1.2);
+        validateGrayscaleParameters(mediumPixels, 200, 200, "luminance");
+        validateColorInversionParameters(mediumPixels, 200, 200);
+        validateSepiaParameters(mediumPixels, 200, 200);
+        validateHslAdjustmentParameters(mediumPixels, 200, 200, 45, 1.3);
+      });
+
+      // Test lookup table creation
+      const lut = createColorLookupTable((value) => applyBrightness(value, 1.2));
+      assert.equal(lut.length, 256);
+
+      // Test applying to all pixels
+      for (let i = 0; i < mediumPixels.length; i += 4) {
+        applyLookupTableToRGB(mediumPixels, i, lut);
+      }
+
+      // Test grayscale conversion
+      const converter = getGrayscaleConverter("luminance");
+      for (let i = 0; i < mediumPixels.length; i += 4) {
+        applyGrayscaleToPixel(mediumPixels, i, converter);
+      }
+
+      // Test color inversion
+      for (let i = 0; i < mediumPixels.length; i += 4) {
+        applyColorInversionToPixel(mediumPixels, i);
+      }
+
+      // Test sepia effect
+      for (let i = 0; i < mediumPixels.length; i += 4) {
+        applySepiaToPixel(mediumPixels, i);
+      }
+
+      // Test HSL adjustment
+      for (let i = 0; i < mediumPixels.length; i += 4) {
+        applyHslAdjustmentToPixel(mediumPixels, i, 30, 1.2);
       }
 
       // Should complete without issues

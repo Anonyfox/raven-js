@@ -17,10 +17,27 @@
 import {
   adjustBrightness,
   adjustContrast,
+  adjustHue,
+  adjustHueSaturation,
+  adjustSaturation,
+  applyColorInversion,
+  applySepiaEffect,
   convertToGrayscale,
   getColorAdjustmentInfo,
+  getColorInversionInfo,
   getGrayscaleInfo,
+  getHslAdjustmentInfo,
+  getSepiaInfo,
 } from "./color/index.js";
+import {
+  applyBoxBlur,
+  applyConvolution,
+  applyEdgeDetection,
+  applyGaussianBlur,
+  applySharpen,
+  applyUnsharpMask,
+  getConvolutionInfo,
+} from "./convolution/index.js";
 import { cropPixels, getCropInfo } from "./crop/index.js";
 import { flipPixels, getFlipInfo } from "./flip/index.js";
 import { resizePixels } from "./resize/index.js";
@@ -284,6 +301,372 @@ export class Image {
       this._height = grayscaleResult.height;
     } catch (error) {
       throw new Error(`Grayscale conversion failed: ${error.message}`);
+    }
+
+    return this;
+  }
+
+  /**
+   * Invert image colors to create negative effect.
+   *
+   * @param {boolean} [inPlace=true] - Whether to modify pixels in-place for performance
+   * @returns {Image} This instance for chaining
+   */
+  invert(inPlace = true) {
+    if (!this.pixels) {
+      throw new Error("Image not decoded yet - no pixel data available for color inversion");
+    }
+
+    try {
+      // Get inversion information to validate parameters
+      const inversionInfo = getColorInversionInfo(this._width, this._height);
+
+      if (!inversionInfo.isValid) {
+        throw new Error("Invalid parameters for color inversion");
+      }
+
+      // Perform color inversion
+      const inversionResult = applyColorInversion(this.pixels, this._width, this._height, inPlace);
+
+      // Update image state with inverted data
+      this.pixels = inversionResult.pixels;
+      // Note: dimensions don't change for color inversion
+      this._width = inversionResult.width;
+      this._height = inversionResult.height;
+    } catch (error) {
+      throw new Error(`Color inversion failed: ${error.message}`);
+    }
+
+    return this;
+  }
+
+  /**
+   * Apply sepia tone effect for vintage appearance.
+   *
+   * @param {boolean} [inPlace=true] - Whether to modify pixels in-place for performance
+   * @returns {Image} This instance for chaining
+   */
+  sepia(inPlace = true) {
+    if (!this.pixels) {
+      throw new Error("Image not decoded yet - no pixel data available for sepia effect");
+    }
+
+    try {
+      // Get sepia information to validate parameters
+      const sepiaInfo = getSepiaInfo(this._width, this._height);
+
+      if (!sepiaInfo.isValid) {
+        throw new Error("Invalid parameters for sepia effect");
+      }
+
+      // Perform sepia transformation
+      const sepiaResult = applySepiaEffect(this.pixels, this._width, this._height, inPlace);
+
+      // Update image state with sepia data
+      this.pixels = sepiaResult.pixels;
+      // Note: dimensions don't change for sepia effect
+      this._width = sepiaResult.width;
+      this._height = sepiaResult.height;
+    } catch (error) {
+      throw new Error(`Sepia effect failed: ${error.message}`);
+    }
+
+    return this;
+  }
+
+  /**
+   * Adjust image saturation using HSL color space.
+   *
+   * @param {number} saturationFactor - Saturation multiplier [0.0 to 2.0]
+   * @param {boolean} [inPlace=true] - Whether to modify pixels in-place for performance
+   * @returns {Image} This instance for chaining
+   */
+  adjustSaturation(saturationFactor, inPlace = true) {
+    if (!this.pixels) {
+      throw new Error("Image not decoded yet - no pixel data available for saturation adjustment");
+    }
+
+    try {
+      // Get HSL adjustment information to validate parameters
+      const hslInfo = getHslAdjustmentInfo(this._width, this._height, 0, saturationFactor);
+
+      if (!hslInfo.isValid) {
+        throw new Error("Invalid parameters for saturation adjustment");
+      }
+
+      // Perform saturation adjustment
+      const saturationResult = adjustSaturation(this.pixels, this._width, this._height, saturationFactor, inPlace);
+
+      // Update image state with adjusted data
+      this.pixels = saturationResult.pixels;
+      // Note: dimensions don't change for saturation adjustment
+      this._width = saturationResult.width;
+      this._height = saturationResult.height;
+    } catch (error) {
+      throw new Error(`Saturation adjustment failed: ${error.message}`);
+    }
+
+    return this;
+  }
+
+  /**
+   * Adjust image hue using HSL color space.
+   *
+   * @param {number} hueShift - Hue shift in degrees [-360 to 360]
+   * @param {boolean} [inPlace=true] - Whether to modify pixels in-place for performance
+   * @returns {Image} This instance for chaining
+   */
+  adjustHue(hueShift, inPlace = true) {
+    if (!this.pixels) {
+      throw new Error("Image not decoded yet - no pixel data available for hue adjustment");
+    }
+
+    try {
+      // Get HSL adjustment information to validate parameters
+      const hslInfo = getHslAdjustmentInfo(this._width, this._height, hueShift, 1.0);
+
+      if (!hslInfo.isValid) {
+        throw new Error("Invalid parameters for hue adjustment");
+      }
+
+      // Perform hue adjustment
+      const hueResult = adjustHue(this.pixels, this._width, this._height, hueShift, inPlace);
+
+      // Update image state with adjusted data
+      this.pixels = hueResult.pixels;
+      // Note: dimensions don't change for hue adjustment
+      this._width = hueResult.width;
+      this._height = hueResult.height;
+    } catch (error) {
+      throw new Error(`Hue adjustment failed: ${error.message}`);
+    }
+
+    return this;
+  }
+
+  /**
+   * Adjust both hue and saturation using HSL color space.
+   *
+   * @param {number} hueShift - Hue shift in degrees [-360 to 360]
+   * @param {number} saturationFactor - Saturation multiplier [0.0 to 2.0]
+   * @param {boolean} [inPlace=true] - Whether to modify pixels in-place for performance
+   * @returns {Image} This instance for chaining
+   */
+  adjustHueSaturation(hueShift, saturationFactor, inPlace = true) {
+    if (!this.pixels) {
+      throw new Error("Image not decoded yet - no pixel data available for HSL adjustment");
+    }
+
+    try {
+      // Get HSL adjustment information to validate parameters
+      const hslInfo = getHslAdjustmentInfo(this._width, this._height, hueShift, saturationFactor);
+
+      if (!hslInfo.isValid) {
+        throw new Error("Invalid parameters for HSL adjustment");
+      }
+
+      // Perform combined HSL adjustment
+      const hslResult = adjustHueSaturation(
+        this.pixels,
+        this._width,
+        this._height,
+        hueShift,
+        saturationFactor,
+        inPlace
+      );
+
+      // Update image state with adjusted data
+      this.pixels = hslResult.pixels;
+      // Note: dimensions don't change for HSL adjustment
+      this._width = hslResult.width;
+      this._height = hslResult.height;
+    } catch (error) {
+      throw new Error(`HSL adjustment failed: ${error.message}`);
+    }
+
+    return this;
+  }
+
+  /**
+   * Apply Gaussian blur to the image.
+   *
+   * @param {number} [radius=1.0] - Blur radius [0.5 to 5.0]
+   * @param {number} [sigma] - Standard deviation (auto-calculated if not provided)
+   * @param {boolean} [inPlace=true] - Whether to modify pixels in-place for performance
+   * @returns {Image} This instance for chaining
+   */
+  blur(radius = 1.0, sigma, inPlace = true) {
+    if (!this.pixels) {
+      throw new Error("Image not decoded yet - no pixel data available for blur");
+    }
+
+    try {
+      // Get convolution information to validate parameters
+      const convolutionInfo = getConvolutionInfo(this._width, this._height, [[1]], "gaussian-blur");
+
+      if (!convolutionInfo.isValid) {
+        throw new Error("Invalid parameters for blur operation");
+      }
+
+      // Perform Gaussian blur
+      const blurResult = applyGaussianBlur(this.pixels, this._width, this._height, radius, sigma, inPlace);
+
+      // Update image state with blurred data
+      this.pixels = blurResult.pixels;
+      // Note: dimensions don't change for blur
+      this._width = blurResult.width;
+      this._height = blurResult.height;
+    } catch (error) {
+      throw new Error(`Blur operation failed: ${error.message}`);
+    }
+
+    return this;
+  }
+
+  /**
+   * Apply box blur to the image.
+   *
+   * @param {number} [size=3] - Kernel size (must be odd: 3, 5, 7, etc.)
+   * @param {boolean} [inPlace=true] - Whether to modify pixels in-place for performance
+   * @returns {Image} This instance for chaining
+   */
+  boxBlur(size = 3, inPlace = true) {
+    if (!this.pixels) {
+      throw new Error("Image not decoded yet - no pixel data available for box blur");
+    }
+
+    try {
+      // Perform box blur
+      const blurResult = applyBoxBlur(this.pixels, this._width, this._height, size, inPlace);
+
+      // Update image state with blurred data
+      this.pixels = blurResult.pixels;
+      this._width = blurResult.width;
+      this._height = blurResult.height;
+    } catch (error) {
+      throw new Error(`Box blur operation failed: ${error.message}`);
+    }
+
+    return this;
+  }
+
+  /**
+   * Apply sharpening to the image.
+   *
+   * @param {number} [strength=1.0] - Sharpening strength [0.0 to 2.0]
+   * @param {boolean} [inPlace=true] - Whether to modify pixels in-place for performance
+   * @returns {Image} This instance for chaining
+   */
+  sharpen(strength = 1.0, inPlace = true) {
+    if (!this.pixels) {
+      throw new Error("Image not decoded yet - no pixel data available for sharpening");
+    }
+
+    try {
+      // Perform sharpening
+      const sharpenResult = applySharpen(this.pixels, this._width, this._height, strength, inPlace);
+
+      // Update image state with sharpened data
+      this.pixels = sharpenResult.pixels;
+      this._width = sharpenResult.width;
+      this._height = sharpenResult.height;
+    } catch (error) {
+      throw new Error(`Sharpen operation failed: ${error.message}`);
+    }
+
+    return this;
+  }
+
+  /**
+   * Apply unsharp mask sharpening to the image.
+   *
+   * @param {number} [amount=1.0] - Sharpening amount [0.0 to 3.0]
+   * @param {number} [radius=1.0] - Blur radius for mask [0.5 to 3.0]
+   * @param {boolean} [inPlace=true] - Whether to modify pixels in-place for performance
+   * @returns {Image} This instance for chaining
+   */
+  unsharpMask(amount = 1.0, radius = 1.0, inPlace = true) {
+    if (!this.pixels) {
+      throw new Error("Image not decoded yet - no pixel data available for unsharp mask");
+    }
+
+    try {
+      // Perform unsharp mask sharpening
+      const sharpenResult = applyUnsharpMask(this.pixels, this._width, this._height, amount, radius, inPlace);
+
+      // Update image state with sharpened data
+      this.pixels = sharpenResult.pixels;
+      this._width = sharpenResult.width;
+      this._height = sharpenResult.height;
+    } catch (error) {
+      throw new Error(`Unsharp mask operation failed: ${error.message}`);
+    }
+
+    return this;
+  }
+
+  /**
+   * Apply edge detection to the image.
+   *
+   * @param {string} [type="sobel-x"] - Edge detection type ("sobel-x", "sobel-y", "laplacian", etc.)
+   * @param {boolean} [inPlace=true] - Whether to modify pixels in-place for performance
+   * @returns {Image} This instance for chaining
+   */
+  detectEdges(type = "sobel-x", inPlace = true) {
+    if (!this.pixels) {
+      throw new Error("Image not decoded yet - no pixel data available for edge detection");
+    }
+
+    try {
+      // Perform edge detection
+      const edgeResult = applyEdgeDetection(this.pixels, this._width, this._height, type, inPlace);
+
+      // Update image state with edge-detected data
+      this.pixels = edgeResult.pixels;
+      this._width = edgeResult.width;
+      this._height = edgeResult.height;
+    } catch (error) {
+      throw new Error(`Edge detection failed: ${error.message}`);
+    }
+
+    return this;
+  }
+
+  /**
+   * Apply custom convolution kernel to the image.
+   *
+   * @param {number[][]} kernel - 2D convolution kernel matrix
+   * @param {Object} [options={}] - Convolution options
+   * @param {string} [options.edgeHandling="clamp"] - Edge handling ("clamp", "wrap", "mirror")
+   * @param {boolean} [options.preserveAlpha=true] - Whether to preserve original alpha values
+   * @param {boolean} [options.inPlace=true] - Whether to modify pixels in-place for performance
+   * @returns {Image} This instance for chaining
+   */
+  convolve(kernel, options = {}) {
+    if (!this.pixels) {
+      throw new Error("Image not decoded yet - no pixel data available for convolution");
+    }
+
+    try {
+      // Get convolution information to validate parameters
+      const convolutionInfo = getConvolutionInfo(this._width, this._height, kernel, "custom");
+
+      if (!convolutionInfo.isValid) {
+        throw new Error("Invalid parameters for convolution operation");
+      }
+
+      // Perform convolution
+      const convolutionResult = applyConvolution(this.pixels, this._width, this._height, kernel, {
+        inPlace: true,
+        ...options,
+      });
+
+      // Update image state with convolved data
+      this.pixels = convolutionResult.pixels;
+      this._width = convolutionResult.width;
+      this._height = convolutionResult.height;
+    } catch (error) {
+      throw new Error(`Convolution operation failed: ${error.message}`);
     }
 
     return this;

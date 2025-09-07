@@ -17,12 +17,18 @@ import {
   adjustBrightnessContrast,
   adjustContrast,
   analyzeBrightness,
+  applyColorInversion,
+  applySepiaEffect,
   compareGrayscaleMethods,
   convertToGrayscale,
   createColorAdjustmentPreview,
+  createColorInversionPreview,
   createGrayscalePreview,
+  createSepiaPreview,
   getColorAdjustmentInfo,
+  getColorInversionInfo,
   getGrayscaleInfo,
+  getSepiaInfo,
 } from "./index.js";
 
 describe("Main Color Adjustment Functions", () => {
@@ -614,6 +620,429 @@ describe("Main Color Adjustment Functions", () => {
       // Green should be brightest, blue should be darkest (human eye sensitivity)
       assert(greenGray.pixels[0] > redGray.pixels[0]);
       assert(redGray.pixels[0] > blueGray.pixels[0]);
+    });
+  });
+
+  describe("applyColorInversion", () => {
+    it("inverts colors correctly", () => {
+      const result = applyColorInversion(testPixels, 2, 2, false);
+
+      assert.equal(result.width, 2);
+      assert.equal(result.height, 2);
+      assert.equal(result.pixels.length, 2 * 2 * 4);
+
+      // Check specific inverted values
+      // Original: 64, 64, 64 -> Inverted: 191, 191, 191
+      assert.equal(result.pixels[0], 191); // 255 - 64 = 191
+      assert.equal(result.pixels[1], 191);
+      assert.equal(result.pixels[2], 191);
+      assert.equal(result.pixels[3], 255); // Alpha preserved
+
+      // Original: 128, 128, 128 -> Inverted: 127, 127, 127
+      assert.equal(result.pixels[4], 127); // 255 - 128 = 127
+      assert.equal(result.pixels[5], 127);
+      assert.equal(result.pixels[6], 127);
+      assert.equal(result.pixels[7], 255); // Alpha preserved
+    });
+
+    it("is perfectly reversible", () => {
+      const original = new Uint8Array(testPixels);
+
+      // Apply inversion twice
+      const inverted = applyColorInversion(testPixels, 2, 2, false);
+      const restored = applyColorInversion(inverted.pixels, 2, 2, false);
+
+      // Should be identical to original
+      assert.deepEqual(restored.pixels, original);
+    });
+
+    it("handles pure colors correctly", () => {
+      const pureColors = new Uint8Array([
+        255,
+        0,
+        0,
+        255, // Pure red
+        0,
+        255,
+        0,
+        255, // Pure green
+        0,
+        0,
+        255,
+        255, // Pure blue
+        255,
+        255,
+        255,
+        255, // Pure white
+      ]);
+
+      const result = applyColorInversion(pureColors, 2, 2, false);
+
+      // Red -> Cyan
+      assert.deepEqual(Array.from(result.pixels.slice(0, 4)), [0, 255, 255, 255]);
+      // Green -> Magenta
+      assert.deepEqual(Array.from(result.pixels.slice(4, 8)), [255, 0, 255, 255]);
+      // Blue -> Yellow
+      assert.deepEqual(Array.from(result.pixels.slice(8, 12)), [255, 255, 0, 255]);
+      // White -> Black
+      assert.deepEqual(Array.from(result.pixels.slice(12, 16)), [0, 0, 0, 255]);
+    });
+
+    it("supports in-place modification", () => {
+      const original = new Uint8Array(testPixels);
+      const result = applyColorInversion(testPixels, 2, 2, true);
+
+      // Should return the same array reference
+      assert.equal(result.pixels, testPixels);
+
+      // Original array should be modified
+      assert.notDeepEqual(testPixels, original);
+    });
+
+    it("supports creating new array", () => {
+      const original = new Uint8Array(testPixels);
+      const result = applyColorInversion(testPixels, 2, 2, false);
+
+      // Should return a different array reference
+      assert.notEqual(result.pixels, testPixels);
+
+      // Original array should be unchanged
+      assert.deepEqual(testPixels, original);
+    });
+
+    it("preserves alpha channel", () => {
+      const withAlpha = new Uint8Array([100, 150, 200, 128]); // Semi-transparent
+
+      const result = applyColorInversion(withAlpha, 1, 1, false);
+
+      // Alpha should be preserved
+      assert.equal(result.pixels[3], 128);
+      // RGB should be inverted
+      assert.equal(result.pixels[0], 155); // 255 - 100
+      assert.equal(result.pixels[1], 105); // 255 - 150
+      assert.equal(result.pixels[2], 55); // 255 - 200
+    });
+
+    it("validates parameters", () => {
+      assert.throws(() => applyColorInversion([], 2, 2), /Pixels must be a Uint8Array/);
+      assert.throws(() => applyColorInversion(testPixels, 0, 2), /Invalid width/);
+      assert.throws(() => applyColorInversion(testPixels, 2, -1), /Invalid height/);
+    });
+  });
+
+  describe("getColorInversionInfo", () => {
+    it("returns correct info for color inversion", () => {
+      const info = getColorInversionInfo(800, 600);
+
+      assert.equal(info.operation, "inversion");
+      assert.equal(info.isLossless, true);
+      assert.equal(info.isReversible, true);
+      assert.equal(info.isValid, true);
+      assert.deepEqual(info.outputDimensions, { width: 800, height: 600 });
+      assert.equal(info.outputSize, 800 * 600 * 4);
+      assert(info.description.includes("negative"));
+    });
+
+    it("handles invalid parameters gracefully", () => {
+      const info = getColorInversionInfo(-1, 600);
+
+      assert.equal(info.isValid, false);
+      assert.equal(info.outputSize, 0);
+    });
+  });
+
+  describe("createColorInversionPreview", () => {
+    it("creates preview for small samples", () => {
+      const smallSample = new Uint8Array([100, 150, 200, 255]); // 1x1 colorful pixel
+      const preview = createColorInversionPreview(smallSample, 1, 1);
+
+      assert.equal(preview.width, 1);
+      assert.equal(preview.height, 1);
+      assert.equal(preview.pixels.length, 4);
+
+      // Should be inverted
+      assert.equal(preview.pixels[0], 155); // 255 - 100
+      assert.equal(preview.pixels[1], 105); // 255 - 150
+      assert.equal(preview.pixels[2], 55); // 255 - 200
+      assert.equal(preview.pixels[3], 255); // Alpha preserved
+    });
+
+    it("rejects samples that are too large", () => {
+      const largeSample = new Uint8Array(65 * 65 * 4); // Too large
+
+      assert.throws(() => createColorInversionPreview(largeSample, 65, 65), /Sample too large for preview/);
+    });
+  });
+
+  describe("Color Inversion Integration", () => {
+    it("works with other color operations", () => {
+      // Simulate chaining: brightness -> inversion -> grayscale
+      const step1 = adjustBrightness(testPixels, 2, 2, 1.2, false);
+      const step2 = applyColorInversion(step1.pixels, step1.width, step1.height, false);
+      const step3 = convertToGrayscale(step2.pixels, step2.width, step2.height, "luminance", false);
+
+      // Should have valid dimensions
+      assert.equal(step3.width, 2);
+      assert.equal(step3.height, 2);
+      assert.equal(step3.pixels.length, 2 * 2 * 4);
+
+      // Final result should be grayscale
+      for (let i = 0; i < step3.pixels.length; i += 4) {
+        assert.equal(step3.pixels[i], step3.pixels[i + 1]);
+        assert.equal(step3.pixels[i + 1], step3.pixels[i + 2]);
+      }
+    });
+
+    it("inversion is mathematically correct", () => {
+      // Test mathematical properties
+      const blackPixel = new Uint8Array([0, 0, 0, 255]);
+      const whitePixel = new Uint8Array([255, 255, 255, 255]);
+
+      const invertedBlack = applyColorInversion(blackPixel, 1, 1, false);
+      const invertedWhite = applyColorInversion(whitePixel, 1, 1, false);
+
+      // Black should become white
+      assert.deepEqual(Array.from(invertedBlack.pixels), [255, 255, 255, 255]);
+      // White should become black
+      assert.deepEqual(Array.from(invertedWhite.pixels), [0, 0, 0, 255]);
+    });
+
+    it("preserves image structure", () => {
+      // Create a simple pattern
+      const pattern = new Uint8Array([
+        255,
+        0,
+        0,
+        255, // Red
+        0,
+        255,
+        0,
+        255, // Green
+        0,
+        0,
+        255,
+        255, // Blue
+        128,
+        128,
+        128,
+        255, // Gray
+      ]);
+
+      const inverted = applyColorInversion(pattern, 2, 2, false);
+      const restored = applyColorInversion(inverted.pixels, 2, 2, false);
+
+      // Structure should be preserved through double inversion
+      assert.deepEqual(restored.pixels, pattern);
+    });
+  });
+
+  describe("applySepiaEffect", () => {
+    it("applies sepia tone correctly", () => {
+      const result = applySepiaEffect(testPixels, 2, 2, false);
+
+      assert.equal(result.width, 2);
+      assert.equal(result.height, 2);
+      assert.equal(result.pixels.length, 2 * 2 * 4);
+
+      // Check that sepia transformation was applied
+      // Original pixels should be transformed to warm brown tones
+      for (let i = 0; i < result.pixels.length; i += 4) {
+        const r = result.pixels[i];
+        const g = result.pixels[i + 1];
+        const b = result.pixels[i + 2];
+        const a = result.pixels[i + 3];
+
+        // Should create warm tones (typically r >= g >= b for sepia)
+        // Alpha should be preserved
+        assert.equal(a, 255);
+        assert(r >= 0 && r <= 255);
+        assert(g >= 0 && g <= 255);
+        assert(b >= 0 && b <= 255);
+      }
+    });
+
+    it("creates vintage brown tones", () => {
+      const colorPixels = new Uint8Array([
+        255,
+        0,
+        0,
+        255, // Pure red
+        0,
+        255,
+        0,
+        255, // Pure green
+        0,
+        0,
+        255,
+        255, // Pure blue
+        128,
+        128,
+        128,
+        255, // Gray
+      ]);
+
+      const result = applySepiaEffect(colorPixels, 2, 2, false);
+
+      // All pixels should have warm brown tones
+      for (let i = 0; i < result.pixels.length; i += 4) {
+        const r = result.pixels[i];
+        const g = result.pixels[i + 1];
+        const b = result.pixels[i + 2];
+
+        // Sepia typically produces warm tones where blue is reduced
+        assert(b <= Math.max(r, g), `Pixel ${i / 4}: Blue (${b}) should be <= max(Red ${r}, Green ${g})`);
+      }
+    });
+
+    it("preserves luminance relationships", () => {
+      const brightPixel = new Uint8Array([200, 200, 200, 255]);
+      const darkPixel = new Uint8Array([50, 50, 50, 255]);
+
+      const brightSepia = applySepiaEffect(brightPixel, 1, 1, false);
+      const darkSepia = applySepiaEffect(darkPixel, 1, 1, false);
+
+      // Bright sepia should be brighter than dark sepia
+      const brightLum = brightSepia.pixels[0] + brightSepia.pixels[1] + brightSepia.pixels[2];
+      const darkLum = darkSepia.pixels[0] + darkSepia.pixels[1] + darkSepia.pixels[2];
+
+      assert(brightLum > darkLum);
+    });
+
+    it("supports in-place modification", () => {
+      const original = new Uint8Array(testPixels);
+      const result = applySepiaEffect(testPixels, 2, 2, true);
+
+      // Should return the same array reference
+      assert.equal(result.pixels, testPixels);
+
+      // Original array should be modified
+      assert.notDeepEqual(testPixels, original);
+    });
+
+    it("supports creating new array", () => {
+      const original = new Uint8Array(testPixels);
+      const result = applySepiaEffect(testPixels, 2, 2, false);
+
+      // Should return a different array reference
+      assert.notEqual(result.pixels, testPixels);
+
+      // Original array should be unchanged
+      assert.deepEqual(testPixels, original);
+    });
+
+    it("preserves alpha channel", () => {
+      const withAlpha = new Uint8Array([100, 150, 200, 128]); // Semi-transparent
+
+      const result = applySepiaEffect(withAlpha, 1, 1, false);
+
+      // Alpha should be preserved
+      assert.equal(result.pixels[3], 128);
+      // RGB should be transformed
+      assert.notEqual(result.pixels[0], 100);
+      assert.notEqual(result.pixels[1], 150);
+      assert.notEqual(result.pixels[2], 200);
+    });
+
+    it("validates parameters", () => {
+      assert.throws(() => applySepiaEffect([], 2, 2), /Pixels must be a Uint8Array/);
+      assert.throws(() => applySepiaEffect(testPixels, 0, 2), /Invalid width/);
+      assert.throws(() => applySepiaEffect(testPixels, 2, -1), /Invalid height/);
+    });
+  });
+
+  describe("getSepiaInfo", () => {
+    it("returns correct info for sepia effect", () => {
+      const info = getSepiaInfo(800, 600);
+
+      assert.equal(info.operation, "sepia");
+      assert.equal(info.isLossless, false);
+      assert.equal(info.isReversible, false);
+      assert.equal(info.isValid, true);
+      assert.deepEqual(info.outputDimensions, { width: 800, height: 600 });
+      assert.equal(info.outputSize, 800 * 600 * 4);
+      assert(info.description.toLowerCase().includes("vintage"));
+    });
+
+    it("handles invalid parameters gracefully", () => {
+      const info = getSepiaInfo(-1, 600);
+
+      assert.equal(info.isValid, false);
+      assert.equal(info.outputSize, 0);
+    });
+  });
+
+  describe("createSepiaPreview", () => {
+    it("creates preview for small samples", () => {
+      const smallSample = new Uint8Array([100, 150, 200, 255]); // 1x1 colorful pixel
+      const preview = createSepiaPreview(smallSample, 1, 1);
+
+      assert.equal(preview.width, 1);
+      assert.equal(preview.height, 1);
+      assert.equal(preview.pixels.length, 4);
+
+      // Should be sepia-toned
+      assert.notEqual(preview.pixels[0], 100);
+      assert.notEqual(preview.pixels[1], 150);
+      assert.notEqual(preview.pixels[2], 200);
+      assert.equal(preview.pixels[3], 255); // Alpha preserved
+    });
+
+    it("rejects samples that are too large", () => {
+      const largeSample = new Uint8Array(65 * 65 * 4); // Too large
+
+      assert.throws(() => createSepiaPreview(largeSample, 65, 65), /Sample too large for preview/);
+    });
+  });
+
+  describe("Sepia Integration", () => {
+    it("works with other color operations", () => {
+      // Simulate chaining: brightness -> sepia -> contrast
+      const step1 = adjustBrightness(testPixels, 2, 2, 1.1, false);
+      const step2 = applySepiaEffect(step1.pixels, step1.width, step1.height, false);
+      const step3 = adjustContrast(step2.pixels, step2.width, step2.height, 1.2, false);
+
+      // Should have valid dimensions
+      assert.equal(step3.width, 2);
+      assert.equal(step3.height, 2);
+      assert.equal(step3.pixels.length, 2 * 2 * 4);
+    });
+
+    it("sepia is not reversible", () => {
+      // Unlike inversion, sepia is a lossy transformation
+      const original = new Uint8Array([255, 0, 0, 255]); // Pure red
+      const sepia1 = applySepiaEffect(original, 1, 1, false);
+      const sepia2 = applySepiaEffect(sepia1.pixels, 1, 1, false);
+
+      // Double sepia should be different from original
+      assert.notDeepEqual(sepia2.pixels, original);
+      // And different from single sepia
+      assert.notDeepEqual(sepia2.pixels, sepia1.pixels);
+    });
+
+    it("produces consistent results", () => {
+      const testColor = new Uint8Array([128, 64, 192, 255]);
+
+      const result1 = applySepiaEffect(testColor, 1, 1, false);
+      const result2 = applySepiaEffect(new Uint8Array(testColor), 1, 1, false);
+
+      // Same input should produce same output
+      assert.deepEqual(result1.pixels, result2.pixels);
+    });
+
+    it("handles edge cases gracefully", () => {
+      // Pure black
+      const black = new Uint8Array([0, 0, 0, 255]);
+      const blackSepia = applySepiaEffect(black, 1, 1, false);
+      assert.deepEqual(Array.from(blackSepia.pixels), [0, 0, 0, 255]);
+
+      // Pure white (may be clamped)
+      const white = new Uint8Array([255, 255, 255, 255]);
+      const whiteSepia = applySepiaEffect(white, 1, 1, false);
+      // Should be valid values
+      assert(whiteSepia.pixels[0] >= 0 && whiteSepia.pixels[0] <= 255);
+      assert(whiteSepia.pixels[1] >= 0 && whiteSepia.pixels[1] <= 255);
+      assert(whiteSepia.pixels[2] >= 0 && whiteSepia.pixels[2] <= 255);
+      assert.equal(whiteSepia.pixels[3], 255);
     });
   });
 });
