@@ -1,0 +1,73 @@
+{
+  "name": "@raven-js/eye",
+  "description": "Zero-dependency reconnaissance intelligence library for modern JavaScript - digital fingerprinting and security assessment",
+  "version": "0.4.32",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "**/*.js",
+    "*.d.ts",
+    "**/README.md",
+    "LICENSE",
+    "media/**/*",
+    "static/**/*",
+    "!**/*.test.js"
+  ],
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "types": "./index.js"
+    }
+  },
+  "scripts": {
+    "nest:validate": "node ../nest/bin/nest.js validate",
+    "nest:docs": "node ../nest/bin/nest.js build-docs",
+    "prepublishOnly": "npm run test && npm run test:style",
+    "test": "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
+    "test:code": "node --no-warnings --test --test-reporter=dot",
+    "test:coverage": "node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
+    "test:style": "npx biome lint --error-on-warnings index.js",
+    "test:types": "tsc --noEmit --project jsconfig.json"
+  },
+  "keywords": [
+    "reconnaissance",
+    "intelligence",
+    "security-assessment",
+    "digital-fingerprinting",
+    "vulnerability-scanning",
+    "web-analysis",
+    "penetration-testing",
+    "competitive-intelligence",
+    "zero-dependency",
+    "modern-javascript",
+    "esm",
+    "web-development",
+    "library",
+    "toolkit",
+    "raven"
+  ],
+  "author": {
+    "name": "Anonyfox",
+    "email": "max@anonyfox.com",
+    "url": "https://anonyfox.com"
+  },
+  "license": "MIT",
+  "homepage": "https://ravenjs.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Anonyfox/raven-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Anonyfox/raven-js/issues"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/Anonyfox"
+  }
+}

@@ -24,6 +24,7 @@ Things you `npm install`:
 - ⚡ **[Reflex](packages/reflex/README.md)** - Signals-based Reactivity + SSR • ✅ Production Ready
 - 🧠 **[Cortex](packages/cortex/README.md)** - ML & AI in pure JS • 🚧 In Development
 - 🦅 **[Talons](packages/talons/README.md)** - Data interaction patterns • 🚧 In Development
+- 👁️ **[Eye](packages/eye/README.md)** - Reconnaissance intelligence • 🚧 In Development
 
 Standalone npm packages with zero dependencies that solve common dev needs optimally.
 Don't waste LLM tokens for vibe coding these things and trying to get it right
