@@ -106,10 +106,11 @@ export {
 } from "./temporal/index.js";
 // Export visual processing functions and classes
 export {
-  createImage,
-  GIFImage,
+  // New codec functions
+  decodeJPEG,
+  decodePNG,
+  encodeJPEG,
+  encodePNG,
+  // Base Image class
   Image,
-  JPEGImage,
-  PNGImage,
-  WebPImage,
 } from "./visual/index.js";

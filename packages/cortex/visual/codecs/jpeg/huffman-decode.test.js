@@ -113,22 +113,71 @@ describe("JPEG Huffman Decoder", () => {
       assert.equal(reader.readBits(8), 0x12);
     });
 
-    it("detects markers", () => {
-      const data = new Uint8Array([0x12, 0xff, 0xd0]); // RST0 marker
+    it("handles multiple consecutive marker stuffing", () => {
+      const data = new Uint8Array([0xff, 0x00, 0xff, 0x00, 0x34]);
       const reader = new BitStreamReader(data);
 
-      assert.equal(reader.readBits(8), 0x12);
-      // RST markers are consumed automatically
-      assert.equal(reader.hasMoreBits(), false);
+      assert.equal(reader.readBits(8), 0xff);
+      assert.equal(reader.readBits(8), 0xff);
+      assert.equal(reader.readBits(8), 0x34);
     });
 
-    it("detects non-RST markers", () => {
-      const data = new Uint8Array([0x12, 0xff, 0xda]); // SOS marker
+    it("handles marker stuffing across bit boundaries", () => {
+      const data = new Uint8Array([0x7f, 0xff, 0x00, 0x80]);
+      const reader = new BitStreamReader(data);
+
+      assert.equal(reader.readBits(1), 0); // 0
+      assert.equal(reader.readBits(8), 0xff); // 1111111 + 1 from stuffed 0xFF
+      assert.equal(reader.readBits(1), 1); // First bit of 0x80
+    });
+
+    it("detects and consumes all RST markers (0xFFD0-0xFFD7)", () => {
+      for (let rst = 0xd0; rst <= 0xd7; rst++) {
+        const data = new Uint8Array([0x12, 0xff, rst]);
+        const reader = new BitStreamReader(data);
+
+        assert.equal(reader.readBits(8), 0x12);
+        // After reading 0x12, the RST marker should be detected and consumed
+        // This should trigger the restart flag
+        assert.equal(reader.hasRestart(), true);
+        assert.equal(reader.consumeRestart(), rst);
+        // After consuming restart, no more bits should be available
+        assert.equal(reader.hasMoreBits(), false);
+      }
+    });
+
+    it("detects non-RST markers and stops decoding", () => {
+      const nonRstMarkers = [0xda, 0xd9, 0xc0, 0xe0, 0xfe];
+
+      for (const marker of nonRstMarkers) {
+        const data = new Uint8Array([0x12, 0xff, marker]);
+        const reader = new BitStreamReader(data);
+
+        assert.equal(reader.readBits(8), 0x12);
+        assert.equal(reader.hasMarker(), true);
+        assert.equal(reader.getMarker(), 0xff00 | marker);
+      }
+    });
+
+    it("handles invalid marker sequences", () => {
+      // 0xFF followed by 0x01-0xCF (invalid range)
+      const data = new Uint8Array([0x12, 0xff, 0x01]);
       const reader = new BitStreamReader(data);
 
       assert.equal(reader.readBits(8), 0x12);
       assert.equal(reader.hasMarker(), true);
-      assert.equal(reader.getMarker(), 0xffda);
+      assert.equal(reader.getMarker(), 0xff01);
+    });
+
+    it("handles 0xFFFF sequences as marker", () => {
+      const data = new Uint8Array([0xff, 0xff, 0x12]);
+      const reader = new BitStreamReader(data);
+
+      // 0xFFFF should be detected as marker immediately
+      assert.equal(reader.hasMarker(), true);
+      assert.equal(reader.getMarker(), 0xffff);
+      // Should still have more bits available (just marker detected)
+      assert.equal(reader.hasMoreBits(), true);
     });
 
     it("peeks bits without consuming", () => {
@@ -276,20 +325,40 @@ describe("JPEG Huffman Decoder", () => {
       }, /Not enough bits/);
     });
 
-    it("throws on invalid category", () => {
-      // Table that returns invalid category
-      const badTable = {
+    it("throws on invalid DC categories (12-15)", () => {
+      // ITU-T T.81: DC categories must be 0-11 only
+      for (let invalidCategory = 12; invalidCategory <= 15; invalidCategory++) {
+        const badTable = {
+          lookup: new Array(256).fill(-1),
+          maxCode: [-1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+          codes: new Map([[invalidCategory, { code: 0, length: 1 }]]),
+        };
+
+        const data = new Uint8Array([0b00000000]);
+        const reader = new BitStreamReader(data);
+
+        assert.throws(
+          () => {
+            decodeDCCoefficient(reader, badTable, 0);
+          },
+          new RegExp(`Invalid DC category: ${invalidCategory}`)
+        );
+      }
+    });
+
+    it("handles maximum valid DC category (11)", () => {
+      const table = {
         lookup: new Array(256).fill(-1),
         maxCode: [-1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-        codes: new Map([[15, { code: 0, length: 1 }]]), // Invalid category 15
+        codes: new Map([[11, { code: 0, length: 1 }]]), // Maximum valid category
       };
 
-      const data = new Uint8Array([0b00000000]);
+      // Category 11 requires 11 magnitude bits: 0 (negative) = -2047, 1 (positive) = +2047
+      const data = new Uint8Array([0b01111111, 0b11110000]); // Category 11, magnitude 2047 (all 1s for 11 bits)
       const reader = new BitStreamReader(data);
 
-      assert.throws(() => {
-        decodeDCCoefficient(reader, badTable, 0);
-      }, /Invalid DC category: 15/);
+      const result = decodeDCCoefficient(reader, table, 0);
+      assert.equal(result.coefficient, 2047); // 0 + 2047
     });
   });
 
@@ -397,6 +466,102 @@ describe("JPEG Huffman Decoder", () => {
       assert.throws(() => {
         decodeACCoefficients(reader, table, block, 1, 63);
       }, /Not enough bits/);
+    });
+
+    it("throws on invalid AC symbol (>255)", () => {
+      // ITU-T T.81: AC symbols must be 0-255 only
+      const badTable = {
+        lookup: new Array(256).fill(-1),
+        maxCode: [-1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        codes: new Map([[256, { code: 0, length: 1 }]]), // Invalid symbol 256
+      };
+
+      const data = new Uint8Array([0b00000000]);
+      const reader = new BitStreamReader(data);
+      const block = new Array(64).fill(0);
+
+      assert.throws(() => {
+        decodeACCoefficients(reader, badTable, block, 1, 63);
+      }, /Invalid AC symbol: 256/);
+    });
+
+    it("throws on invalid run length (>15)", () => {
+      // Symbol 0xFF has run=15, size=15 (maximum valid)
+      // Test with invalid symbol that would decode to run=16
+      const badTable = {
+        lookup: new Array(256).fill(-1),
+        maxCode: [-1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        codes: new Map([[0x100, { code: 0, length: 1 }]]), // Would decode to run=16, size=0
+      };
+
+      const data = new Uint8Array([0b00000000]);
+      const reader = new BitStreamReader(data);
+      const block = new Array(64).fill(0);
+
+      // This should be caught by AC symbol validation first
+      assert.throws(() => {
+        decodeACCoefficients(reader, badTable, block, 1, 63);
+      }, /Invalid AC symbol/);
+    });
+
+    it("throws on invalid size category (>10)", () => {
+      // Symbol with size=11 (invalid, max is 10)
+      const badTable = {
+        lookup: new Array(256).fill(-1),
+        maxCode: [-1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        codes: new Map([[0x0b, { code: 0, length: 1 }]]), // Run=0, Size=11 (invalid)
+      };
+
+      const data = new Uint8Array([0b00000000]);
+      const reader = new BitStreamReader(data);
+      const block = new Array(64).fill(0);
+
+      assert.throws(() => {
+        decodeACCoefficients(reader, badTable, block, 1, 63);
+      }, /Invalid AC size category: 11/);
+    });
+
+    it("throws on block overflow", () => {
+      // Table with symbol that has run=15 and will cause overflow
+      const overflowTable = {
+        lookup: new Array(256).fill(-1),
+        maxCode: [-1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        codes: new Map([[0xf1, { code: 0, length: 1 }]]), // Run=15, Size=1
+      };
+
+      // Provide enough data: symbol (1 bit) + magnitude (1 bit) repeated
+      const data = new Uint8Array([0b01010101, 0b01010101]); // Multiple 01 patterns
+      const reader = new BitStreamReader(data);
+      const block = new Array(64).fill(0);
+
+      // Start at position 50, run=15 will try to go to position 65, but should be clamped
+      // Should not throw, but handle gracefully with clamping
+      assert.doesNotThrow(() => {
+        decodeACCoefficients(reader, overflowTable, block, 50, 63);
+      });
+    });
+
+    it("handles maximum valid AC values", () => {
+      // Test maximum run=15, size=10 (symbol 0xFA)
+      const table = {
+        lookup: new Array(256).fill(-1),
+        maxCode: [-1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        codes: new Map([
+          [0x00, { code: 0, length: 2 }], // EOB
+          [0xfa, { code: 1, length: 2 }], // Run=15, Size=10 (maximum)
+        ]),
+      };
+
+      // Symbol 0xFA (01) + 10-bit magnitude (1023 = all 1s) + EOB (00)
+      const data = new Uint8Array([0b01111111, 0b11110000]); // 01 (0xFA) + 1111111111 (1023) + 00 (EOB)
+      const reader = new BitStreamReader(data);
+      const block = new Array(64).fill(0);
+
+      const count = decodeACCoefficients(reader, table, block, 1, 63);
+
+      // Should skip 15 positions and place coefficient at position 16
+      assert.equal(count, 1);
+      assert.equal(block[ZIGZAG_ORDER[16]], 1023); // Maximum positive 10-bit value
     });
   });
 

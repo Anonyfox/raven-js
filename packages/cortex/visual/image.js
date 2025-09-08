@@ -7,13 +7,15 @@
  */
 
 /**
- * @file Base Image class providing uniform interface for all image formats.
+ * @file Unified Image class for image processing and format conversion.
  *
- * Abstract base class defining the standard API for image manipulation operations.
- * All format-specific implementations extend this class to ensure consistent
- * behavior across PNG, JPEG, WebP, and GIF formats.
+ * Provides a single, unified interface for loading, manipulating, and saving images
+ * across multiple formats. Uses static constructors for format-specific loading
+ * and async instance methods for format-specific encoding.
  */
 
+import { decodeJPEG, encodeJPEG } from "./codecs/jpeg/index.js";
+import { decodePNG, encodePNG } from "./codecs/png/index.js";
 import {
   adjustBrightness,
   adjustContrast,
@@ -44,28 +46,70 @@ import { resizePixels } from "./resize/index.js";
 import { getRotationInfo, rotatePixels } from "./rotate/index.js";
 
 /**
- * Base class for image processing operations.
+ * Unified Image class for image processing and format conversion.
  *
- * Provides uniform interface for decoding, manipulating, and encoding images
- * regardless of source format. Internal pixel representation uses RGBA Uint8Array
- * for consistent operations across all formats.
+ * Provides a single interface for loading, manipulating, and saving images
+ * across multiple formats. Internal pixel representation uses RGBA Uint8Array
+ * for consistent operations. Use static constructors to load images and
+ * async instance methods to save in different formats.
+ *
+ * @example
+ * // Load from PNG buffer
+ * const image = await Image.fromPngBuffer(pngBuffer);
+ *
+ * // Manipulate image
+ * image.resize(800, 600).brightness(0.1);
+ *
+ * // Save as JPEG
+ * const jpegBuffer = await image.toJpegBuffer({ quality: 85 });
  */
 export class Image {
   /**
-   * Creates new Image instance from buffer data.
+   * Creates new Image instance with RGBA pixel data.
    *
-   * @param {ArrayBuffer|Uint8Array} buffer - Raw image data
-   * @param {string} mimeType - MIME type of source image
+   * @param {Uint8Array} pixels - RGBA pixel data
+   * @param {number} width - Image width in pixels
+   * @param {number} height - Image height in pixels
+   * @param {Object} [metadata={}] - Image metadata
    */
-  constructor(buffer, mimeType) {
-    this.rawData = new Uint8Array(buffer);
-    this.mimeType = mimeType;
-    this.originalMimeType = mimeType;
-    this.pixels = null; // RGBA Uint8Array
-    this.metadata = {};
-    this._width = 0;
-    this._height = 0;
+  constructor(pixels, width, height, metadata = {}) {
+    this.pixels = pixels; // RGBA Uint8Array
+    this._width = width;
+    this._height = height;
     this._channels = 4; // RGBA
+    this.metadata = metadata;
+  }
+
+  /**
+   * Create Image instance from PNG buffer.
+   *
+   * @param {ArrayBuffer|Uint8Array} buffer - PNG image data
+   * @returns {Promise<Image>} Image instance with decoded PNG data
+   * @throws {Error} If PNG decoding fails
+   *
+   * @example
+   * const pngBuffer = readFileSync('image.png');
+   * const image = await Image.fromPngBuffer(pngBuffer);
+   */
+  static async fromPngBuffer(buffer) {
+    const { pixels, width, height, metadata } = await decodePNG(buffer);
+    return new Image(pixels, width, height, metadata);
+  }
+
+  /**
+   * Create Image instance from JPEG buffer.
+   *
+   * @param {ArrayBuffer|Uint8Array} buffer - JPEG image data
+   * @returns {Promise<Image>} Image instance with decoded JPEG data
+   * @throws {Error} If JPEG decoding fails
+   *
+   * @example
+   * const jpegBuffer = readFileSync('image.jpg');
+   * const image = await Image.fromJpegBuffer(jpegBuffer);
+   */
+  static async fromJpegBuffer(buffer) {
+    const { pixels, width, height, metadata } = await decodeJPEG(buffer);
+    return new Image(pixels, width, height, metadata);
   }
 
   /**
@@ -77,10 +121,6 @@ export class Image {
    * @returns {Image} This instance for chaining
    */
   resize(width, height, algorithm = "bilinear") {
-    if (!this.pixels) {
-      throw new Error("Image not decoded yet - no pixel data available for resizing");
-    }
-
     try {
       // Perform resize operation
       this.pixels = resizePixels(this.pixels, this._width, this._height, width, height, algorithm);
@@ -105,9 +145,7 @@ export class Image {
    * @returns {Image} This instance for chaining
    */
   crop(x, y, width, height) {
-    if (!this.pixels) {
-      throw new Error("Image not decoded yet - no pixel data available for cropping");
-    }
+    // Pixels are always available in unified Image class cropping");
 
     try {
       // Get crop information to determine actual output dimensions
@@ -140,9 +178,7 @@ export class Image {
    * @returns {Image} This instance for chaining
    */
   rotate(degrees, algorithm = "bilinear", fillColor = [0, 0, 0, 0]) {
-    if (!this.pixels) {
-      throw new Error("Image not decoded yet - no pixel data available for rotation");
-    }
+    // Pixels are always available in unified Image class rotation");
 
     try {
       // Get rotation information to determine actual output dimensions
@@ -174,9 +210,7 @@ export class Image {
    * @returns {Image} This instance for chaining
    */
   flip(direction, inPlace = true) {
-    if (!this.pixels) {
-      throw new Error("Image not decoded yet - no pixel data available for flipping");
-    }
+    // Pixels are always available in unified Image class flipping");
 
     try {
       // Get flip information to validate parameters
@@ -209,9 +243,7 @@ export class Image {
    * @returns {Image} This instance for chaining
    */
   adjustBrightness(factor, inPlace = true) {
-    if (!this.pixels) {
-      throw new Error("Image not decoded yet - no pixel data available for brightness adjustment");
-    }
+    // Pixels are always available in unified Image class brightness adjustment");
 
     try {
       // Get adjustment information to validate parameters
@@ -244,9 +276,7 @@ export class Image {
    * @returns {Image} This instance for chaining
    */
   adjustContrast(factor, inPlace = true) {
-    if (!this.pixels) {
-      throw new Error("Image not decoded yet - no pixel data available for contrast adjustment");
-    }
+    // Pixels are always available in unified Image class contrast adjustment");
 
     try {
       // Get adjustment information to validate parameters
@@ -279,9 +309,7 @@ export class Image {
    * @returns {Image} This instance for chaining
    */
   grayscale(method = "luminance", inPlace = true) {
-    if (!this.pixels) {
-      throw new Error("Image not decoded yet - no pixel data available for grayscale conversion");
-    }
+    // Pixels are always available in unified Image class grayscale conversion");
 
     try {
       // Get grayscale information to validate parameters
@@ -313,9 +341,7 @@ export class Image {
    * @returns {Image} This instance for chaining
    */
   invert(inPlace = true) {
-    if (!this.pixels) {
-      throw new Error("Image not decoded yet - no pixel data available for color inversion");
-    }
+    // Pixels are always available in unified Image class color inversion");
 
     try {
       // Get inversion information to validate parameters
@@ -347,9 +373,7 @@ export class Image {
    * @returns {Image} This instance for chaining
    */
   sepia(inPlace = true) {
-    if (!this.pixels) {
-      throw new Error("Image not decoded yet - no pixel data available for sepia effect");
-    }
+    // Pixels are always available in unified Image class sepia effect");
 
     try {
       // Get sepia information to validate parameters
@@ -382,9 +406,7 @@ export class Image {
    * @returns {Image} This instance for chaining
    */
   adjustSaturation(saturationFactor, inPlace = true) {
-    if (!this.pixels) {
-      throw new Error("Image not decoded yet - no pixel data available for saturation adjustment");
-    }
+    // Pixels are always available in unified Image class saturation adjustment");
 
     try {
       // Get HSL adjustment information to validate parameters
@@ -417,9 +439,7 @@ export class Image {
    * @returns {Image} This instance for chaining
    */
   adjustHue(hueShift, inPlace = true) {
-    if (!this.pixels) {
-      throw new Error("Image not decoded yet - no pixel data available for hue adjustment");
-    }
+    // Pixels are always available in unified Image class hue adjustment");
 
     try {
       // Get HSL adjustment information to validate parameters
@@ -453,9 +473,7 @@ export class Image {
    * @returns {Image} This instance for chaining
    */
   adjustHueSaturation(hueShift, saturationFactor, inPlace = true) {
-    if (!this.pixels) {
-      throw new Error("Image not decoded yet - no pixel data available for HSL adjustment");
-    }
+    // Pixels are always available in unified Image class HSL adjustment");
 
     try {
       // Get HSL adjustment information to validate parameters
@@ -496,9 +514,7 @@ export class Image {
    * @returns {Image} This instance for chaining
    */
   blur(radius = 1.0, sigma, inPlace = true) {
-    if (!this.pixels) {
-      throw new Error("Image not decoded yet - no pixel data available for blur");
-    }
+    // Pixels are always available in unified Image class blur");
 
     try {
       // Get convolution information to validate parameters
@@ -531,9 +547,7 @@ export class Image {
    * @returns {Image} This instance for chaining
    */
   boxBlur(size = 3, inPlace = true) {
-    if (!this.pixels) {
-      throw new Error("Image not decoded yet - no pixel data available for box blur");
-    }
+    // Pixels are always available in unified Image class box blur");
 
     try {
       // Perform box blur
@@ -558,9 +572,7 @@ export class Image {
    * @returns {Image} This instance for chaining
    */
   sharpen(strength = 1.0, inPlace = true) {
-    if (!this.pixels) {
-      throw new Error("Image not decoded yet - no pixel data available for sharpening");
-    }
+    // Pixels are always available in unified Image class sharpening");
 
     try {
       // Perform sharpening
@@ -586,9 +598,7 @@ export class Image {
    * @returns {Image} This instance for chaining
    */
   unsharpMask(amount = 1.0, radius = 1.0, inPlace = true) {
-    if (!this.pixels) {
-      throw new Error("Image not decoded yet - no pixel data available for unsharp mask");
-    }
+    // Pixels are always available in unified Image class unsharp mask");
 
     try {
       // Perform unsharp mask sharpening
@@ -613,9 +623,7 @@ export class Image {
    * @returns {Image} This instance for chaining
    */
   detectEdges(type = "sobel-x", inPlace = true) {
-    if (!this.pixels) {
-      throw new Error("Image not decoded yet - no pixel data available for edge detection");
-    }
+    // Pixels are always available in unified Image class edge detection");
 
     try {
       // Perform edge detection
@@ -643,9 +651,7 @@ export class Image {
    * @returns {Image} This instance for chaining
    */
   convolve(kernel, options = {}) {
-    if (!this.pixels) {
-      throw new Error("Image not decoded yet - no pixel data available for convolution");
-    }
+    // Pixels are always available in unified Image class convolution");
 
     try {
       // Get convolution information to validate parameters
@@ -679,9 +685,8 @@ export class Image {
    * @param {Object} _options - Format-specific encoding options
    * @returns {Uint8Array} Encoded image buffer
    */
-  toBuffer(_targetMimeType = this.originalMimeType, _options = {}) {
-    // Stub implementation
-    return new Uint8Array(0);
+  toBuffer(_targetMimeType, _options = {}) {
+    throw new Error("toBuffer() is deprecated. Use toPngBuffer() or toJpegBuffer() instead.");
   }
 
   /**
@@ -748,5 +753,42 @@ export class Image {
    */
   get hasAlpha() {
     return this._channels === 4;
+  }
+
+  /**
+   * Encode image as PNG buffer.
+   *
+   * @param {Object} [options={}] - PNG encoding options
+   * @param {number} [options.compressionLevel=6] - PNG compression level (0-9)
+   * @param {string} [options.filter='auto'] - PNG filter type
+   * @returns {Promise<Uint8Array>} PNG encoded buffer
+   * @throws {Error} If PNG encoding fails
+   *
+   * @example
+   * const pngBuffer = await image.toPngBuffer({ compressionLevel: 9 });
+   * writeFileSync('output.png', pngBuffer);
+   */
+  async toPngBuffer(options = {}) {
+    // Pixels are always available in unified Image class PNG encoding");
+    return await encodePNG(this.pixels, this._width, this._height, options);
+  }
+
+  /**
+   * Encode image as JPEG buffer.
+   *
+   * @param {Object} [options={}] - JPEG encoding options
+   * @param {number} [options.quality=75] - JPEG quality (1-100)
+   * @param {boolean} [options.progressive=false] - Enable progressive encoding
+   * @param {string} [options.subsampling="4:2:0"] - Chroma subsampling mode
+   * @returns {Promise<Uint8Array>} JPEG encoded buffer
+   * @throws {Error} If JPEG encoding fails
+   *
+   * @example
+   * const jpegBuffer = await image.toJpegBuffer({ quality: 85, progressive: true });
+   * writeFileSync('output.jpg', jpegBuffer);
+   */
+  async toJpegBuffer(options = {}) {
+    // Pixels are always available in unified Image class JPEG encoding");
+    return await encodeJPEG(this.pixels, this._width, this._height, options);
   }
 }

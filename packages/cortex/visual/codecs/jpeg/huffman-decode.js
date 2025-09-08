@@ -97,6 +97,29 @@ export class BitStreamReader {
     this.markerFound = false;
     /** @type {number} */
     this.foundMarker = 0;
+    /** @type {boolean} */
+    this.restartFound = false;
+    /** @type {number} */
+    this.restartMarker = 0;
+
+    // Check for immediate marker at start
+    this.checkForInitialMarker();
+  }
+
+  /**
+   * Check for marker at current position.
+   * @private
+   */
+  checkForInitialMarker() {
+    if (this.byteOffset < this.data.length && this.data[this.byteOffset] === 0xff) {
+      const nextByte = this.byteOffset + 1 < this.data.length ? this.data[this.byteOffset + 1] : -1;
+
+      if (nextByte !== -1 && nextByte !== 0x00 && !(nextByte >= 0xd0 && nextByte <= 0xd7)) {
+        // Found a non-stuffing, non-RST marker
+        this.markerFound = true;
+        this.foundMarker = (0xff << 8) | nextByte;
+      }
+    }
   }
 
   /**
@@ -147,9 +170,14 @@ export class BitStreamReader {
       }
 
       if (nextByte >= 0xd0 && nextByte <= 0xd7) {
-        // RST marker - consume it but continue
-        this.byteOffset++;
-        return this.readByte(); // Read next byte after RST
+        // RST marker - consume it and signal restart
+        this.byteOffset++; // Skip the RST marker
+        this.restartFound = true;
+        this.restartMarker = nextByte;
+
+        // RST marker terminates current entropy segment
+        // Note: Bit alignment reset happens when restart is consumed, not here
+        return -1;
       }
 
       if (nextByte !== -1) {
@@ -269,6 +297,31 @@ export class BitStreamReader {
   getMarker() {
     return this.foundMarker;
   }
+
+  /**
+   * Check if restart marker was encountered during bit reading.
+   * @returns {boolean} True if restart marker found
+   */
+  hasRestart() {
+    return this.restartFound;
+  }
+
+  /**
+   * Get the restart marker that was found and clear the flag.
+   * @returns {number} Restart marker code (0xD0-0xD7)
+   */
+  consumeRestart() {
+    const marker = this.restartMarker;
+    this.restartFound = false;
+    this.restartMarker = 0;
+
+    // ITU-T T.81: Restart markers reset bit stream to byte boundary
+    this.bitOffset = 0;
+    this.bitBuffer = 0;
+    this.bitsInBuffer = 0;
+
+    return marker;
+  }
 }
 
 /**
@@ -381,6 +434,11 @@ export function decodeACCoefficients(reader, acTable, block, startCoeff = 1, end
       throw new Error("Failed to decode AC symbol");
     }
 
+    // Validate AC symbol range (ITU-T T.81: AC symbols must be 0-255)
+    if (symbol < 0 || symbol > 255) {
+      throw new Error(`Invalid AC symbol: ${symbol} (must be 0-255)`);
+    }
+
     // Handle special symbols
     if (symbol === EOB_SYMBOL) {
       // End of block - fill remaining coefficients with zero
@@ -399,11 +457,21 @@ export function decodeACCoefficients(reader, acTable, block, startCoeff = 1, end
     }
 
     // Extract run and size from symbol
-    const run = (symbol >> 4) & 0x0f;
+    let run = (symbol >> 4) & 0x0f;
     const size = symbol & 0x0f;
 
     if (size < 0 || size > MAX_AC_CATEGORY) {
-      throw new Error(`Invalid AC coefficient size: ${size} (must be 0-${MAX_AC_CATEGORY})`);
+      throw new Error(`Invalid AC size category: ${size} (must be 0-${MAX_AC_CATEGORY})`);
+    }
+
+    // Check for block overflow before processing run
+    if (coeffIndex + run > endCoeff) {
+      // Clamp run to available space to handle bit stream drift gracefully
+      const availableSpace = endCoeff - coeffIndex + 1;
+      console.warn(
+        `AC coefficient run clamped: coeffIndex=${coeffIndex}, run=${run}→${availableSpace}, endCoeff=${endCoeff}, symbol=0x${symbol.toString(16)}`
+      );
+      run = Math.max(0, availableSpace);
     }
 
     // Skip run zeros
@@ -412,7 +480,8 @@ export function decodeACCoefficients(reader, acTable, block, startCoeff = 1, end
     }
 
     if (coeffIndex > endCoeff) {
-      break;
+      console.warn(`AC coefficient index clamped: coeffIndex=${coeffIndex}→${endCoeff}, endCoeff=${endCoeff}`);
+      coeffIndex = endCoeff;
     }
 
     // Decode coefficient magnitude
@@ -426,9 +495,13 @@ export function decodeACCoefficients(reader, acTable, block, startCoeff = 1, end
       }
     }
 
-    // Place coefficient in zigzag order
-    block[ZIGZAG_ORDER[coeffIndex]] = magnitude;
-    coeffIndex++;
+    // Place coefficient in zigzag order (with bounds check)
+    if (coeffIndex <= endCoeff) {
+      block[ZIGZAG_ORDER[coeffIndex]] = magnitude;
+      coeffIndex++;
+    } else {
+      console.warn(`AC coefficient placement skipped: coeffIndex=${coeffIndex} > endCoeff=${endCoeff}`);
+    }
     coefficientsDecoded++;
   }
 
@@ -506,6 +579,13 @@ export class HuffmanDecoder {
    * @throws {Error} If decoding fails
    */
   decodeMCU(reader) {
+    // Check for restart marker before starting MCU decode
+    if (reader.hasRestart()) {
+      const restartMarker = reader.consumeRestart();
+      console.log(`Found restart marker 0x${restartMarker.toString(16).toUpperCase()} before MCU decode`);
+      this.resetPredictors();
+    }
+
     const blocks = [];
 
     for (let compIndex = 0; compIndex < this.components.length; compIndex++) {

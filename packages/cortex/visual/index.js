@@ -28,9 +28,12 @@
  * console.log(metadata.exif, metadata.xmp);
  */
 
-export { GIFImage } from "./gif-image.js";
-export { Image } from "./image-base.js";
-export { createImage } from "./image-factory.js";
-export { JPEGImage } from "./jpeg/index.js";
-export { PNGImage } from "./png/index.js";
-export { WebPImage } from "./webp-image.js";
+// Codec functions (new architecture)
+export { decodeJPEG, encodeJPEG } from "./codecs/jpeg/index.js";
+export { decodePNG, encodePNG } from "./codecs/png/index.js";
+// Base Image class
+export { Image } from "./image.js";
+
+// TODO: Convert remaining formats to codec functions
+// export { GIFImage } from "./gif-image.js";
+// export { WebPImage } from "./webp-image.js";
