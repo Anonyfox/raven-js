@@ -15,20 +15,25 @@
  */
 
 import { Image } from "../image-base.js";
+import { convertYcbcrToRgbInterleaved } from "./colorspace-convert.js";
 import { decodeDHT } from "./decode-dht.js";
 import { decodeDQT } from "./decode-dqt.js";
 import { decodeSOF, isSOFMarker } from "./decode-sof.js";
 import { decodeSOS } from "./decode-sos.js";
+import { dequantizeBlocks } from "./dequantize.js";
 import { downsampleChroma } from "./downsample-chroma.js";
 import { convertRgbToYcbcr } from "./encode-colorspace.js";
 import { forwardDct2d } from "./forward-dct.js";
 import { BitStreamReader, HuffmanDecoder } from "./huffman-decode.js";
 import { encodeHuffmanBlocks, getStandardHuffmanTable } from "./huffman-encode.js";
+import { idctBlocks } from "./inverse-dct.js";
 import { parseExifData } from "./parse-exif.js";
 import { parseJfifData } from "./parse-jfif.js";
 import { findMarkersByType, JPEG_MARKERS, parseJPEGMarkers } from "./parse-markers.js";
 import { batchQuantizeBlocks, getStandardQuantizationTable } from "./quantize.js";
+import { IMAGE_LAYOUTS, reconstructFromComponentBlocks } from "./reconstruct-image.js";
 import { applyPadding, calculatePadding, extractComponentBlocks } from "./segment-blocks.js";
+import { upsampleChromaComponents } from "./upsample-chroma.js";
 
 /**
  * Simple helper to write JPEG marker with data.
@@ -195,10 +200,144 @@ export class JPEGImage extends Image {
           }
         }
 
-        // If we got some blocks, try to process them
+        // If we got some blocks, process them through the complete pipeline
         if (allBlocks.length > 0) {
-          // For now, use a simplified fallback since the full pipeline is complex
-          throw new Error("Full JPEG decoding pipeline not yet implemented");
+          // Step 1: Organize blocks by component (Y, Cb, Cr)
+          /** @type {{ Y: Array<number[]>, Cb: Array<number[]>, Cr: Array<number[]> }} */
+          const componentBlocks = { Y: [], Cb: [], Cr: [] };
+          const componentNames = ["Y", "Cb", "Cr"];
+
+          // Distribute blocks to components based on sampling factors
+          let blockIndex = 0;
+          for (const component of this.components) {
+            const comp = /** @type {any} */ (component);
+            const componentName = componentNames[comp.id - 1] || "Y";
+            const blocksPerMCU = comp.horizontalSamplingFactor * comp.verticalSamplingFactor;
+
+            for (let i = 0; i < blocksPerMCU && blockIndex < allBlocks.length; i++) {
+              /** @type {any} */ (componentBlocks)[componentName].push(allBlocks[blockIndex++]);
+            }
+          }
+
+          // Step 2: Dequantize coefficient blocks
+          /** @type {{ [key: string]: Array<number[]> }} */
+          const dequantizedBlocks = {};
+          for (const [componentName, blocks] of Object.entries(componentBlocks)) {
+            if (blocks.length > 0) {
+              // Find the appropriate quantization table for this component
+              const component = this.components.find(
+                (c) => /** @type {any} */ (c).id - 1 === componentNames.indexOf(componentName)
+              );
+              const quantTable =
+                /** @type {any} */ (this.quantizationTables[/** @type {any} */ (component)?.quantizationTableId || 0])
+                  ?.table || new Array(64).fill(1); // Fallback to no quantization
+
+              dequantizedBlocks[componentName] = dequantizeBlocks(blocks, quantTable);
+            }
+          }
+
+          // Step 3: Apply inverse DCT to convert to spatial domain
+          /** @type {{ [key: string]: Array<number[]> }} */
+          const spatialBlocks = {};
+          for (const [componentName, blocks] of Object.entries(dequantizedBlocks)) {
+            if (blocks.length > 0) {
+              spatialBlocks[componentName] = idctBlocks(blocks);
+            }
+          }
+
+          // Step 4: Ensure all required components exist for reconstruction
+          // For color images, ensure we have Y, Cb, Cr components
+          if (this.components.length > 1) {
+            if (!spatialBlocks.Y) spatialBlocks.Y = [];
+            if (!spatialBlocks.Cb) spatialBlocks.Cb = [];
+            if (!spatialBlocks.Cr) spatialBlocks.Cr = [];
+          }
+
+          // Step 4: Reconstruct image from blocks
+          const reconstructedImage = reconstructFromComponentBlocks(
+            /** @type {{ [key: string]: Uint8Array[] }} */ (/** @type {unknown} */ (spatialBlocks)),
+            this._width,
+            this._height,
+            {
+              layout: this.components.length === 1 ? IMAGE_LAYOUTS.GRAYSCALE : IMAGE_LAYOUTS.YCBCR,
+              outputFormat: "planar",
+            }
+          );
+
+          // Step 5: Handle chroma upsampling if needed
+          const yData = /** @type {any} */ (reconstructedImage).Y || new Uint8Array(this._width * this._height);
+          let cbData =
+            /** @type {any} */ (reconstructedImage).Cb || new Uint8Array(this._width * this._height).fill(128);
+          let crData =
+            /** @type {any} */ (reconstructedImage).Cr || new Uint8Array(this._width * this._height).fill(128);
+
+          // Upsample chroma components if subsampled
+          if (this.components.length > 1) {
+            const yComponent = /** @type {any} */ (this.components[0]);
+            const cbComponent = /** @type {any} */ (this.components[1]);
+
+            if (
+              cbComponent &&
+              (cbComponent.horizontalSamplingFactor !== yComponent.horizontalSamplingFactor ||
+                cbComponent.verticalSamplingFactor !== yComponent.verticalSamplingFactor)
+            ) {
+              const chromaWidth = Math.ceil(
+                this._width / (yComponent.horizontalSamplingFactor / cbComponent.horizontalSamplingFactor)
+              );
+              const chromaHeight = Math.ceil(
+                this._height / (yComponent.verticalSamplingFactor / cbComponent.verticalSamplingFactor)
+              );
+
+              const upsampled = upsampleChromaComponents(
+                cbData,
+                crData,
+                chromaWidth,
+                chromaHeight,
+                this._width,
+                this._height
+              );
+
+              cbData = upsampled.cb;
+              crData = upsampled.cr;
+            }
+          }
+
+          // Step 6: Convert YCbCr to RGB
+          if (this.components.length === 1) {
+            // Grayscale image - replicate Y to RGB
+            this.pixels = new Uint8Array(this._width * this._height * 4);
+            for (let i = 0; i < yData.length; i++) {
+              const pixelIndex = i * 4;
+              this.pixels[pixelIndex] = yData[i]; // R
+              this.pixels[pixelIndex + 1] = yData[i]; // G
+              this.pixels[pixelIndex + 2] = yData[i]; // B
+              this.pixels[pixelIndex + 3] = 255; // A
+            }
+          } else {
+            // Color image - convert YCbCr to RGB
+            const ycbcrData = new Uint8Array(this._width * this._height * 3);
+            for (let i = 0; i < yData.length; i++) {
+              ycbcrData[i * 3] = yData[i]; // Y
+              ycbcrData[i * 3 + 1] = cbData[i]; // Cb
+              ycbcrData[i * 3 + 2] = crData[i]; // Cr
+            }
+
+            const rgbData = convertYcbcrToRgbInterleaved(ycbcrData, this._width, this._height, "BT601");
+
+            // Convert RGB to RGBA
+            this.pixels = new Uint8Array(this._width * this._height * 4);
+            for (let i = 0; i < rgbData.length; i += 3) {
+              const pixelIndex = (i / 3) * 4;
+              this.pixels[pixelIndex] = rgbData[i]; // R
+              this.pixels[pixelIndex + 1] = rgbData[i + 1]; // G
+              this.pixels[pixelIndex + 2] = rgbData[i + 2]; // B
+              this.pixels[pixelIndex + 3] = 255; // A
+            }
+          }
+
+          console.log(
+            `✓ Successfully decoded JPEG: ${this._width}×${this._height}, ${this.components.length} components`
+          );
         } else {
           throw new Error("No MCUs could be decoded");
         }
