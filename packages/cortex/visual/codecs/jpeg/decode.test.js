@@ -16,8 +16,7 @@ import { describe, it } from "node:test";
 import { decodeJPEG } from "./decode.js";
 
 describe("JPEG decode function", () => {
-  it.skip("decodes valid JPEG buffer to RGBA pixels", async () => {
-    // TODO: Fix file path issue
+  it("decodes valid JPEG buffer to RGBA pixels", async () => {
     // Use the test JPEG from the media folder
     const jpegBuffer = readFileSync("../../../media/integration-example-small.jpeg");
 
@@ -53,8 +52,7 @@ describe("JPEG decode function", () => {
     );
   });
 
-  it.skip("handles ArrayBuffer input", async () => {
-    // TODO: Fix file path issue
+  it("handles ArrayBuffer input", async () => {
     const jpegBuffer = readFileSync("../../../media/integration-example-small.jpeg");
     const arrayBuffer = jpegBuffer.buffer.slice(jpegBuffer.byteOffset, jpegBuffer.byteOffset + jpegBuffer.byteLength);
 
@@ -64,8 +62,7 @@ describe("JPEG decode function", () => {
     assert(result.width > 0 && result.height > 0, "Should decode successfully from ArrayBuffer");
   });
 
-  it.skip("returns valid metadata", async () => {
-    // TODO: Fix file path issue
+  it("returns valid metadata", async () => {
     const jpegBuffer = readFileSync("../../../media/integration-example-small.jpeg");
 
     const { metadata } = await decodeJPEG(jpegBuffer);
