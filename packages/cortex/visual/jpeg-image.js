@@ -14,7 +14,7 @@
  * Supports baseline and progressive JPEG formats with full EXIF support.
  */
 
-import { Image } from "../image-base.js";
+import { Image } from "./image-base.js";
 
 /**
  * JPEG format image implementation.
@@ -98,7 +98,7 @@ export class JPEGImage extends Image {
    * @param {Object} options - Format-specific encoding options
    * @returns {Uint8Array} Encoded image buffer
    */
-  toBuffer(targetMimeType = this.originalMimeType, options = {}) {
+  toBuffer(targetMimeType = this.mimeType, options = {}) {
     if (targetMimeType === "image/jpeg" || targetMimeType === "image/jpg") {
       return this._encodeJPEG(/** @type {Object} */ (options));
     }
