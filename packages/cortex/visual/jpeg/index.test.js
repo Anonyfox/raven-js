@@ -164,7 +164,17 @@ function createTestPixels(width, height) {
 describe("JPEG Image Integration", () => {
   describe("Real JPEG File Processing", () => {
     it("decodes real JPEG file correctly", async () => {
-      const jpegBuffer = await readFile("../../media/integration-example-small.jpeg");
+      // Try different paths based on working directory
+      let jpegBuffer;
+      try {
+        jpegBuffer = await readFile("../../media/integration-example-small.jpeg");
+      } catch (_e) {
+        try {
+          jpegBuffer = await readFile("media/integration-example-small.jpeg");
+        } catch (_e2) {
+          jpegBuffer = await readFile("packages/cortex/media/integration-example-small.jpeg");
+        }
+      }
       const image = new JPEGImage(jpegBuffer, "image/jpeg");
 
       assert(image instanceof Image);
@@ -180,7 +190,17 @@ describe("JPEG Image Integration", () => {
     });
 
     it("extracts metadata from real JPEG file", async () => {
-      const jpegBuffer = await readFile("../../media/integration-example-small.jpeg");
+      // Try different paths based on working directory
+      let jpegBuffer;
+      try {
+        jpegBuffer = await readFile("../../media/integration-example-small.jpeg");
+      } catch (_e) {
+        try {
+          jpegBuffer = await readFile("media/integration-example-small.jpeg");
+        } catch (_e2) {
+          jpegBuffer = await readFile("packages/cortex/media/integration-example-small.jpeg");
+        }
+      }
       const image = new JPEGImage(jpegBuffer, "image/jpeg");
       const metadata = image.getMetadata();
 
