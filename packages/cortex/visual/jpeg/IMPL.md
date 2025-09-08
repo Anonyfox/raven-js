@@ -468,37 +468,38 @@ Complete JPEG encoding/decoding implementation following ITU-T T.81 (ISO 10918-1
 
 ---
 
-### 🔄 PENDING MODULES
-
 #### 16. `downsample-chroma.js` - Chroma Subsampling for Encoding
 
-**Status**: 🔄 PENDING
+**Status**: ✅ COMPLETED
+**Implementation**: Complete chroma subsampling for JPEG encoding with multiple modes and quality control.
 
-**What needs to be implemented**:
+**What was implemented**:
 
-- **Subsampling Modes**: 4:4:4 → 4:2:2, 4:2:0, 4:1:1 chroma reduction
-- **Filtering Algorithms**: Anti-aliasing filters for quality preservation
-- **Edge Handling**: Proper boundary pixel handling during downsampling
-- **Quality Control**: Subsampling quality vs compression trade-offs
-- **Performance Optimization**: Efficient downsampling with minimal artifacts
+- **Subsampling Modes**: Full support for 4:4:4 (no subsampling), 4:2:2 (horizontal), 4:2:0 (H+V), and 4:1:1 (aggressive horizontal) with proper compression ratios
+- **Anti-Aliasing Filters**: Box filter (fast averaging), bilinear interpolation (smooth), Gaussian filter (high-quality with configurable sigma), and Lanczos resampling (simplified)
+- **Boundary Handling**: Reflect (mirror edges), replicate (extend edges), wrap (periodic), and zero-pad modes for robust edge processing
+- **Content Analysis**: Adaptive subsampling mode selection based on chroma activity, edge density, and color complexity analysis
+- **Quality Control**: Comprehensive quality impact estimation with artifact prediction and optimization recommendations
 
-**Critical Edge Cases**:
+**Edge Cases Handled**:
 
-- **Odd Dimensions**: Images not divisible by subsampling factors
-- **Single Pixel Components**: Extreme downsampling scenarios
-- **Aliasing Prevention**: High-frequency chroma content handling
-- **Memory Efficiency**: In-place downsampling when possible
-- **Quality Assessment**: Perceptual quality loss measurement
+- **Odd Dimensions**: Proper handling of non-even image dimensions with intelligent padding and boundary management
+- **Boundary Processing**: Advanced edge pixel handling with multiple boundary modes to prevent artifacts at image edges
+- **Content-Aware Processing**: Sobel gradient-based edge detection with configurable thresholds for preserving important color details
+- **Performance Optimization**: Efficient batch processing with optimized algorithms for real-time chroma subsampling of large images
+- **Quality Preservation**: Edge-aware filtering to maintain sharp color transitions while achieving compression goals
 
-**Extensions Required**:
+**Extensions Supported**:
 
-- **Adaptive Subsampling**: Content-aware subsampling mode selection
-- **Custom Ratios**: Non-standard subsampling ratios
-- **Progressive Subsampling**: Multi-pass quality reduction
-- **Region-Based Subsampling**: Different ratios for different image regions
-- **Quality Feedback**: Real-time quality assessment during subsampling
+- **Adaptive Mode Selection**: Content analysis algorithms that automatically select optimal subsampling mode based on image characteristics
+- **Edge Preservation**: Selective filtering that preserves sharp color transitions in high-detail regions while applying aggressive subsampling elsewhere
+- **Quality Metrics**: Comprehensive quality assessment with perceptual weighting, artifact prediction, and optimization recommendations
+- **Performance Analysis**: Real-time metrics tracking including compression ratios, processing time, pixels per second, and data savings percentage
+- **Advanced Filtering**: Multi-scale Gaussian filtering with 3-sigma rule and configurable parameters for optimal quality/performance balance
 
 ---
+
+### 🔄 PENDING MODULES
 
 #### 17. `segment-blocks.js` - Image Segmentation into 8×8 Blocks
 
@@ -772,17 +773,17 @@ Output: Encoded JPEG File
 
 ### Implementation Quality
 
-- ✅ **15/22 modules completed** (68% complete)
+- ✅ **16/22 modules completed** (73% complete)
 - ✅ **100% test coverage** on completed modules
 - ✅ **Zero external dependencies** maintained
 - ✅ **Complete JPEG decode pipeline** functional with progressive support
-- 🔄 **JPEG encode pipeline** in progress with RGB→YCbCr conversion
+- 🔄 **JPEG encode pipeline** in progress with RGB→YCbCr conversion and chroma subsampling
 
 ### Next Priorities
 
-1. **`downsample-chroma.js`** - Chroma subsampling for encoding efficiency
-2. **`segment-blocks.js`** - Image block segmentation into 8×8 units
-3. **`forward-dct.js`** - Fast 8×8 DCT for encoding
-4. **`quantize.js`** - Coefficient quantization with quality scaling
+1. **`segment-blocks.js`** - Image block segmentation into 8×8 DCT units
+2. **`forward-dct.js`** - Fast 8×8 forward DCT for encoding
+3. **`quantize.js`** - Coefficient quantization with quality scaling
+4. **`huffman-encode.js`** - Entropy encoding with optimal Huffman tables
 
-The murder's institutional memory now spans 15 complete JPEG algorithms, with 7 remaining for total JPEG mastery. Each completed module represents surgical precision applied to decades of image compression research, distilled into zero-dependency, testable, performant code. The encoding pipeline foundation is established with textbook-perfect RGB→YCbCr conversion supporting multiple color standards, precision modes, and quality analysis.
+The murder's institutional memory now spans 16 complete JPEG algorithms, with 6 remaining for total JPEG mastery. Each completed module represents surgical precision applied to decades of image compression research, distilled into zero-dependency, testable, performant code. The encoding pipeline advances with chroma subsampling mastery—human visual system exploitation for maximum compression efficiency while preserving perceptual quality through adaptive mode selection and edge-aware filtering.
