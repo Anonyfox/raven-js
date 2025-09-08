@@ -868,8 +868,9 @@ function evaluateOptimizationScore(huffmanTables, quantizationTables, _contentAn
 
   if (huffmanTables) {
     // Score based on average code length (lower is better)
-    score += 50 / /** @type {any} */ ((huffmanTables).dcLuminance?.averageCodeLength + 1 || 1);
-    score += 50 / /** @type {any} */ ((huffmanTables).acLuminance?.averageCodeLength + 1 || 1);
+    const htables = /** @type {any} */ (huffmanTables);
+    score += 50 / (htables.dcLuminance?.averageCodeLength + 1 || 1);
+    score += 50 / (htables.acLuminance?.averageCodeLength + 1 || 1);
   }
 
   if (quantizationTables) {
