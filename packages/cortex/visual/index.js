@@ -9,7 +9,7 @@
 /**
  * @file Pure JavaScript image processing with zero dependencies.
  *
- * Platform-native image manipulation supporting PNG, JPEG, WebP, and GIF formats.
+ * Platform-native image manipulation supporting PNG, WebP, and GIF formats.
  * Provides uniform API for decoding, transforming, and encoding images using only
  * modern JavaScript features and Node.js built-ins. Runs everywhere without native
  * dependencies or WebAssembly complexity.
@@ -29,7 +29,6 @@
  */
 
 // Codec functions (new architecture)
-export { decodeJPEG, encodeJPEG } from "./codecs/jpeg/index.js";
 export { decodePNG, encodePNG } from "./codecs/png/index.js";
 // Base Image class
 export { Image } from "./image.js";

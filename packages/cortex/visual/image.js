@@ -14,7 +14,6 @@
  * and async instance methods for format-specific encoding.
  */
 
-import { decodeJPEG, encodeJPEG } from "./codecs/jpeg/index.js";
 import { decodePNG, encodePNG } from "./codecs/png/index.js";
 import {
   adjustBrightness,
@@ -60,8 +59,6 @@ import { getRotationInfo, rotatePixels } from "./rotate/index.js";
  * // Manipulate image
  * image.resize(800, 600).brightness(0.1);
  *
- * // Save as JPEG
- * const jpegBuffer = await image.toJpegBuffer({ quality: 85 });
  */
 export class Image {
   /**
@@ -93,22 +90,6 @@ export class Image {
    */
   static async fromPngBuffer(buffer) {
     const { pixels, width, height, metadata } = await decodePNG(buffer);
-    return new Image(pixels, width, height, metadata);
-  }
-
-  /**
-   * Create Image instance from JPEG buffer.
-   *
-   * @param {ArrayBuffer|Uint8Array} buffer - JPEG image data
-   * @returns {Promise<Image>} Image instance with decoded JPEG data
-   * @throws {Error} If JPEG decoding fails
-   *
-   * @example
-   * const jpegBuffer = readFileSync('image.jpg');
-   * const image = await Image.fromJpegBuffer(jpegBuffer);
-   */
-  static async fromJpegBuffer(buffer) {
-    const { pixels, width, height, metadata } = await decodeJPEG(buffer);
     return new Image(pixels, width, height, metadata);
   }
 
@@ -686,7 +667,7 @@ export class Image {
    * @returns {Uint8Array} Encoded image buffer
    */
   toBuffer(_targetMimeType, _options = {}) {
-    throw new Error("toBuffer() is deprecated. Use toPngBuffer() or toJpegBuffer() instead.");
+    throw new Error("toBuffer() is deprecated. Use toPngBuffer() instead.");
   }
 
   /**
@@ -771,24 +752,5 @@ export class Image {
   async toPngBuffer(options = {}) {
     // Pixels are always available in unified Image class PNG encoding");
     return await encodePNG(this.pixels, this._width, this._height, options);
-  }
-
-  /**
-   * Encode image as JPEG buffer.
-   *
-   * @param {Object} [options={}] - JPEG encoding options
-   * @param {number} [options.quality=75] - JPEG quality (1-100)
-   * @param {boolean} [options.progressive=false] - Enable progressive encoding
-   * @param {string} [options.subsampling="4:2:0"] - Chroma subsampling mode
-   * @returns {Promise<Uint8Array>} JPEG encoded buffer
-   * @throws {Error} If JPEG encoding fails
-   *
-   * @example
-   * const jpegBuffer = await image.toJpegBuffer({ quality: 85, progressive: true });
-   * writeFileSync('output.jpg', jpegBuffer);
-   */
-  async toJpegBuffer(options = {}) {
-    // Pixels are always available in unified Image class JPEG encoding");
-    return await encodeJPEG(this.pixels, this._width, this._height, options);
   }
 }

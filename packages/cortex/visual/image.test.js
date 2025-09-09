@@ -39,10 +39,6 @@ describe("Unified Image Class", () => {
     it("exports fromPngBuffer method", () => {
       assert.equal(typeof Image.fromPngBuffer, "function", "Should have fromPngBuffer static method");
     });
-
-    it("exports fromJpegBuffer method", () => {
-      assert.equal(typeof Image.fromJpegBuffer, "function", "Should have fromJpegBuffer static method");
-    });
   });
 
   describe("Instance Methods", () => {
@@ -94,7 +90,6 @@ describe("Unified Image Class", () => {
 
     it("has output methods", () => {
       assert.equal(typeof testImage.toPngBuffer, "function", "Should have toPngBuffer method");
-      assert.equal(typeof testImage.toJpegBuffer, "function", "Should have toJpegBuffer method");
     });
 
     it("resize method works", () => {
@@ -130,7 +125,7 @@ describe("Unified Image Class", () => {
         () => {
           image.toBuffer("image/png");
         },
-        /deprecated.*toPngBuffer.*toJpegBuffer/,
+        /deprecated.*toPngBuffer/,
         "Should throw deprecation error"
       );
     });

@@ -15,16 +15,11 @@
 
 import assert from "node:assert";
 import { describe, it } from "node:test";
-import { decodeJPEG, decodePNG, encodeJPEG, encodePNG, Image } from "./index.js";
+import { decodePNG, encodePNG, Image } from "./index.js";
 
 describe("Visual module exports", () => {
   it("exports base Image class", () => {
     assert.equal(typeof Image, "function", "Should export Image class");
-  });
-
-  it("exports JPEG codec functions", () => {
-    assert.equal(typeof decodeJPEG, "function", "Should export decodeJPEG function");
-    assert.equal(typeof encodeJPEG, "function", "Should export encodeJPEG function");
   });
 
   it("exports PNG codec functions", () => {

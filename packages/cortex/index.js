@@ -107,9 +107,7 @@ export {
 // Export visual processing functions and classes
 export {
   // New codec functions
-  decodeJPEG,
   decodePNG,
-  encodeJPEG,
   encodePNG,
   // Base Image class
   Image,
