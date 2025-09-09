@@ -28,6 +28,7 @@
  * console.log(metadata.exif, metadata.xmp);
  */
 
+export { decodeBMP, encodeBMP } from "./codecs/bmp/index.js";
 // Codec functions (new architecture)
 export { decodePNG, encodePNG } from "./codecs/png/index.js";
 // Base Image class

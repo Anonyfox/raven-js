@@ -14,6 +14,7 @@
  * and async instance methods for format-specific encoding.
  */
 
+import { decodeBMP, encodeBMP } from "./codecs/bmp/index.js";
 import { decodePNG, encodePNG } from "./codecs/png/index.js";
 import {
   adjustBrightness,
@@ -737,6 +738,22 @@ export class Image {
   }
 
   /**
+   * Create Image instance from BMP buffer.
+   *
+   * @param {ArrayBuffer|Uint8Array} buffer - BMP image data
+   * @returns {Image} Image instance with decoded BMP data
+   * @throws {Error} If BMP decoding fails
+   *
+   * @example
+   * const bmpBuffer = readFileSync('image.bmp');
+   * const image = Image.fromBmpBuffer(bmpBuffer);
+   */
+  static fromBmpBuffer(buffer) {
+    const { pixels, width, height, metadata } = decodeBMP(buffer);
+    return new Image(pixels, width, height, metadata);
+  }
+
+  /**
    * Encode image as PNG buffer.
    *
    * @param {Object} [options={}] - PNG encoding options
@@ -752,5 +769,24 @@ export class Image {
   async toPngBuffer(options = {}) {
     // Pixels are always available in unified Image class PNG encoding");
     return await encodePNG(this.pixels, this._width, this._height, options);
+  }
+
+  /**
+   * Encode image as BMP buffer.
+   *
+   * @param {Object} [options={}] - BMP encoding options
+   * @param {boolean} [options.hasAlpha=false] - Whether to preserve alpha channel (32-bit BMP)
+   * @param {number} [options.xResolution=0] - Horizontal resolution in pixels per meter
+   * @param {number} [options.yResolution=0] - Vertical resolution in pixels per meter
+   * @returns {Uint8Array} BMP encoded buffer
+   * @throws {Error} If BMP encoding fails
+   *
+   * @example
+   * const bmpBuffer = image.toBmpBuffer({ hasAlpha: true });
+   * writeFileSync('output.bmp', bmpBuffer);
+   */
+  toBmpBuffer(options = {}) {
+    // Pixels are always available in unified Image class BMP encoding");
+    return encodeBMP(this.pixels, this._width, this._height, options);
   }
 }
