@@ -15,7 +15,7 @@ import { describe, it } from "node:test";
 import { Image } from "../../image.js";
 
 describe("BMP identity tests", () => {
-  it("preserves exact pixel values through encode/decode cycle (24-bit)", () => {
+  it("preserves exact pixel values through encode/decode cycle (24-bit)", async () => {
     // Create a 3x3 test pattern with specific RGB values
     const width = 3;
     const height = 3;
@@ -45,7 +45,7 @@ describe("BMP identity tests", () => {
     const originalImage = new Image(originalPixels, width, height);
 
     // Encode to BMP (24-bit, no alpha)
-    const bmpBuffer = originalImage.toBmpBuffer({ hasAlpha: false });
+    const bmpBuffer = await originalImage.toBmpBuffer({ hasAlpha: false });
 
     // Verify BMP file structure
     assert(bmpBuffer.length > 0, "BMP buffer should not be empty");
@@ -53,7 +53,7 @@ describe("BMP identity tests", () => {
     assert.equal(bmpBuffer[1], 0x4d, "Should start with 'M'");
 
     // Decode back from BMP
-    const decodedImage = Image.fromBmpBuffer(bmpBuffer);
+    const decodedImage = await Image.fromBmpBuffer(bmpBuffer);
 
     // Verify dimensions match
     assert.equal(decodedImage.width, width, "Width should match");
@@ -71,7 +71,7 @@ describe("BMP identity tests", () => {
     }
 
     // Verify file-level identity (encode the same data twice, should be identical)
-    const bmpBuffer2 = originalImage.toBmpBuffer({ hasAlpha: false });
+    const bmpBuffer2 = await originalImage.toBmpBuffer({ hasAlpha: false });
     assert.equal(bmpBuffer.length, bmpBuffer2.length, "File sizes should be identical");
 
     for (let i = 0; i < bmpBuffer.length; i++) {
@@ -83,7 +83,7 @@ describe("BMP identity tests", () => {
     }
   });
 
-  it("preserves exact pixel values through encode/decode cycle (32-bit)", () => {
+  it("preserves exact pixel values through encode/decode cycle (32-bit)", async () => {
     // Create a 2x2 test pattern with RGBA values
     const width = 2;
     const height = 2;
@@ -107,7 +107,7 @@ describe("BMP identity tests", () => {
     const originalImage = new Image(originalPixels, width, height);
 
     // Encode to BMP (32-bit, with alpha)
-    const bmpBuffer = originalImage.toBmpBuffer({ hasAlpha: true });
+    const bmpBuffer = await originalImage.toBmpBuffer({ hasAlpha: true });
 
     // Verify BMP file structure
     assert(bmpBuffer.length > 0, "BMP buffer should not be empty");
@@ -119,7 +119,7 @@ describe("BMP identity tests", () => {
     assert.equal(bitCount, 32, "Should be 32-bit BMP");
 
     // Decode back from BMP
-    const decodedImage = Image.fromBmpBuffer(bmpBuffer);
+    const decodedImage = await Image.fromBmpBuffer(bmpBuffer);
 
     // Verify dimensions match
     assert.equal(decodedImage.width, width, "Width should match");
@@ -137,7 +137,7 @@ describe("BMP identity tests", () => {
     }
   });
 
-  it("produces identical files for identical input data", () => {
+  it("produces identical files for identical input data", async () => {
     // Create identical images
     const width = 2;
     const height = 2;
@@ -164,8 +164,8 @@ describe("BMP identity tests", () => {
     const image2 = new Image(pixels, width, height);
 
     // Encode both to BMP
-    const bmp1 = image1.toBmpBuffer({ hasAlpha: false });
-    const bmp2 = image2.toBmpBuffer({ hasAlpha: false });
+    const bmp1 = await image1.toBmpBuffer({ hasAlpha: false });
+    const bmp2 = await image2.toBmpBuffer({ hasAlpha: false });
 
     // Files should be identical
     assert.equal(bmp1.length, bmp2.length, "File sizes should be identical");
@@ -175,14 +175,14 @@ describe("BMP identity tests", () => {
     }
   });
 
-  it("handles edge case: single pixel image", () => {
+  it("handles edge case: single pixel image", async () => {
     const width = 1;
     const height = 1;
     const pixels = new Uint8Array([128, 64, 192, 255]); // Specific color
 
     const originalImage = new Image(pixels, width, height);
-    const bmpBuffer = originalImage.toBmpBuffer({ hasAlpha: false });
-    const decodedImage = Image.fromBmpBuffer(bmpBuffer);
+    const bmpBuffer = await originalImage.toBmpBuffer({ hasAlpha: false });
+    const decodedImage = await Image.fromBmpBuffer(bmpBuffer);
 
     // Verify pixel is preserved
     for (let i = 0; i < pixels.length; i++) {

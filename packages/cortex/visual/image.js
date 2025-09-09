@@ -741,14 +741,14 @@ export class Image {
    * Create Image instance from BMP buffer.
    *
    * @param {ArrayBuffer|Uint8Array} buffer - BMP image data
-   * @returns {Image} Image instance with decoded BMP data
+   * @returns {Promise<Image>} Image instance with decoded BMP data
    * @throws {Error} If BMP decoding fails
    *
    * @example
    * const bmpBuffer = readFileSync('image.bmp');
-   * const image = Image.fromBmpBuffer(bmpBuffer);
+   * const image = await Image.fromBmpBuffer(bmpBuffer);
    */
-  static fromBmpBuffer(buffer) {
+  static async fromBmpBuffer(buffer) {
     const { pixels, width, height, metadata } = decodeBMP(buffer);
     return new Image(pixels, width, height, metadata);
   }
@@ -778,14 +778,14 @@ export class Image {
    * @param {boolean} [options.hasAlpha=false] - Whether to preserve alpha channel (32-bit BMP)
    * @param {number} [options.xResolution=0] - Horizontal resolution in pixels per meter
    * @param {number} [options.yResolution=0] - Vertical resolution in pixels per meter
-   * @returns {Uint8Array} BMP encoded buffer
+   * @returns {Promise<Uint8Array>} BMP encoded buffer
    * @throws {Error} If BMP encoding fails
    *
    * @example
-   * const bmpBuffer = image.toBmpBuffer({ hasAlpha: true });
+   * const bmpBuffer = await image.toBmpBuffer({ hasAlpha: true });
    * writeFileSync('output.bmp', bmpBuffer);
    */
-  toBmpBuffer(options = {}) {
+  async toBmpBuffer(options = {}) {
     // Pixels are always available in unified Image class BMP encoding");
     return encodeBMP(this.pixels, this._width, this._height, options);
   }
