@@ -337,8 +337,10 @@ Implementor notes:
 
 - JFIF APP0: signature, version, units, densities, no thumbnail; fixed 16-byte length.
 - EXIF APP1: prefix then raw TIFF; do not split across segments; enforce length cap.
+  - If the provided EXIF blob already starts with `"Exif\0\0"`, do not prepend the prefix; set length as blob length + 2.
 - ICC APP2: split into ≤65519-byte chunks each with header and sequence; emit in order.
 - Adobe APP14: only when needed; set transform as per color mode.
+- COM (optional): if caller provides short ASCII comments, emit COM (FF FE) per comment with correct length; cap count/total size.
 
 Determinism: fixed APP order; no timestamps.
 

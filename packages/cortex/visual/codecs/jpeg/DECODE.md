@@ -374,6 +374,10 @@ RST and band state:
 
 - At each RST, reset predictors and `eobrun=0`. In AC refine, also reset any run counters.
 
+Tolerant handling of missing blocks:
+
+- In malformed progressive streams, a scan may reference a block row not yet allocated due to earlier corruption. In tolerant mode, if `component.blocks[blockRow]` is undefined, skip decoding that block (leave zeros) and continue; never throw. In strict mode, this is an error.
+
 Pitfalls to avoid:
 
 - Using natural index instead of zig-zag for `Ss/Se` band traversal; JPEG bands are in zig-zag space.
