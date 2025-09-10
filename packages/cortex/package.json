@@ -1,7 +1,7 @@
 {
   "name": "@raven-js/cortex",
   "description": "Zero-dependency machine learning, AI, and data processing library for modern JavaScript",
-  "version": "0.4.32",
+  "version": "0.4.33",
   "type": "module",
   "files": [
     "**/*.js",
