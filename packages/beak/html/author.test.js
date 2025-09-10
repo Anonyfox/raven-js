@@ -98,14 +98,13 @@ describe("author()", () => {
       assert(result.includes('<link rel="me" href="https://github.com/Anonyfox" />'));
     });
 
-    it("should generate Twitter verification and creator tag", () => {
+    it("should generate Twitter verification link", () => {
       const result = author({
         name: "Anonyfox",
         profiles: { twitter: "https://twitter.com/anonyfox" },
       });
 
       assert(result.includes('<link rel="me" href="https://twitter.com/anonyfox" />'));
-      assert(result.includes('<meta name="twitter:creator" content="@anonyfox" />'));
     });
 
     it("should generate LinkedIn verification link", () => {
@@ -139,7 +138,6 @@ describe("author()", () => {
       assert(result.includes('rel="me" href="https://github.com/Anonyfox"'));
       assert(result.includes('rel="me" href="https://twitter.com/anonyfox"'));
       assert(result.includes('rel="author" href="https://anonyfox.com"'));
-      assert(result.includes("twitter:creator"));
     });
 
     it("should handle empty profiles object", () => {
@@ -154,25 +152,14 @@ describe("author()", () => {
   });
 
   describe("Tier 4: Rich Profile", () => {
-    it("should add photo to Open Graph and Twitter", () => {
-      const result = author({
-        name: "Anonyfox",
-        photo: "/images/authors/anonyfox.jpg",
-      });
-
-      assert(result.includes('property="og:image" content="/images/authors/anonyfox.jpg"'));
-      assert(result.includes('name="twitter:image" content="/images/authors/anonyfox.jpg"'));
-    });
-
-    it("should add bio as description when no jobTitle", () => {
+    it("should include bio in rich Person schema", () => {
       const result = author({
         name: "Anonyfox",
         bio: "Creator of RavenJS toolkit",
       });
 
-      assert(result.includes('name="description" content="Creator of RavenJS toolkit"'));
-      assert(result.includes('property="og:description" content="Creator of RavenJS toolkit"'));
-      assert(result.includes('name="twitter:description" content="Creator of RavenJS toolkit"'));
+      assert(result.includes('"description": "Creator of RavenJS toolkit"'));
+      assert(result.includes("Person"));
     });
 
     it("should include photo in rich Person schema", () => {
@@ -282,7 +269,6 @@ describe("author()", () => {
       assert(result.includes('"jobTitle": "Developer"'));
       assert(result.includes('"worksFor"'));
       assert(result.includes('rel="me" href="https://twitter.com/anonyfox"'));
-      assert(result.includes("twitter:creator"));
     });
 
     it("should handle all tiers combined", () => {
@@ -306,8 +292,7 @@ describe("author()", () => {
       assert(result.includes('<meta name="reply-to" content="test@example.com" />'));
       assert(result.includes('"jobTitle": "Senior Developer"'));
       assert(result.includes('rel="me" href="https://github.com/Anonyfox"'));
-      assert(result.includes("twitter:creator"));
-      assert(result.includes('property="og:image"'));
+      assert(result.includes('"image": "/images/authors/anonyfox.jpg"'));
       assert(result.includes('"addressLocality": "Berlin, Germany"'));
       assert(result.includes('"EducationalOccupationalCredential"'));
     });

@@ -31,13 +31,13 @@ import { html } from "./index.js";
  * // TIER 3: Social Verification (unlocks platform verification links)
  * @property {Object} [profiles] - Social media profile URLs for verification
  * @property {string} [profiles.github] - GitHub profile URL (generates rel="me" link)
- * @property {string} [profiles.twitter] - Twitter profile URL (generates rel="me" + twitter:creator meta)
+ * @property {string} [profiles.twitter] - Twitter profile URL (generates rel="me" link)
  * @property {string} [profiles.linkedin] - LinkedIn profile URL (generates rel="me" link)
  * @property {string} [profiles.website] - Personal website URL (generates rel="author" link)
  *
- * // TIER 4: Rich Profile (unlocks enhanced schema + social meta tags)
- * @property {string} [photo] - Author photo/avatar URL (generates og:image + twitter:image)
- * @property {string} [bio] - Short biography (used as fallback description meta)
+ * // TIER 4: Rich Profile (unlocks enhanced schema)
+ * @property {string} [photo] - Author photo/avatar URL for structured data
+ * @property {string} [bio] - Short biography for structured data
  * @property {string} [location] - Geographic location for structured data
  * @property {string} [language] - Primary language code (ISO 639-1) for structured data
  * @property {string[]} [credentials] - Professional credentials/titles for structured data
@@ -162,7 +162,6 @@ const generateSocialVerificationMarkup = (profiles) => {
 
   if (twitter) {
     markup += html`<link rel="me" href="${twitter}" />`;
-    markup += html`<meta name="twitter:creator" content="@${twitter.split("/").pop()}" />`;
   }
 
   if (linkedin) {
@@ -185,38 +184,17 @@ const generateSocialVerificationMarkup = (profiles) => {
 const generateRichProfileMarkup = (config) => {
   const { photo, bio, location, language, credentials } = config;
 
+  // Only generate markup if there's rich profile data for structured data
   if (!photo && !bio && !location && !language && !credentials) return "";
 
   const baseSchema = createBasePersonSchema(config);
   const richSchema = enhancePersonSchema(baseSchema, config);
 
-  let markup = "";
-
-  // Add Open Graph and Twitter image meta tags
-  if (photo) {
-    markup += html`
-      <meta property="og:image" content="${photo}" />
-      <meta name="twitter:image" content="${photo}" />
-    `;
-  }
-
-  // Add description meta tags if bio exists and no jobTitle
-  if (bio && !config.jobTitle) {
-    markup += html`
-      <meta name="description" content="${bio}" />
-      <meta property="og:description" content="${bio}" />
-      <meta name="twitter:description" content="${bio}" />
-    `;
-  }
-
-  // Add enhanced Person schema
-  markup += html`
+  return html`
     <script type="application/ld+json">
       ${JSON.stringify(richSchema, null, 2)}
     </script>
   `;
-
-  return markup;
 };
 
 /**
@@ -260,7 +238,7 @@ const generateRichProfileMarkup = (config) => {
  * // → Author meta + rel="me" verification links for each platform
  *
  * @example
- * // Tier 4: Rich profile with photo and credentials
+ * // Tier 4: Rich profile with structured data
  * author({
  *   name: 'Anonyfox',
  *   photo: '/images/authors/anonyfox.jpg',
@@ -268,7 +246,7 @@ const generateRichProfileMarkup = (config) => {
  *   location: 'Berlin, Germany',
  *   credentials: ['Google Developer Expert']
  * });
- * // → Complete markup with images, bio, location, and credential schema
+ * // → Complete markup with enhanced Person schema including images, bio, location, and credentials
  */
 /**
  * Generates progressive author markup with SEO optimization tiers.
