@@ -18,22 +18,206 @@ import { html } from "./index.js";
 
 /**
  * @typedef {Object} AuthorConfig
- * @property {string} name - Author's full name (required)
- * @property {string} [email] - Author's email for reply-to meta tag
+ *
+ * // TIER 1: Always Required - Core Attribution
+ * @property {string} name - Author's full name
+ *
+ * // TIER 2: Professional Identity (unlocks structured data Person schema)
+ * @property {string} [email] - Author's email for structured data and reply-to meta
  * @property {string} [jobTitle] - Professional title for structured data
- * @property {string} [organization] - Organization/company name
- * @property {string} [website] - Personal website URL (for Person schema)
- * @property {Object} [profiles] - Social media profile URLs
- * @property {string} [profiles.github] - GitHub profile URL
- * @property {string} [profiles.twitter] - Twitter profile URL
- * @property {string} [profiles.linkedin] - LinkedIn profile URL
- * @property {string} [profiles.website] - Personal website URL
- * @property {string} [photo] - Author photo/avatar URL
- * @property {string} [bio] - Short author biography
- * @property {string} [location] - Geographic location
- * @property {string} [language] - Primary language code (ISO 639-1)
- * @property {string[]} [credentials] - Professional credentials/titles
+ * @property {string} [organization] - Organization/company name for structured data
+ * @property {string} [website] - Personal website URL for Person schema
+ *
+ * // TIER 3: Social Verification (unlocks platform verification links)
+ * @property {Object} [profiles] - Social media profile URLs for verification
+ * @property {string} [profiles.github] - GitHub profile URL (generates rel="me" link)
+ * @property {string} [profiles.twitter] - Twitter profile URL (generates rel="me" + twitter:creator meta)
+ * @property {string} [profiles.linkedin] - LinkedIn profile URL (generates rel="me" link)
+ * @property {string} [profiles.website] - Personal website URL (generates rel="author" link)
+ *
+ * // TIER 4: Rich Profile (unlocks enhanced schema + social meta tags)
+ * @property {string} [photo] - Author photo/avatar URL (generates og:image + twitter:image)
+ * @property {string} [bio] - Short biography (used as fallback description meta)
+ * @property {string} [location] - Geographic location for structured data
+ * @property {string} [language] - Primary language code (ISO 639-1) for structured data
+ * @property {string[]} [credentials] - Professional credentials/titles for structured data
  */
+
+/**
+ * Creates base Person schema object for structured data.
+ *
+ * @param {AuthorConfig} config - Author configuration
+ * @returns {Object} Base Person schema object
+ */
+const createBasePersonSchema = (config) => {
+  const { name, jobTitle, organization, email, website } = config;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name,
+    ...(jobTitle && { jobTitle }),
+    ...(organization && {
+      worksFor: {
+        "@type": "Organization",
+        name: organization,
+      },
+    }),
+    ...(email && { email }),
+    ...(website && { url: website }),
+  };
+};
+
+/**
+ * Enhances Person schema with rich profile properties.
+ *
+ * @param {Object} baseSchema - Base Person schema to enhance
+ * @param {AuthorConfig} config - Author configuration
+ * @returns {Object} Enhanced Person schema object
+ */
+const enhancePersonSchema = (baseSchema, config) => {
+  const { photo, bio, location, language, credentials } = config;
+
+  return {
+    ...baseSchema,
+    ...(photo && { image: photo }),
+    ...(bio && { description: bio }),
+    ...(location && { address: { "@type": "PostalAddress", addressLocality: location } }),
+    ...(language && { knowsLanguage: language }),
+    ...(credentials &&
+      credentials.length > 0 && {
+        hasCredential: credentials.map((credential) => ({
+          "@type": "EducationalOccupationalCredential",
+          name: credential,
+        })),
+      }),
+  };
+};
+
+/**
+ * Generates basic author meta tags (Tier 1).
+ *
+ * @param {AuthorConfig} config - Author configuration
+ * @returns {string} Basic meta tag markup
+ */
+const generateBasicMeta = (config) => {
+  const { name, email } = config;
+
+  let markup = html`
+    <meta name="author" content="${name}" />
+  `;
+
+  if (email) {
+    markup += html`
+      <meta name="reply-to" content="${email}" />
+    `;
+  }
+
+  return markup;
+};
+
+/**
+ * Generates Person schema markup (Tier 2).
+ *
+ * @param {AuthorConfig} config - Author configuration
+ * @returns {string} Person schema markup
+ */
+const generatePersonSchemaMarkup = (config) => {
+  const { jobTitle, organization } = config;
+
+  if (!jobTitle && !organization) return "";
+
+  const schema = createBasePersonSchema(config);
+
+  return html`
+    <script type="application/ld+json">
+      ${JSON.stringify(schema, null, 2)}
+    </script>
+  `;
+};
+
+/**
+ * @typedef {Object} AuthorProfiles
+ * @property {string} [github] - GitHub profile URL
+ * @property {string} [twitter] - Twitter profile URL
+ * @property {string} [linkedin] - LinkedIn profile URL
+ * @property {string} [website] - Personal website URL
+ */
+
+/**
+ * Generates social verification markup (Tier 3).
+ *
+ * @param {AuthorProfiles} [profiles] - Social media profiles
+ * @returns {string} Social verification markup
+ */
+const generateSocialVerificationMarkup = (profiles) => {
+  if (!profiles) return "";
+
+  const { github, twitter, linkedin, website } = profiles;
+  let markup = "";
+
+  if (github) {
+    markup += html`<link rel="me" href="${github}" />`;
+  }
+
+  if (twitter) {
+    markup += html`<link rel="me" href="${twitter}" />`;
+    markup += html`<meta name="twitter:creator" content="@${twitter.split("/").pop()}" />`;
+  }
+
+  if (linkedin) {
+    markup += html`<link rel="me" href="${linkedin}" />`;
+  }
+
+  if (website) {
+    markup += html`<link rel="author" href="${website}" />`;
+  }
+
+  return markup;
+};
+
+/**
+ * Generates rich profile markup (Tier 4).
+ *
+ * @param {AuthorConfig} config - Author configuration
+ * @returns {string} Rich profile markup
+ */
+const generateRichProfileMarkup = (config) => {
+  const { photo, bio, location, language, credentials } = config;
+
+  if (!photo && !bio && !location && !language && !credentials) return "";
+
+  const baseSchema = createBasePersonSchema(config);
+  const richSchema = enhancePersonSchema(baseSchema, config);
+
+  let markup = "";
+
+  // Add Open Graph and Twitter image meta tags
+  if (photo) {
+    markup += html`
+      <meta property="og:image" content="${photo}" />
+      <meta name="twitter:image" content="${photo}" />
+    `;
+  }
+
+  // Add description meta tags if bio exists and no jobTitle
+  if (bio && !config.jobTitle) {
+    markup += html`
+      <meta name="description" content="${bio}" />
+      <meta property="og:description" content="${bio}" />
+      <meta name="twitter:description" content="${bio}" />
+    `;
+  }
+
+  // Add enhanced Person schema
+  markup += html`
+    <script type="application/ld+json">
+      ${JSON.stringify(richSchema, null, 2)}
+    </script>
+  `;
+
+  return markup;
+};
 
 /**
  * Generates progressive author markup with SEO optimization tiers.
@@ -86,117 +270,22 @@ import { html } from "./index.js";
  * });
  * // → Complete markup with images, bio, location, and credential schema
  */
+/**
+ * Generates progressive author markup with SEO optimization tiers.
+ *
+ * @param {AuthorConfig} config - Progressive author configuration
+ * @returns {string} Generated author HTML markup
+ */
 export const author = (config) => {
   if (!config || typeof config !== "object") return "";
   const { name } = config;
   if (!name || typeof name !== "string") return "";
 
-  // Tier 1: Basic attribution (always present)
-  let markup = html`
-		<meta name="author" content="${name}" />
-	`;
-
-  // Add reply-to if email provided
-  if (config.email) {
-    markup += html`
-			<meta name="reply-to" content="${config.email}" />
-		`;
-  }
-
-  // Tier 2: Professional identity (structured data)
-  if (config.jobTitle || config.organization) {
-    const personSchema = {
-      "@context": "https://schema.org",
-      "@type": "Person",
-      name,
-      ...(config.jobTitle && { jobTitle: config.jobTitle }),
-      ...(config.organization && {
-        worksFor: {
-          "@type": "Organization",
-          name: config.organization,
-        },
-      }),
-      ...(config.email && { email: config.email }),
-      ...(config.website && { url: config.website }),
-    };
-
-    markup += html`
-			<script type="application/ld+json">
-				${JSON.stringify(personSchema, null, 2)}
-			</script>
-		`;
-  }
-
-  // Tier 3: Social platform verification
-  if (config.profiles) {
-    const { github, twitter, linkedin, website } = config.profiles;
-
-    if (github) {
-      markup += html`<link rel="me" href="${github}" />`;
-    }
-    if (twitter) {
-      markup += html`<link rel="me" href="${twitter}" />`;
-      markup += html`<meta name="twitter:creator" content="@${twitter.split("/").pop()}" />`;
-    }
-    if (linkedin) {
-      markup += html`<link rel="me" href="${linkedin}" />`;
-    }
-    if (website) {
-      markup += html`<link rel="author" href="${website}" />`;
-    }
-  }
-
-  // Tier 4: Rich profile enhancements
-  if (config.photo || config.bio || config.location || config.language || config.credentials) {
-    // Enhanced Person schema for rich profiles
-    const richPersonSchema = {
-      "@context": "https://schema.org",
-      "@type": "Person",
-      name,
-      ...(config.photo && { image: config.photo }),
-      ...(config.bio && { description: config.bio }),
-      ...(config.location && { address: { "@type": "PostalAddress", addressLocality: config.location } }),
-      ...(config.language && { knowsLanguage: config.language }),
-      ...(config.credentials &&
-        config.credentials.length > 0 && {
-          hasCredential: config.credentials.map((credential) => ({
-            "@type": "EducationalOccupationalCredential",
-            name: credential,
-          })),
-        }),
-      ...(config.jobTitle && { jobTitle: config.jobTitle }),
-      ...(config.organization && {
-        worksFor: {
-          "@type": "Organization",
-          name: config.organization,
-        },
-      }),
-      ...(config.email && { email: config.email }),
-    };
-
-    // Add Open Graph author image
-    if (config.photo) {
-      markup += html`
-				<meta property="og:image" content="${config.photo}" />
-				<meta name="twitter:image" content="${config.photo}" />
-			`;
-    }
-
-    // Add bio as description if no other description exists
-    if (config.bio && !config.jobTitle) {
-      markup += html`
-				<meta name="description" content="${config.bio}" />
-				<meta property="og:description" content="${config.bio}" />
-				<meta name="twitter:description" content="${config.bio}" />
-			`;
-    }
-
-    markup += html`
-			<script type="application/ld+json">
-				${JSON.stringify(richPersonSchema, null, 2)}
-			</script>
-		`;
-  }
+  // Clean orchestration through pure functions
+  let markup = generateBasicMeta(config);
+  markup += generatePersonSchemaMarkup(config);
+  markup += generateSocialVerificationMarkup(config.profiles);
+  markup += generateRichProfileMarkup(config);
 
   return markup;
 };
