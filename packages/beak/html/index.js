@@ -317,7 +317,6 @@ export function safeHtml(strings, ...values) {
 // Export utilities
 export { author } from "./author.js";
 export { canonical } from "./canonical.js";
-export { discord } from "./discord.js";
 export { linkedin } from "./linkedin.js";
 export { openGraph } from "./open-graph.js";
 export { pinterest } from "./pinterest.js";
