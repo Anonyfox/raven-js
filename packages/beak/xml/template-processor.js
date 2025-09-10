@@ -16,8 +16,7 @@
 import { escapeXml } from "./escape-xml.js";
 
 // Raven-fast trim detection - extracted for V8 optimization
-const needsTrim = (/** @type {string} */ str) =>
-	str.charAt(0) <= " " || str.charAt(str.length - 1) <= " ";
+const needsTrim = (/** @type {string} */ str) => str.charAt(0) <= " " || str.charAt(str.length - 1) <= " ";
 
 /**
  * Process XML values with context-aware formatting (trusted mode).
@@ -32,35 +31,32 @@ const needsTrim = (/** @type {string} */ str) =>
  * @returns {string} Processed XML content (no escaping)
  */
 function processXmlValue(value) {
-	if (value == null || value === false) return "";
-	if (value === true) return "true";
-	if (typeof value === "string") return value;
-	if (typeof value === "number") return String(value);
+  if (value == null || value === false) return "";
+  if (value === true) return "true";
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
 
-	if (Array.isArray(value)) {
-		return value
-			.filter((v) => v != null && v !== false)
-			.map((v) => processXmlValue(v))
-			.join("");
-	}
+  if (Array.isArray(value)) {
+    return value
+      .filter((v) => v != null && v !== false)
+      .map((v) => processXmlValue(v))
+      .join("");
+  }
 
-	if (typeof value === "object") {
-		// Convert object to attribute pairs: {host: "localhost", port: 3306} → `host="localhost" port="3306"`
-		return Object.entries(value)
-			.filter(([_, v]) => v != null)
-			.map(([key, val]) => {
-				// Kebab-case conversion for attribute names
-				const attrName = key.replace(
-					/[A-Z]/g,
-					(match) => `-${match.toLowerCase()}`,
-				);
-				const attrValue = escapeXml(String(val));
-				return `${attrName}="${attrValue}"`;
-			})
-			.join(" ");
-	}
+  if (typeof value === "object") {
+    // Convert object to attribute pairs: {host: "localhost", port: 3306} → `host="localhost" port="3306"`
+    return Object.entries(value)
+      .filter(([_, v]) => v != null)
+      .map(([key, val]) => {
+        // Kebab-case conversion for attribute names
+        const attrName = key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`);
+        const attrValue = escapeXml(String(val));
+        return `${attrName}="${attrValue}"`;
+      })
+      .join(" ");
+  }
 
-	return String(value);
+  return String(value);
 }
 
 /**
@@ -104,41 +100,41 @@ function processXmlValue(value) {
  * // → `<server bind-host="0.0.0.0" max-connections="100"/>`
  */
 export function processXmlTemplate(strings, ...values) {
-	const valueCount = values.length;
+  const valueCount = values.length;
 
-	// Tier 0: Static-only template (no interpolations)
-	if (valueCount === 0) {
-		const result = strings[0];
-		return needsTrim(result) ? result.trim() : result;
-	}
+  // Tier 0: Static-only template (no interpolations)
+  if (valueCount === 0) {
+    const result = strings[0];
+    return needsTrim(result) ? result.trim() : result;
+  }
 
-	// Tier 1: Single interpolation (most common case)
-	if (valueCount === 1) {
-		const result = strings[0] + processXmlValue(values[0]) + strings[1];
-		return needsTrim(result) ? result.trim() : result;
-	}
+  // Tier 1: Single interpolation (most common case)
+  if (valueCount === 1) {
+    const result = strings[0] + processXmlValue(values[0]) + strings[1];
+    return needsTrim(result) ? result.trim() : result;
+  }
 
-	// Tier 2: Few interpolations (2-3 values) - StringBuilder pattern
-	if (valueCount <= 3) {
-		let result = strings[0];
-		for (let i = 0; i < valueCount; i++) {
-			result += processXmlValue(values[i]) + strings[i + 1];
-		}
-		return needsTrim(result) ? result.trim() : result;
-	}
+  // Tier 2: Few interpolations (2-3 values) - StringBuilder pattern
+  if (valueCount <= 3) {
+    let result = strings[0];
+    for (let i = 0; i < valueCount; i++) {
+      result += processXmlValue(values[i]) + strings[i + 1];
+    }
+    return needsTrim(result) ? result.trim() : result;
+  }
 
-	// Tier 3: Many interpolations (4+ values) - Pre-sized array join
-	const capacity = strings.length + valueCount;
-	const parts = new Array(capacity);
-	let index = 0;
+  // Tier 3: Many interpolations (4+ values) - Pre-sized array join
+  const capacity = strings.length + valueCount;
+  const parts = new Array(capacity);
+  let index = 0;
 
-	// Interleave strings and processed values
-	for (let i = 0; i < valueCount; i++) {
-		parts[index++] = strings[i];
-		parts[index++] = processXmlValue(values[i]);
-	}
-	parts[index] = strings[valueCount];
+  // Interleave strings and processed values
+  for (let i = 0; i < valueCount; i++) {
+    parts[index++] = strings[i];
+    parts[index++] = processXmlValue(values[i]);
+  }
+  parts[index] = strings[valueCount];
 
-	const result = parts.join("");
-	return needsTrim(result) ? result.trim() : result;
+  const result = parts.join("");
+  return needsTrim(result) ? result.trim() : result;
 }

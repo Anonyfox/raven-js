@@ -111,5 +111,6 @@ export function cdata(content) {
   return `<![CDATA[${safeContent}]]>`;
 }
 
+export { feed } from "./feed.js";
 // Re-export XML utilities
 export { sitemap } from "./sitemap.js";
