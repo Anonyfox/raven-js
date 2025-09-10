@@ -20,7 +20,6 @@ export { author } from "./html/author.js";
 export { canonical } from "./html/canonical.js";
 export { discord } from "./html/discord.js";
 export { html, safeHtml } from "./html/index.js";
-export { instagram } from "./html/instagram.js";
 export { linkedin } from "./html/linkedin.js";
 export { openGraph } from "./html/open-graph.js";
 export { pinterest } from "./html/pinterest.js";
