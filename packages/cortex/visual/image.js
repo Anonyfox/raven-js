@@ -15,6 +15,7 @@
  */
 
 import { decodeBMP, encodeBMP } from "./codecs/bmp/index.js";
+import { decodeJPEG } from "./codecs/jpeg/index.js";
 import { decodePNG, encodePNG } from "./codecs/png/index.js";
 import {
   adjustBrightness,
@@ -92,6 +93,23 @@ export class Image {
   static async fromPngBuffer(buffer) {
     const { pixels, width, height, metadata } = await decodePNG(buffer);
     return new Image(pixels, width, height, metadata);
+  }
+
+  /**
+   * Create Image instance from JPEG buffer.
+   *
+   * @param {ArrayBuffer|Uint8Array} buffer - JPEG image data
+   * @param {Object} [options] - JPEG decoding options
+   * @returns {Promise<Image>} Image instance with decoded JPEG data
+   * @throws {Error} If JPEG decoding fails
+   *
+   * @example
+   * const jpegBuffer = readFileSync('image.jpg');
+   * const image = await Image.fromJpegBuffer(jpegBuffer);
+   */
+  static async fromJpegBuffer(buffer, options = {}) {
+    const result = /** @type {any} */ (await decodeJPEG(buffer, options));
+    return new Image(result.pixels, result.width, result.height, result.metadata);
   }
 
   /**

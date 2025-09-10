@@ -9,10 +9,17 @@
 /**
  * @file Pure JavaScript image processing with zero dependencies.
  *
- * Platform-native image manipulation supporting PNG, WebP, and GIF formats.
+ * Platform-native image manipulation supporting JPEG, PNG, BMP, WebP, and GIF formats.
  * Provides uniform API for decoding, transforming, and encoding images using only
  * modern JavaScript features and Node.js built-ins. Runs everywhere without native
  * dependencies or WebAssembly complexity.
+ *
+ * @example
+ * // Decode JPEG image
+ * import { decodeJPEG } from "@raven-js/cortex/visual";
+ *
+ * const result = await decodeJPEG(jpegBuffer);
+ * console.log(`Decoded ${result.width}x${result.height} JPEG`);
  *
  * @example
  * // Create image from buffer
@@ -29,6 +36,7 @@
  */
 
 export { decodeBMP, encodeBMP } from "./codecs/bmp/index.js";
+export { decodeJPEG, JPEGDecoder } from "./codecs/jpeg/index.js";
 // Codec functions (new architecture)
 export { decodePNG, encodePNG } from "./codecs/png/index.js";
 // Base Image class
