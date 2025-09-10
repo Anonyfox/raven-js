@@ -10,7 +10,7 @@
   <img src="./media/logo.webp" alt="Beak Logo" width="200" height="200" />
 </div>
 
-**Zero-dependency template engine for modern JavaScript.** Tagged template literals for HTML, CSS, SQL, XML, and Markdown with platform-native performance.
+**Zero-dependency template engine for modern JavaScript.** Tagged template literals for HTML, CSS, SQL, XML, and Markdown with progressive SEO generators and platform-native performance.
 
 ## Purpose
 
@@ -31,9 +31,12 @@ npm install @raven-js/beak
 Import template functions and use them as tagged template literals:
 
 ```javascript
-import { html, css, md, sh, sql } from "@raven-js/beak";
+import {
+  html, css, md, sh, sql,
+  openGraph, canonical, feed, sitemap
+} from "@raven-js/beak";
 
-// HTML with XSS protection and array flattening
+// Core HTML generation with progressive features
 const page = html`
   <div class="${isActive ? "active" : "inactive"}">
     <h1>${title}</h1>
@@ -49,12 +52,49 @@ const styles = css`
   }
 `;
 
-// SQL with automatic character escaping
+// SQL with injection prevention
 const query = sql`
   SELECT * FROM users
   WHERE name = '${userName}' AND status = '${status}'
 `;
+
+// Markdown with context-aware composition
+const content = md`
+  # ${title}
+
+  ${description}
+
+  ## Features
+
+  ${features.map(f => `- ${f}`).join('\n')}
+`;
+
+// Progressive SEO generators
+const meta = html`
+  ${canonical({ domain: 'example.com', path: '/article' })}
+  ${openGraph({ title, description, image: '/hero.jpg' })}
+`;
+
+// XML feeds and sitemaps
+const rssFeed = feed({
+  title: 'Blog Posts',
+  description: 'Latest articles',
+  link: 'https://blog.example.com',
+  items: posts
+});
+
+const xmlSitemap = sitemap({
+  domain: 'example.com',
+  pages: posts.map(p => ({ path: p.slug, priority: 0.8 }))
+});
 ```
+
+## Content-As-Code
+
+Everything becomes programmable JavaScript => no separate build pipelines, no multiple file types, no synchronization headaches.
+
+**Traditional:** `styles.css` + `template.html` + `component.js` = coordination nightmare
+**Beak:** Single JavaScript file with all content as template literals = unified tooling
 
 **Security options for untrusted content:**
 
@@ -70,8 +110,10 @@ const escaped = escapeHtml('<script>alert("xss")</script>');
 
 ```javascript
 // Import only what you need
-import { html } from "@raven-js/beak/html";
-import { openGraph } from "@raven-js/beak/html";
+import { html, safeHtml } from "@raven-js/beak/html";
+import { openGraph, canonical, author, robots, twitter } from "@raven-js/beak/html";
+import { xml, feed, sitemap } from "@raven-js/beak/xml";
+import { md, markdownToHTML } from "@raven-js/beak/md";
 ```
 
 ## IDE Integration
@@ -79,43 +121,67 @@ import { openGraph } from "@raven-js/beak/html";
 VS Code and Cursor plugin provides syntax highlighting and IntelliSense for all template types:
 
 ```bash
-ext install ravenjs.beak-templates
+TODO: not yet published, see the plugins/vscode folder to get it
 ```
 
 Zero configuration required. Templates get full IDE support with automatic completion and error detection.
 
 ## SEO Integration
 
-Generate platform-optimized meta tags for social media and search engines:
+Progressive generators that scale from basic meta tags to enterprise content ecosystems:
 
 ```javascript
-import { openGraph, twitter, robots } from "@raven-js/beak/html";
+import { openGraph, canonical, author, robots, twitter } from "@raven-js/beak/html";
+import { feed, sitemap } from "@raven-js/beak/xml";
 
-const meta = openGraph({
-  title: "Page Title",
-  description: "Page description",
-  domain: "example.com",
-  path: "/page",
-  imageUrl: "/og-image.jpg",
+// Basic social sharing
+const basicMeta = openGraph({
+  title: "Article Title",
+  description: "Article description",
+  image: "/hero.jpg"
+});
+
+// Advanced content specialization
+const advancedMeta = html`
+  ${canonical({ domain: 'example.com', path: '/article', variants: { amp: '/amp/article' } })}
+  ${openGraph({
+    title: "Article Title",
+    description: "Article description",
+    article: {
+      authors: ['Author Name'],
+      publishedTime: '2024-01-15T10:00:00Z',
+      section: 'Technology'
+    }
+  })}
+  ${author({ name: 'Author Name', profiles: { github: 'https://github.com/author' } })}
+  ${robots({ maxSnippet: 160, maxImagePreview: 'large' })}
+  ${twitter({ card: 'summary_large_image', site: '@handle' })}
+`;
+
+// Complete content ecosystem
+const contentSystem = (posts) => ({
+  html: posts.map(post => html`...${openGraph(post)}...`),
+  rss: feed({ format: 'rss', title: 'Blog', items: posts }),
+  atom: feed({ format: 'atom', title: 'Blog', items: posts }),
+  sitemap: sitemap({ domain: 'example.com', pages: posts.map(p => ({ path: p.slug })) })
 });
 ```
 
-Covers Open Graph, Twitter Cards, canonical URLs, robots directives, and structured data with dual name/property attributes for maximum compatibility.
+Supports Open Graph, Twitter Cards, canonical URLs, robots directives, structured data, RSS/Atom feeds, and XML sitemaps with progressive complexity tiers.
 
 ## Architecture
 
 **Core template processors:**
 
-| Module  | Purpose                          |
-| ------- | -------------------------------- |
-| `html/` | XSS protection, event binding    |
-| `css/`  | Minification, object transforms  |
-| `md/`   | GitHub Flavored Markdown         |
-| `js/`   | Script tag variants, filtering   |
-| `sh/`   | Shell command assembly           |
-| `sql/`  | Injection prevention             |
-| `seo/`  | Meta generators, structured data |
-| `xml/`  | Well-formed XML with escaping    |
+| Module  | Purpose                         | Advanced Features                                                           |
+| ------- | ------------------------------- | --------------------------------------------------------------------------- |
+| `html/` | XSS protection, event binding   | Progressive SEO generators (Open Graph, Twitter, Canonical, Author, Robots) |
+| `css/`  | Minification, object transforms | Object-to-kebab-case conversion                                             |
+| `md/`   | GitHub Flavored Markdown        | Context-aware composition + HTML/text rendering                             |
+| `js/`   | Script tag variants, filtering  | Script generation utilities                                                 |
+| `sh/`   | Shell command assembly          | Command composition                                                         |
+| `sql/`  | Injection prevention            | Query building with escaping                                                |
+| `xml/`  | Well-formed XML with escaping   | Feed generators (RSS/Atom) + XML sitemaps                                   |
 
 **Performance optimization:**
 
