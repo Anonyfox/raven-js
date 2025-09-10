@@ -344,50 +344,6 @@ describe("canonical()", () => {
       assert(result.includes('<link rel="next"'));
     });
 
-    it("should generate social media canonical overrides", () => {
-      const result = canonical({
-        domain: "example.com",
-        path: "/article",
-        strategy: {
-          social: {
-            twitter: "https://twitter.com/status/123",
-            facebook: "https://facebook.com/post/456",
-          },
-        },
-      });
-
-      assert(result.includes('property="twitter:url"'));
-      assert(result.includes('property="og:url"'));
-      assert(result.includes('content="https://twitter.com/status/123"'));
-      assert(result.includes('content="https://facebook.com/post/456"'));
-    });
-
-    it("should generate Twitter-only social canonical", () => {
-      const result = canonical({
-        domain: "example.com",
-        path: "/article",
-        strategy: {
-          social: { twitter: "https://twitter.com/status/123" },
-        },
-      });
-
-      assert(result.includes('property="twitter:url"'));
-      assert(!result.includes('property="og:url"'));
-    });
-
-    it("should generate Facebook-only social canonical", () => {
-      const result = canonical({
-        domain: "example.com",
-        path: "/article",
-        strategy: {
-          social: { facebook: "https://facebook.com/post/456" },
-        },
-      });
-
-      assert(result.includes('property="og:url"'));
-      assert(!result.includes('property="twitter:url"'));
-    });
-
     it("should handle empty strategy object", () => {
       const result = canonical({
         domain: "example.com",
@@ -398,7 +354,6 @@ describe("canonical()", () => {
       assert(result.includes('<link rel="canonical"'));
       assert(!result.includes('rel="prev"'));
       assert(!result.includes('rel="next"'));
-      assert(!result.includes('property="twitter:url"'));
     });
   });
 
@@ -456,7 +411,6 @@ describe("canonical()", () => {
         },
         strategy: {
           paginated: { next: "/article?page=2" },
-          social: { twitter: "https://twitter.com/status/123" },
         },
       });
 
@@ -467,7 +421,6 @@ describe("canonical()", () => {
       assert(result.includes('hreflang="en-US"'));
       assert(result.includes('hreflang="es-ES"'));
       assert(result.includes('rel="next"'));
-      assert(result.includes('property="twitter:url"'));
     });
   });
 
@@ -533,7 +486,6 @@ describe("canonical()", () => {
         path: "/article",
         strategy: {
           paginated: {},
-          social: {},
           syndicated: [],
         },
       });
@@ -541,7 +493,6 @@ describe("canonical()", () => {
       assert(result.includes('<link rel="canonical"'));
       assert(!result.includes('rel="prev"'));
       assert(!result.includes('rel="next"'));
-      assert(!result.includes('property="twitter:url"'));
     });
   });
 
