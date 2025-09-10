@@ -6,8 +6,8 @@
  * @see {@link https://anonyfox.com}
  */
 
-import { html } from "../html/index.js";
-import { absoluteUrl } from "./utils.js";
+import { normalizeUrl } from "../html/url.js";
+import { xml } from "./index.js";
 
 /**
  *
@@ -36,7 +36,7 @@ import { absoluteUrl } from "./utils.js";
  * @returns {string} The generated XML sitemap as a string
  *
  * @example
- * import { sitemap } from '@raven-js/beak/seo';
+ * import { sitemap } from '@raven-js/beak/xml';
  *
  * const xml = sitemap({
  *   domain: 'example.com',
@@ -82,25 +82,25 @@ import { absoluteUrl } from "./utils.js";
  * });
  */
 export const sitemap = ({ domain, pages, lastmod, changefreq, priority }) => {
-	const defaultLastmod = new Date().toISOString();
-	const defaultChangefreq = "weekly";
-	const defaultPriority = "0.8";
+  const defaultLastmod = new Date().toISOString();
+  const defaultChangefreq = "weekly";
+  const defaultPriority = "0.8";
 
-	const entries = pages.map((/** @type {any} */ page) => {
-		const url = domain ? absoluteUrl(page.path, domain) : page.path;
-		const pageLastmod = page.lastmod || lastmod || defaultLastmod;
-		const pageChangefreq = page.changefreq || changefreq || defaultChangefreq;
-		const pagePriority = page.priority || priority || defaultPriority;
+  const entries = pages.map((/** @type {any} */ page) => {
+    const url = domain ? normalizeUrl(page.path, domain) : page.path;
+    const pageLastmod = page.lastmod || lastmod || defaultLastmod;
+    const pageChangefreq = page.changefreq || changefreq || defaultChangefreq;
+    const pagePriority = page.priority || priority || defaultPriority;
 
-		return html`<url>
+    return xml`<url>
         <loc>${url}</loc>
         <lastmod>${pageLastmod}</lastmod>
         <changefreq>${pageChangefreq}</changefreq>
         <priority>${pagePriority}</priority>
       </url>`;
-	});
+  });
 
-	return html`<?xml version="1.0" encoding="UTF-8"?>
+  return xml`<?xml version="1.0" encoding="UTF-8"?>
       <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
         ${entries.join("\n")}
       </urlset>`;

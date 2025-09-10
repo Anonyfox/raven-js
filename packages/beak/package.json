@@ -37,10 +37,6 @@
       "import": "./sql/index.js",
       "types": "./sql/index.js"
     },
-    "./seo": {
-      "import": "./seo/index.js",
-      "types": "./seo/index.js"
-    },
     "./highlight": {
       "import": "./highlight/index.js",
       "types": "./highlight/index.js"
@@ -61,7 +57,7 @@
     "test": "npm run nest:validate && npm run test:types && npm run test:style && npm run test:code",
     "test:code": "node --no-warnings --test --test-reporter=dot",
     "test:coverage": "node --no-warnings --test --experimental-test-coverage --test-coverage-exclude='**/*.test.js'",
-    "test:style": "npx biome lint --error-on-warnings index.js ./seo ./html ./css ./js ./md ./sql ./xml ./sh",
+    "test:style": "npx biome lint --error-on-warnings index.js ./html ./css ./js ./md ./sql ./xml ./sh",
     "test:types": "tsc --noEmit --project jsconfig.json"
   },
   "keywords": [

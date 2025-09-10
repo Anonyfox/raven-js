@@ -14,11 +14,22 @@
  * comprehensive SEO utilities. Main entry point for complete beak functionality.
  */
 
+// Perfect tree-shaking: Direct re-exports from implementation files (no intermediate objects)
 export { css, style } from "./css/index.js";
+export { author } from "./html/author.js";
+export { canonical } from "./html/canonical.js";
+export { discord } from "./html/discord.js";
 export { html, safeHtml } from "./html/index.js";
+export { instagram } from "./html/instagram.js";
+export { linkedin } from "./html/linkedin.js";
+export { openGraph } from "./html/open-graph.js";
+export { pinterest } from "./html/pinterest.js";
+export { robots } from "./html/robots.js";
+export { twitter } from "./html/twitter.js";
+export { youtube } from "./html/youtube.js";
 export { js, script, scriptAsync, scriptDefer } from "./js/index.js";
 export * from "./md/index.js";
-export * from "./seo/index.js";
 export { sh } from "./sh/index.js";
 export { sql } from "./sql/index.js";
 export { cdata, xml } from "./xml/index.js";
+export { sitemap } from "./xml/sitemap.js";

@@ -61,19 +61,19 @@ const TEMPLATE_CACHE = new WeakMap();
  * xml`<users>${items}</users>`
  */
 export function xml(strings, ...values) {
-	// Check cache for compiled template
-	let fn = TEMPLATE_CACHE.get(strings);
-	if (!fn) {
-		// Create a bound version that passes through the template strings
-		/**
-		 * @param {...any} vals
-		 * @returns {string}
-		 */
-		fn = (...vals) => processXmlTemplate(strings, ...vals);
-		TEMPLATE_CACHE.set(strings, fn);
-	}
+  // Check cache for compiled template
+  let fn = TEMPLATE_CACHE.get(strings);
+  if (!fn) {
+    // Create a bound version that passes through the template strings
+    /**
+     * @param {...any} vals
+     * @returns {string}
+     */
+    fn = (...vals) => processXmlTemplate(strings, ...vals);
+    TEMPLATE_CACHE.set(strings, fn);
+  }
 
-	return fn(...values);
+  return fn(...values);
 }
 
 /**
@@ -106,7 +106,10 @@ export function xml(strings, ...values) {
  * `
  */
 export function cdata(content) {
-	const stringContent = content == null ? "" : String(content);
-	const safeContent = escapeCdata(stringContent);
-	return `<![CDATA[${safeContent}]]>`;
+  const stringContent = content == null ? "" : String(content);
+  const safeContent = escapeCdata(stringContent);
+  return `<![CDATA[${safeContent}]]>`;
 }
+
+// Re-export XML utilities
+export { sitemap } from "./sitemap.js";

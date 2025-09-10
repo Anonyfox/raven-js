@@ -71,7 +71,7 @@ const escaped = escapeHtml('<script>alert("xss")</script>');
 ```javascript
 // Import only what you need
 import { html } from "@raven-js/beak/html";
-import { openGraph } from "@raven-js/beak/seo";
+import { openGraph } from "@raven-js/beak/html";
 ```
 
 ## IDE Integration
@@ -89,7 +89,7 @@ Zero configuration required. Templates get full IDE support with automatic compl
 Generate platform-optimized meta tags for social media and search engines:
 
 ```javascript
-import { openGraph, twitter, robots } from "@raven-js/beak/seo";
+import { openGraph, twitter, robots } from "@raven-js/beak/html";
 
 const meta = openGraph({
   title: "Page Title",
