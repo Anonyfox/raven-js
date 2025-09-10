@@ -63,30 +63,43 @@ import { escapeHtml, html } from "./index.js";
 
 /**
  * @typedef {Object} RobotsConfig
- * @property {boolean} [index=true] - Basic indexing control
- * @property {boolean} [follow=true] - Basic following control
- * @property {boolean} [archive=true] - Archive control
- * @property {boolean} [snippet=true] - Snippet control
- * @property {boolean} [imageindex=true] - Image indexing control
- * @property {boolean} [cache=true] - Cache control
- * @property {number} [maxSnippet] - Maximum snippet length
- * @property {number|'none'|'standard'|'large'} [maxImagePreview] - Image preview size
- * @property {number} [maxVideoPreview] - Video preview duration
- * @property {string} [unavailableAfter] - Content expiration date
- * @property {boolean} [googlebot=true] - Google bot control
- * @property {boolean} [bingbot=true] - Bing bot control
- * @property {boolean} [slurp=true] - Yahoo bot control
- * @property {boolean} [duckduckbot=true] - DuckDuckGo bot control
- * @property {number} [crawlDelay] - Crawl delay
- * @property {string} [host] - Preferred host
- * @property {string} [contentType] - Content type for defaults
- * @property {boolean} [isStaging=false] - Staging environment
- * @property {boolean} [isPrivate=false] - Private content
- * @property {boolean} [isPaid=false] - Paid content
- * @property {string} [locale] - Content locale
- * @property {string[]} [sitemaps] - Sitemap URLs
- * @property {Object} [news] - News directives
- * @property {Object} [ecommerce] - E-commerce directives
+ *
+ * **Tier 1 (Basic SEO Control):** Essential indexing and crawling directives
+ * @property {boolean} [index=true] - Allow/disallow page indexing
+ * @property {boolean} [follow=true] - Allow/disallow link following
+ *
+ * **Tier 2 (Advanced Crawling Directives):** Enhanced search result control
+ * @property {boolean} [archive=true] - Allow/disallow cached page copies
+ * @property {boolean} [snippet=true] - Allow/disallow text snippets in search results
+ * @property {boolean} [imageindex=true] - Allow/disallow indexing of images on page
+ * @property {boolean} [cache=true] - Allow/disallow page storage in search cache
+ *
+ * **Tier 3 (Search Engine Specific):** Platform-specific optimizations
+ * @property {boolean} [googlebot=true] - Google-specific indexing control
+ * @property {boolean} [bingbot=true] - Bing-specific indexing control
+ * @property {boolean} [slurp=true] - Yahoo-specific indexing control
+ * @property {boolean} [duckduckbot=true] - DuckDuckGo-specific indexing control
+ * @property {number} [maxSnippet] - Maximum snippet length (Google: 0-320, Bing: 0-1000)
+ * @property {number|'none'|'standard'|'large'} [maxImagePreview] - Maximum image preview size
+ * @property {number} [maxVideoPreview] - Maximum video preview duration in seconds
+ * @property {string} [unavailableAfter] - ISO 8601 date when content becomes unavailable
+ * @property {number} [crawlDelay] - Delay between crawler requests in seconds
+ * @property {string} [host] - Preferred domain for multi-domain sites
+ *
+ * **Tier 4 (Enterprise SEO Management):** Advanced content and environment controls
+ * @property {string} [contentType] - Content type for intelligent defaults ('article', 'product', 'news', 'page', 'category')
+ * @property {boolean} [isStaging=false] - Staging environment flag (auto-blocks all indexing)
+ * @property {boolean} [isPrivate=false] - Private/protected content flag (auto-blocks indexing)
+ * @property {boolean} [isPaid=false] - Paid content requiring subscription (auto-blocks indexing)
+ * @property {string} [locale] - Content locale for international SEO
+ * @property {string[]} [sitemaps] - Sitemap URLs to include (max 5)
+ * @property {Object} [news] - News-specific directives (auto-applies for contentType: 'news')
+ * @property {boolean} [news.follow=true] - Allow following links in news content
+ * @property {boolean} [news.archive=true] - Allow archiving news content
+ * @property {Object} [ecommerce] - E-commerce specific directives (auto-applies for contentType: 'product')
+ * @property {boolean} [ecommerce.index=true] - Index product pages
+ * @property {boolean} [ecommerce.snippet=true] - Allow product snippets
+ * @property {number} [ecommerce.maxImagePreview] - Product image preview size
  */
 
 /**
@@ -201,6 +214,60 @@ const getContentTypeDefaults = (contentType, isStaging, isPrivate, isPaid) => {
 };
 
 /**
+ * Generates basic robots directives (index, follow).
+ *
+ * @param {RobotsConfig} config - Robots configuration
+ * @returns {string[]} Array of basic directives
+ */
+const generateBasicDirectives = (config) => {
+  const directives = [];
+
+  // @ts-expect-error: Intentional check for both boolean false and numeric zero
+  if (config.index === false || config.index === 0) {
+    directives.push("noindex");
+  } else {
+    directives.push("index");
+  }
+
+  // @ts-expect-error: Intentional check for both boolean false and numeric zero
+  if (config.follow === false || config.follow === 0) {
+    directives.push("nofollow");
+  } else {
+    directives.push("follow");
+  }
+
+  return directives;
+};
+
+/**
+ * Generates advanced robots directives (archive, snippet, imageindex, cache).
+ *
+ * @param {RobotsConfig} config - Robots configuration
+ * @returns {string[]} Array of advanced directives
+ */
+const generateAdvancedDirectives = (config) => {
+  const directives = [];
+
+  if (config.archive === false) {
+    directives.push("noarchive");
+  }
+
+  if (config.snippet === false) {
+    directives.push("nosnippet");
+  }
+
+  if (config.imageindex === false) {
+    directives.push("noimageindex");
+  }
+
+  if (config.cache === false) {
+    directives.push("nocache");
+  }
+
+  return directives;
+};
+
+/**
  * Generates search engine specific robots directives.
  *
  * @param {RobotsConfig} config - Robots configuration
@@ -235,12 +302,94 @@ const generateSearchEngineDirectives = (config) => {
 };
 
 /**
+ * Generates Google-specific robots directives (max-snippet, max-image-preview, etc.).
+ *
+ * @param {RobotsConfig} config - Robots configuration
+ * @returns {string[]} Array of Google-specific directives
+ */
+const generateGoogleDirectives = (config) => {
+  const directives = [];
+
+  if (config.maxSnippet != null) {
+    directives.push(`max-snippet:${config.maxSnippet}`);
+  }
+
+  if (config.maxImagePreview != null) {
+    directives.push(`max-image-preview:${config.maxImagePreview}`);
+  }
+
+  if (config.maxVideoPreview != null) {
+    directives.push(`max-video-preview:${config.maxVideoPreview}`);
+  }
+
+  if (config.unavailableAfter) {
+    directives.push(`unavailable_after:${config.unavailableAfter}`);
+  }
+
+  return directives;
+};
+
+/**
+ * Generates enterprise-level robots markup (canonical, sitemaps, content-specific).
+ *
+ * @param {RobotsConfig} config - Robots configuration
+ * @returns {string} Enterprise markup
+ */
+const generateEnterpriseMarkup = (config) => {
+  let markup = "";
+
+  if (config.host) {
+    markup += html`<link rel="canonical" href="https://${escapeHtml(config.host)}" />`;
+  }
+
+  if (config.sitemaps && config.sitemaps.length > 0) {
+    for (const sitemap of config.sitemaps.slice(0, 5)) {
+      // Limit to 5 sitemaps
+      markup += html`<link rel="sitemap" type="application/xml" href="${sitemap}" />`;
+    }
+  }
+
+  // Content-specific optimizations
+  if (config.news && config.contentType === "news") {
+    const newsDirectives = [];
+    if (/** @type {any} */ (config.news).follow === false) {
+      newsDirectives.push("nofollow");
+    }
+    if (/** @type {any} */ (config.news).archive === false) {
+      newsDirectives.push("noarchive");
+    }
+    if (newsDirectives.length > 0) {
+      markup += html`<meta name="robots" content="${newsDirectives.join(", ")}" />`;
+    }
+  }
+
+  if (config.ecommerce && config.contentType === "product") {
+    const commerceDirectives = [];
+    if (/** @type {any} */ (config.ecommerce).index === false) {
+      commerceDirectives.push("noindex");
+    }
+    if (/** @type {any} */ (config.ecommerce).snippet === false) {
+      commerceDirectives.push("nosnippet");
+    }
+    if (commerceDirectives.length > 0) {
+      markup += html`<meta name="robots" content="${commerceDirectives.join(", ")}" />`;
+    }
+
+    if (/** @type {any} */ (config.ecommerce).maxImagePreview) {
+      markup += html`<meta name="robots" content="max-image-preview:${/** @type {any} */ (config.ecommerce).maxImagePreview}" />`;
+    }
+  }
+
+  return markup;
+};
+
+/**
  * Generates comprehensive robots meta tags with progressive SEO control.
  *
- * **Tier 1: Basic SEO Control** - Foundation indexing and following control
- * **Tier 2: Advanced Crawling Directives** - Snippet control, archiving, image indexing
- * **Tier 3: Search Engine Specific** - Platform-specific optimizations and crawl management
- * **Tier 4: Enterprise SEO Management** - Content-type intelligence and advanced controls
+ * **Tier 1 (Basic SEO Control):** Essential indexing and crawling directives
+ * **Tier 2 (Advanced Crawling Directives):** Enhanced search result control
+ * **Tier 3 (Search Engine Specific):** Platform-specific optimizations
+ * **Tier 4 (Enterprise SEO Management):** Content-type intelligence and advanced controls
  *
  * Each configuration option unlocks increasingly sophisticated SEO capabilities
  * without redundancy. Missing options generate no corresponding markup.
@@ -249,67 +398,93 @@ const generateSearchEngineDirectives = (config) => {
  * @returns {string} Generated robots HTML markup
  *
  * @example
- * // Tier 1: Basic SEO control
+ * // Tier 1: Essential SEO (minimal viable indexing)
  * robots({
  *   index: true,
  *   follow: true
  * });
- * // → Basic indexing control for all search engines
+ * // → Basic allow indexing and following for all search engines
  *
  * @example
- * // Tier 2: Advanced snippet control (maximum SEO impact)
+ * // Tier 1 + Blocking: Essential SEO with blocking
+ * robots({
+ *   index: false,
+ *   follow: false
+ * });
+ * // → Block all indexing and following
+ *
+ * @example
+ * // Tier 2: Advanced control (enhanced search appearance)
  * robots({
  *   index: true,
  *   follow: true,
+ *   snippet: true,
+ *   archive: true,
+ *   maxSnippet: 160,
+ *   maxImagePreview: 'large'
+ * });
+ * // → Control how content appears in search results
+ *
+ * @example
+ * // Tier 2: No snippets (privacy-focused)
+ * robots({
+ *   index: true,
+ *   follow: true,
+ *   snippet: false,
+ *   maxSnippet: 0
+ * });
+ * // → Allow indexing but hide text snippets
+ *
+ * @example
+ * // Tier 3: Google-specific optimizations
+ * robots({
+ *   index: true,
+ *   follow: true,
+ *   googlebot: true,
  *   maxSnippet: 160,
  *   maxImagePreview: 'large',
  *   maxVideoPreview: 30,
- *   archive: true,
- *   snippet: true,
- *   imageindex: true
+ *   unavailableAfter: '2024-12-31T23:59:59Z'
  * });
- * // → Controls search result appearance and crawl behavior
+ * // → Google-specific search result control and expiration
  *
  * @example
- * // Tier 3: Search engine specific optimization
+ * // Tier 3: Multi-engine platform control
  * robots({
  *   index: true,
  *   follow: true,
  *   googlebot: true,
  *   bingbot: true,
- *   unavailableAfter: '2024-12-31T23:59:59Z',
- *   crawlDelay: 1
+ *   slurp: true,
+ *   host: 'example.com'
  * });
- * // → Platform-specific optimizations with crawl budget management
+ * // → Platform-specific control with canonical domain preference
  *
  * @example
- * // Tier 4: Article content with enterprise controls
+ * // Tier 4: Article content (intelligent defaults)
  * robots({
  *   contentType: 'article',
  *   maxSnippet: 160,
  *   maxImagePreview: 'large',
- *   maxVideoPreview: 30,
- *   locale: 'en-US',
- *   sitemaps: ['/sitemap.xml', '/sitemap-news.xml']
+ *   sitemaps: ['/sitemap.xml']
  * });
- * // → Content-aware defaults with international SEO support
+ * // → Article-optimized settings with intelligent defaults applied
  *
  * @example
- * // Tier 4: E-commerce product optimization
+ * // Tier 4: E-commerce product (commerce-specific)
  * robots({
  *   contentType: 'product',
  *   maxSnippet: 120,
  *   maxImagePreview: 'large',
  *   ecommerce: {
  *     index: true,
- *     snippet: true,
- *     maxImagePreview: 'large'
+ *     snippet: true
  *   }
  * });
- * // → Product-specific SEO optimizations
+ * // → Product-optimized settings for e-commerce SEO
  *
  * @example
- * // Tier 4: News content with breaking news optimization
+ * // Tier 4: News content (time-sensitive optimization)
  * robots({
  *   contentType: 'news',
  *   maxSnippet: 200,
@@ -320,14 +495,22 @@ const generateSearchEngineDirectives = (config) => {
  *     archive: true
  *   }
  * });
- * // → News-specific SEO with high visibility settings
+ * // → News-optimized settings for breaking news and time-sensitive content
  *
  * @example
- * // Staging environment protection
+ * // Enterprise: Staging environment protection
  * robots({
  *   isStaging: true
  * });
- * // → Blocks all indexing for staging environments
+ * // → Auto-blocks ALL indexing for staging environments (security override)
+ *
+ * @example
+ * // Enterprise: Private/paid content protection
+ * robots({
+ *   isPaid: true,
+ *   maxSnippet: 50
+ * });
+ * // → Auto-blocks indexing with minimal snippet for paid content
  */
 /**
  * @param {RobotsConfig} config - Progressive robots configuration
@@ -371,119 +554,31 @@ export const robots = (/** @type {RobotsConfig} */ config = {}) => {
       : {}),
   };
 
-  // Tier 1: Basic directives (always present)
-  const basicDirectives = [];
-
-  // @ts-expect-error: Intentional check for both boolean false and numeric zero
-  if (finalConfig.index === false || finalConfig.index === 0) {
-    basicDirectives.push("noindex");
-  } else {
-    basicDirectives.push("index");
-  }
-
-  // @ts-expect-error: Intentional check for both boolean false and numeric zero
-  if (finalConfig.follow === false || finalConfig.follow === 0) {
-    basicDirectives.push("nofollow");
-  } else {
-    basicDirectives.push("follow");
-  }
-
-  // Tier 2: Advanced directives
-  const advancedDirectives = [];
-
-  if (finalConfig.archive === false) {
-    advancedDirectives.push("noarchive");
-  }
-
-  if (finalConfig.snippet === false) {
-    advancedDirectives.push("nosnippet");
-  }
-
-  if (finalConfig.imageindex === false) {
-    advancedDirectives.push("noimageindex");
-  }
-
-  if (finalConfig.cache === false) {
-    advancedDirectives.push("nocache");
-  }
+  // Clean orchestration through pure functions
+  const basicDirectives = generateBasicDirectives(finalConfig);
+  const advancedDirectives = generateAdvancedDirectives(finalConfig);
+  const searchEngineDirectives = generateSearchEngineDirectives(finalConfig);
+  const googleDirectives = generateGoogleDirectives(finalConfig);
 
   // Combine all directives
   const allDirectives = [...basicDirectives, ...advancedDirectives];
   const robotsContent = allDirectives.join(", ");
 
-  // Generate search engine specific directives
-  const searchEngineDirectives = generateSearchEngineDirectives(finalConfig);
-
   // Build the HTML output
-  let markup = "";
-
-  // Main robots meta tag
-  markup += html`<meta name="robots" content="${robotsContent}" />`;
+  let markup = html`<meta name="robots" content="${robotsContent}" />`;
 
   // Add search engine specific tags
   for (const directive of searchEngineDirectives) {
     markup += html`<meta name="robots" content="${directive}" />`;
   }
 
-  // Tier 3: Google-specific meta tags
-  if (finalConfig.maxSnippet != null) {
-    markup += html`<meta name="robots" content="max-snippet:${finalConfig.maxSnippet}" />`;
+  // Add Google-specific directives
+  for (const directive of googleDirectives) {
+    markup += html`<meta name="robots" content="${directive}" />`;
   }
 
-  if (finalConfig.maxImagePreview != null) {
-    markup += html`<meta name="robots" content="max-image-preview:${finalConfig.maxImagePreview}" />`;
-  }
-
-  if (finalConfig.maxVideoPreview != null) {
-    markup += html`<meta name="robots" content="max-video-preview:${finalConfig.maxVideoPreview}" />`;
-  }
-
-  if (finalConfig.unavailableAfter) {
-    markup += html`<meta name="robots" content="unavailable_after:${finalConfig.unavailableAfter}" />`;
-  }
-
-  // Tier 4: Enterprise features
-  if (finalConfig.host) {
-    markup += html`<link rel="canonical" href="https://${escapeHtml(finalConfig.host)}" />`;
-  }
-
-  if (finalConfig.sitemaps && finalConfig.sitemaps.length > 0) {
-    for (const sitemap of finalConfig.sitemaps.slice(0, 5)) {
-      // Limit to 5 sitemaps
-      markup += html`<link rel="sitemap" type="application/xml" href="${sitemap}" />`;
-    }
-  }
-
-  // Content-specific optimizations
-  if (finalConfig.news && finalConfig.contentType === "news") {
-    const newsDirectives = [];
-    if (/** @type {any} */ (finalConfig.news).follow === false) {
-      newsDirectives.push("nofollow");
-    }
-    if (/** @type {any} */ (finalConfig.news).archive === false) {
-      newsDirectives.push("noarchive");
-    }
-    if (newsDirectives.length > 0) {
-      markup += html`<meta name="robots" content="${newsDirectives.join(", ")}" />`;
-    }
-  }
-
-  if (finalConfig.ecommerce && finalConfig.contentType === "product") {
-    const commerceDirectives = [];
-    if (/** @type {any} */ (finalConfig.ecommerce).index === false) {
-      commerceDirectives.push("noindex");
-    }
-    if (/** @type {any} */ (finalConfig.ecommerce).snippet === false) {
-      commerceDirectives.push("nosnippet");
-    }
-    if (commerceDirectives.length > 0) {
-      markup += html`<meta name="robots" content="${commerceDirectives.join(", ")}" />`;
-    }
-
-    if (/** @type {any} */ (finalConfig.ecommerce).maxImagePreview) {
-      markup += html`<meta name="robots" content="max-image-preview:${/** @type {any} */ (finalConfig.ecommerce).maxImagePreview}" />`;
-    }
-  }
+  // Add enterprise features
+  markup += generateEnterpriseMarkup(finalConfig);
 
   return markup;
 };
