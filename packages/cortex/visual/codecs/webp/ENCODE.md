@@ -297,3 +297,220 @@ Each milestone includes tests for 100% branches of the new modules and determini
 - Overly aggressive quantization causing ringing on edges; prioritize mode decisions to reduce energy.
 - Loop filter misconfigured vs Q leads to over-blur; clamp with sharpness.
 - Non-deterministic heuristics (Math.random or unordered maps) → breaks tests.
+
+---
+
+## 12. Incremental Implementation Pipeline (Inverse of Decoder)
+
+Ship each milestone independently with 100% branch coverage for the new files. Mirror decoder structure so primitives are reusable and parity is testable. All math integer-only, zero-deps, pure functions with explicit inputs/outputs.
+
+### M0 — RIFF Writer and Orchestrator Skeleton
+
+- Purpose:
+  - Establish `encodeWEBP(pixels, width, height, options)` and `writeRIFFWebP(chunks)`.
+- Contracts:
+  - `writeRIFFWebP(chunks: { type: string, data: Uint8Array }[]) -> Uint8Array`.
+  - Orchestrator selects path: VP8 (lossy) or VP8L (lossless) or VP8X + auxiliaries.
+- Algorithm:
+  1. Compute each chunk size; write `<FOURCC><u32 size><data>`; add pad byte if size is odd (not counted in size).
+  2. RIFF header: `"RIFF" <u32 totalAfter> "WEBP"` where `totalAfter = 4 + sum(chunkRecordsInclPad)`.
+- Tests:
+  - Core: single `VP8 ` chunk emission produces valid sizes/padding.
+  - Edges: odd `data.length` → pad; large size sum; empty `chunks` rejected.
+- Pitfalls:
+  - Incorrect RIFF size; forgetting to pad; FOURCC spacing (e.g., `"VP8 "`).
+- Done criteria:
+  - Byte-accurate container with round-trip parse by decoder parser.
+
+### M1 — Color and Downsampling Primitives (RGBA→YUV420)
+
+- Purpose:
+  - Deterministic integer RGBA→YUV (BT.601) and 2×2 chroma downsample.
+- Contracts:
+  - `rgbaToYuv420(rgba: Uint8Array, width: number, height: number) -> { y: Uint8Array, u: Uint8Array, v: Uint8Array }`.
+- Algorithm:
+  - Integer matrix; U/V computed on 2×2 windows (box); handle odd width/height by clamping edges.
+- Tests:
+  - Core: known RGBA→YUV vectors; 2×2, 3×3 edge cases.
+  - Edges: saturation, odd dims; no floats.
+- Pitfalls:
+  - Rounding drift vs decoder path; ensure symmetry when re-converted by our decoder.
+- Done criteria:
+  - Byte-for-byte agreement with decoder YUV→RGB inverse on round-trip fixtures.
+
+### M2 — Forward 4×4 Transform and Quantization
+
+- Purpose:
+  - Implement forward integer transform matched to inverse; quantization with segment deltas.
+- Contracts:
+  - `fdct4x4(block: Int16Array) -> void` (in-place), `quantize(block, q) -> tokens`.
+- Algorithm:
+  - Use integer transform that inverts losslessly with inverse path at Q=0; support DC-only optimization.
+  - Quant: dead-zone; derive DC/AC scales from base Q and deltas.
+- Tests:
+  - Core: transform-pair identity at Q=0; DC-only; random block vs reconstruct after inverse+dequant.
+  - Edges: clamp ranges; all-zero quantization path.
+- Pitfalls:
+  - Non-matching forward/inverse integer constants; missed dead-zone optimization.
+- Done criteria:
+  - Exact inverse consistency tests with decode primitives.
+
+### M3 — Intra Predictors and Mode Decision Harness
+
+- Purpose:
+  - Implement predictors and a minimal mode decision loop (deterministic, no RD yet or simple lambda).
+- Contracts:
+  - `predictIntra4x4(top,left,mode)`, `predictIntra16x16(...)`, `predictUV8x8(...)` (reuse decoder’s predictor code if shared).
+  - `chooseModes(mbCtx) -> { yMode16, yModes4[], uvMode }`.
+- Algorithm:
+  - For each block, evaluate SSE of predicted vs source; optionally simple rate term from expected token counts; pick minimal cost.
+- Tests:
+  - Core: patterns that favor specific modes; borders (no top/left).
+  - Edges: tie-breaking determinism.
+- Pitfalls:
+  - Non-deterministic iteration order; border sample handling mismatch.
+- Done criteria:
+  - Stable choices and coverage of all modes at least once.
+
+### M4 — Boolean Arithmetic Encoder and Frame Packer
+
+- Purpose:
+  - Mirror bool decoder; pack VP8 frame tag, headers, and partitions.
+- Contracts:
+  - `createBoolEncoder() -> { writeBit(prob, bit), writeLiteral(n, value), finish() -> Uint8Array }`.
+  - `packVP8Headers(params) -> Uint8Array`.
+- Algorithm:
+  - Range init 128..255, compute split like decoder, renormalize; write out bytes deterministically.
+  - Frame tag: keyframe=0, version, show_frame=1, 19-bit first partition length encoded in 3 bytes little-endian.
+- Tests:
+  - Core: encode known literal patterns, verify decoder reads same bits.
+  - Edges: partition size computation exact; zero-length partitions rejected.
+- Pitfalls:
+  - Off-by-one in split; endian on partition sizes.
+- Done criteria:
+  - Cross-validated with decoder’s bool reader in tests.
+
+### M5 — VP8 Lossy Encode (Minimal, Opaque)
+
+- Purpose:
+  - End-to-end intra-only VP8 encoder with single partition, loop filter, fixed Q.
+- Contracts:
+  - `encodeVP8(rgba, width, height, { qIndex, sharpness }) -> Uint8Array /* VP8 frame */`.
+- Algorithm:
+  - RGBA→YUV420; mode decision; FDCT; quant; tokenization using coeff trees; write headers (quant, loop filter, probs), pack tokens.
+- Tests:
+  - Core: 2×2 and 4×4 images; golden size ranges and decode back to RGBA equal to source within tolerance driven by Q.
+  - Edges: 1×N/N×1; flat blocks produce few tokens; filter params consistent.
+- Pitfalls:
+  - Token order/tree mismatches; partition size miscalc; mismatch in filter params vs decode.
+- Done criteria:
+  - Self-decode parity; deterministic output with fixed options.
+
+### M6 — ALPH Encode (Stills)
+
+- Purpose:
+  - Encode alpha plane via methods 0 (raw) and 2 (quant), later 1 (compressed using VP8L primitives).
+- Contracts:
+  - `encodeAlpha(plane: Uint8Array, width, height, { method, quantLevels? }) -> Uint8Array /* ALPH chunk data */`.
+- Algorithm:
+  - Method 0: direct bytes with optional filter markers.
+  - Method 2: quantize to N levels; store table + indices.
+  - Method 1 (later): compress with VP8L encoder’s LZ/Huffman.
+- Tests:
+  - Core: binary mask chooses 2 levels; gradient preserved with configured levels.
+  - Edges: row padding; reserved method rejected.
+- Pitfalls:
+  - Premultiplication; forgetting VP8X alpha flag when emitting ALPH.
+- Done criteria:
+  - Byte-exact plane reconstruction by decoder.
+
+### M7 — Rate Control and Probability Estimation
+
+- Purpose:
+  - Hit target size or quality deterministically; adapt coeff probabilities.
+- Contracts:
+  - `estimateProbs(stats) -> probs`; `rateControl(targetBytes, encodeOnce) -> { qIndex }`.
+- Algorithm:
+  - Gather token histograms; smooth and clamp probs; single-pass or two-pass size targeting via binary search on Q.
+- Tests:
+  - Core: monotonicity wrt Q; target size within ±2% on canonical images.
+  - Edges: tiny target that is impossible → graceful failure.
+- Pitfalls:
+  - Non-deterministic histograms; oscillation in binary search without bounds.
+- Done criteria:
+  - Stable outputs; bounded iterations.
+
+### M8 — VP8L Lossless Primitives (Encoder Side)
+
+- Purpose:
+  - Build Huffman, LZ77, predictors, and transforms for lossless path.
+- Contracts:
+  - `analyzeTransforms(pixels) -> chain`; `lz77Parse(argb) -> tokens`; `buildHuffman(hist) -> tables`.
+- Algorithm:
+  - Palette detection (<=256 colors); subtract-green; small search for color transform multipliers; greedy+lazy LZ; canonical Huffman with length limits.
+- Tests:
+  - Core: encode small images with palette; overlapping backrefs; tree shapes valid.
+  - Edges: noise images prefer literals; invalid states never produced.
+- Pitfalls:
+  - Over/under-subscribed trees; channel order ARGB vs RGBA.
+- Done criteria:
+  - Decoder decodes to original RGBA byte-for-byte.
+
+### M9 — VP8L Image Encode + ALPH Method 1
+
+- Purpose:
+  - Full VP8L image emission; reuse to compress ALPH method 1.
+- Contracts:
+  - `encodeVP8L(rgba, width, height, opts) -> Uint8Array /* VP8L bitstream */`.
+- Algorithm:
+  - Emit header (w/h-1, version, color cache bits), transforms, trees, compressed stream; convert RGBA→ARGB packing as needed.
+- Tests:
+  - Core: subtract-green-only, palette, overlap backref; round-trip exact.
+  - Edges: very small images prefer literals; palette size bounds.
+- Pitfalls:
+  - Predictor reset per meta-block; color cache off-by-one.
+- Done criteria:
+  - Lossless round-trip; ALPH-1 compression verified on tiny planes.
+
+### M10 — VP8X Features and Final Orchestration
+
+- Purpose:
+  - Wire features, metadata, alpha, and primary streams into final RIFF; ensure strict compliance.
+- Contracts:
+  - `encodeWEBP(pixels, w, h, options) -> Uint8Array` with `options.metadata`, `options.mode`, `options.alpha`.
+- Algorithm:
+  1. Decide mode (VP8/VP8L) and alpha presence.
+  2. If features present, write VP8X with flags and canvas size; then ICCP/EXIF/XMP; then ALPH (if used); then primary chunk.
+  3. Validate chunk order and single-occurrence constraints.
+- Tests:
+  - Core: lossy/lossless with/without alpha and metadata; decoder parses flags and decodes correctly.
+  - Edges: missing VP8X when ALPH present (encoder must not produce); oversized sub-bitstream vs canvas (reject before write).
+- Pitfalls:
+  - Flag-chunk mismatch; bad ordering; canvas mismatch allowed erroneously.
+- Done criteria:
+  - Files validated by our parser; decodable by our decoder and common viewers.
+
+---
+
+## 13. Test Authoring Guidance (Encoder)
+
+- Use micro-images (≤ 8×8); test three groups per file: core, edges/errors, integration.
+- Round-trip using our decoder; assert byte-precise RGBA (lossless) or deterministic output and monotonic size/quality (lossy).
+- Ensure deterministic behavior: fixed iteration orders; no randomization.
+- Enforce performance limits: each test <1s; suite <10s.
+
+---
+
+## 14. Error and Option Validation Conventions
+
+- Validate inputs early: `pixels.length === width*height*4`, dimensions > 0.
+- Use clear errors: `RIFF:`, `VP8:`, `VP8L:`, `VP8X:`, `ALPH:` prefixes.
+- Provide constraints in messages: e.g., `VP8X: cannot emit ALPH without Alpha flag`.
+
+---
+
+## 15. Performance Discipline (Encoder)
+
+- Reuse pre-allocated buffers; avoid object churn in hot loops.
+- Prefer 1 token partition initially; add more only with measurable wins.
+- Ensure symmetry with decoder math to avoid tiny drifts.

@@ -291,3 +291,246 @@ Each milestone ships with tests hitting 100% branches of the new modules.
   - `DECODE.md` (this document)
 
 All functions pure, typed via JSDoc, no shared mutable globals; reuse typed array scratch buffers by explicit passing.
+
+---
+
+## 13. Incremental Implementation Pipeline (Milestones with Exact Specs)
+
+Each milestone is shippable alone, with 100% branch coverage in its own tests. Keep functions pure, pass typed-array views, avoid allocations in hot paths, and fail fast with precise messages.
+
+### M0 — Skeleton Orchestrator and RIFF Container Parser
+
+- Purpose:
+  - Establish `decodeWEBP(bytes)` orchestrator stub and `parseRIFFWebP(bytes)` container parser.
+- Contracts:
+  - `parseRIFFWebP(bytes: Uint8Array) -> { riffSize: number, chunks: { type: string, data: Uint8Array, offset: number, size: number }[], chunksByType: Map<string, { type, data, offset, size }[]>, hasVP8X: boolean, features?: { icc: boolean, alpha: boolean, exif: boolean, xmp: boolean, anim: boolean, tiles: boolean }, orderValid: boolean, errors: string[] }`.
+  - Orchestrator returns `{ metadata, width?, height? }` for now and throws if no primary stream is found.
+- Algorithm:
+  1. Validate `"RIFF"` (bytes 0..3), LE size at 4..7, `"WEBP"` at 8..11.
+  2. Iterate chunks at offset 12: read 4-char type, LE size, take `size` bytes as `data`, record `offset` (start of data), `size`, then advance by `size + (size & 1)` (pad if odd).
+  3. Validate cumulative size never exceeds container, and final offset equals or is within the RIFF size boundary.
+  4. Populate `chunksByType` and `hasVP8X` (presence of `VP8X`).
+  5. Validate ordering constraints if `hasVP8X` (VP8X must be first after header; other chunks allowed as per spec). Collect violations in `errors`.
+- Tests:
+  - Core: minimal file with one `VP8 ` chunk; one with `VP8L` chunk.
+  - Edges: odd-sized chunk padding byte; overlapping/overflowing size → error; multiple primary chunks present → error list contains specific items; unknown chunk types preserved in `chunks`.
+  - Integration: `VP8X` followed by metadata chunks (ICCP/EXIF/XMP) then primary.
+- Pitfalls:
+  - Off-by-one when applying padding; size overflows; treating ASCII types as UTF-8 (keep raw bytes and construct string from 4 bytes only).
+  - Accept files without `VP8X`.
+- Done criteria:
+  - Strict size/order validation, exact offsets in errors, zero allocations beyond views and arrays of descriptors.
+
+### M1 — VP8X Header and Metadata Extraction (Parse-only)
+
+- Purpose:
+  - Parse `VP8X` flags and canvas size; surface ICC/EXIF/XMP in metadata; do not decode yet.
+- Contracts:
+  - `parseVP8X(view: Uint8Array) -> { width: number, height: number, flags: { icc, alpha, exif, xmp, anim, tiles } }`.
+  - `extractMetadata(chunks: {type,data}[]) -> { icc?: Uint8Array, exif?: Uint8Array, xmp?: Uint8Array, unknownChunks: { type: string, data: Uint8Array }[] }`.
+- Algorithm:
+  1. VP8X: byte0 = flags; bytes1..3 = reserved; bytes4..6 = width-1 (24-bit LE); bytes7..9 = height-1 (24-bit LE). Compute width/height by +1; validate >0.
+  2. Flags: bit positions per spec; expose booleans.
+  3. Metadata: find at most one `ICCP`, `EXIF`, `XMP `; duplicates → error at orchestrator-level; collect unknown chunks.
+- Tests:
+  - Core: min (1×1) and max (16384×16384) canvas sizes.
+  - Edges: invalid size 0; duplicate ICC/EXIF/XMP flagged; set Alpha flag but no `ALPH` present (deferred validation but detectable once orchestrated).
+- Pitfalls:
+  - VP8X size governs canvas; sub-stream sizes are separate and must match later.
+- Done criteria:
+  - Correct width/height math, flags mapping, metadata surfaced as views, no copies.
+
+### M2 — YUV and Transform Primitives (Codec-agnostic)
+
+- Purpose:
+  - Provide deterministic integer color conversion and IDCT/WHT for VP8.
+- Contracts:
+  - `yuv420ToRgba(y: Uint8Array, u: Uint8Array, v: Uint8Array, width: number, height: number) -> Uint8Array`.
+  - `inverse4x4(block: Int16Array) -> void` (in-place 4×4 IDCT-like integer transform).
+  - `inverseWHT4(dc: Int16Array) -> void` (Walsh-Hadamard on 4 DC terms).
+- Algorithm:
+  - YUV→RGB: use integer BT.601 limited range; compute per 2×2 block mapping shared UV; clamp to [0,255].
+  - IDCT: implement spec integer path with early-out if all AC zero; keep intermediate in 16-bit or 32-bit accumulators; write back clamped.
+  - WHT: fast butterfly on 4 DC terms, integer arithmetic only.
+- Tests:
+  - Core: known YUV triplets to RGB; all-zero AC path; DC-only block; saturation extremes.
+  - Edges: odd width/height pad handling at right/bottom; ensure no float usage.
+- Pitfalls:
+  - Premature rounding; using floats; overflow without clamp.
+- Done criteria:
+  - Byte-for-byte parity with reference vectors; no allocations in inner loops.
+
+### M3 — VP8 Intra Predictors and Loop Filter (Isolated)
+
+- Purpose:
+  - Implement predictors and deblocking independent of bitstream.
+- Contracts:
+  - `predictIntra4x4(top: Uint8Array|undefined, left: Uint8Array|undefined, mode: number) -> Uint8Array(16)`.
+  - `predictIntra16x16(top, left, mode) -> Uint8Array(256)`.
+  - `predictUV8x8(top, left, mode) -> Uint8Array(64)`.
+  - `filterEdges(y: Uint8Array, u: Uint8Array, v: Uint8Array, width: number, height: number, params: { filterType: 'simple'|'normal', sharpness: number, level: number, deltas: {...} }) -> void`.
+- Algorithm:
+  - Predictors: implement each mode per spec, handling missing top/left by padding with 129 or edge replication as defined.
+  - Loop filter: compute per-edge strength from params and macroblock quant; apply per 4/8-pixel edges; handle `hev` detection; clamp neighbors.
+- Tests:
+  - Core: each mode with crafted borders; equality against known predictor outputs.
+  - Edges: top row/left column absence; right/bottom macroblock boundaries; `simple` vs `normal` filter.
+- Pitfalls:
+  - Not resetting contexts between blocks; off-by-one at MB boundaries; incorrect `hev` thresholds.
+- Done criteria:
+  - Deterministic outputs, complete mode coverage, edge correctness.
+
+### M4 — VP8 Bool Decoder and Headers
+
+- Purpose:
+  - Implement the boolean arithmetic decoder and parse VP8 frame headers and control data.
+- Contracts:
+  - `createBoolDecoder(view: Uint8Array, start: number, end: number) -> { readBit(prob: number): 0|1, readLiteral(n: number): number, tell(): number }`.
+  - `parseVP8FrameHeader(view: Uint8Array) -> { keyframe: boolean, version: number, show: boolean, firstPartitionSize: number, width: number, height: number }`.
+  - Additional header parsers: segmentation, loop filter, quantization, mode probabilities.
+- Algorithm:
+  - Bool decoder: maintain `range` (128..255) and `value` window; compute `split = 1 + (((range - 1) * prob) >> 8)`; branch, renormalize by left-shifting until range ≥ 128, pulling bytes as needed; constant-time per bit.
+  - Frame header: read start code 0x9d 0x01 0x2a; 14-bit width/height with ratio flags; validate partition size and boundaries.
+- Tests:
+  - Core: synthetic ranges for bool decoder literals/bits; start code and size parsing for tiny frames.
+  - Edges: zero `firstPartitionSize`; partition end before header complete; width/height 0 or >16383.
+- Pitfalls:
+  - Incorrect `split` rounding; not renormalizing; reading past buffer.
+- Done criteria:
+  - Pass vectors; strict boundary enforcement; precise error messages with offsets.
+
+### M5 — VP8 Coefficient Tokens
+
+- Purpose:
+  - Decode DCT coefficient tokens across bands/contexts and partitions.
+- Contracts:
+  - `decodeCoefficients(dec: BoolDecoder, quant: { y, y2, uv }, modeCtx: object, partitions: Array<{start,end}>) -> Int16Array` (blocks for a macroblock).
+- Algorithm:
+  - Use per-band trees; decode EOB, zero runs, magnitude categories; apply dequant; maintain and update mode contexts; respect partition boundaries.
+- Tests:
+  - Core: EOB-only; DC-only; mixed AC with context changes; multi-partitions with exact cutoff.
+  - Edges: corrupted token near partition end; under/overflows in dequant clamps.
+- Pitfalls:
+  - Forgetting early EOB; not updating context; crossing partition boundary.
+- Done criteria:
+  - Deterministic block reconstruction; strict partition safety.
+
+### M6 — VP8 Lossy Still Decode (Opaque)
+
+- Purpose:
+  - End-to-end decode of `VP8 ` still images without alpha.
+- Contracts:
+  - `decodeVP8(view: Uint8Array) -> { y: Uint8Array, u: Uint8Array, v: Uint8Array, width: number, height: number }`.
+  - Orchestrator composes RGBA via `yuv420ToRgba` and returns `{ pixels, width, height, metadata }`.
+- Algorithm:
+  - Parse headers; setup segmentation/loop filter/quant; iterate macroblocks: predict, decode coeffs, inverse transforms, reconstruct planes; apply loop filter per edges; final YUV420 to RGBA.
+- Tests:
+  - Core: 2×2 and 4×4 images with DC-only; images using each intra mode at least once; golden RGBA.
+  - Edges: tiny images (1×N, N×1); filter edges; partition counts 1 vs many.
+- Pitfalls:
+  - Predictor context reset; border padding; integer overflow in transforms; performance regressions from not short-circuiting zeros.
+- Done criteria:
+  - Byte-exact RGBA, fast (<1s) tests, 100% branches in decode path modules.
+
+### M7 — Alpha (ALPH) for VP8X Stills
+
+- Purpose:
+  - Decode `ALPH` and composite into RGBA; no premultiply.
+- Contracts:
+  - `decodeAlpha(alph: Uint8Array, width: number, height: number) -> Uint8Array` (alpha plane).
+  - Orchestrator: if VP8X Alpha flag true, require `ALPH` and apply.
+- Algorithm:
+  - Parse header: method (0 none/raw, 1 compressed, 2 quant-only, 3 reserved), filter, pre-processing.
+  - Implement method 0 and 2 first: raw plane with optional filtering; quant table expansion.
+  - Validate plane size, handle row padding.
+- Tests:
+  - Core: uniform 128 alpha (method 0); quantized small set (method 2) vs expected plane.
+  - Edges: Alpha flag without ALPH → error; wrong plane size; reserved method → error.
+- Pitfalls:
+  - Premultiplying; ignoring padding; wrong method gates.
+- Done criteria:
+  - Correct A channel composition; precise validations.
+
+### M8 — VP8L Lossless Primitives
+
+- Purpose:
+  - Implement Huffman/LZ77/predictors/transforms for VP8L.
+- Contracts:
+  - `buildHuffman(codeLengths: Uint8Array) -> { table: Uint16Array, ... }` and `decodeSymbol(reader)`.
+  - `lz77Copy(dst: Uint32Array, from: number, len: number) -> void` (ARGB packed or separate channels strategy, define and stick to one).
+  - `predictPixel(x,y,mode,neighbors) -> [r,g,b,a]`.
+  - `applyTransforms(chain, pixels)` for subtract-green, color transform, palette.
+- Algorithm:
+  - Canonical Huffman construction with overflow/undersubscription checks; bit reader supporting meta trees.
+  - LZ77 with overlap-safe copy; sliding window limited to output length.
+  - Predictors per spec; transforms order matters.
+- Tests:
+  - Core: over/under-subscribed tree detection; overlapping copies; palette bounds; subtract-green round-trip.
+  - Edges: 1×N/N×1 predictors; color cache optional behavior.
+- Pitfalls:
+  - Silent tree errors; ARGB vs RGBA ordering; state leakage across tiles.
+- Done criteria:
+  - Deterministic primitives with exhaustive edge coverage.
+
+### M9 — VP8L Image Decode + ALPH Method 1
+
+- Purpose:
+  - Full VP8L still decode and use its decompressor for ALPH method 1.
+- Contracts:
+  - `decodeVP8L(view: Uint8Array) -> { pixels: Uint8Array /* RGBA */, width: number, height: number }`.
+  - Extend `decodeAlpha` to method 1 (compressed) using VP8L primitives.
+- Algorithm:
+  - Parse VP8L header (14-bit w/h-1, version, color cache bits); decode meta-blocks with trees/backrefs; apply transforms; reorder ARGB→RGBA.
+- Tests:
+  - Core: subtract-green-only image; small palette image; LZ77 overlap; golden RGBA.
+  - Edges: broken Huffman → specific error; backref beyond produced pixels.
+- Pitfalls:
+  - Predictor resets between tiles; wrong channel order; accidental premultiply.
+- Done criteria:
+  - Byte-exact RGBA; compressed ALPH verified on tiny planes.
+
+### M10 — VP8X Feature Validation and Final Orchestration
+
+- Purpose:
+  - Tie all parts together; validate flags/order; reject animation with clear diagnostics.
+- Contracts:
+  - `decodeWEBP(bytes: Uint8Array) -> { pixels: Uint8Array, width: number, height: number, metadata: { icc?, exif?, xmp?, unknownChunks: [...] } }`.
+- Algorithm:
+  1. Parse RIFF; if VP8X present, parse flags and canvas; enforce VP8X-first rule.
+  2. Extract metadata; ensure single-occurrence constraints.
+  3. Resolve primary: `VP8 ` or `VP8L` (not both). If animation flags set, parse `ANIM`/`ANMF` frames structurally but throw `Animation not supported` with details.
+  4. If Alpha flag: require `ALPH` and decode plane; composite with color pixels (no premultiply).
+  5. Validate canvas vs substream sizes (match for stills).
+- Tests:
+  - Core: end-to-end still lossy and lossless with/without alpha.
+  - Edges: canvas/substream mismatch; missing mandatory chunk per flag; duplicate metadata chunks; animation present → rejection with frame counts.
+  - Integration: unknown chunks preserved; odd padding preserved and skipped.
+- Pitfalls:
+  - Reading sizes from wrong header; failing to enforce single primary; metadata duplication allowed silently.
+- Done criteria:
+  - Clean API surface; all branches tested; deterministic outputs; isomorphic behavior in Node and browser.
+
+---
+
+## 14. Test Authoring Guidance
+
+- Keep assets ≤ 8×8, checked-in as Uint8Array literals or tiny binary fixtures.
+- Group tests into: core, edges/errors, integration; enforce runtime limits (<1s per test, <10s suite).
+- Assert with byte-precise buffers (RGBA) and exact error messages with offsets and chunk names.
+- Exclude `*.test.js` from coverage; target 100% branch coverage for all implementation files.
+
+---
+
+## 15. Error Message Conventions
+
+- Prefix with subsystem: `RIFF:`, `VP8X:`, `VP8:`, `VP8L:`, `ALPH:`.
+- Include offset and context: e.g., `VP8: token partition overflow at 0x1A3C (partition 2)`.
+- Use consistent verbs: `missing`, `invalid`, `overflow`, `mismatch`, `unsupported`.
+
+---
+
+## 16. Performance Discipline
+
+- Use integer math only; avoid object churn inside loops.
+- Early-out on all-zero blocks; reuse scratch buffers passed as parameters.
+- Validate once, compute many: container parsing upfront, strict boundaries to avoid re-checks.
