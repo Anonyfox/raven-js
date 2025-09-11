@@ -36,7 +36,7 @@
  */
 
 export { decodeBMP, encodeBMP } from "./codecs/bmp/index.js";
-export { decodeJPEG } from "./codecs/jpeg/index.js";
+export { decodeJPEG, encodeJPEG } from "./codecs/jpeg/index.js";
 // Codec functions (new architecture)
 export { decodePNG, encodePNG } from "./codecs/png/index.js";
 // Base Image class

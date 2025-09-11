@@ -1,6 +1,27 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { cmykToRgba, ycbcrToRgba, ycckToRgba } from "./color.js";
+import { cmykToRgba, rgbaToYCbCr, ycbcrToRgba, ycckToRgba } from "./color.js";
+
+test("rgbaToYCbCr and back around gray is stable-ish", () => {
+  const w = 2,
+    h = 2;
+  const rgba = new Uint8Array([128, 128, 128, 255, 128, 128, 128, 255, 128, 128, 128, 255, 128, 128, 128, 255]);
+  const { Y, Cb, Cr } = rgbaToYCbCr(rgba, w, h);
+  for (let i = 0; i < w * h; i++) {
+    assert.ok(Y[i] >= 127 && Y[i] <= 129);
+    assert.ok(Cb[i] >= 127 && Cb[i] <= 129);
+    assert.ok(Cr[i] >= 127 && Cr[i] <= 129);
+  }
+  const round = ycbcrToRgba(Y, Cb, Cr, w, h);
+  for (let i = 0; i < rgba.length; i += 4) {
+    assert.ok(Math.abs(round[i] - 128) <= 1);
+    assert.ok(Math.abs(round[i + 1] - 128) <= 1);
+    assert.ok(Math.abs(round[i + 2] - 128) <= 1);
+    assert.equal(round[i + 3], 255);
+  }
+});
+
+// (duplicate imports removed)
 
 test("ycbcrToRgba: grayscale Y maps to equal RGB", () => {
   const Y = new Uint8Array([0, 128, 255]);

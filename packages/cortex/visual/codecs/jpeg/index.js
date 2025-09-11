@@ -24,3 +24,4 @@
  */
 
 export { decodeJPEG } from "./decode.js";
+export { encodeJPEG } from "./encode.js";
