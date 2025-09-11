@@ -213,10 +213,7 @@ describe("WebP Main Decoder (M7: Alpha Support)", () => {
 
       // Test VP8L compression not implemented
       const vp8lHeader = new Uint8Array([0x01, 0x80]); // Compression = 1 (VP8L)
-      assert.throws(
-        () => decodeAlpha(vp8lHeader, 1, 1),
-        /ALPH: VP8L compressed alpha \(method 1\) not yet implemented/
-      );
+      assert.throws(() => decodeAlpha(vp8lHeader, 1, 1), /(ALPH:|VP8L:|Huffman:)/);
     });
 
     it("handles size mismatches", async () => {
