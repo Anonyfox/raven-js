@@ -261,17 +261,25 @@ export class HuffmanTable {
    * @throws {Error} If invalid Huffman code
    */
   decodeSymbol(bitReader) {
+    // Debug: Check if table is properly initialized
+    if (!this.codes || !this.codeLengths) {
+      throw new Error("Huffman table not properly initialized");
+    }
+
     // Try fast table first
     if (bitReader.bitCount >= 8) {
       const peek = bitReader.bitBuffer >>> (bitReader.bitCount - 8);
-      const fastLength = this.fastTable[peek];
+      // Bounds check for fast table
+      if (peek < 256) {
+        const fastLength = this.fastTable[peek];
 
-      if (fastLength !== -1) {
-        // Fast path hit
-        const symbol = this.fastTableSymbols[peek];
-        // Consume the bits
-        bitReader.bitCount -= fastLength;
-        return symbol;
+        if (fastLength !== -1 && this.fastTableSymbols[peek] !== -1) {
+          // Fast path hit
+          const symbol = this.fastTableSymbols[peek];
+          // Consume the bits
+          bitReader.bitCount -= fastLength;
+          return symbol;
+        }
       }
     }
 
@@ -285,13 +293,16 @@ export class HuffmanTable {
 
       // Check if this code matches any symbol
       for (let symbol = 0; symbol < 256; symbol++) {
-        if (this.codes[symbol] === code && this.codeLengths[symbol] === length) {
-          return symbol;
+        if (this.codes[symbol] !== undefined && this.codeLengths[symbol] !== undefined) {
+          if (this.codes[symbol] === code && this.codeLengths[symbol] === length) {
+            return symbol;
+          }
         }
       }
     }
 
-    throw new Error("Invalid Huffman code");
+    // If we get here, no valid symbol was found
+    throw new Error(`Invalid Huffman code: 0x${code.toString(16)} (length ${length})`);
   }
 }
 

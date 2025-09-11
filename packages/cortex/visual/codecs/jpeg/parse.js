@@ -194,8 +194,13 @@ export function parseMarker(buffer, offset) {
   const marker = (buffer[offset] << 8) | buffer[offset + 1];
   offset += 2;
 
-  // SOI and EOI have no payload
-  if (marker === MARKERS.SOI || marker === MARKERS.EOI) {
+  // Check if this is a valid marker before proceeding
+  if (marker < 0xffc0 || marker > 0xfffe) {
+    throw new Error(`Invalid marker 0x${marker.toString(16)} at offset ${offset - 2}`);
+  }
+
+  // SOI, EOI, and RST markers have no payload
+  if (marker === MARKERS.SOI || marker === MARKERS.EOI || isRestartMarker(marker)) {
     return { marker, length: 0, dataOffset: offset, endOffset: offset };
   }
 
@@ -205,6 +210,7 @@ export function parseMarker(buffer, offset) {
   }
 
   const length = readUint16BE(buffer, offset);
+
   if (length < 2) {
     throw new Error(`Invalid marker length ${length} for marker ${marker.toString(16)}`);
   }
@@ -212,8 +218,13 @@ export function parseMarker(buffer, offset) {
   const dataOffset = offset + 2;
   const endOffset = dataOffset + length - 2;
 
+  // Make bounds checking more robust - if length seems corrupted, skip this marker
   if (endOffset > buffer.length) {
-    throw new Error(`Marker ${marker.toString(16)} payload exceeds buffer bounds`);
+    // This looks like a corrupted marker - skip it
+    console.warn(
+      `Skipping corrupted marker 0x${marker.toString(16)} at offset ${offset} (length ${length} would exceed buffer)`
+    );
+    return { marker: marker, length: 2, dataOffset: offset + 2, endOffset: offset + 2 }; // Skip just the marker
   }
 
   return { marker, length, dataOffset, endOffset };
@@ -276,7 +287,8 @@ export function findNextMarker(buffer, startOffset, maxSearch = 1024) {
     }
   }
 
-  throw new Error(`No valid marker found within ${maxSearch} bytes from offset ${startOffset}`);
+  // Return -1 to indicate no marker found (more robust than throwing)
+  return -1;
 }
 
 /**
@@ -752,37 +764,70 @@ export function extractAppSegments(buffer) {
   const appSegments = [];
   let offset = 2; // Skip SOI marker
 
+  let iterations = 0;
+  const maxIterations = Math.max(100, buffer.length); // Safety limit
+
   try {
     while (offset < buffer.length - 1) {
-      // Find next marker
-      const markerOffset = findNextMarker(buffer, offset);
-      const marker = (buffer[markerOffset] << 8) | buffer[markerOffset + 1];
-
-      if (marker === MARKERS.EOI) {
-        break; // End of image
+      iterations++;
+      if (iterations > maxIterations) {
+        throw new Error(`Parse loop exceeded maximum iterations (${maxIterations}) - possible infinite loop`);
       }
 
-      if (isAppMarker(marker)) {
-        // Parse APP segment
-        const markerInfo = parseMarker(buffer, markerOffset);
-        const appIndex = getAppIndex(marker);
-        const appSegment = parseGenericAPP(
-          buffer,
-          markerInfo.dataOffset,
-          markerInfo.length - 2, // Exclude length field
-          appIndex
-        );
-        appSegments.push(appSegment);
+      // Find next marker
+      const markerOffset = findNextMarker(buffer, offset);
+      if (markerOffset === -1) {
+        // No more markers found, we're done
+        break;
+      }
 
-        offset = markerInfo.endOffset;
-      } else {
-        // Skip non-APP segments
-        const markerInfo = parseMarker(buffer, markerOffset);
-        offset = markerInfo.endOffset;
+      try {
+        const marker = (buffer[markerOffset] << 8) | buffer[markerOffset + 1];
+
+        if (marker === MARKERS.EOI) {
+          break; // End of image
+        }
+
+        if (isAppMarker(marker)) {
+          // Parse APP segment
+          const markerInfo = parseMarker(buffer, markerOffset);
+          const appIndex = getAppIndex(marker);
+          const appSegment = parseGenericAPP(
+            buffer,
+            markerInfo.dataOffset,
+            markerInfo.length - 2, // Exclude length field
+            appIndex
+          );
+          appSegments.push(appSegment);
+
+          offset = markerInfo.endOffset;
+        } else if (isRestartMarker(marker) || marker === MARKERS.TEM) {
+          // Skip standalone markers (RST, TEM) that have no payload
+          offset = markerOffset + 2; // Just skip the marker itself
+        } else {
+          // Skip other non-APP segments that have payloads
+          const markerInfo = parseMarker(buffer, markerOffset);
+          offset = markerInfo.endOffset;
+        }
+      } catch (parseError) {
+        // If parsing this marker fails, it might be corrupted data or invalid marker
+        if (
+          parseError.message.includes("Invalid marker") ||
+          parseError.message.includes("payload exceeds buffer bounds")
+        ) {
+          // This might be corrupted data that looks like a marker
+          // Skip just this potential marker and continue searching
+          console.warn(`Skipping invalid marker at offset ${markerOffset}:`, parseError.message);
+          offset = markerOffset + 2; // Skip what might be corrupted marker data
+        } else {
+          // For other parsing errors, skip the marker
+          console.warn(`Skipping malformed marker at offset ${markerOffset}:`, parseError.message);
+          offset = markerOffset + 2; // Skip this marker and continue
+        }
       }
     }
   } catch (error) {
-    // If parsing fails partway through, return what we have
+    // If finding markers fails, return what we have
     console.warn("APP segment extraction failed:", error.message);
   }
 

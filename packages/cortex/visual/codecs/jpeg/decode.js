@@ -314,10 +314,16 @@ export class JPEGDecoder {
       // Step 4: Extract and validate metadata
       let metadata = null;
       if (options.extractMetadata) {
-        metadata = this.extractMetadata(data);
-        if (options.validateMetadata) {
-          const appSegments = extractAppSegments(data);
-          metadata.validation = validateMetadata(appSegments);
+        try {
+          metadata = this.extractMetadata(data);
+          if (options.validateMetadata) {
+            const appSegments = extractAppSegments(data);
+            metadata.validation = validateMetadata(appSegments);
+          }
+        } catch (metadataError) {
+          // If metadata extraction fails, continue without metadata
+          console.warn("Metadata extraction failed, continuing without metadata:", metadataError.message);
+          metadata = null;
         }
       }
 
@@ -363,7 +369,7 @@ export class JPEGDecoder {
 
       // Step 11: Return comprehensive result
       return {
-        pixels: finalPixels,
+        pixels: decodedImage.data,
         width: decodedImage.width,
         height: decodedImage.height,
         components: decodedImage.components,
@@ -408,20 +414,7 @@ export class JPEGDecoder {
    * @returns {Object} Decoded image with pixels, width, height, metadata
    */
   decode(buffer) {
-    const result = this.decodeJPEG(buffer, {
-      tolerantDecoding: false,
-      maxResolutionMP: 100,
-      maxMemoryMB: 512,
-      fancyUpsampling: false,
-      upsampleQuality: UPSAMPLE_QUALITY.FAST,
-      colorTransform: undefined,
-      extractMetadata: true,
-      validateMetadata: false,
-      outputFormat: "rgba",
-      streamingMode: false,
-      maxScanPasses: 20,
-      performanceMetrics: false,
-    });
+    const result = this.decodeJPEG(buffer, this.options);
 
     return {
       pixels: result.pixels,
@@ -907,7 +900,13 @@ export class JPEGDecoder {
    * @returns {JPEGMetadata} Extracted metadata
    */
   extractMetadata(buffer) {
-    const appSegments = extractAppSegments(buffer);
+    let appSegments = [];
+    try {
+      appSegments = extractAppSegments(buffer);
+    } catch (appError) {
+      // If APP segment extraction fails, continue with empty segments
+      console.warn("APP segment extraction failed in metadata, using empty segments:", appError.message);
+    }
 
     return {
       jfif: getJFIFMetadata(appSegments),
@@ -1152,7 +1151,7 @@ export class JPEGDecoder {
           break;
         case MARKERS.SOS:
           // SOS marks start of entropy-coded data
-          this.sosOffset = offset;
+          this.sosOffset = offset + 2;
           return;
         case MARKERS.EOI:
           // EOI can appear at the end of the file or as a terminator
@@ -2231,8 +2230,7 @@ export class JPEGDecoder {
    * @param {BitReader} bitReader - Bit reader instance
    */
   parseSOS(buffer, bitReader) {
-    // Skip SOS marker
-    bitReader.offset += 2;
+    // BitReader is already positioned at SOS segment data (after marker)
 
     // Read SOS segment length
     const sosLength = (buffer[bitReader.offset++] << 8) | buffer[bitReader.offset++];
@@ -2299,9 +2297,19 @@ export class JPEGDecoder {
     this.dcPredictors.fill(0);
 
     // Process all MCUs in raster order
+    let processedMCUs = 0;
     for (let mcuY = 0; mcuY < this.mcusPerColumn; mcuY++) {
       for (let mcuX = 0; mcuX < this.mcusPerLine; mcuX++) {
-        this.decodeMCU(bitReader, scan.scanComponents, mcuX, mcuY);
+        try {
+          this.decodeMCU(bitReader, scan.scanComponents, mcuX, mcuY);
+          processedMCUs++;
+        } catch (error) {
+          if (error.message.includes("Bit stream exhausted")) {
+            // Return early - we've processed as much as possible
+            return;
+          }
+          throw error;
+        }
       }
     }
   }
@@ -2314,11 +2322,16 @@ export class JPEGDecoder {
    * @param {number} mcuY - MCU Y coordinate
    */
   decodeMCU(bitReader, scanComponents, mcuX, mcuY) {
-    // Check for restart marker at MCU boundary if restart is enabled
+    // Check for restart marker when expected (with some tolerance)
     if (this.restartEnabled && this.mcuCount > 0 && this.mcuCount % this.restartInterval === 0) {
-      // We expect a restart marker here - check for it
+      // Try to find the restart marker
       if (!this.handleRestartMarker(bitReader)) {
-        throw new Error(`Expected restart marker at MCU ${this.mcuCount}, but none found`);
+        // In tolerant mode, continue without restart marker but log warning
+        if (this.options?.tolerantDecoding) {
+          this.addWarning("MISSING_RST", `Expected restart marker at MCU ${this.mcuCount}, continuing without it`);
+        } else {
+          throw new Error(`Expected restart marker at MCU ${this.mcuCount}, but none found`);
+        }
       }
     }
 
