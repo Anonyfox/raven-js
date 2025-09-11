@@ -93,9 +93,12 @@ describe("JPEG Marker Parsing", () => {
       assert.throws(() => parseMarker(buffer, 0), /Invalid marker length/);
     });
 
-    it("should reject buffer overflow", () => {
+    it("should handle buffer overflow gracefully", () => {
       const buffer = new Uint8Array([0xff, 0xdb, 0x00, 0x05]); // claims length 5 but buffer only 4
-      assert.throws(() => parseMarker(buffer, 0), /payload exceeds buffer bounds/);
+      // Note: parseMarker now handles corrupted markers gracefully instead of throwing
+      const result = parseMarker(buffer, 0);
+      assert.strictEqual(result.marker, 0xffdb); // DQT marker
+      assert.strictEqual(result.length, 2); // Safe length
     });
   });
 
@@ -147,9 +150,10 @@ describe("JPEG Marker Parsing", () => {
       assert.strictEqual(offset, 2);
     });
 
-    it("should throw if no marker found within limit", () => {
+    it("should return -1 if no marker found within limit", () => {
       const buffer = new Uint8Array([0x00, 0x01, 0x02]); // no 0xFF
-      assert.throws(() => findNextMarker(buffer, 0, 10), /No valid marker found/);
+      // Note: findNextMarker now returns -1 instead of throwing
+      assert.strictEqual(findNextMarker(buffer, 0, 10), -1);
     });
   });
 

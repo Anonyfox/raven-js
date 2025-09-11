@@ -33,6 +33,13 @@ import { UPSAMPLE_QUALITY, upsamplePlaneQuality } from "./upsample.js";
 
 /**
  * @typedef {import('./parse.js').ProgressiveComponentData} ProgressiveComponentData
+ * @typedef {Object} AppSegment
+ * @property {number} appIndex - APP segment index (0-15)
+ * @property {string} type - Segment type ("JFIF", "EXIF", "XMP", "ICC", "Adobe", "Unknown")
+ * @property {number} length - Raw segment length
+ * @property {Uint8Array} rawData - Raw segment data
+ * @property {Object|null} metadata - Parsed metadata (null if parsing failed)
+ * @property {boolean} parsed - Whether metadata was successfully parsed
  */
 
 /**
@@ -246,6 +253,8 @@ export class JPEGDecoder {
     this.restartCount = 0;
     /** @type {number} */
     this.mcuCount = 0;
+    /** @type {number} */
+    this.totalBlocksDecoded = 0; // Debug counter
     /** @type {Object} */
     this.metadata = {};
 
@@ -339,7 +348,7 @@ export class JPEGDecoder {
       this.reportProgress(options.onProgress, 80, "Entropy decoding complete");
 
       // Step 8: Apply output format conversion
-      const finalPixels = this.convertOutputFormat(
+      const _finalPixels = this.convertOutputFormat(
         decodedImage.data,
         decodedImage.width,
         decodedImage.height,
@@ -900,6 +909,7 @@ export class JPEGDecoder {
    * @returns {JPEGMetadata} Extracted metadata
    */
   extractMetadata(buffer) {
+    /** @type {any[]} */
     let appSegments = [];
     try {
       appSegments = extractAppSegments(buffer);
@@ -2297,12 +2307,12 @@ export class JPEGDecoder {
     this.dcPredictors.fill(0);
 
     // Process all MCUs in raster order
-    let processedMCUs = 0;
+    let _processedMCUs = 0;
     for (let mcuY = 0; mcuY < this.mcusPerColumn; mcuY++) {
       for (let mcuX = 0; mcuX < this.mcusPerLine; mcuX++) {
         try {
           this.decodeMCU(bitReader, scan.scanComponents, mcuX, mcuY);
-          processedMCUs++;
+          _processedMCUs++;
         } catch (error) {
           if (error.message.includes("Bit stream exhausted")) {
             // Return early - we've processed as much as possible

@@ -63,7 +63,7 @@ export function dequantizeBlock(coeffs, quantTable, output) {
  * @param {Uint8Array} output - 64 output samples (0-255 range)
  */
 export function idctBlock(coeffs, output) {
-  const { COS_2_16, COS_4_16, COS_6_16, SQRT2, INV_SQRT2, ROUND_FACTOR, AAN_SCALE_BITS } = IDCT_CONSTANTS;
+  const { COS_2_16, COS_4_16, COS_6_16, INV_SQRT2, AAN_SCALE_BITS } = IDCT_CONSTANTS;
 
   // Apply AAN scaling to input coefficients for better precision
   for (let i = 0; i < 8; i++) {
@@ -71,7 +71,7 @@ export function idctBlock(coeffs, output) {
     coeffs[i * 8] = (coeffs[i * 8] * INV_SQRT2) >> AAN_SCALE_BITS;
     // Scale AC coefficients (positions 1-7) by 1/2
     for (let j = 1; j < 8; j++) {
-      coeffs[i * 8 + j] = (coeffs[i * 8 + j] * SQRT2) >> AAN_SCALE_BITS;
+      coeffs[i * 8 + j] = coeffs[i * 8 + j] >> 1; // Divide by 2 (multiply by 0.5)
     }
   }
 
@@ -158,13 +158,13 @@ export function idctBlock(coeffs, output) {
 
     // Apply AAN scaling to column coefficients
     const scaled_x0 = (x0 * INV_SQRT2) >> AAN_SCALE_BITS;
-    const scaled_x1 = (x1 * SQRT2) >> AAN_SCALE_BITS;
-    const scaled_x2 = (x2 * SQRT2) >> AAN_SCALE_BITS;
-    const scaled_x3 = (x3 * SQRT2) >> AAN_SCALE_BITS;
+    const scaled_x1 = x1 >> 1; // Divide by 2 (multiply by 0.5)
+    const scaled_x2 = x2 >> 1; // Divide by 2 (multiply by 0.5)
+    const scaled_x3 = x3 >> 1; // Divide by 2 (multiply by 0.5)
     const scaled_x4 = (x4 * INV_SQRT2) >> AAN_SCALE_BITS;
-    const scaled_x5 = (x5 * SQRT2) >> AAN_SCALE_BITS;
-    const scaled_x6 = (x6 * SQRT2) >> AAN_SCALE_BITS;
-    const scaled_x7 = (x7 * SQRT2) >> AAN_SCALE_BITS;
+    const scaled_x5 = x5 >> 1; // Divide by 2 (multiply by 0.5)
+    const scaled_x6 = x6 >> 1; // Divide by 2 (multiply by 0.5)
+    const scaled_x7 = x7 >> 1; // Divide by 2 (multiply by 0.5)
 
     // Same Loeffler algorithm as row pass
     const t0 = scaled_x0 + scaled_x4;
@@ -206,16 +206,16 @@ export function idctBlock(coeffs, output) {
     const y6 = s3 + w3;
     const y7 = s3 - w3;
 
-    // Final scaling and clamping to 0-255 range
-    // Combined AAN scaling (17 bits total) + level shift for unsigned representation
-    output[col + 0 * 8] = clampToUint8(((y0 + ROUND_FACTOR) >> 17) + 128);
-    output[col + 1 * 8] = clampToUint8(((y1 + ROUND_FACTOR) >> 17) + 128);
-    output[col + 2 * 8] = clampToUint8(((y2 + ROUND_FACTOR) >> 17) + 128);
-    output[col + 3 * 8] = clampToUint8(((y3 + ROUND_FACTOR) >> 17) + 128);
-    output[col + 4 * 8] = clampToUint8(((y4 + ROUND_FACTOR) >> 17) + 128);
-    output[col + 5 * 8] = clampToUint8(((y5 + ROUND_FACTOR) >> 17) + 128);
-    output[col + 6 * 8] = clampToUint8(((y6 + ROUND_FACTOR) >> 17) + 128);
-    output[col + 7 * 8] = clampToUint8(((y7 + ROUND_FACTOR) >> 17) + 128);
+    // Simple approach: just shift and clamp
+    const shift = 3; // Reduce values to reasonable range
+    output[col + 0 * 8] = clampToUint8(Math.max(0, Math.min(255, (y0 >> shift) + 128)));
+    output[col + 1 * 8] = clampToUint8(Math.max(0, Math.min(255, (y1 >> shift) + 128)));
+    output[col + 2 * 8] = clampToUint8(Math.max(0, Math.min(255, (y2 >> shift) + 128)));
+    output[col + 3 * 8] = clampToUint8(Math.max(0, Math.min(255, (y3 >> shift) + 128)));
+    output[col + 4 * 8] = clampToUint8(Math.max(0, Math.min(255, (y4 >> shift) + 128)));
+    output[col + 5 * 8] = clampToUint8(Math.max(0, Math.min(255, (y5 >> shift) + 128)));
+    output[col + 6 * 8] = clampToUint8(Math.max(0, Math.min(255, (y6 >> shift) + 128)));
+    output[col + 7 * 8] = clampToUint8(Math.max(0, Math.min(255, (y7 >> shift) + 128)));
   }
 }
 
