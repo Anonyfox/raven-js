@@ -7,390 +7,275 @@
  */
 
 /**
- * @file JPEG Huffman coding and bitstream reading.
+ * @file JPEG Huffman + Bitreader utilities.
  *
- * Implements canonical Huffman code construction, fast decode tables,
- * and bit-level reading with 0xFF00 unstuffing. Provides entropy decoding
- * for both baseline and progressive JPEG scans.
+ * Pure, dependency-free primitives used by the JPEG decoder:
+ * - createBitReader: byte-stuff aware bit reader for entropy-coded segments
+ * - buildHuffmanTable: canonical JPEG Huffman (Annex C) table builder
+ * - decodeHuffmanSymbol: decode one symbol using table and reader
  */
 
 /**
- * Huffman table types
+ * @typedef {Object} BitReader
+ * @property {number} offset Current byte offset in source
+ * @property {number} bitBuffer Internal 32-bit buffer
+ * @property {number} bitCount Number of valid bits in bitBuffer
+ * @property {number|null} marker Last seen 0xFFxx marker inside entropy stream (if any)
+ * @property {() => number} readBit Read a single bit (0/1)
+ * @property {(n:number)=>number} receive Read n bits as unsigned integer
+ * @property {(n:number)=>number} receiveSigned Read n bits and apply JPEG sign-extension
+ * @property {() => void} alignToByte Drop remaining bits to align to next byte boundary
+ * @property {() => (number|null)} getMarker Get and clear the last seen marker (returns value and clears internal state)
+ * @property {() => boolean} hasMarker Whether a marker was seen and is pending consumption
+ * @property {() => boolean} eof Whether source is exhausted
  */
-export const HUFFMAN_TABLE_TYPES = {
-  DC: 0,
-  AC: 1,
-};
 
 /**
- * Bit reader for JPEG entropy-coded data.
+ * Create a byte-stuff aware bit reader.
+ * - Unstuffs 0xFF 0x00 to literal 0xFF
+ * - On 0xFF followed by non-zero, records marker (0xFFxx), drops bit-buffer (byte align), and prevents further reads until marker is consumed via getMarker().
  *
- * Handles byte-aligned reading with 0xFF00 unstuffing and marker detection.
- * Maintains 32-bit bit buffer for efficient bit operations.
+ * @param {Uint8Array|ArrayBuffer} source
+ * @returns {BitReader}
  */
-export class BitReader {
-  /**
-   * Create bit reader for buffer segment.
-   *
-   * @param {Uint8Array} buffer - Source buffer
-   * @param {number} startOffset - Start of entropy-coded segment
-   * @param {number} endOffset - End of entropy-coded segment
-   */
-  constructor(buffer, startOffset, endOffset) {
-    this.buffer = buffer;
-    this.offset = startOffset;
-    this.endOffset = endOffset;
-    this.bitBuffer = 0;
-    this.bitCount = 0;
+export function createBitReader(source) {
+  /** @type {Uint8Array} */
+  const bytes = source instanceof Uint8Array ? source : new Uint8Array(source);
+
+  /** @type {BitReader} */
+  const state = {
+    offset: 0,
+    bitBuffer: 0,
+    bitCount: 0,
+    marker: null,
+    readBit,
+    receive,
+    receiveSigned,
+    alignToByte,
+    getMarker,
+    hasMarker: () => state.marker !== null,
+    eof: () => state.offset >= bytes.length && state.bitCount === 0,
+  };
+
+  function getMarker() {
+    const m = state.marker;
+    state.marker = null;
+    return m;
   }
 
-  /**
-   * Refill bit buffer from source data.
-   * Handles 0xFF00 unstuffing and marker detection.
-   *
-   * @returns {boolean} True if more data available, false if end reached
-   */
-  refillBuffer() {
-    while (this.bitCount <= 24 && this.offset < this.endOffset) {
-      const byte = this.buffer[this.offset++];
+  function alignToByte() {
+    state.bitBuffer &= ~((1 << (state.bitCount & 7)) - 1);
+    state.bitCount &= ~7;
+  }
 
-      // Handle 0xFF stuffing BEFORE adding to buffer
-      if (byte === 0xff) {
-        if (this.offset >= this.endOffset) {
-          // End of segment - add the 0xff and stop
-          this.bitBuffer = (this.bitBuffer << 8) | byte;
-          this.bitCount += 8;
-          break;
-        }
-
-        const nextByte = this.buffer[this.offset];
-        if (nextByte === 0x00) {
-          // Stuffed byte - skip both 0xff and 0x00, continue to next byte
-          this.offset++;
-          continue; // Don't add 0xff to buffer, read next byte
+  /** @param {number} n */
+  function ensureBits(n) {
+    if (state.marker !== null) throw markerError(state.marker);
+    while (state.bitCount < n) {
+      if (state.offset >= bytes.length) throw new Error("ERR_UNDERFLOW: entropy data exhausted");
+      let b = bytes[state.offset++];
+      if (b === 0xff) {
+        if (state.offset >= bytes.length) throw new Error("ERR_STUFFING: stray 0xFF at end of stream");
+        const next = bytes[state.offset++];
+        if (next === 0x00) {
+          // stuffed 0xFF literal
+          b = 0xff;
         } else {
-          // Found marker - back up to 0xff and signal end
-          this.offset--; // Don't consume marker
-          break;
+          // encountered marker; record and stop feeding bits
+          state.marker = (0xff << 8) | next;
+          state.bitCount = 0;
+          state.bitBuffer = 0;
+          throw markerError(state.marker);
         }
       }
-
-      // Add byte to bit buffer (MSB first)
-      this.bitBuffer = (this.bitBuffer << 8) | byte;
-      this.bitCount += 8;
+      state.bitBuffer = (state.bitBuffer << 8) | b;
+      state.bitCount += 8;
     }
-
-    return this.bitCount > 0;
   }
 
-  /**
-   * Read single bit from stream.
-   *
-   * @returns {number} Bit value (0 or 1)
-   * @throws {Error} If insufficient data
-   */
-  readBit() {
-    if (this.bitCount === 0 && !this.refillBuffer()) {
-      throw new Error("Bit stream exhausted");
-    }
-
-    const bit = (this.bitBuffer >>> (this.bitCount - 1)) & 1;
-    this.bitCount--;
-
+  function readBit() {
+    ensureBits(1);
+    state.bitCount -= 1;
+    const bit = (state.bitBuffer >>> state.bitCount) & 1;
+    state.bitBuffer &= (1 << state.bitCount) - 1;
     return bit;
   }
 
   /**
-   * Read n bits from stream and return as unsigned integer.
-   *
-   * @param {number} n - Number of bits to read (1-16)
-   * @returns {number} Unsigned integer value
-   * @throws {Error} If insufficient data or invalid n
+   * @param {number} n
    */
-  receive(n) {
-    if (n < 1 || n > 16) {
-      throw new Error(`Invalid bit count: ${n}`);
-    }
-
-    let value = 0;
-    for (let i = 0; i < n; i++) {
-      value = (value << 1) | this.readBit();
-    }
-
-    return value;
-  }
-
-  /**
-   * Read n bits and convert to signed integer using JPEG sign extension.
-   *
-   * @param {number} n - Number of bits to read (1-16)
-   * @returns {number} Signed integer value
-   */
-  receiveSigned(n) {
-    const unsigned = this.receive(n);
-
-    // JPEG sign extension: if MSB is 0, value is positive
-    // If MSB is 1, extend sign by subtracting 2^n
+  function receive(n) {
     if (n === 0) return 0;
-
-    const msb = unsigned >>> (n - 1);
-    if (msb === 0) {
-      return unsigned;
-    } else {
-      return unsigned - (1 << n);
-    }
+    ensureBits(n);
+    state.bitCount -= n;
+    const value = (state.bitBuffer >>> state.bitCount) & ((1 << n) - 1);
+    state.bitBuffer &= (1 << state.bitCount) - 1;
+    return value >>> 0;
   }
 
   /**
-   * Check if bit stream has reached end or marker.
-   *
-   * @returns {boolean} True if at end
+   * JPEG receive-and-extend
+   * @param {number} n
    */
-  isAtEnd() {
-    return this.bitCount === 0 && this.offset >= this.endOffset;
+  function receiveSigned(n) {
+    const v = receive(n);
+    if (n === 0) return 0;
+    const threshold = 1 << (n - 1);
+    return v < threshold ? v - ((1 << n) - 1) : v;
   }
 
-  /**
-   * Get current byte offset for error reporting.
-   *
-   * @returns {number} Current offset
-   */
-  getOffset() {
-    return this.offset;
+  return state;
+
+  /** @param {number} m */
+  function markerError(m) {
+    const hex = `0x${m.toString(16).toUpperCase().padStart(4, "0")}`;
+    return new JPEGError("ERR_MARKER", `encountered marker ${hex} inside entropy stream`, m);
   }
 }
 
 /**
- * Huffman table for JPEG entropy decoding.
+ * Custom JPEG error with code and optional marker field.
+ * @extends Error
+ */
+class JPEGError extends Error {
+  /**
+   * @param {string} code
+   * @param {string} message
+   * @param {number=} marker
+   */
+  constructor(code, message, marker) {
+    super(`${code}: ${message}`);
+    this.name = "JPEGError";
+    /** @type {string} */
+    this.code = code;
+    if (marker !== undefined) {
+      /** @type {number|undefined} */
+      this.marker = marker;
+    }
+  }
+}
+
+/**
+ * @typedef {Object} HuffmanTable
+ * @property {Int32Array} minCode
+ * @property {Int32Array} maxCode
+ * @property {Int32Array} valPtr
+ * @property {Uint8Array} huffVal
+ * @property {Uint16Array} fast
+ * @property {Uint8Array} fastLen
+ * @property {number} fastBits
+ */
+
+/**
+ * Build a canonical JPEG Huffman table per Annex C (minCode/maxCode/valPtr),
+ * plus a primary fast lookup table for the first N bits.
  *
- * Stores canonical Huffman codes and provides fast decoding lookup.
+ * @param {Uint8Array|number[]} codeLengthCounts 16 counts for code lengths 1..16
+ * @param {Uint8Array|number[]} symbols Symbol values in order
+ * @param {number} [fastBits=9] Primary table width
+ * @returns {HuffmanTable}
  */
-export class HuffmanTable {
-  /**
-   * Create Huffman table from DHT segment data.
-   *
-   * @param {number} tableType - DC (0) or AC (1)
-   * @param {number} tableId - Table ID (0-3)
-   * @param {Uint8Array} lengths - Code length counts (16 bytes)
-   * @param {Uint8Array} values - Symbol values
-   */
-  constructor(tableType, tableId, lengths, values) {
-    this.tableType = tableType;
-    this.tableId = tableId;
-    this.lengths = lengths;
-    this.values = values;
-    this.codes = new Array(256); // Canonical codes
-    this.codeLengths = new Array(256); // Code lengths for each symbol
+export function buildHuffmanTable(codeLengthCounts, symbols, fastBits = 9) {
+  const L = codeLengthCounts instanceof Uint8Array ? codeLengthCounts : Uint8Array.from(codeLengthCounts);
+  const V = symbols instanceof Uint8Array ? symbols : Uint8Array.from(symbols);
 
-    this.buildCanonicalCodes();
-    this.buildFastTable();
+  if (L.length !== 16) throw new Error("ERR_DHT_LENGTHS: expected 16 length counts");
+  let total = 0;
+  for (let i = 0; i < 16; i++) total += L[i];
+  if (total !== V.length) throw new Error("ERR_DHT_SYMBOLS: symbol count must equal sum(lengthCounts)");
+  if (total === 0) throw new Error("ERR_DHT_EMPTY: at least one symbol required");
+
+  const minCode = new Int32Array(17);
+  const maxCode = new Int32Array(17);
+  const valPtr = new Int32Array(17);
+
+  let code = 0;
+  let k = 0;
+  for (let i = 1; i <= 16; i++) {
+    const count = L[i - 1];
+    if (count === 0) {
+      minCode[i] = -1;
+      maxCode[i] = -1;
+      valPtr[i] = k;
+    } else {
+      valPtr[i] = k;
+      minCode[i] = code;
+      code += count;
+      maxCode[i] = code - 1;
+    }
+    code <<= 1;
+    k += count;
   }
 
-  /**
-   * Build canonical Huffman codes from lengths and values.
-   */
-  buildCanonicalCodes() {
-    let code = 0;
-    let symbolIndex = 0;
+  // Fast table: maps prefix -> (len<<8)|symbol, or 0xFFFF for slow path
+  const size = 1 << fastBits;
+  const fast = new Uint16Array(size);
+  const fastLen = new Uint8Array(size);
+  fast.fill(0xffff);
 
-    // Standard canonical Huffman code generation
-    for (let length = 1; length <= 16; length++) {
-      // Assign codes to all symbols of this length
-      for (let i = 0; i < this.lengths[length - 1]; i++) {
-        if (symbolIndex >= this.values.length) {
-          throw new Error("Too few symbols for Huffman table");
+  code = 0;
+  k = 0;
+  for (let i = 1; i <= 16; i++) {
+    const count = L[i - 1];
+    for (let j = 0; j < count; j++, k++) {
+      const sym = V[k];
+      const len = i;
+      if (len <= fastBits) {
+        const start = code << (fastBits - len);
+        const end = start + (1 << (fastBits - len));
+        for (let p = start; p < end; p++) {
+          fast[p] = (len << 8) | sym;
+          fastLen[p] = len;
         }
-
-        const symbol = this.values[symbolIndex++];
-        this.codes[symbol] = code;
-        this.codeLengths[symbol] = length;
-        code++;
       }
-
-      // Shift for next length (ensures lexicographic ordering)
-      code <<= 1;
+      code++;
     }
-
-    if (symbolIndex !== this.values.length) {
-      throw new Error("Too many symbols for Huffman table");
-    }
+    code <<= 1;
   }
 
-  /**
-   * Build fast lookup table for decoding.
-   * Uses 8-bit prefix lookup with fallback to sequential search.
-   */
-  buildFastTable() {
-    const FAST_TABLE_SIZE = 256; // 2^8
-    this.fastTable = new Array(FAST_TABLE_SIZE);
-    this.fastTableSymbols = new Array(FAST_TABLE_SIZE);
-
-    for (let i = 0; i < FAST_TABLE_SIZE; i++) {
-      this.fastTable[i] = -1; // -1 = need more bits
-      this.fastTableSymbols[i] = -1;
-    }
-
-    // Populate fast table with 8-bit prefixes
-    for (let symbol = 0; symbol < 256; symbol++) {
-      const code = this.codes[symbol];
-      const length = this.codeLengths[symbol];
-
-      if (length === undefined || code === undefined) continue;
-
-      if (length <= 8) {
-        // Can fit in fast table
-        const prefix = code << (8 - length);
-        const mask = (1 << (8 - length)) - 1;
-
-        for (let i = 0; i <= mask; i++) {
-          const index = prefix | i;
-          if (this.fastTable[index] === -1) {
-            this.fastTable[index] = length;
-            this.fastTableSymbols[index] = symbol;
-          }
-        }
-      }
-    }
-  }
-
-  /**
-   * Decode next Huffman symbol from bit reader.
-   *
-   * @param {BitReader} bitReader - Bit reader instance
-   * @returns {number} Decoded symbol
-   * @throws {Error} If invalid Huffman code
-   */
-  decodeSymbol(bitReader) {
-    // Debug: Check if table is properly initialized
-    if (!this.codes || !this.codeLengths) {
-      throw new Error("Huffman table not properly initialized");
-    }
-
-    // Try fast table first
-    if (bitReader.bitCount >= 8) {
-      const peek = bitReader.bitBuffer >>> (bitReader.bitCount - 8);
-      // Bounds check for fast table
-      if (peek < 256) {
-        const fastLength = this.fastTable[peek];
-
-        if (fastLength !== -1 && this.fastTableSymbols[peek] !== -1) {
-          // Fast path hit
-          const symbol = this.fastTableSymbols[peek];
-          // Consume the bits
-          bitReader.bitCount -= fastLength;
-          return symbol;
-        }
-      }
-    }
-
-    // Slow path: build code bit by bit
-    let code = 0;
-    let length = 0;
-
-    while (length < 16) {
-      code = (code << 1) | bitReader.readBit();
-      length++;
-
-      // Check if this code matches any symbol
-      for (let symbol = 0; symbol < 256; symbol++) {
-        if (this.codes[symbol] !== undefined && this.codeLengths[symbol] !== undefined) {
-          if (this.codes[symbol] === code && this.codeLengths[symbol] === length) {
-            return symbol;
-          }
-        }
-      }
-    }
-
-    // If we get here, no valid symbol was found
-    throw new Error(`Invalid Huffman code: 0x${code.toString(16)} (length ${length})`);
-  }
+  return { minCode, maxCode, valPtr, huffVal: V, fast, fastLen, fastBits };
 }
 
 /**
- * Huffman decoder state for scan processing.
+ * Decode one symbol using the provided Huffman table and bit reader.
+ * Uses fast table when possible, falls back to Annex C traversal.
+ *
+ * @param {BitReader} br
+ * @param {HuffmanTable} tab
+ * @returns {number}
  */
-export class HuffmanDecoder {
-  /**
-   * Create decoder with DC and AC tables.
-   *
-   * @param {HuffmanTable} dcTable - DC Huffman table
-   * @param {HuffmanTable} acTable - AC Huffman table
-   */
-  constructor(dcTable, acTable) {
-    this.dcTable = dcTable;
-    this.acTable = acTable;
-    this.dcPredictor = 0; // DC predictor for component
-  }
-
-  /**
-   * Decode DC coefficient.
-   *
-   * @param {BitReader} bitReader - Bit reader
-   * @returns {number} DC coefficient value
-   */
-  decodeDC(bitReader) {
-    const symbol = this.dcTable.decodeSymbol(bitReader);
-
-    if (symbol === 0) {
-      // No additional bits
-      this.dcPredictor = 0;
-      return 0;
-    }
-
-    const diff = bitReader.receiveSigned(symbol);
-    const coeff = this.dcPredictor + diff;
-    this.dcPredictor = coeff;
-
-    return coeff;
-  }
-
-  /**
-   * Decode AC coefficients for block.
-   *
-   * @param {BitReader} bitReader - Bit reader
-   * @param {Int16Array} block - 64-element block to fill
-   * @param {number} startIndex - Starting coefficient index (0 for DC, 1 for AC)
-   */
-  decodeAC(bitReader, block, startIndex = 1) {
-    let k = startIndex;
-
-    while (k < 64) {
-      const rs = this.acTable.decodeSymbol(bitReader);
-      const r = rs >>> 4; // Run length
-      const s = rs & 15; // Size of coefficient
-
-      if (rs === 0) {
-        // EOB - end of block
-        break;
-      }
-
-      if (rs === 0xf0) {
-        // ZRL - 16 zeros
-        k += 16;
-        continue;
-      }
-
-      // Skip r zeros
-      k += r;
-
-      if (k >= 64) break;
-
-      // Read coefficient
-      const coeff = bitReader.receiveSigned(s);
-      block[k] = coeff;
-      k++;
-    }
-
-    // Fill remaining with zeros
-    for (; k < 64; k++) {
-      block[k] = 0;
+export function decodeHuffmanSymbol(br, tab) {
+  // Try fast path by peeking fastBits
+  // Ensure enough bits for peek; if marker is hit, ensureBits throws with marker error
+  // We conservatively request fastBits bits; if not available due to marker, the error propagates
+  const need = tab.fastBits;
+  // local ensure: mimic receive but non-destructive
+  // We rely on createBitReader's ensureBits via a shadow call: readBit cannot peek.
+  // Implement a small local peek by temporarily pulling bits via receive, then pushing back is complex.
+  // Instead, do slow path always if bitCount < need.
+  if (br.bitCount >= need) {
+    const peek = (br.bitBuffer >>> (br.bitCount - need)) & ((1 << need) - 1);
+    const entry = tab.fast[peek];
+    if (entry !== 0xffff) {
+      const len = entry >>> 8;
+      const sym = entry & 0xff;
+      // consume len bits
+      br.bitCount -= len;
+      br.bitBuffer &= (1 << br.bitCount) - 1;
+      return sym;
     }
   }
 
-  /**
-   * Reset DC predictor (called at restart markers).
-   */
-  resetPredictor() {
-    this.dcPredictor = 0;
+  // Slow path: read bit-by-bit comparing against min/max codes
+  let code = 0;
+  for (let len = 1; len <= 16; len++) {
+    code = (code << 1) | br.readBit();
+    const min = tab.minCode[len];
+    const max = tab.maxCode[len];
+    if (min >= 0 && code <= max) {
+      const idx = tab.valPtr[len] + (code - min);
+      return tab.huffVal[idx];
+    }
   }
+  throw new Error("ERR_HUFF_DECODE: code length exceeded 16 bits");
 }

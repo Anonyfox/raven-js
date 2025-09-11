@@ -23,4 +23,4 @@
  * console.log('Metadata:', result.metadata);
  */
 
-export { decodeJPEG, JPEGDecoder } from "./decode.js";
+export { decodeJPEG } from "./decode.js";

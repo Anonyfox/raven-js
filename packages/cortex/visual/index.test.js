@@ -15,7 +15,7 @@
 
 import assert from "node:assert";
 import { describe, it } from "node:test";
-import { decodeJPEG, decodePNG, encodePNG, Image, JPEGDecoder } from "./index.js";
+import { decodeJPEG, decodePNG, encodePNG, Image } from "./index.js";
 
 describe("Visual module exports", () => {
   it("exports base Image class", () => {
@@ -29,7 +29,6 @@ describe("Visual module exports", () => {
 
   it("exports JPEG codec functions", () => {
     assert.equal(typeof decodeJPEG, "function", "Should export decodeJPEG function");
-    assert.equal(typeof JPEGDecoder, "function", "Should export JPEGDecoder class");
   });
 
   it("Image class has expected methods", () => {

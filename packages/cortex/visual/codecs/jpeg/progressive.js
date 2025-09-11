@@ -7,267 +7,182 @@
  */
 
 /**
- * @file JPEG progressive DCT scan processing.
+ * @file Progressive JPEG scan refinement (placeholder).
  *
- * Handles progressive JPEG scans with DC refinement, AC successive approximation,
- * and EOB run management. Maintains coefficient state across multiple scans.
+ * Documentation:
+ * This module will implement progressive JPEG scan handling per DECODE.md:
+ * DC first/refine, AC first/refine with EOBRUN, and RST resets. No exports yet.
  */
 
-import { BitReader, HuffmanTable } from "./huffman.js";
+import { decodeHuffmanSymbol } from "./huffman.js";
+import { zigZagToNatural } from "./zigzag.js";
 
 /**
- * Progressive scan state machine states
- */
-export const PROGRESSIVE_STATES = {
-  INITIAL: 0,
-  RUN: 1,
-  SET: 2,
-  EOB: 3,
-};
-
-/**
- * Progressive AC decoder state
- */
-export class ProgressiveACState {
-  constructor() {
-    this.eobrun = 0; // End-of-band run counter
-    this.state = PROGRESSIVE_STATES.INITIAL;
-    this.runLength = 0;
-    this.refinementBit = 0;
-  }
-
-  /**
-   * Reset state at restart markers
-   */
-  reset() {
-    this.eobrun = 0;
-    this.state = PROGRESSIVE_STATES.INITIAL;
-    this.runLength = 0;
-  }
-}
-
-/**
- * Decode progressive DC scan (Ss=0, Se=0).
+ * Decode a progressive scan with restart handling.
+ * - Supports DC first/refine and AC first/refine with EOBRUN.
+ * - Predictors persist across scans; pass in and modified in place.
  *
- * @param {BitReader} bitReader - Bit reader
- * @param {HuffmanTable} dcTable - DC Huffman table
- * @param {Int16Array} block - 64-element coefficient block
- * @param {number} predictor - Current DC predictor
- * @param {number} al - Successive approximation low bit position
- * @returns {number} Updated predictor
+ * @param {import('./huffman.js').createBitReader extends (...args:any)=>infer R ? R : any} br
+ * @param {import('./parse.js').Frame} frame
+ * @param {{ components: { idx:number, id:number, td:number, ta:number }[], Ss:number, Se:number, Ah:number, Al:number }} scan
+ * @param {{ dc: any[], ac: any[] }} store
+ * @param {number} Ri
+ * @param {Int32Array} predictors
  */
-export function decodeProgressiveDC(bitReader, dcTable, block, predictor, al) {
-  if (al === 0) {
-    // First pass: decode full DC coefficient
-    const symbol = dcTable.decodeSymbol(bitReader);
-    if (symbol === 0) {
-      block[0] = predictor;
-      return predictor;
-    }
+export function decodeProgressiveScanWithDRI(br, frame, scan, store, Ri, predictors) {
+  const isDC = scan.Ss === 0 && scan.Se === 0;
+  const isFirst = scan.Ah === 0;
+  const Al = scan.Al | 0;
+  let mcusSinceRST = 0;
+  let rstIndex = 0;
+  let eobrun = 0;
 
-    const diff = bitReader.receiveSigned(symbol) << al;
-    const coeff = predictor + diff;
-    block[0] = coeff;
-    return coeff;
-  } else {
-    // Refinement pass: add next bit
-    const bit = bitReader.readBit();
-    const refinement = bit << al;
-    const coeff = block[0] + refinement;
-    block[0] = coeff;
-    return predictor; // Predictor unchanged in refinement
-  }
-}
+  for (let my = 0; my < frame.mcusPerColumn; my++) {
+    for (let mx = 0; mx < frame.mcusPerLine; mx++) {
+      for (let s = 0; s < scan.components.length; s++) {
+        const sc = scan.components[s];
+        const comp = frame.components[sc.idx];
+        for (let v = 0; v < comp.v; v++) {
+          for (let h = 0; h < comp.h; h++) {
+            const blockRow = my * comp.v + v;
+            const blockCol = mx * comp.h + h;
+            const coeffs = comp.blocks[blockRow][blockCol];
 
-/**
- * Decode progressive AC scan (Ss>0).
- *
- * @param {BitReader} bitReader - Bit reader
- * @param {HuffmanTable} acTable - AC Huffman table
- * @param {Int16Array} block - 64-element coefficient block
- * @param {number} ss - Spectral start (0-63)
- * @param {number} se - Spectral end (0-63)
- * @param {number} al - Successive approximation low bit position
- * @param {ProgressiveACState} state - Progressive AC state
- */
-export function decodeProgressiveAC(bitReader, acTable, block, ss, se, al, state) {
-  let k = ss;
-
-  if (al === 0) {
-    // First pass AC decoding
-    while (k <= se) {
-      if (state.eobrun > 0) {
-        // Still in EOB run
-        state.eobrun--;
-        k++;
-        continue;
-      }
-
-      const rs = acTable.decodeSymbol(bitReader);
-      const r = rs >>> 4;
-      const s = rs & 15;
-
-      if (s === 0) {
-        if (r < 15) {
-          // EOB run
-          state.eobrun = bitReader.receive(r) + (1 << r) - 1;
-          break;
-        } else {
-          // ZRL (16 zeros)
-          k += 16;
-          continue;
-        }
-      }
-
-      // Skip r zeros
-      k += r;
-
-      if (k > se) break;
-
-      // Decode coefficient
-      const coeff = bitReader.receiveSigned(s) << al;
-      block[k] = coeff;
-      k++;
-    }
-  } else {
-    // Refinement pass AC decoding
-    while (k <= se) {
-      switch (state.state) {
-        case PROGRESSIVE_STATES.INITIAL:
-          if (block[k] !== 0) {
-            // Refine existing non-zero coefficient
-            const bit = bitReader.readBit();
-            const sign = block[k] > 0 ? 1 : -1;
-            block[k] += sign * (bit << al);
-          } else {
-            // Check for new non-zero coefficient
-            const rs = acTable.decodeSymbol(bitReader);
-            const r = rs >>> 4;
-            const s = rs & 15;
-
-            if (s === 0) {
-              if (r < 15) {
-                // EOB run
-                state.eobrun = bitReader.receive(r) + (1 << r) - 1;
-                state.state = PROGRESSIVE_STATES.EOB;
-                return;
+            if (isDC) {
+              if (isFirst) {
+                const sdc = decodeHuffmanSymbol(br, store.dc[sc.td]);
+                const diff = br.receiveSigned(sdc) << Al;
+                predictors[sc.idx] += diff;
+                coeffs[0] = predictors[sc.idx];
               } else {
-                // ZRL
-                state.runLength = 16;
-                state.state = PROGRESSIVE_STATES.RUN;
+                // DC refine: append next bit at Al
+                const bit = br.readBit();
+                coeffs[0] |= bit << Al;
               }
             } else {
-              // New non-zero coefficient
-              state.runLength = r;
-              state.refinementBit = bitReader.readBit();
-              state.state = PROGRESSIVE_STATES.SET;
+              // AC scan
+              if (isFirst) {
+                let k = scan.Ss;
+                while (k <= scan.Se) {
+                  if (eobrun > 0) {
+                    eobrun--;
+                    break;
+                  }
+                  const RS = decodeHuffmanSymbol(br, store.ac[sc.ta]);
+                  const r = RS >> 4;
+                  const sBits = RS & 0x0f;
+                  if (sBits === 0) {
+                    if (r < 15) {
+                      // EOBRUN
+                      const rbits = r;
+                      const val = rbits ? br.receive(rbits) : 0;
+                      eobrun = val + ((1 << rbits) - 1);
+                      break;
+                    } else {
+                      // ZRL
+                      k += 16;
+                      continue;
+                    }
+                  }
+                  // Skip r zeros
+                  k += r;
+                  if (k > scan.Se) break;
+                  const zz = zigZagToNatural[k];
+                  const vnew = br.receiveSigned(sBits) << Al;
+                  coeffs[zz] = vnew;
+                  k++;
+                }
+              } else {
+                // AC refine
+                let k = scan.Ss;
+                while (k <= scan.Se) {
+                  // refine existing nonzeros in band and process zeros/new insertion
+                  if (eobrun > 0) {
+                    for (let t = k; t <= scan.Se; t++) {
+                      const zz = zigZagToNatural[t];
+                      const cv = coeffs[zz];
+                      if (cv !== 0) {
+                        const bit = br.readBit();
+                        if (bit) coeffs[zz] += (cv > 0 ? 1 : -1) * (1 << Al);
+                      }
+                    }
+                    eobrun--;
+                    break;
+                  }
+                  const RS = decodeHuffmanSymbol(br, store.ac[sc.ta]);
+                  let r = RS >> 4;
+                  const sBits = RS & 0x0f;
+                  if (sBits === 0) {
+                    if (r < 15) {
+                      // EOBRUN start
+                      const rbits = r;
+                      const val = rbits ? br.receive(rbits) : 0;
+                      eobrun = val + ((1 << rbits) - 1);
+                      continue;
+                    } else {
+                      // ZRL in refine: skip 16 zeros with refining of intervening nonzeros
+                      let zeros = 16;
+                      while (k <= scan.Se && zeros > 0) {
+                        const zz = zigZagToNatural[k];
+                        const cv = coeffs[zz];
+                        if (cv !== 0) {
+                          const bit = br.readBit();
+                          if (bit) coeffs[zz] += (cv > 0 ? 1 : -1) * (1 << Al);
+                        } else {
+                          zeros--;
+                        }
+                        k++;
+                      }
+                      continue;
+                    }
+                  }
+                  // Insert with run r
+                  while (k <= scan.Se) {
+                    const zz = zigZagToNatural[k];
+                    const cv = coeffs[zz];
+                    if (cv !== 0) {
+                      const bit = br.readBit();
+                      if (bit) coeffs[zz] += (cv > 0 ? 1 : -1) * (1 << Al);
+                    } else {
+                      if (r === 0) {
+                        // new coefficient
+                        const sign = br.readBit() ? -1 : 1; // sign bit per spec: 1 means negative; using convention
+                        coeffs[zz] = sign * (1 << Al);
+                        k++;
+                        break;
+                      }
+                      r = (r - 1) | 0;
+                    }
+                    k++;
+                  }
+                }
+              }
             }
           }
-          break;
-
-        case PROGRESSIVE_STATES.RUN:
-          if (block[k] !== 0) {
-            // Refine existing coefficient
-            const bit = bitReader.readBit();
-            const sign = block[k] > 0 ? 1 : -1;
-            block[k] += sign * (bit << al);
-          } else {
-            // Still in run of zeros
-            state.runLength--;
-            if (state.runLength === 0) {
-              state.state = PROGRESSIVE_STATES.INITIAL;
-            }
-          }
-          break;
-
-        case PROGRESSIVE_STATES.SET: {
-          // Set new non-zero coefficient
-          const sign = state.refinementBit ? 1 : -1;
-          block[k] = sign * (1 << al);
-
-          state.runLength--;
-          if (state.runLength === 0) {
-            state.state = PROGRESSIVE_STATES.INITIAL;
-          } else {
-            state.state = PROGRESSIVE_STATES.RUN;
-          }
-          break;
         }
-
-        case PROGRESSIVE_STATES.EOB:
-          // In EOB run
-          state.eobrun--;
-          if (state.eobrun === 0) {
-            state.state = PROGRESSIVE_STATES.INITIAL;
-            return; // End of band
-          }
-          break;
       }
-
-      k++;
+      // Restart handling
+      if (Ri > 0) {
+        mcusSinceRST++;
+        if (mcusSinceRST === Ri) {
+          try {
+            br.alignToByte();
+            if (!br.hasMarker()) br.readBit();
+          } catch (err) {
+            if (err && err.code === "ERR_MARKER") {
+              const m = br.getMarker();
+              const expected = 0xffd0 + rstIndex;
+              if (m !== expected) rstIndex = (m - 0xffd0) & 7;
+              predictors.fill(0);
+              eobrun = 0;
+              mcusSinceRST = 0;
+              rstIndex = (rstIndex + 1) & 7;
+              continue;
+            }
+            throw err;
+          }
+        }
+      }
     }
   }
-}
-
-/**
- * Validate progressive scan parameters.
- *
- * @param {number} ss - Spectral start
- * @param {number} se - Spectral end
- * @param {number} ah - Successive approximation high
- * @param {number} al - Successive approximation low
- * @returns {boolean} True if valid
- */
-export function validateProgressiveScan(ss, se, ah, al) {
-  // Basic range checks
-  if (ss < 0 || ss > 63 || se < 0 || se > 63 || ss > se) {
-    return false;
-  }
-
-  // Successive approximation constraints
-  if (ah < 0 || ah > 13 || al < 0 || al > 13 || ah > al) {
-    return false;
-  }
-
-  // DC scan (Ss=0, Se=0)
-  if (ss === 0 && se === 0) {
-    return ah === 0 || (ah > 0 && al >= ah - 1);
-  }
-
-  // AC scan (Ss>0)
-  if (ss > 0) {
-    if (ah === 0) {
-      // First AC pass
-      return al >= 0;
-    } else {
-      // AC refinement
-      return al >= ah;
-    }
-  }
-
-  return true;
-}
-
-/**
- * Check if scan is DC refinement (Ss=0, Se=0, Ah>0).
- *
- * @param {number} ss - Spectral start
- * @param {number} se - Spectral end
- * @param {number} ah - Successive approximation high
- * @returns {boolean} True if DC refinement
- */
-export function isDCRefinement(ss, se, ah) {
-  return ss === 0 && se === 0 && ah > 0;
-}
-
-/**
- * Check if scan is AC refinement (Ss>0, Ah>0).
- *
- * @param {number} ss - Spectral start
- * @param {number} _se - Spectral end
- * @param {number} ah - Successive approximation high
- * @returns {boolean} True if AC refinement
- */
-export function isACRefinement(ss, _se, ah) {
-  return ss > 0 && ah > 0;
 }
