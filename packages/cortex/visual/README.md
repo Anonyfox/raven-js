@@ -32,7 +32,7 @@ npm install @raven-js/cortex
 ```
 
 ```javascript
-import { Image, decodePNG, encodePNG, decodeBMP, encodeBMP } from "@raven-js/cortex/visual";
+import { Image, decodePNG, encodePNG, decodeJPEG, encodeJPEG, decodeBMP, encodeBMP } from "@raven-js/cortex/visual";
 ```
 
 ## 🚀 Quick Start
@@ -43,9 +43,9 @@ import { Image, decodePNG, encodePNG, decodeBMP, encodeBMP } from "@raven-js/cor
 import { Image } from "@raven-js/cortex/visual";
 import { readFileSync, writeFileSync } from "fs";
 
-// Load PNG image
-const pngBuffer = readFileSync("input.png");
-const image = await Image.fromPngBuffer(pngBuffer);
+// Load image (supports JPEG, PNG, BMP)
+const jpegBuffer = readFileSync("input.jpg");
+const image = await Image.fromJpegBuffer(jpegBuffer);
 
 // Chain operations
 const processed = image
@@ -54,16 +54,23 @@ const processed = image
   .adjustBrightness(0.1)
   .adjustContrast(1.2);
 
-// Save as BMP
-const bmpBuffer = await processed.toBmpBuffer({ hasAlpha: false });
-writeFileSync("output.bmp", bmpBuffer);
+// Save as JPEG (lossy compression)
+const jpegBuffer = await processed.toJpegBuffer({ quality: 85, progressive: true });
+writeFileSync("output.jpg", jpegBuffer);
 ```
 
 ### Cross-Format Conversion
 
 ```javascript
-// PNG to BMP
+// JPEG to PNG (lossless conversion)
+const jpegImage = await Image.fromJpegBuffer(jpegBuffer);
+const pngBuffer = await jpegImage.toPngBuffer({ compressionLevel: 9 });
+
+// PNG to JPEG (lossy compression)
 const pngImage = await Image.fromPngBuffer(pngBuffer);
+const jpegOutput = await pngImage.toJpegBuffer({ quality: 90, progressive: true });
+
+// PNG to BMP
 const bmpBuffer = await pngImage.toBmpBuffer({ hasAlpha: true });
 
 // BMP to PNG
@@ -75,10 +82,11 @@ const pngOutput = await bmpImage.toPngBuffer({ compressionLevel: 9 });
 
 ### Currently Supported Codecs
 
-| Format  | Read | Write | Features                                        |
-| ------- | ---- | ----- | ----------------------------------------------- |
-| **PNG** | ✅   | ✅    | Full RGBA support, compression levels, metadata |
-| **BMP** | ✅   | ✅    | 24-bit RGB, 32-bit BGRA, uncompressed           |
+| Format   | Read | Write | Features                                        |
+| -------- | ---- | ----- | ----------------------------------------------- |
+| **JPEG** | ✅   | ✅    | Lossy compression, quality control, progressive |
+| **PNG**  | ✅   | ✅    | Full RGBA support, compression levels, metadata |
+| **BMP**  | ✅   | ✅    | 24-bit RGB, 32-bit BGRA, uncompressed           |
 
 ### Codec Architecture
 
@@ -86,11 +94,11 @@ Each format uses a dedicated codec with separate encode/decode functions:
 
 ```javascript
 // Direct codec usage
-import { decodePNG, encodePNG, decodeBMP, encodeBMP } from "@raven-js/cortex/visual";
+import { decodeJPEG, encodeJPEG, decodePNG, encodePNG, decodeBMP, encodeBMP } from "@raven-js/cortex/visual";
 
 // Encode/decode operations
-const { pixels, width, height, metadata } = await decodePNG(buffer);
-const pngBuffer = await encodePNG(pixels, width, height, options);
+const { pixels, width, height, metadata } = await decodeJPEG(buffer);
+const jpegBuffer = await encodeJPEG(pixels, width, height, { quality: 85 });
 ```
 
 ## 🖼️ Image Class API
@@ -107,6 +115,12 @@ const image = new Image(pixels, width, height, metadata);
 - `metadata`: Optional metadata object
 
 ### Loading Images
+
+#### JPEG Images
+
+```javascript
+const image = await Image.fromJpegBuffer(buffer);
+```
 
 #### PNG Images
 
@@ -276,6 +290,16 @@ image.convolve(kernel, options);
 
 ### Saving Images
 
+#### JPEG Format
+
+```javascript
+const jpegBuffer = await image.toJpegBuffer({
+  quality: 85,        // 1-100 (default: 75)
+  progressive: false,  // Enable progressive encoding
+  subsampling: "420"   // "444", "422", "420", "gray"
+});
+```
+
 #### PNG Format
 
 ```javascript
@@ -419,6 +443,10 @@ npm test
 
 ```
 codecs/
+├── jpeg/          # JPEG implementation
+│   ├── decode.js  # JPEG → RGBA conversion
+│   ├── encode.js  # RGBA → JPEG conversion
+│   └── *.js       # JPEG-specific utilities
 ├── png/           # Full PNG implementation
 │   ├── decode.js  # PNG → RGBA conversion
 │   ├── encode.js  # RGBA → PNG conversion
@@ -442,7 +470,6 @@ Input Buffer → Decoder → RGBA Pixels → Operations → Encoder → Output B
 
 ### Planned Codecs
 
-- **JPEG**: Lossy compression with quality control
 - **WebP**: Modern format with transparency and animation
 - **GIF**: Indexed colors with animation support
 - **TIFF**: Professional photography format

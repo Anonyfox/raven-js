@@ -33,6 +33,10 @@
       "import": "./language/index.js",
       "types": "./language/index.js"
     },
+    "./visual": {
+      "import": "./visual/index.js",
+      "types": "./visual/index.js"
+    },
     "./primitives": {
       "import": "./primitives/index.js",
       "types": "./primitives/index.js"

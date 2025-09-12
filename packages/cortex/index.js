@@ -104,11 +104,6 @@ export {
   Holiday,
   NaiveDateTime,
 } from "./temporal/index.js";
+
 // Export visual processing functions and classes
-export {
-  // New codec functions
-  decodePNG,
-  encodePNG,
-  // Base Image class
-  Image,
-} from "./visual/index.js";
+export { Image } from "./visual/index.js";
