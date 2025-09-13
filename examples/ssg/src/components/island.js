@@ -13,36 +13,50 @@
 import { html } from "@raven-js/beak";
 
 /**
- * Generate island with client-side hydration
+ * Generate an island placeholder with hydration metadata.
  * @param {Function} Component - Component function reference
  * @param {Object} [props={}] - Component props
  * @param {Object} [options={}] - Island options
+ * @param {string} [options.module] - Explicit client module path (e.g. "/apps/counter.js")
  * @param {'load'|'idle'|'visible'} [options.client='load'] - Loading strategy
- * @returns {string} HTML with hydration script
+ * @param {string} [options.export='default'] - Export name to use from module
+ * @returns {string} HTML placeholder with SSR content and hydration data attributes
  */
 export const island = (Component, props = {}, options = {}) => {
-	const { client = "load" } = options;
-	const id = `island-${Math.random().toString(36).substr(2, 9)}`;
+  const {
+    client = "load",
+    module,
+    export: exportName = "default",
+  } = /** @type {{ client?: 'load'|'idle'|'visible', module?: string, export?: string }} */ (options);
+  if (!module) {
+    throw new Error("island(): options.module is required (e.g. '/apps/counter.js')");
+  }
+  const id = `island-${Math.random().toString(36).substr(2, 9)}`;
 
-	// Convention: /apps/${componentName}.js
-	const modulePath = `/apps/${Component.name.toLowerCase()}.js`;
+  // Serialize props into attribute using URI encoding to avoid HTML escaping issues
+  const propsAttr = encodeURIComponent(JSON.stringify(props));
 
-	// Generate loading strategy wrapper
-	let scriptContent = "";
+  // Server-side render the component output if available
+  let ssr = "";
+  try {
+    if (typeof Component === "function") {
+      const out = Component(props);
+      ssr = String(out ?? "");
+    }
+  } catch {
+    ssr = "";
+  }
 
-	switch (client) {
-		case "idle":
-			scriptContent = `(window.requestIdleCallback || setTimeout)(() => { import('${modulePath}').then(m => m.hydrate('#${id}', ${JSON.stringify(props)})).catch(console.error); });`;
-			break;
-
-		case "visible":
-			scriptContent = `if ('IntersectionObserver' in window) { const observer = new IntersectionObserver((entries) => { if (entries[0].isIntersecting) { import('${modulePath}').then(m => m.hydrate('#${id}', ${JSON.stringify(props)})).catch(console.error); observer.disconnect(); } }); observer.observe(document.getElementById('${id}')); } else { import('${modulePath}').then(m => m.hydrate('#${id}', ${JSON.stringify(props)})).catch(console.error); }`;
-			break;
-
-		default:
-			scriptContent = `import('${modulePath}').then(m => m.hydrate('#${id}', ${JSON.stringify(props)})).catch(console.error);`;
-			break;
-	}
-
-	return html`<div id="${id}"></div><script type="module">${scriptContent}</script>`;
+  return html`
+		<div
+			id="${id}"
+			data-island
+			data-module="${module}"
+			data-export="${exportName}"
+			data-client="${client}"
+			data-props="${propsAttr}"
+		>
+			${ssr}
+		</div>
+	`;
 };

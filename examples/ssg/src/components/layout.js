@@ -43,6 +43,7 @@ export const Layout = ({ title, description, content }) => {
             <p>&copy; 2024 RavenJS. Built with Content As Code.</p>
           </div>
         </footer>
+        <script type="module" src="/apps/index.js" defer></script>
       </body>
     </html>
   `;

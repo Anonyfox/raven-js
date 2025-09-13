@@ -23,8 +23,7 @@ export const title = "About - RavenJS SSG";
 /**
  * About page description
  */
-export const description =
-	"Learn about the RavenJS approach to static site generation";
+export const description = "Learn about the RavenJS approach to static site generation";
 
 /**
  * About page content using markdown with embedded components
@@ -39,13 +38,13 @@ RavenJS SSG represents a fundamental shift in how we think about static site gen
 Including seamless reactivity with **selective hydration** - interactive components on static pages:
 
 ### Load Strategy (immediate)
-${island(Counter, { initial: 0 })}
+${island(Counter, { initial: 0 }, { module: "/apps/counter.js", export: "Counter" })}
 
 ### Idle Strategy (when browser idle)
-${island(Counter, { initial: 10 }, { client: "idle" })}
+${island(Counter, { initial: 10 }, { client: "idle", module: "/apps/counter.js", export: "Counter" })}
 
 ### Visible Strategy (when scrolled into view)
-${island(Counter, { initial: 100 }, { client: "visible" })}
+${island(Counter, { initial: 100 }, { client: "visible", module: "/apps/counter.js", export: "Counter" })}
 
 ## The Philosophy
 

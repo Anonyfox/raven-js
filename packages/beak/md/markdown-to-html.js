@@ -65,14 +65,14 @@
  * // → ''
  */
 export const markdownToHTML = (markdown, options = {}) => {
-	if (typeof markdown !== "string" || !markdown.trim()) {
-		return "";
-	}
+  if (typeof markdown !== "string" || !markdown.trim()) {
+    return "";
+  }
 
-	const { escapeHtml = false } = options;
-	const lines = markdown.split(/\r\n|\r|\n/);
-	const { ast, references } = parseToAST(lines);
-	return astToHTML(/** @type {ASTNode[]} */ (ast), references, escapeHtml);
+  const { escapeHtml = false } = options;
+  const lines = markdown.split(/\r\n|\r|\n/);
+  const { ast, references } = parseToAST(lines);
+  return astToHTML(/** @type {ASTNode[]} */ (ast), references, escapeHtml);
 };
 
 /**
@@ -81,19 +81,19 @@ export const markdownToHTML = (markdown, options = {}) => {
  * @returns {{ ast: Object[], references: Map<string, {url: string, title: string}> }}
  */
 const parseToAST = (lines) => {
-	const ast = [];
-	const references = new Map();
-	let i = 0;
+  const ast = [];
+  const references = new Map();
+  let i = 0;
 
-	while (i < lines.length) {
-		const result = parseBlockElement(lines, i, references);
-		if (result.node) {
-			ast.push(result.node);
-		}
-		i = result.nextIndex;
-	}
+  while (i < lines.length) {
+    const result = parseBlockElement(lines, i, references);
+    if (result.node) {
+      ast.push(result.node);
+    }
+    i = result.nextIndex;
+  }
 
-	return { ast, references };
+  return { ast, references };
 };
 
 /**
@@ -104,303 +104,319 @@ const parseToAST = (lines) => {
  * @returns {{ node: ASTNode|null, nextIndex: number }}
  */
 const parseBlockElement = (lines, startIndex, references) => {
-	// Skip empty lines
-	while (startIndex < lines.length && !lines[startIndex].trim()) {
-		startIndex++;
-	}
+  // Skip empty lines
+  while (startIndex < lines.length && !lines[startIndex].trim()) {
+    startIndex++;
+  }
 
-	if (startIndex >= lines.length) {
-		return { node: null, nextIndex: startIndex };
-	}
+  if (startIndex >= lines.length) {
+    return { node: null, nextIndex: startIndex };
+  }
 
-	const line = lines[startIndex];
+  const line = lines[startIndex];
 
-	// Reference definition: [label]: url "title"
-	const refMatch = line.match(/^ {0,3}\[([^\]]+)\]:\s*(\S+)(?:\s+"([^"]*)")?$/);
-	if (refMatch) {
-		const [, label, url, title] = refMatch;
-		references.set(label.toLowerCase(), { url, title: title || "" });
-		return { node: null, nextIndex: startIndex + 1 };
-	}
+  // Reference definition: [label]: url "title"
+  const refMatch = line.match(/^ {0,3}\[([^\]]+)\]:\s*(\S+)(?:\s+"([^"]*)")?$/);
+  if (refMatch) {
+    const [, label, url, title] = refMatch;
+    references.set(label.toLowerCase(), { url, title: title || "" });
+    return { node: null, nextIndex: startIndex + 1 };
+  }
 
-	// Horizontal rule: --- *** ___ (but not if it contains letters)
-	if (/^ {0,3}([-*_])\s*(\1\s*){2,}$/.test(line) && !/[a-zA-Z]/.test(line)) {
-		return { node: { type: "hr" }, nextIndex: startIndex + 1 };
-	}
+  // Horizontal rule: --- *** ___ (but not if it contains letters)
+  if (/^ {0,3}([-*_])\s*(\1\s*){2,}$/.test(line) && !/[a-zA-Z]/.test(line)) {
+    return { node: { type: "hr" }, nextIndex: startIndex + 1 };
+  }
 
-	// ATX Heading: # Title
-	const headingMatch = line.match(/^ {0,3}(#{1,6})\s+(.+)$/);
-	if (headingMatch) {
-		const [, hashes, text] = headingMatch;
-		return {
-			node: { type: "heading", level: hashes.length, text: text.trim() },
-			nextIndex: startIndex + 1,
-		};
-	}
+  // ATX Heading: # Title
+  const headingMatch = line.match(/^ {0,3}(#{1,6})\s+(.+)$/);
+  if (headingMatch) {
+    const [, hashes, text] = headingMatch;
+    return {
+      node: { type: "heading", level: hashes.length, text: text.trim() },
+      nextIndex: startIndex + 1,
+    };
+  }
 
-	// Setext Headings: underline style
-	if (startIndex + 1 < lines.length) {
-		const nextLine = lines[startIndex + 1];
-		// Level 1: ===...
-		if (nextLine?.match(/^\s{0,3}=+\s*$/)) {
-			return {
-				node: { type: "heading", level: 1, text: line.trim() },
-				nextIndex: startIndex + 2,
-			};
-		}
-		// Level 2: ---... (but not horizontal rule)
-		if (nextLine?.match(/^\s{0,3}-+\s*$/) && !line.trim().match(/^\s*$/)) {
-			return {
-				node: { type: "heading", level: 2, text: line.trim() },
-				nextIndex: startIndex + 2,
-			};
-		}
-	}
+  // Setext Headings: underline style
+  if (startIndex + 1 < lines.length) {
+    const nextLine = lines[startIndex + 1];
+    // Level 1: ===...
+    if (nextLine?.match(/^\s{0,3}=+\s*$/)) {
+      return {
+        node: { type: "heading", level: 1, text: line.trim() },
+        nextIndex: startIndex + 2,
+      };
+    }
+    // Level 2: ---... (but not horizontal rule)
+    if (nextLine?.match(/^\s{0,3}-+\s*$/) && !line.trim().match(/^\s*$/)) {
+      return {
+        node: { type: "heading", level: 2, text: line.trim() },
+        nextIndex: startIndex + 2,
+      };
+    }
+  }
 
-	// Fenced code block: ```lang
-	const fenceMatch = line.match(/^ {0,3}```\s*(.*)$/);
-	if (fenceMatch) {
-		const [, lang] = fenceMatch;
-		const codeLines = [];
-		let i = startIndex + 1;
+  // Fenced code block: ```lang
+  const fenceMatch = line.match(/^ {0,3}```\s*(.*)$/);
+  if (fenceMatch) {
+    const [, lang] = fenceMatch;
+    const codeLines = [];
+    let i = startIndex + 1;
 
-		while (i < lines.length && !lines[i].match(/^ {0,3}```\s*$/)) {
-			codeLines.push(lines[i]);
-			i++;
-		}
+    while (i < lines.length && !lines[i].match(/^ {0,3}```\s*$/)) {
+      codeLines.push(lines[i]);
+      i++;
+    }
 
-		return {
-			node: { type: "code", lang: lang.trim(), code: codeLines.join("\n") },
-			nextIndex: i + 1,
-		};
-	}
+    return {
+      node: { type: "code", lang: lang.trim(), code: codeLines.join("\n") },
+      nextIndex: i + 1,
+    };
+  }
 
-	// Indented code blocks disabled - use fenced code blocks (```) instead
-	// This allows HTML components with indentation to be preserved as HTML blocks
+  // Indented code blocks disabled - use fenced code blocks (```) instead
+  // This allows HTML components with indentation to be preserved as HTML blocks
 
-	// Blockquote: > text
-	if (/^ {0,3}>/.test(line)) {
-		const quoteLines = [];
-		let i = startIndex;
+  // Blockquote: > text
+  if (/^ {0,3}>/.test(line)) {
+    const quoteLines = [];
+    let i = startIndex;
 
-		while (
-			i < lines.length &&
-			(/^ {0,3}>/.test(lines[i]) ||
-				(lines[i].trim() === "" &&
-					i + 1 < lines.length &&
-					/^ {0,3}>/.test(lines[i + 1])))
-		) {
-			quoteLines.push(lines[i].replace(/^ {0,3}>\s?/, ""));
-			i++;
-		}
+    while (
+      i < lines.length &&
+      (/^ {0,3}>/.test(lines[i]) || (lines[i].trim() === "" && i + 1 < lines.length && /^ {0,3}>/.test(lines[i + 1])))
+    ) {
+      quoteLines.push(lines[i].replace(/^ {0,3}>\s?/, ""));
+      i++;
+    }
 
-		// Parse nested content
-		const { ast: nestedAST } = parseToAST(quoteLines);
-		return {
-			node: {
-				type: "blockquote",
-				content: /** @type {ASTNode[]} */ (nestedAST),
-			},
-			nextIndex: i,
-		};
-	}
+    // Parse nested content
+    const { ast: nestedAST } = parseToAST(quoteLines);
+    return {
+      node: {
+        type: "blockquote",
+        content: /** @type {ASTNode[]} */ (nestedAST),
+      },
+      nextIndex: i,
+    };
+  }
 
-	// List: - * + 1. - handle loose lists (with blank lines)
-	const listMatch = line.match(/^ {0,3}([*+-]|\d+\.)\s+(.*)$/);
-	if (listMatch) {
-		const [, marker, _text] = listMatch;
-		const isOrdered = /^\d+\./.test(marker);
-		const items = [];
-		let i = startIndex;
+  // List: - * + 1. - handle loose lists (with blank lines)
+  const listMatch = line.match(/^ {0,3}([*+-]|\d+\.)\s+(.*)$/);
+  if (listMatch) {
+    const [, marker, _text] = listMatch;
+    const isOrdered = /^\d+\./.test(marker);
+    const items = [];
+    let i = startIndex;
 
-		while (i < lines.length) {
-			// Skip blank lines in loose lists
-			if (!lines[i].trim()) {
-				i++;
-				continue;
-			}
+    while (i < lines.length) {
+      // Skip blank lines in loose lists
+      if (!lines[i].trim()) {
+        i++;
+        continue;
+      }
 
-			const itemMatch = lines[i].match(/^ {0,3}([*+-]|\d+\.)\s+(.*)$/);
-			if (!itemMatch) {
-				// Check if this is a continuation line
-				if (lines[i].match(/^ {4}/) || lines[i].trim() === "") {
-					if (items.length > 0) {
-						// Add to last item
-						items[items.length - 1] += `\n${lines[i].replace(/^ {4}/, "")}`;
-					}
-					i++;
-					continue;
-				}
-				break;
-			}
+      const itemMatch = lines[i].match(/^ {0,3}([*+-]|\d+\.)\s+(.*)$/);
+      if (!itemMatch) {
+        // Check if this is a continuation line
+        if (lines[i].match(/^ {4}/) || lines[i].trim() === "") {
+          if (items.length > 0) {
+            // Add to last item
+            items[items.length - 1] += `\n${lines[i].replace(/^ {4}/, "")}`;
+          }
+          i++;
+          continue;
+        }
+        break;
+      }
 
-			const [, newMarker, itemText] = itemMatch;
-			const newIsOrdered = /^\d+\./.test(newMarker);
+      const [, newMarker, itemText] = itemMatch;
+      const newIsOrdered = /^\d+\./.test(newMarker);
 
-			// Different list type, stop
-			if (isOrdered !== newIsOrdered) break;
+      // Different list type, stop
+      if (isOrdered !== newIsOrdered) break;
 
-			items.push(itemText);
-			i++;
-		}
+      items.push(itemText);
+      i++;
+    }
 
-		return {
-			node: { type: "list", ordered: isOrdered, items },
-			nextIndex: i,
-		};
-	}
+    return {
+      node: { type: "list", ordered: isOrdered, items },
+      nextIndex: i,
+    };
+  }
 
-	// Table (GitHub flavored)
-	if (
-		line.includes("|") &&
-		startIndex + 1 < lines.length &&
-		lines[startIndex + 1].match(/^\s*\|?[\s:|-]+\|?[\s:|-]*\|?/)
-	) {
-		const headerCells = line
-			.split("|")
-			.map((cell) => cell.trim())
-			.filter((cell) => cell);
-		const separatorLine = lines[startIndex + 1];
-		const alignments = separatorLine
-			.split("|")
-			.map((cell) => {
-				const trimmed = cell.trim();
-				if (trimmed.startsWith(":") && trimmed.endsWith(":")) return "center";
-				if (trimmed.endsWith(":")) return "right";
-				return "left";
-			})
-			.filter((_, idx, arr) => idx > 0 && idx < arr.length - 1); // Remove first/last empty
+  // Table (GitHub flavored)
+  if (
+    line.includes("|") &&
+    startIndex + 1 < lines.length &&
+    lines[startIndex + 1].match(/^\s*\|?[\s:|-]+\|?[\s:|-]*\|?/)
+  ) {
+    const headerCells = line
+      .split("|")
+      .map((cell) => cell.trim())
+      .filter((cell) => cell);
+    const separatorLine = lines[startIndex + 1];
+    const alignments = separatorLine
+      .split("|")
+      .map((cell) => {
+        const trimmed = cell.trim();
+        if (trimmed.startsWith(":") && trimmed.endsWith(":")) return "center";
+        if (trimmed.endsWith(":")) return "right";
+        return "left";
+      })
+      .filter((_, idx, arr) => idx > 0 && idx < arr.length - 1); // Remove first/last empty
 
-		const rows = [];
-		let i = startIndex + 2;
+    const rows = [];
+    let i = startIndex + 2;
 
-		while (i < lines.length && lines[i].includes("|")) {
-			const cells = lines[i]
-				.split("|")
-				.map((cell) => cell.trim())
-				.filter((cell, idx, arr) => {
-					return (
-						!(idx === 0 && cell === "") &&
-						!(idx === arr.length - 1 && cell === "")
-					);
-				});
-			if (cells.length > 0) {
-				rows.push(cells);
-			}
-			i++;
-		}
+    while (i < lines.length && lines[i].includes("|")) {
+      const cells = lines[i]
+        .split("|")
+        .map((cell) => cell.trim())
+        .filter((cell, idx, arr) => {
+          return !(idx === 0 && cell === "") && !(idx === arr.length - 1 && cell === "");
+        });
+      if (cells.length > 0) {
+        rows.push(cells);
+      }
+      i++;
+    }
 
-		return {
-			node: { type: "table", headers: headerCells, alignments, rows },
-			nextIndex: i,
-		};
-	}
+    return {
+      node: { type: "table", headers: headerCells, alignments, rows },
+      nextIndex: i,
+    };
+  }
 
-	// Raw HTML block (but not autolinks)
-	if (
-		line.match(/^ {0,3}<[a-zA-Z][^>]*>/) &&
-		!line.match(/^ {0,3}<(https?:\/\/[^>]+>|[^@\s>]+@[^@\s>]+\.[^@\s>]+>)/)
-	) {
-		const htmlLines = [];
-		let i = startIndex;
+  // Raw HTML block (but not autolinks) - allow more indentation for embedded HTML
+  if (line.match(/^\s*<[a-zA-Z][^>]*>/) && !line.match(/^\s*<(https?:\/\/[^>]+>|[^@\s>]+@[^@\s>]+\.[^@\s>]+>)/)) {
+    const htmlLines = [];
+    let i = startIndex;
 
-		// Track all unclosed tags, not just the first one
-		const unclosedTags = new Map(); // tagName -> count
-		let foundOpeningTag = false;
+    // Track all unclosed tags, not just the first one
+    const unclosedTags = new Map(); // tagName -> count
+    let foundOpeningTag = false;
 
-		while (i < lines.length) {
-			const currentLine = lines[i];
-			htmlLines.push(currentLine);
+    while (i < lines.length) {
+      const currentLine = lines[i];
+      htmlLines.push(currentLine);
 
-			// Track all opening and closing tags on this line
-			const allOpenTags =
-				currentLine.match(/<([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g) || [];
-			const allCloseTags =
-				currentLine.match(/<\/([a-zA-Z][a-zA-Z0-9]*)\s*>/g) || [];
+      // Track all opening and closing tags on this line
+      const allOpenTags = currentLine.match(/<([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g) || [];
+      const allCloseTags = currentLine.match(/<\/([a-zA-Z][a-zA-Z0-9]*)\s*>/g) || [];
 
-			// Process opening tags
-			for (const openTag of allOpenTags) {
-				const tagMatch = openTag.match(/<([a-zA-Z][a-zA-Z0-9]*)/);
-				if (tagMatch) {
-					const tagName = tagMatch[1].toLowerCase();
-					// Skip self-closing tags and void elements
-					if (
-						!openTag.endsWith("/>") &&
-						![
-							"area",
-							"base",
-							"br",
-							"col",
-							"embed",
-							"hr",
-							"img",
-							"input",
-							"link",
-							"meta",
-							"param",
-							"source",
-							"track",
-							"wbr",
-						].includes(tagName)
-					) {
-						unclosedTags.set(tagName, (unclosedTags.get(tagName) || 0) + 1);
-						foundOpeningTag = true;
-					}
-				}
-			}
+      // Process opening tags
+      for (const openTag of allOpenTags) {
+        const tagMatch = openTag.match(/<([a-zA-Z][a-zA-Z0-9]*)/);
+        if (tagMatch) {
+          const tagName = tagMatch[1].toLowerCase();
+          // Skip self-closing tags and void elements
+          if (
+            !openTag.endsWith("/>") &&
+            ![
+              "area",
+              "base",
+              "br",
+              "col",
+              "embed",
+              "hr",
+              "img",
+              "input",
+              "link",
+              "meta",
+              "param",
+              "source",
+              "track",
+              "wbr",
+            ].includes(tagName)
+          ) {
+            unclosedTags.set(tagName, (unclosedTags.get(tagName) || 0) + 1);
+            foundOpeningTag = true;
+          }
+        }
+      }
 
-			// Process closing tags
-			for (const closeTag of allCloseTags) {
-				const tagMatch = closeTag.match(/<\/([a-zA-Z][a-zA-Z0-9]*)/);
-				if (tagMatch) {
-					const tagName = tagMatch[1].toLowerCase();
-					const count = unclosedTags.get(tagName) || 0;
-					if (count > 1) {
-						unclosedTags.set(tagName, count - 1);
-					} else {
-						unclosedTags.delete(tagName);
-					}
-				}
-			}
+      // Process closing tags
+      for (const closeTag of allCloseTags) {
+        const tagMatch = closeTag.match(/<\/([a-zA-Z][a-zA-Z0-9]*)/);
+        if (tagMatch) {
+          const tagName = tagMatch[1].toLowerCase();
+          const count = unclosedTags.get(tagName) || 0;
+          if (count > 1) {
+            unclosedTags.set(tagName, count - 1);
+          } else {
+            unclosedTags.delete(tagName);
+          }
+        }
+      }
 
-			// Stop when all tags are closed
-			if (foundOpeningTag && unclosedTags.size === 0) {
-				i++;
-				break;
-			}
+      // Check if we should continue parsing
+      const shouldContinue = () => {
+        // If we have unclosed tags, definitely continue
+        if (unclosedTags.size > 0) return true;
 
-			// Only stop at blank lines if we haven't found an opening tag yet
-			// Once we have an opening tag, continue until closing tag is found
-			if (!currentLine.trim() && !foundOpeningTag) {
-				break;
-			}
+        // If current line is blank, peek ahead to see if there's more HTML
+        if (!currentLine.trim()) {
+          // Look ahead for more HTML content (like <style>, <script>, etc.)
+          for (let j = i + 1; j < lines.length; j++) {
+            const nextLine = lines[j];
+            if (!nextLine.trim()) continue; // Skip blank lines
 
-			i++;
-		}
+            // If we find another HTML tag, continue the block
+            if (nextLine.match(/^\s*<[a-zA-Z][^>]*>/)) {
+              return true;
+            }
 
-		return {
-			node: { type: "html", content: htmlLines.join("\n") },
-			nextIndex: i,
-		};
-	}
+            // If we find non-HTML content, stop
+            break;
+          }
 
-	// Default: paragraph
-	const paraLines = [];
-	let i = startIndex;
+          // If we found opening tag but no more HTML ahead, we can stop
+          return false;
+        }
 
-	while (i < lines.length && lines[i].trim() && !isBlockStart(lines[i])) {
-		paraLines.push(lines[i]);
-		i++;
-	}
+        // Continue if we have content on current line
+        return true;
+      };
 
-	if (paraLines.length > 0) {
-		return {
-			node: { type: "paragraph", text: paraLines.join("\n") },
-			nextIndex: i,
-		};
-	}
+      if (foundOpeningTag && unclosedTags.size === 0 && !shouldContinue()) {
+        i++;
+        break;
+      }
 
-	return { node: null, nextIndex: startIndex + 1 };
+      // Stop at blank lines only if we haven't found any opening tag
+      if (!currentLine.trim() && !foundOpeningTag) {
+        break;
+      }
+
+      i++;
+    }
+
+    return {
+      node: { type: "html", content: htmlLines.join("\n") },
+      nextIndex: i,
+    };
+  }
+
+  // Default: paragraph
+  const paraLines = [];
+  let i = startIndex;
+
+  while (i < lines.length && lines[i].trim() && !isBlockStart(lines[i])) {
+    paraLines.push(lines[i]);
+    i++;
+  }
+
+  if (paraLines.length > 0) {
+    return {
+      node: { type: "paragraph", text: paraLines.join("\n") },
+      nextIndex: i,
+    };
+  }
+
+  return { node: null, nextIndex: startIndex + 1 };
 };
 
 /**
@@ -409,19 +425,16 @@ const parseBlockElement = (lines, startIndex, references) => {
  * @returns {boolean}
  */
 const isBlockStart = (line) => {
-	return Boolean(
-		/^ {0,3}#{1,6}\s/.test(line) || // heading
-			/^ {0,3}```/.test(line) || // code block
-			/^ {0,3}([-*+]|\d+\.)\s/.test(line) || // list
-			/^ {0,3}>/.test(line) || // blockquote
-			(/^ {0,3}([-*_])\s*(\1\s*){2,}$/.test(line) && !/[a-zA-Z]/.test(line)) || // horizontal rule (no letters)
-			/^ {0,3}\|/.test(line) || // table
-			/^ {0,3}\[([^\]]+)\]:\s*\S+/.test(line) || // reference definition
-			(line.match(/^ {0,3}<[a-zA-Z][^>]*>/) &&
-				!line.match(
-					/^ {0,3}<(https?:\/\/[^>]+>|[^@\s>]+@[^@\s>]+\.[^@\s>]+>)/,
-				)), // HTML block
-	);
+  return Boolean(
+    /^ {0,3}#{1,6}\s/.test(line) || // heading
+      /^ {0,3}```/.test(line) || // code block
+      /^ {0,3}([-*+]|\d+\.)\s/.test(line) || // list
+      /^ {0,3}>/.test(line) || // blockquote
+      (/^ {0,3}([-*_])\s*(\1\s*){2,}$/.test(line) && !/[a-zA-Z]/.test(line)) || // horizontal rule (no letters)
+      /^ {0,3}\|/.test(line) || // table
+      /^ {0,3}\[([^\]]+)\]:\s*\S+/.test(line) || // reference definition
+      (line.match(/^\s*<[a-zA-Z][^>]*>/) && !line.match(/^\s*<(https?:\/\/[^>]+>|[^@\s>]+@[^@\s>]+\.[^@\s>]+>)/)) // HTML block
+  );
 };
 
 /**
@@ -432,7 +445,7 @@ const isBlockStart = (line) => {
  * @returns {string} HTML output
  */
 const astToHTML = (ast, references, escapeHtml = false) => {
-	return ast.map((node) => renderNode(node, references, escapeHtml)).join("\n");
+  return ast.map((node) => renderNode(node, references, escapeHtml)).join("\n");
 };
 
 /**
@@ -443,92 +456,78 @@ const astToHTML = (ast, references, escapeHtml = false) => {
  * @returns {string} HTML
  */
 const renderNode = (node, references, escapeHtml = false) => {
-	switch (node.type) {
-		case "heading": {
-			const text = renderInline(node.text || "", references, escapeHtml);
-			return `<h${node.level}>${text}</h${node.level}>`;
-		}
+  switch (node.type) {
+    case "heading": {
+      const text = renderInline(node.text || "", references, escapeHtml);
+      return `<h${node.level}>${text}</h${node.level}>`;
+    }
 
-		case "paragraph": {
-			const text = renderInline(node.text || "", references, escapeHtml);
-			// Only escape scripts when HTML escaping is disabled for security
-			const safeText = escapeHtml
-				? text
-				: text.replace(
-						/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-						(match) => escapeHTML(match),
-					);
-			return `<p>${safeText}</p>`;
-		}
+    case "paragraph": {
+      const text = renderInline(node.text || "", references, escapeHtml);
+      // Only escape scripts when HTML escaping is disabled for security
+      const safeText = escapeHtml
+        ? text
+        : text.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, (match) => escapeHTML(match));
+      return `<p>${safeText}</p>`;
+    }
 
-		case "code": {
-			const escapedCode = escapeHTML(node.code || "");
-			const langAttr = node.lang
-				? ` class="language-${escapeHTML(node.lang)}"`
-				: "";
-			return `<pre><code${langAttr}>${escapedCode}</code></pre>`;
-		}
+    case "code": {
+      const escapedCode = escapeHTML(node.code || "");
+      const langAttr = node.lang ? ` class="language-${escapeHTML(node.lang)}"` : "";
+      return `<pre><code${langAttr}>${escapedCode}</code></pre>`;
+    }
 
-		case "blockquote": {
-			const content = Array.isArray(node.content)
-				? astToHTML(node.content, references, escapeHtml)
-				: node.content || "";
-			return `<blockquote>\n${content}\n</blockquote>`;
-		}
+    case "blockquote": {
+      const content = Array.isArray(node.content)
+        ? astToHTML(node.content, references, escapeHtml)
+        : node.content || "";
+      return `<blockquote>\n${content}\n</blockquote>`;
+    }
 
-		case "list": {
-			const tag = node.ordered ? "ol" : "ul";
-			const items = (node.items || [])
-				.map(
-					(/** @type {string} */ item) =>
-						`<li>${renderInline(item, references, escapeHtml)}</li>`,
-				)
-				.join("\n");
-			return `<${tag}>\n${items}\n</${tag}>`;
-		}
+    case "list": {
+      const tag = node.ordered ? "ol" : "ul";
+      const items = (node.items || [])
+        .map((/** @type {string} */ item) => `<li>${renderInline(item, references, escapeHtml)}</li>`)
+        .join("\n");
+      return `<${tag}>\n${items}\n</${tag}>`;
+    }
 
-		case "table": {
-			const headers = node.headers || [];
-			const alignments = node.alignments || [];
-			const rows = node.rows || [];
+    case "table": {
+      const headers = node.headers || [];
+      const alignments = node.alignments || [];
+      const rows = node.rows || [];
 
-			const headerRow = headers
-				.map((/** @type {string} */ header, /** @type {number} */ i) => {
-					const align =
-						alignments[i] !== "left"
-							? ` style="text-align:${alignments[i]}"`
-							: "";
-					return `<th${align}>${renderInline(header, references, escapeHtml)}</th>`;
-				})
-				.join("");
+      const headerRow = headers
+        .map((/** @type {string} */ header, /** @type {number} */ i) => {
+          const align = alignments[i] !== "left" ? ` style="text-align:${alignments[i]}"` : "";
+          return `<th${align}>${renderInline(header, references, escapeHtml)}</th>`;
+        })
+        .join("");
 
-			const bodyRows = rows
-				.map((/** @type {string[]} */ row) => {
-					const cells = row
-						.map((/** @type {string} */ cell, /** @type {number} */ i) => {
-							const align =
-								alignments[i] !== "left"
-									? ` style="text-align:${alignments[i]}"`
-									: "";
-							return `<td${align}>${renderInline(cell || "", references, escapeHtml)}</td>`;
-						})
-						.join("");
-					return `<tr>${cells}</tr>`;
-				})
-				.join("\n");
+      const bodyRows = rows
+        .map((/** @type {string[]} */ row) => {
+          const cells = row
+            .map((/** @type {string} */ cell, /** @type {number} */ i) => {
+              const align = alignments[i] !== "left" ? ` style="text-align:${alignments[i]}"` : "";
+              return `<td${align}>${renderInline(cell || "", references, escapeHtml)}</td>`;
+            })
+            .join("");
+          return `<tr>${cells}</tr>`;
+        })
+        .join("\n");
 
-			return `<table>\n<thead>\n<tr>${headerRow}</tr>\n</thead>\n<tbody>\n${bodyRows}\n</tbody>\n</table>`;
-		}
+      return `<table>\n<thead>\n<tr>${headerRow}</tr>\n</thead>\n<tbody>\n${bodyRows}\n</tbody>\n</table>`;
+    }
 
-		case "hr":
-			return "<hr>";
+    case "hr":
+      return "<hr>";
 
-		case "html":
-			return typeof node.content === "string" ? node.content : "";
+    case "html":
+      return typeof node.content === "string" ? node.content : "";
 
-		default:
-			return "";
-	}
+    default:
+      return "";
+  }
 };
 
 /**
@@ -539,157 +538,135 @@ const renderNode = (node, references, escapeHtml = false) => {
  * @returns {string} HTML with inline elements rendered
  */
 const renderInline = (text, references, escapeHtml = false) => {
-	if (!text) return "";
+  if (!text) return "";
 
-	// Process in order of precedence to avoid conflicts
-	let result = text;
+  // Process in order of precedence to avoid conflicts
+  let result = text;
 
-	// Handle backslash escaping first - protect escaped characters with unique placeholders
-	/** @type {string[]} */ const escapedChars = [];
-	result = result.replace(/\\(.)/g, (_match, char) => {
-		const placeholder = `\uE000${escapedChars.length}\uE001`; // Use private Unicode area
-		escapedChars.push(char);
-		return placeholder;
-	});
+  // Handle backslash escaping first - protect escaped characters with unique placeholders
+  /** @type {string[]} */ const escapedChars = [];
+  result = result.replace(/\\(.)/g, (_match, char) => {
+    const placeholder = `\uE000${escapedChars.length}\uE001`; // Use private Unicode area
+    escapedChars.push(char);
+    return placeholder;
+  });
 
-	// Inline code (highest precedence) - protect from other processing
-	/** @type {string[]} */ const codeBlocks = [];
-	result = result.replace(/`([^`]*(?:`{1,2}[^`]*)*)`/g, (_match, code) => {
-		const placeholder = `__CODE_${codeBlocks.length}__`;
-		codeBlocks.push(`<code>${escapeHTML(code)}</code>`);
-		return placeholder;
-	});
+  // Inline code (highest precedence) - protect from other processing
+  /** @type {string[]} */ const codeBlocks = [];
+  result = result.replace(/`([^`]*(?:`{1,2}[^`]*)*)`/g, (_match, code) => {
+    const placeholder = `__CODE_${codeBlocks.length}__`;
+    codeBlocks.push(`<code>${escapeHTML(code)}</code>`);
+    return placeholder;
+  });
 
-	// Images: ![alt](url "title") and ![alt][ref] - must come BEFORE links
-	result = result.replace(
-		/!\[([^\]]*)\]\(([^)]+?)(?:\s+"([^"]*)")?\)/g,
-		(_match, alt, url, title) => {
-			const titleAttr = title ? ` title="${escapeHTML(title)}"` : "";
-			return `<img src="${escapeHTML(url)}" alt="${escapeHTML(alt)}"${titleAttr}>`;
-		},
-	);
+  // Images: ![alt](url "title") and ![alt][ref] - must come BEFORE links
+  result = result.replace(/!\[([^\]]*)\]\(([^)]+?)(?:\s+"([^"]*)")?\)/g, (_match, alt, url, title) => {
+    const titleAttr = title ? ` title="${escapeHTML(title)}"` : "";
+    return `<img src="${escapeHTML(url)}" alt="${escapeHTML(alt)}"${titleAttr}>`;
+  });
 
-	result = result.replace(/!\[([^\]]*)\]\[([^\]]*)\]/g, (match, alt, ref) => {
-		const refKey = (ref || alt).toLowerCase();
-		const refData = references.get(refKey);
-		if (refData) {
-			const titleAttr = refData.title
-				? ` title="${escapeHTML(refData.title)}"`
-				: "";
-			return `<img src="${escapeHTML(refData.url)}" alt="${escapeHTML(alt)}"${titleAttr}>`;
-		}
-		return match;
-	});
+  result = result.replace(/!\[([^\]]*)\]\[([^\]]*)\]/g, (match, alt, ref) => {
+    const refKey = (ref || alt).toLowerCase();
+    const refData = references.get(refKey);
+    if (refData) {
+      const titleAttr = refData.title ? ` title="${escapeHTML(refData.title)}"` : "";
+      return `<img src="${escapeHTML(refData.url)}" alt="${escapeHTML(alt)}"${titleAttr}>`;
+    }
+    return match;
+  });
 
-	// Links: [text](url "title") - simple robust parsing
-	result = result.replace(
-		/\[([^\]]+)\]\(([^\s)]+)(?:\s+"([^"]*)")?\)/g,
-		(_match, text, url, title) => {
-			const titleAttr = title ? ` title="${escapeHTML(title)}"` : "";
-			return `<a href="${escapeHTML(url)}"${titleAttr}>${renderInline(text, references, escapeHtml)}</a>`;
-		},
-	);
+  // Links: [text](url "title") - simple robust parsing
+  result = result.replace(/\[([^\]]+)\]\(([^\s)]+)(?:\s+"([^"]*)")?\)/g, (_match, text, url, title) => {
+    const titleAttr = title ? ` title="${escapeHTML(title)}"` : "";
+    return `<a href="${escapeHTML(url)}"${titleAttr}>${renderInline(text, references, escapeHtml)}</a>`;
+  });
 
-	// Reference links: [text][ref] and [text][]
-	result = result.replace(/\[([^\]]+)\]\[([^\]]*)\]/g, (match, text, ref) => {
-		const refKey = (ref || text).toLowerCase();
-		const refData = references.get(refKey);
-		if (refData) {
-			const titleAttr = refData.title
-				? ` title="${escapeHTML(refData.title)}"`
-				: "";
-			return `<a href="${escapeHTML(refData.url)}"${titleAttr}>${renderInline(text, references, escapeHtml)}</a>`;
-		}
-		return match;
-	});
+  // Reference links: [text][ref] and [text][]
+  result = result.replace(/\[([^\]]+)\]\[([^\]]*)\]/g, (match, text, ref) => {
+    const refKey = (ref || text).toLowerCase();
+    const refData = references.get(refKey);
+    if (refData) {
+      const titleAttr = refData.title ? ` title="${escapeHTML(refData.title)}"` : "";
+      return `<a href="${escapeHTML(refData.url)}"${titleAttr}>${renderInline(text, references, escapeHtml)}</a>`;
+    }
+    return match;
+  });
 
-	// Autolinks: <http://example.com>
-	result = result.replace(/<(https?:\/\/[^>]+)>/g, '<a href="$1">$1</a>');
-	result = result.replace(
-		/<([^@\s>]+@[^@\s>]+\.[^@\s>]+)>/g,
-		'<a href="mailto:$1">$1</a>',
-	);
+  // Autolinks: <http://example.com>
+  result = result.replace(/<(https?:\/\/[^>]+)>/g, '<a href="$1">$1</a>');
+  result = result.replace(/<([^@\s>]+@[^@\s>]+\.[^@\s>]+)>/g, '<a href="mailto:$1">$1</a>');
 
-	// Process emphasis with proper CommonMark precedence
-	// Handle triple markers first: ***foo*** → <em><strong>foo</strong></em>
-	result = result.replace(
-		/\*\*\*([^*\n]+?)\*\*\*/g,
-		"<em><strong>$1</strong></em>",
-	);
-	result = result.replace(/___([^_\n]+?)___/g, "<em><strong>$1</strong></em>");
+  // Process emphasis with proper CommonMark precedence
+  // Handle triple markers first: ***foo*** → <em><strong>foo</strong></em>
+  result = result.replace(/\*\*\*([^*\n]+?)\*\*\*/g, "<em><strong>$1</strong></em>");
+  result = result.replace(/___([^_\n]+?)___/g, "<em><strong>$1</strong></em>");
 
-	// Bold: **text** - must be complete pairs
-	result = result.replace(/\*\*([^*\n]+?)\*\*/g, "<strong>$1</strong>");
-	result = result.replace(/__([^_\n]+?)__/g, "<strong>$1</strong>");
+  // Bold: **text** - must be complete pairs
+  result = result.replace(/\*\*([^*\n]+?)\*\*/g, "<strong>$1</strong>");
+  result = result.replace(/__([^_\n]+?)__/g, "<strong>$1</strong>");
 
-	// Italic: *text* and _text* - handle word boundaries per CommonMark
-	// Asterisks can work mid-word, underscores cannot
-	result = result.replace(/\*([^*\n]+?)\*/g, "<em>$1</em>");
-	result = result.replace(
-		/(?<![a-zA-Z0-9])_([^_\n]+?)_(?![a-zA-Z0-9])/g,
-		"<em>$1</em>",
-	);
+  // Italic: *text* and _text* - handle word boundaries per CommonMark
+  // Asterisks can work mid-word, underscores cannot
+  result = result.replace(/\*([^*\n]+?)\*/g, "<em>$1</em>");
+  result = result.replace(/(?<![a-zA-Z0-9])_([^_\n]+?)_(?![a-zA-Z0-9])/g, "<em>$1</em>");
 
-	// Strikethrough: ~~text~~
-	result = result.replace(/~~([^~]+)~~/g, "<del>$1</del>");
+  // Strikethrough: ~~text~~
+  result = result.replace(/~~([^~]+)~~/g, "<del>$1</del>");
 
-	// Handle HTML preservation vs escaping
-	/** @type {string[]} */ const htmlTags = [];
-	/** @type {string[]} */ const hardBreaks = [];
+  // Handle HTML preservation vs escaping
+  /** @type {string[]} */ const htmlTags = [];
+  /** @type {string[]} */ const hardBreaks = [];
 
-	if (escapeHtml) {
-		// When escaping enabled, escape all HTML characters
-		result = result
-			.replace(/&(?![a-zA-Z][a-zA-Z0-9]*;|#[0-9]+;|#x[0-9a-fA-F]+;)/g, "&amp;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;")
-			.replace(/"/g, "&quot;")
-			.replace(/'/g, "&#39;");
-	} else {
-		// When escaping disabled (CommonMark default), preserve HTML tags
-		result = result.replace(
-			/<(\/?)([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g,
-			(match) => {
-				const placeholder = `__HTML_${htmlTags.length}__`;
-				htmlTags.push(match);
-				return placeholder;
-			},
-		);
-	}
+  if (escapeHtml) {
+    // When escaping enabled, escape all HTML characters
+    result = result
+      .replace(/&(?![a-zA-Z][a-zA-Z0-9]*;|#[0-9]+;|#x[0-9a-fA-F]+;)/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  } else {
+    // When escaping disabled (CommonMark default), preserve HTML tags
+    result = result.replace(/<(\/?)([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g, (match) => {
+      const placeholder = `__HTML_${htmlTags.length}__`;
+      htmlTags.push(match);
+      return placeholder;
+    });
+  }
 
-	// Handle hard line breaks: two or more spaces before newline
-	result = result.replace(/ {2,}\n/g, (_match) => {
-		const placeholder = `__BREAK_${hardBreaks.length}__`;
-		hardBreaks.push("<br>\n");
-		return placeholder;
-	});
+  // Handle hard line breaks: two or more spaces before newline
+  result = result.replace(/ {2,}\n/g, (_match) => {
+    const placeholder = `__BREAK_${hardBreaks.length}__`;
+    hardBreaks.push("<br>\n");
+    return placeholder;
+  });
 
-	// Normalize single trailing spaces before newlines (CommonMark soft line break)
-	result = result.replace(/ \n/g, "\n");
+  // Normalize single trailing spaces before newlines (CommonMark soft line break)
+  result = result.replace(/ \n/g, "\n");
 
-	// Restore hard line breaks
-	hardBreaks.forEach((br, i) => {
-		result = result.replace(`__BREAK_${i}__`, br);
-	});
+  // Restore hard line breaks
+  hardBreaks.forEach((br, i) => {
+    result = result.replace(`__BREAK_${i}__`, br);
+  });
 
-	// Restore HTML tags (only when not escaping)
-	if (!escapeHtml) {
-		htmlTags.forEach((tag, i) => {
-			result = result.replace(`__HTML_${i}__`, tag);
-		});
-	}
+  // Restore HTML tags (only when not escaping)
+  if (!escapeHtml) {
+    htmlTags.forEach((tag, i) => {
+      result = result.replace(`__HTML_${i}__`, tag);
+    });
+  }
 
-	// Restore code blocks
-	codeBlocks.forEach((code, i) => {
-		result = result.replace(`__CODE_${i}__`, code);
-	});
+  // Restore code blocks
+  codeBlocks.forEach((code, i) => {
+    result = result.replace(`__CODE_${i}__`, code);
+  });
 
-	// Restore escaped characters last, after all other processing
-	escapedChars.forEach((char, i) => {
-		result = result.replace(`\uE000${i}\uE001`, escapeHTML(char));
-	});
+  // Restore escaped characters last, after all other processing
+  escapedChars.forEach((char, i) => {
+    result = result.replace(`\uE000${i}\uE001`, escapeHTML(char));
+  });
 
-	return result;
+  return result;
 };
 
 /**
@@ -698,14 +675,14 @@ const renderInline = (text, references, escapeHtml = false) => {
  * @returns {string} Escaped text
  */
 const escapeHTML = (text) => {
-	if (!text) return "";
-	return (
-		text
-			// Don't escape already-valid HTML entities
-			.replace(/&(?![a-zA-Z][a-zA-Z0-9]*;|#[0-9]+;|#x[0-9a-fA-F]+;)/g, "&amp;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;")
-			.replace(/"/g, "&quot;")
-			.replace(/'/g, "&#39;")
-	);
+  if (!text) return "";
+  return (
+    text
+      // Don't escape already-valid HTML entities
+      .replace(/&(?![a-zA-Z][a-zA-Z0-9]*;|#[0-9]+;|#x[0-9a-fA-F]+;)/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;")
+  );
 };
