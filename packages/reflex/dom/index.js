@@ -18,31 +18,29 @@ import { __getWriteVersion, effect, withTemplateContext } from "../index.js";
  * @param {string} html
  */
 function setHTML(el, html) {
-	const scrollable =
-		el.scrollHeight > el.clientHeight ||
-		el.scrollWidth > el.clientWidth ||
-		el === document.scrollingElement;
+  const scrollable =
+    el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth || el === document.scrollingElement;
 
-	const top = scrollable ? el.scrollTop : 0;
-	const left = scrollable ? el.scrollLeft : 0;
+  const top = scrollable ? el.scrollTop : 0;
+  const left = scrollable ? el.scrollLeft : 0;
 
-	if (document.createRange && el.replaceChildren) {
-		try {
-			const range = document.createRange();
-			const frag = range.createContextualFragment(html);
-			el.replaceChildren(frag);
-			if (scrollable) {
-				el.scrollTop = top;
-				el.scrollLeft = left;
-			}
-			return;
-		} catch {}
-	}
-	el.innerHTML = html;
-	if (scrollable) {
-		el.scrollTop = top;
-		el.scrollLeft = left;
-	}
+  if (document.createRange && el.replaceChildren) {
+    try {
+      const range = document.createRange();
+      const frag = range.createContextualFragment(html);
+      el.replaceChildren(frag);
+      if (scrollable) {
+        el.scrollTop = top;
+        el.scrollLeft = left;
+      }
+      return;
+    } catch {}
+  }
+  el.innerHTML = html;
+  if (scrollable) {
+    el.scrollTop = top;
+    el.scrollLeft = left;
+  }
 }
 
 /**
@@ -51,12 +49,12 @@ function setHTML(el, html) {
  * @returns {Element}
  */
 function resolveTarget(target) {
-	if (typeof target === "string") {
-		const el = document.querySelector(target);
-		if (!el) throw new Error(`mount(): No element for selector ${target}`);
-		return el;
-	}
-	return /** @type {Element} */ (target);
+  if (typeof target === "string") {
+    const el = document.querySelector(target);
+    if (!el) throw new Error(`mount(): No element for selector ${target}`);
+    return el;
+  }
+  return /** @type {Element} */ (target);
 }
 
 /**
@@ -66,14 +64,14 @@ function resolveTarget(target) {
  * @returns {Promise<T>}
  */
 function schedule(cb) {
-	if (typeof requestAnimationFrame === "function") {
-		return new Promise((res) => {
-			requestAnimationFrame(() => {
-				Promise.resolve().then(() => res(cb()));
-			});
-		});
-	}
-	return Promise.resolve().then(cb);
+  if (typeof requestAnimationFrame === "function") {
+    return new Promise((res) => {
+      requestAnimationFrame(() => {
+        Promise.resolve().then(() => res(cb()));
+      });
+    });
+  }
+  return Promise.resolve().then(cb);
 }
 
 /**
@@ -110,66 +108,223 @@ function schedule(cb) {
  * @returns {{ unmount(): void }}
  */
 export function mount(templateFn, target, /** @type {{}} */ _options = {}) {
-	if (typeof window === "undefined") throw new Error("mount() is browser-only");
-	const el = resolveTarget(target);
+  if (typeof window === "undefined") throw new Error("mount() is browser-only");
+  const el = resolveTarget(target);
 
-	const scope = { slots: /** @type {any[]} */ ([]), cursor: 0 };
+  const scope = { slots: /** @type {any[]} */ ([]), cursor: 0 };
 
-	// --- HYDRATION AWARENESS ---
-	const hydrationBaseline = __getWriteVersion(); // version before any client writes
-	const hasSSRContent = el.childNodes && el.childNodes.length > 0;
-	let first = !hasSSRContent; // if SSR present, we won't do a "first setHTML"
-	let last = hasSSRContent ? el.innerHTML : ""; // track SSR HTML to compare against
-	// ---------------------------
+  // --- HYDRATION AWARENESS ---
+  const hydrationBaseline = __getWriteVersion(); // version before any client writes
+  const hasSSRContent = el.childNodes && el.childNodes.length > 0;
+  let first = !hasSSRContent; // if SSR present, we won't do a "first setHTML"
+  let last = hasSSRContent ? el.innerHTML : ""; // track SSR HTML to compare against
+  // ---------------------------
 
-	let token = 0; // coalescing guard
+  let token = 0; // coalescing guard
 
-	const dispose = effect(() => {
-		const out = withTemplateContext(templateFn, scope);
-		const runId = ++token;
+  const dispose = effect(() => {
+    const out = withTemplateContext(templateFn, scope);
+    const runId = ++token;
 
-		/** @param {string} html */
-		const apply = (html) => {
-			if (runId !== token) return;
+    /** @param {string} html */
+    const apply = (html) => {
+      if (runId !== token) return;
 
-			// --- SKIP INITIAL DOWNGRADE ---
-			// If SSR already painted and no reactive writes occurred yet,
-			// don't replace DOM with a different (usually "empty") HTML.
-			if (hasSSRContent && __getWriteVersion() === hydrationBaseline) {
-				// just record what the client *would* render; do not touch DOM yet
-				last = String(html ?? "");
-				return;
-			}
-			// ----------------------------------
+      // --- SKIP INITIAL DOWNGRADE ---
+      // If SSR already painted and no reactive writes occurred yet,
+      // don't replace DOM with a different (usually "empty") HTML.
+      if (hasSSRContent && __getWriteVersion() === hydrationBaseline) {
+        // just record what the client *would* render; do not touch DOM yet
+        last = String(html ?? "");
+        return;
+      }
+      // ----------------------------------
 
-			if (first) {
-				setHTML(el, html);
-				last = html;
-				first = false;
-			} else if (html !== last) {
-				schedule(() => {
-					if (runId !== token) return;
-					if (html !== last) {
-						setHTML(el, html);
-						last = html;
-					}
-				});
-			}
-		};
+      if (first) {
+        setHTML(el, html);
+        last = html;
+        first = false;
+      } else if (html !== last) {
+        schedule(() => {
+          if (runId !== token) return;
+          if (html !== last) {
+            setHTML(el, html);
+            last = html;
+          }
+        });
+      }
+    };
 
-		if (out && typeof (/** @type {any} */ (out).then) === "function") {
-			/** @type {Promise<string>} */ (out)
-				.then((s) => apply(String(s ?? "")))
-				.catch((e) => console.error(e));
-		} else {
-			apply(String(out ?? ""));
-		}
-	});
+    if (out && typeof (/** @type {any} */ (out).then) === "function") {
+      /** @type {Promise<string>} */ (out).then((s) => apply(String(s ?? ""))).catch((e) => console.error(e));
+    } else {
+      apply(String(out ?? ""));
+    }
+  });
 
-	return {
-		unmount() {
-			dispose();
-			// optional: el.innerHTML = "";
-		},
-	};
+  return {
+    unmount() {
+      dispose();
+      // optional: el.innerHTML = "";
+    },
+  };
+}
+
+/**
+ * Import a module respecting a loading strategy.
+ * @param {"load"|"idle"|"visible"} strategy
+ * @param {Element} el
+ * @param {string} modulePath
+ * @returns {Promise<any>}
+ */
+function importWithStrategy(strategy, el, modulePath) {
+  switch (strategy) {
+    case "idle": {
+      return new Promise((resolve, reject) => {
+        const schedule = window.requestIdleCallback || ((cb) => setTimeout(cb, 0));
+        schedule(() => import(modulePath).then(resolve, reject));
+      });
+    }
+    case "visible": {
+      return new Promise((resolve, reject) => {
+        if (typeof window.IntersectionObserver === "function") {
+          const observer = new IntersectionObserver((entries) => {
+            if (entries[0]?.isIntersecting) {
+              observer.disconnect();
+              import(modulePath).then(resolve, reject);
+            }
+          });
+          observer.observe(el);
+        } else {
+          import(modulePath).then(resolve, reject);
+        }
+      });
+    }
+    default: {
+      return import(modulePath);
+    }
+  }
+}
+
+/**
+ * Hydrate a single island element.
+ * @param {Element} el
+ */
+async function hydrateIsland(el) {
+  const modulePath = el.getAttribute("data-module");
+  if (!modulePath) {
+    console.error("[islands] Missing data-module on", el);
+    return;
+  }
+  if (el.getAttribute("data-hydrated") === "1") return;
+  const exportName = el.getAttribute("data-export") || "default";
+  const strategy = /** @type {"load"|"idle"|"visible"} */ (el.getAttribute("data-client") || "load");
+  const propsAttr = el.getAttribute("data-props");
+  let props = {};
+  if (propsAttr) {
+    try {
+      props = JSON.parse(decodeURIComponent(propsAttr));
+    } catch (e) {
+      console.error("[islands] Failed to parse data-props", e);
+    }
+  }
+
+  try {
+    const mod = await importWithStrategy(strategy, el, modulePath);
+    const Component = mod?.[exportName] || mod?.default;
+    if (typeof Component !== "function") {
+      console.error(`[islands] Export "${exportName}" not found or not a function in ${modulePath}`);
+      return;
+    }
+    // Clear SSR children and mount reactive component
+    el.textContent = "";
+    mount(() => Component(props), el, { replace: true });
+    el.setAttribute("data-hydrated", "1");
+  } catch (err) {
+    console.error(`[islands] Failed to load ${modulePath}`, err);
+  }
+}
+
+/**
+ * Generate an island placeholder with hydration metadata.
+ *
+ * Creates a div with data attributes for client-side hydration. Supports SSR content
+ * and multiple loading strategies (load, idle, visible).
+ *
+ * @example
+ * // Basic island
+ * import { island } from '@raven-js/reflex/dom';
+ * const html = island({ src: '/apps/counter.js#Counter', props: { initial: 0 } });
+ *
+ * @example
+ * // With SSR and loading strategy
+ * import { Counter } from './counter.js';
+ * const html = island({
+ *   src: '/apps/counter.js#Counter',
+ *   ssr: Counter,
+ *   props: { initial: 10 },
+ *   on: 'visible'
+ * });
+ *
+ * @param {{ src: string, ssr?: Function, props?: Object, on?: 'load'|'idle'|'visible', id?: string }} cfg
+ * @returns {string} HTML placeholder with SSR content and hydration data attributes
+ */
+export function island(cfg) {
+  const on = cfg?.on ?? "load";
+  const src = cfg?.src;
+  const props = cfg?.props ?? {};
+  const ssrFn = cfg?.ssr;
+  if (!src) {
+    throw new Error("island(): src is required (e.g. '/apps/counter.js' or '/apps/counter.js#Counter')");
+  }
+
+  // Parse module path and export from src (e.g. "/apps/counter.js#Counter")
+  const [modulePath, exportName = "default"] = src.split("#");
+
+  const id = cfg?.id || `island-${Math.random().toString(36).substr(2, 9)}`;
+
+  // Serialize props into attribute using URI encoding to avoid HTML escaping issues
+  const propsAttr = encodeURIComponent(JSON.stringify(props));
+
+  // Server-side render the component output if available
+  let ssrContent = "";
+  try {
+    if (typeof ssrFn === "function") {
+      const out = ssrFn(props);
+      ssrContent = String(out ?? "");
+    }
+  } catch {
+    ssrContent = "";
+  }
+
+  return `<div id="${id}" data-island data-module="${modulePath}" data-export="${exportName}" data-client="${on}" data-props="${propsAttr}">${ssrContent}</div>`;
+}
+
+/**
+ * Hydrate all islands on the page with selective loading strategies.
+ *
+ * Scans for elements with `data-island` and `data-module` attributes and hydrates them
+ * using the specified loading strategy (load, idle, visible). Each island is hydrated
+ * with its component from the specified module path and export name.
+ *
+ * @example
+ * // Hydrate all islands immediately
+ * import { hydrateIslands } from '@raven-js/reflex/dom';
+ * hydrateIslands();
+ *
+ * @example
+ * // Auto-hydrate on DOM ready
+ * if (document.readyState === 'loading') {
+ *   document.addEventListener('DOMContentLoaded', hydrateIslands);
+ * } else {
+ *   hydrateIslands();
+ * }
+ */
+export function hydrateIslands() {
+  if (typeof window === "undefined") throw new Error("hydrateIslands() is browser-only");
+
+  const islands = document.querySelectorAll("[data-island][data-module]");
+  islands.forEach((el) => {
+    void hydrateIsland(el);
+  });
 }

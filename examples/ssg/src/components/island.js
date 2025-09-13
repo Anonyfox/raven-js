@@ -7,23 +7,15 @@
  */
 
 /**
- * @file Islands helper - selective client-side hydration with loading strategies
+ * @file Temporary local island function (will use @raven-js/reflex/dom after publish)
  */
-
-import { html } from "@raven-js/beak";
 
 /**
  * Generate an island placeholder with hydration metadata.
- * Clean API: island({ src, ssr, props, on, id })
- * - src (required): client module path with optional export (e.g. "/apps/counter.js#Counter")
- * - ssr (optional): server-side render function for SSR
- * - props (optional): initial props object
- * - on (optional): 'load' | 'idle' | 'visible' (default 'load')
- * - id (optional): deterministic id override
  * @param {{ src: string, ssr?: Function, props?: Object, on?: 'load'|'idle'|'visible', id?: string }} cfg
  * @returns {string} HTML placeholder with SSR content and hydration data attributes
  */
-export const island = (cfg) => {
+export function island(cfg) {
   const on = cfg?.on ?? "load";
   const src = cfg?.src;
   const props = cfg?.props ?? {};
@@ -51,16 +43,5 @@ export const island = (cfg) => {
     ssrContent = "";
   }
 
-  return html`
-		<div
-			id="${id}"
-			data-island
-			data-module="${modulePath}"
-			data-export="${exportName}"
-			data-client="${on}"
-			data-props="${propsAttr}"
-		>
-			${ssrContent}
-		</div>
-	`;
-};
+  return `<div id="${id}" data-island data-module="${modulePath}" data-export="${exportName}" data-client="${on}" data-props="${propsAttr}">${ssrContent}</div>`;
+}

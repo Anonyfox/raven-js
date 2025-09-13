@@ -6,7 +6,7 @@
 [![ESM Only](https://img.shields.io/badge/ESM-Only-blue.svg)](https://nodejs.org/api/esm.html)
 [![Node.js 22.5+](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
 
-Mount reactive templates with automatic signal tracking and efficient DOM updates.
+Mount reactive templates with automatic signal tracking, efficient DOM updates, and islands architecture for selective hydration.
 
 ## Installation
 
@@ -57,6 +57,84 @@ const app = mount(App, "#app", { replace: true });
 // Optional manual cleanup (automatic when element removed)
 app.unmount();
 ```
+
+### island(config)
+
+Generate island placeholder for selective client-side hydration.
+
+- `config.src: string` - Module path with optional export (e.g., `/apps/counter.js#Counter`)
+- `config.ssr?: Function` - Server-side render function
+- `config.props?: Object` - Initial props object
+- `config.on?: 'load'|'idle'|'visible'` - Loading strategy (default: 'load')
+- `config.id?: string` - Custom element ID
+- Returns: HTML string with island placeholder
+
+```javascript
+import { island } from "@raven-js/reflex/dom";
+import { Counter } from "./counter.js";
+
+// Basic island
+const html = island({
+  src: "/apps/counter.js#Counter",
+  props: { initial: 0 }
+});
+
+// With SSR and loading strategy
+const html = island({
+  src: "/apps/counter.js#Counter",
+  ssr: Counter,           // Render on server
+  props: { initial: 10 },
+  on: "visible"          // Load when scrolled into view
+});
+```
+
+### hydrateIslands()
+
+Hydrate all islands on the page with selective loading strategies.
+
+```javascript
+import { hydrateIslands } from "@raven-js/reflex/dom";
+
+// Auto-hydrate all islands
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", hydrateIslands);
+} else {
+  hydrateIslands();
+}
+```
+
+## Islands Architecture
+
+Islands enable selective hydration - static HTML with interactive components that load on demand.
+
+```javascript
+import { island, hydrateIslands } from "@raven-js/reflex/dom";
+import { Counter } from "./counter.js";
+
+// Server: Generate static HTML with island placeholders
+const page = `
+  <h1>My Blog Post</h1>
+  <p>Static content loads instantly...</p>
+
+  ${island({
+    src: "/apps/counter.js#Counter",
+    ssr: Counter,                    // Pre-render on server
+    props: { initial: 0 },
+    on: "visible"                   // Load when scrolled into view
+  })}
+
+  <p>More static content...</p>
+`;
+
+// Client: Auto-hydrate islands
+hydrateIslands();
+```
+
+### Loading Strategies
+
+- **`load`** (default): Immediate hydration
+- **`idle`**: When browser is idle (requestIdleCallback)
+- **`visible`**: When scrolled into viewport (IntersectionObserver)
 
 ## Server Rendering
 

@@ -7,17 +7,11 @@
  */
 
 /**
- * @file Islands bootloader – hydrates all islands declared via data attributes.
- *
- * Contract (emitted by server/SSG):
- * <div data-island data-module="/apps/counter.js" data-export="Counter" data-client="load|idle|visible">
- *   <script type="application/json">{"initial":0}</script>
- * </div>
+ * @file Islands bootloader – auto-hydrate all islands on page load.
+ * TODO: Use import { hydrateIslands } from "@raven-js/reflex/dom" after publish
  */
 
 import { mount } from "@raven-js/reflex/dom";
-
-// No JSON child support; props are passed via data-props only.
 
 /**
  * Import a module respecting a loading strategy.
@@ -85,7 +79,7 @@ async function hydrateIsland(el) {
       console.error(`[islands] Export "${exportName}" not found or not a function in ${modulePath}`);
       return;
     }
-    // Trigger initial render to attach listeners and styles by clearing SSR children once
+    // Clear SSR children and mount reactive component
     el.textContent = "";
     mount(() => Component(props), el, { replace: true });
     el.setAttribute("data-hydrated", "1");
@@ -94,15 +88,16 @@ async function hydrateIsland(el) {
   }
 }
 
-function boot() {
+function hydrateIslands() {
   const islands = document.querySelectorAll("[data-island][data-module]");
   islands.forEach((el) => {
     void hydrateIsland(el);
   });
 }
 
+// Auto-hydrate islands when DOM is ready
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", boot);
+  document.addEventListener("DOMContentLoaded", hydrateIslands);
 } else {
-  boot();
+  hydrateIslands();
 }
