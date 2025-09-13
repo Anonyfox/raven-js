@@ -14,49 +14,53 @@ import { html } from "@raven-js/beak";
 
 /**
  * Generate an island placeholder with hydration metadata.
- * @param {Function} Component - Component function reference
- * @param {Object} [props={}] - Component props
- * @param {Object} [options={}] - Island options
- * @param {string} [options.module] - Explicit client module path (e.g. "/apps/counter.js")
- * @param {'load'|'idle'|'visible'} [options.client='load'] - Loading strategy
- * @param {string} [options.export='default'] - Export name to use from module
+ * Clean API: island({ src, ssr, props, on, id })
+ * - src (required): client module path with optional export (e.g. "/apps/counter.js#Counter")
+ * - ssr (optional): server-side render function for SSR
+ * - props (optional): initial props object
+ * - on (optional): 'load' | 'idle' | 'visible' (default 'load')
+ * - id (optional): deterministic id override
+ * @param {{ src: string, ssr?: Function, props?: Object, on?: 'load'|'idle'|'visible', id?: string }} cfg
  * @returns {string} HTML placeholder with SSR content and hydration data attributes
  */
-export const island = (Component, props = {}, options = {}) => {
-  const {
-    client = "load",
-    module,
-    export: exportName = "default",
-  } = /** @type {{ client?: 'load'|'idle'|'visible', module?: string, export?: string }} */ (options);
-  if (!module) {
-    throw new Error("island(): options.module is required (e.g. '/apps/counter.js')");
+export const island = (cfg) => {
+  const on = cfg?.on ?? "load";
+  const src = cfg?.src;
+  const props = cfg?.props ?? {};
+  const ssrFn = cfg?.ssr;
+  if (!src) {
+    throw new Error("island(): src is required (e.g. '/apps/counter.js' or '/apps/counter.js#Counter')");
   }
-  const id = `island-${Math.random().toString(36).substr(2, 9)}`;
+
+  // Parse module path and export from src (e.g. "/apps/counter.js#Counter")
+  const [modulePath, exportName = "default"] = src.split("#");
+
+  const id = cfg?.id || `island-${Math.random().toString(36).substr(2, 9)}`;
 
   // Serialize props into attribute using URI encoding to avoid HTML escaping issues
   const propsAttr = encodeURIComponent(JSON.stringify(props));
 
   // Server-side render the component output if available
-  let ssr = "";
+  let ssrContent = "";
   try {
-    if (typeof Component === "function") {
-      const out = Component(props);
-      ssr = String(out ?? "");
+    if (typeof ssrFn === "function") {
+      const out = ssrFn(props);
+      ssrContent = String(out ?? "");
     }
   } catch {
-    ssr = "";
+    ssrContent = "";
   }
 
   return html`
 		<div
 			id="${id}"
 			data-island
-			data-module="${module}"
+			data-module="${modulePath}"
 			data-export="${exportName}"
-			data-client="${client}"
+			data-client="${on}"
 			data-props="${propsAttr}"
 		>
-			${ssr}
+			${ssrContent}
 		</div>
 	`;
 };

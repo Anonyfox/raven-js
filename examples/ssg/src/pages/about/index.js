@@ -38,13 +38,13 @@ RavenJS SSG represents a fundamental shift in how we think about static site gen
 Including seamless reactivity with **selective hydration** - interactive components on static pages:
 
 ### Load Strategy (immediate)
-${island(Counter, { initial: 0 }, { module: "/apps/counter.js", export: "Counter" })}
+${island({ src: "/apps/counter.js#Counter", ssr: Counter, props: { initial: 0 } })}
 
 ### Idle Strategy (when browser idle)
-${island(Counter, { initial: 10 }, { client: "idle", module: "/apps/counter.js", export: "Counter" })}
+${island({ src: "/apps/counter.js#Counter", ssr: Counter, on: "idle", props: { initial: 10 } })}
 
 ### Visible Strategy (when scrolled into view)
-${island(Counter, { initial: 100 }, { client: "visible", module: "/apps/counter.js", export: "Counter" })}
+${island({ src: "/apps/counter.js#Counter", ssr: Counter, on: "visible", props: { initial: 100 } })}
 
 ## The Philosophy
 
