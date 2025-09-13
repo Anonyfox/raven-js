@@ -152,7 +152,7 @@ export function analyzeZipfDeviation(text, options = {}) {
   // Calculate Zipf's Law expected frequencies
   // Zipf's Law: frequency(rank) = frequency(1) / rank^s
   // We'll calculate the optimal exponent 's' and then measure deviations
-  const mostFrequentCount = analyzedFrequencies[0][1];
+  // Note: we regress in log space; no need to anchor to the top frequency
 
   // Calculate optimal Zipf exponent using least squares regression
   // log(frequency) = log(C) - s * log(rank)
@@ -174,24 +174,27 @@ export function analyzeZipfDeviation(text, options = {}) {
   }
 
   const n = analyzedFrequencies.length;
-  const zipfExponent =
+  // Slope in log-log space: log(freq) = alpha + slope * log(rank); for Zipf, slope ≈ -s
+  const slope =
     (sumLogRankLogFreq - (sumLogRank * sumLogFreq) / n) / (sumLogRankSquared - (sumLogRank * sumLogRank) / n);
+  const meanLogRank = sumLogRank / n;
+  const meanLogFreq = sumLogFreq / n;
+  const alpha = meanLogFreq - slope * meanLogRank;
 
-  // Calculate expected frequencies using optimal exponent
+  // Calculate expected frequencies using regression line (not anchored to top frequency)
   const expectedFrequencies = [];
   for (let i = 0; i < analyzedFrequencies.length; i++) {
     const rank = i + 1;
-    const expected = mostFrequentCount / rank ** Math.abs(zipfExponent);
+    const logExpected = alpha + slope * Math.log(rank);
+    const expected = Math.exp(logExpected);
     expectedFrequencies.push(expected);
   }
 
   // Calculate deviation metrics
   let totalDeviation = 0;
   let chiSquared = 0;
-  let ssTotal = 0; // Total sum of squares for R²
-  let ssResidual = 0; // Residual sum of squares for R²
-
-  const meanFrequency = analyzedFrequencies.reduce((sum, [, freq]) => sum + freq, 0) / n;
+  let ssTotalLog = 0; // Total sum of squares in log space for R²
+  let ssResidualLog = 0; // Residual sum of squares in log space for R²
 
   for (let i = 0; i < analyzedFrequencies.length; i++) {
     const actual = analyzedFrequencies[i][1];
@@ -205,14 +208,16 @@ export function analyzeZipfDeviation(text, options = {}) {
     const chiContribution = (actual - expected) ** 2 / expected;
     chiSquared += chiContribution;
 
-    // Calculate R² components
-    ssTotal += (actual - meanFrequency) ** 2;
-    ssResidual += (actual - expected) ** 2;
+    // Calculate R² components in log space to match linearization basis
+    const logActual = Math.log(actual);
+    const logExpected = Math.log(expected);
+    ssTotalLog += (logActual - meanLogFreq) ** 2;
+    ssResidualLog += (logActual - logExpected) ** 2;
   }
 
   // Calculate final metrics
   const averageDeviation = (totalDeviation / n) * 100; // Convert to percentage
-  const rSquared = ssTotal === 0 ? 1 : Math.max(0, 1 - ssResidual / ssTotal); // Handle perfect fit case
+  const rSquared = ssTotalLog === 0 ? 1 : Math.max(0, 1 - ssResidualLog / ssTotalLog); // Log-space R²
 
   return {
     deviation: averageDeviation,
@@ -220,6 +225,7 @@ export function analyzeZipfDeviation(text, options = {}) {
     chiSquared,
     totalWords: words.length,
     uniqueWords: frequencyMap.size,
-    zipfExponent: Math.abs(zipfExponent),
+    // Zipf exponent s is the negative of the slope in log-log space
+    zipfExponent: Math.abs(-slope),
   };
 }

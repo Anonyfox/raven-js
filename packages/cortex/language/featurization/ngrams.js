@@ -60,42 +60,40 @@ import { tokenizeWords } from "../segmentation/tokenize-words.js";
  * console.log(trigrams); // ["natural language processing"]
  */
 export function ngrams(text, options = {}) {
-	const {
-		type = "words",
-		n = type === "chars" ? 3 : 2, // Smart default based on type
-		stride = 1,
-		normalize = true,
-		lowercase = true,
-		separator = " ",
-		charN = 3,
-		wordN = 2,
-	} = options;
+  const {
+    type = "words",
+    n = type === "chars" ? 3 : 2, // Smart default based on type
+    stride = 1,
+    normalize = true,
+    lowercase = true,
+    separator = " ",
+    charN = 3,
+    wordN = 2,
+  } = options;
 
-	// Delegate to appropriate internal function
-	switch (type) {
-		case "chars":
-			return extractCharNgrams(text, n, stride, { normalize, lowercase });
+  // Delegate to appropriate internal function
+  switch (type) {
+    case "chars":
+      return extractCharNgrams(text, n, stride, { normalize, lowercase });
 
-		case "words":
-			return extractWordNgrams(text, n, stride, {
-				normalize,
-				lowercase,
-				separator,
-			});
+    case "words":
+      return extractWordNgrams(text, n, stride, {
+        normalize,
+        lowercase,
+        separator,
+      });
 
-		case "mixed":
-			return extractMixedNgrams(text, {
-				charN, // Always use the provided charN parameter
-				wordN, // Always use the provided wordN parameter
-				stride,
-				options: { normalize, lowercase, separator },
-			});
+    case "mixed":
+      return extractMixedNgrams(text, {
+        charN, // Always use the provided charN parameter
+        wordN, // Always use the provided wordN parameter
+        stride,
+        options: { normalize, lowercase, separator },
+      });
 
-		default:
-			throw new Error(
-				`Unknown n-gram type: "${type}". Must be "chars", "words", or "mixed"`,
-			);
-	}
+    default:
+      throw new Error(`Unknown n-gram type: "${type}". Must be "chars", "words", or "mixed"`);
+  }
 }
 
 // Keep internal functions for the unified API
@@ -107,36 +105,36 @@ export function ngrams(text, options = {}) {
  * @returns {string[]}
  */
 function extractCharNgrams(text, n = 3, stride = 1, options = {}) {
-	const { normalize = true, lowercase = true } = options;
+  const { normalize = true, lowercase = true } = options;
 
-	if (typeof text !== "string" || text.length === 0) {
-		return [];
-	}
+  if (typeof text !== "string" || text.length === 0) {
+    return [];
+  }
 
-	if (n < 1 || stride < 1) {
-		throw new Error("N-gram size and stride must be positive integers");
-	}
+  if (n < 1 || stride < 1) {
+    throw new Error("N-gram size and stride must be positive integers");
+  }
 
-	let processedText = text;
+  let processedText = text;
 
-	// Apply normalization if requested
-	if (normalize) {
-		processedText = normalizeUnicode(processedText);
-	}
+  // Apply normalization if requested
+  if (normalize) {
+    processedText = normalizeUnicode(processedText);
+  }
 
-	// Apply case folding if requested
-	if (lowercase) {
-		processedText = foldCase(processedText);
-	}
+  // Apply case folding if requested
+  if (lowercase) {
+    processedText = foldCase(processedText);
+  }
 
-	const ngramsList = [];
+  const ngramsList = [];
 
-	// Extract n-grams with configurable stride
-	for (let i = 0; i <= processedText.length - n; i += stride) {
-		ngramsList.push(processedText.slice(i, i + n));
-	}
+  // Extract n-grams with configurable stride
+  for (let i = 0; i <= processedText.length - n; i += stride) {
+    ngramsList.push(processedText.slice(i, i + n));
+  }
 
-	return ngramsList;
+  return ngramsList;
 }
 
 /**
@@ -147,44 +145,48 @@ function extractCharNgrams(text, n = 3, stride = 1, options = {}) {
  * @returns {string[]}
  */
 function extractWordNgrams(text, n = 2, stride = 1, options = {}) {
-	const { normalize = true, lowercase = true, separator = " " } = options;
+  const { normalize = true, lowercase = true, separator = " " } = options;
 
-	if (typeof text !== "string" || text.length === 0) {
-		return [];
-	}
+  if (typeof text !== "string" || text.length === 0) {
+    return [];
+  }
 
-	if (n < 1 || stride < 1) {
-		throw new Error("N-gram size and stride must be positive integers");
-	}
+  if (n < 1 || stride < 1) {
+    throw new Error("N-gram size and stride must be positive integers");
+  }
 
-	let processedText = text;
+  let processedText = text;
 
-	// Apply normalization if requested
-	if (normalize) {
-		processedText = normalizeUnicode(processedText);
-	}
+  // Apply normalization if requested
+  if (normalize) {
+    processedText = normalizeUnicode(processedText);
+  }
 
-	// Apply case folding if requested
-	if (lowercase) {
-		processedText = foldCase(processedText);
-	}
+  // Apply case folding if requested
+  if (lowercase) {
+    processedText = foldCase(processedText);
+  }
 
-	// Use our hardened tokenizeWords function
-	const words = tokenizeWords(processedText);
+  // Use our hardened tokenizeWords function
+  const words = tokenizeWords(processedText);
 
-	if (words.length < n) {
-		return [];
-	}
+  if (words.length < n) {
+    return [];
+  }
 
-	const ngramsList = [];
+  const ngramsList = [];
 
-	// Extract word n-grams with configurable stride
-	for (let i = 0; i <= words.length - n; i += stride) {
-		const ngram = words.slice(i, i + n).join(separator);
-		ngramsList.push(ngram);
-	}
+  // Extract word n-grams with configurable stride
+  for (let i = 0; i <= words.length - n; i += stride) {
+    // Build n-gram string without allocating a subarray
+    let token = words[i];
+    for (let j = 1; j < n; j++) {
+      token += separator + words[i + j];
+    }
+    ngramsList.push(token);
+  }
 
-	return ngramsList;
+  return ngramsList;
 }
 
 /**
@@ -193,10 +195,10 @@ function extractWordNgrams(text, n = 2, stride = 1, options = {}) {
  * @returns {{char: string[], word: string[]}}
  */
 function extractMixedNgrams(text, config = {}) {
-	const { charN = 3, wordN = 2, stride = 1, options = {} } = config;
+  const { charN = 3, wordN = 2, stride = 1, options = {} } = config;
 
-	return {
-		char: extractCharNgrams(text, charN, stride, options),
-		word: extractWordNgrams(text, wordN, stride, options),
-	};
+  return {
+    char: extractCharNgrams(text, charN, stride, options),
+    word: extractWordNgrams(text, wordN, stride, options),
+  };
 }

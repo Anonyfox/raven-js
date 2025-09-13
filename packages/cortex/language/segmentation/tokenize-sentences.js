@@ -15,8 +15,46 @@
  */
 
 // Pre-compiled regexes for V8 optimization - avoid regex compilation on every call
-const SENTENCE_BOUNDARY_REGEX = /([.!?]+)(?:\s+)(?=[A-Z\p{Lu}])/u;
-const PUNCTUATION_END_REGEX = /[.!?]+$/;
+// Allow Unicode sentence-ending punctuation and optional leading quotes/brackets before next sentence
+const SENTENCE_BOUNDARY_REGEX = /([.!?…！？。]+)(?:\s+)(?=(?:["'“”«»([{]+\s*)?[A-Z\p{Lu}])/u;
+const PUNCTUATION_END_REGEX = /[.!?…！？。]+$/u;
+
+// Minimal common abbreviation tails to avoid false splits in regex fallback (language-agnostic but biased to EN)
+// Intentionally small to stay fast and avoid maintenance bloat
+const ABBREVIATION_ENDINGS = new Set([
+  "Mr.",
+  "Mrs.",
+  "Ms.",
+  "Dr.",
+  "Prof.",
+  "Sr.",
+  "Jr.",
+  "St.",
+  "vs.",
+  "etc.",
+  "No.",
+  "Fig.",
+  "Eq.",
+  "Dept.",
+  "Inc.",
+  "Ltd.",
+  "Jan.",
+  "Feb.",
+  "Mar.",
+  "Apr.",
+  "Jun.",
+  "Jul.",
+  "Aug.",
+  "Sep.",
+  "Sept.",
+  "Oct.",
+  "Nov.",
+  "Dec.",
+  "z.B.",
+  "bzw.",
+  "u.a.",
+  "ca.",
+]);
 
 /**
  * Tokenizes text into sentences using intelligent boundary detection.
@@ -42,55 +80,59 @@ const PUNCTUATION_END_REGEX = /[.!?]+$/;
  * tokenizeSentences('Really?! Yes... I think so.'); // ['Really?!', 'Yes... I think so.']
  */
 export function tokenizeSentences(text, locale = "en") {
-	// Handle edge cases - return early for invalid inputs
-	if (!text) return [];
+  // Handle edge cases - return early for invalid inputs
+  if (!text) return [];
 
-	// Ensure valid locale fallback
-	if (!locale) locale = "en";
+  // Ensure valid locale fallback
+  if (!locale) locale = "en";
 
-	// Try modern Intl.Segmenter first
-	if (typeof Intl !== "undefined" && Intl.Segmenter) {
-		try {
-			const segmenter = new Intl.Segmenter(locale, { granularity: "sentence" });
-			const sentences = [];
+  // Try modern Intl.Segmenter first
+  if (typeof Intl !== "undefined" && Intl.Segmenter) {
+    try {
+      const segmenter = new Intl.Segmenter(locale, { granularity: "sentence" });
+      const sentences = [];
 
-			for (const { segment } of segmenter.segment(text)) {
-				const trimmed = segment.trim();
-				if (trimmed) {
-					sentences.push(trimmed);
-				}
-			}
+      for (const { segment } of segmenter.segment(text)) {
+        const trimmed = segment.trim();
+        if (trimmed) {
+          sentences.push(trimmed);
+        }
+      }
 
-			return sentences;
-		} catch (_error) {
-			// Fall through to regex approach if Intl.Segmenter fails
-		}
-	}
+      return sentences;
+    } catch (_error) {
+      // Fall through to regex approach if Intl.Segmenter fails
+    }
+  }
 
-	// Optimized regex-based fallback with pre-compiled patterns
-	const sentences = [];
-	const segments = text.split(SENTENCE_BOUNDARY_REGEX);
+  // Optimized regex-based fallback with pre-compiled patterns
+  const sentences = [];
+  const segments = text.split(SENTENCE_BOUNDARY_REGEX);
 
-	let current = "";
+  let current = "";
 
-	for (let i = 0; i < segments.length; i++) {
-		current += segments[i];
+  for (let i = 0; i < segments.length; i++) {
+    current += segments[i];
 
-		// Check if this segment ends with punctuation and we have more segments
-		if (i < segments.length - 1 && PUNCTUATION_END_REGEX.test(segments[i])) {
-			const trimmed = current.trim();
-			if (trimmed) {
-				sentences.push(trimmed);
-				current = "";
-			}
-		}
-	}
+    // Check if this segment ends with punctuation and we have more segments
+    if (i < segments.length - 1 && PUNCTUATION_END_REGEX.test(segments[i])) {
+      const trimmed = current.trim();
+      if (trimmed) {
+        // Avoid splitting at common abbreviations (fallback only)
+        const tail = trimmed.split(/\s+/u).slice(-1)[0] || "";
+        if (!ABBREVIATION_ENDINGS.has(tail)) {
+          sentences.push(trimmed);
+          current = "";
+        }
+      }
+    }
+  }
 
-	// Add any remaining text
-	const trimmed = current.trim();
-	if (trimmed) {
-		sentences.push(trimmed);
-	}
+  // Add any remaining text
+  const trimmed = current.trim();
+  if (trimmed) {
+    sentences.push(trimmed);
+  }
 
-	return sentences.length > 0 ? sentences : [text.trim()].filter(Boolean);
+  return sentences.length > 0 ? sentences : [text.trim()].filter(Boolean);
 }

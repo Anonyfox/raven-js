@@ -22,8 +22,8 @@ describe("text-type-detector index", () => {
       "This is a comprehensive test text that includes many words to meet the minimum requirement for analysis and testing of text type detection algorithms. The system provides additional content.";
     const defaultResult = detectTextType(text);
 
-    assert.strictEqual(defaultResult.type, "business", "Default export should return business type");
-    assert.strictEqual(defaultResult.confidence, 0.5, "Default export should return neutral confidence");
+    assert.strictEqual(defaultResult.type, "unknown", "Default export should return unknown type");
+    assert.strictEqual(defaultResult.confidence, 0.1, "Default export should return low confidence");
     assert.deepStrictEqual(defaultResult.scores, {}, "Default export should return empty scores");
   });
 

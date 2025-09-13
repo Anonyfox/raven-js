@@ -17,8 +17,8 @@ describe("detectTextType (general)", () => {
         "This is a comprehensive sample text that contains enough words to meet the minimum requirement for analysis and testing of text type detection algorithms. The system provides additional content.";
       const result = detectTextType(text);
 
-      assert.strictEqual(result.type, "business", "Should return default business type");
-      assert.strictEqual(result.confidence, 0.5, "Should return neutral confidence");
+      assert.strictEqual(result.type, "unknown", "Should return default unknown type");
+      assert.strictEqual(result.confidence, 0.1, "Should return low confidence");
       assert.deepStrictEqual(result.scores, {}, "Should return empty scores object");
     });
 
@@ -26,8 +26,8 @@ describe("detectTextType (general)", () => {
       const text = "This is a test text with enough words to meet the minimum requirements for analysis.";
       const result = detectTextType(text);
 
-      assert.strictEqual(result.type, "business", "Should handle text consistently");
-      assert.strictEqual(result.confidence, 0.5, "Should return neutral confidence");
+      assert.strictEqual(result.type, "unknown", "Should handle text consistently");
+      assert.strictEqual(result.confidence, 0.1, "Should return low confidence");
     });
   });
 
@@ -51,8 +51,8 @@ describe("detectTextType (general)", () => {
         "Dies ist ein umfassender test text mit genügend worten um die mindestanforderungen zu erfüllen und die analyse zu testen. Das system bietet zusätzliche funktionen.";
       const result = detectTextType(unicodeText);
 
-      assert.strictEqual(result.type, "business", "Should handle Unicode text");
-      assert.strictEqual(result.confidence, 0.5, "Should return neutral confidence for Unicode");
+      assert.strictEqual(result.type, "unknown", "Should handle Unicode text");
+      assert.strictEqual(result.confidence, 0.1, "Should return low confidence for Unicode");
     });
   });
 });

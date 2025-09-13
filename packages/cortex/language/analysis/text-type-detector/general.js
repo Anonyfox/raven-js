@@ -21,8 +21,8 @@ import { foldCase } from "../../normalization/index.js";
  * Analyzes text for type classification (language-agnostic fallback).
  *
  * This general implementation doesn't search for any specific text type patterns,
- * providing a neutral default classification. All text is classified as "business"
- * with medium confidence, making it suitable as a fallback or when text type
+ * providing a neutral default classification. All text is classified as "unknown"
+ * with low confidence, making it suitable as a fallback or when text type
  * detection isn't needed.
  *
  * **Algorithm**: Fold text case → return neutral default classification with medium confidence
@@ -35,7 +35,7 @@ import { foldCase } from "../../normalization/index.js";
  *
  * @param {string} text - Input text to analyze
  * @param {Object} [_options={}] - Analysis options
- * @returns {{type: string, confidence: number, scores: Record<string, number>}} Classification result with neutral default. type: Always "business". confidence: Always 0.5 (medium). scores: Empty object.
+ * @returns {{type: string, confidence: number, scores: Record<string, number>}} Classification result with neutral default. type: Always "unknown". confidence: Always 0.1 (low). scores: Empty object.
  *
  * @throws {TypeError} When text parameter is not a string
  * @throws {Error} When text is empty
@@ -44,8 +44,8 @@ import { foldCase } from "../../normalization/index.js";
  * // Neutral fallback classification
  * const unknownText = "Some text in an unsupported language with various content types.";
  * const analysis = detectTextType(text);
- * console.log(analysis.type); // "business"
- * console.log(analysis.confidence); // 0.5 (neutral confidence)
+ * console.log(analysis.type); // "unknown"
+ * console.log(analysis.confidence); // 0.1 (low confidence)
  */
 export function detectTextType(text, _options = {}) {
   if (typeof text !== "string") {
@@ -61,8 +61,8 @@ export function detectTextType(text, _options = {}) {
   foldCase(text);
 
   return {
-    type: "business", // Neutral default type
-    confidence: 0.5, // Neutral confidence
+    type: "unknown", // Neutral default type
+    confidence: 0.1, // Low confidence
     scores: {}, // No category scores
   };
 }

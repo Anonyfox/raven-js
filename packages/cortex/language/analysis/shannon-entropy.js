@@ -110,8 +110,22 @@ export function calculateShannonEntropy(text) {
   // Handles emoji, combining characters, and compatibility mappings consistently
   const normalizedText = normalizeUnicode(text);
 
-  // Convert to array of characters for processing
-  const characters = normalizedText.split("");
+  // Segment into grapheme clusters when possible for accurate "character" units
+  // Fallbacks: Array.from (code points) → .split("") (UTF-16 units)
+  let characters;
+  if (typeof Intl !== "undefined" && Intl.Segmenter) {
+    try {
+      const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+      characters = [];
+      for (const { segment } of segmenter.segment(normalizedText)) {
+        characters.push(segment);
+      }
+    } catch (_err) {
+      characters = Array.from(normalizedText);
+    }
+  } else {
+    characters = Array.from(normalizedText);
+  }
   const totalCharacters = characters.length;
 
   // Count frequency of each character
