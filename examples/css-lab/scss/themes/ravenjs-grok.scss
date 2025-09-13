@@ -1,0 +1,1183 @@
+// RavenJS Grok Theme - Electric Monochrome Intelligence
+// Surgical minimalism meets electric truthfulness - every pixel pulses with algorithmic precision
+// Sharp edges, dynamic shadows, electric intensity in pure monochrome perfection
+// Zero-nonsense design that makes complexity feel effortless and alive
+
+// Electric monochrome foundation - algorithmic intensity
+$white: #ffffff !default; // Pure electric white - clean algorithmic canvas
+$gray-50: #fafbfc !default; // Electric mist - subtle algorithmic presence
+$gray-100: #f4f5f7 !default; // Quantum foam - dynamic background texture
+$gray-200: #e1e5e9 !default; // Electric steel - sharp logical boundaries
+$gray-300: #c7d0d9 !default; // Storm gray - intense analytical depth
+$gray-400: #9aa4b2 !default; // Thunder gray - commanding algorithmic presence
+$gray-500: #6b7785 !default; // Electric graphite - balanced intelligence flow
+$gray-600: #4a5568 !default; // Dark electric - focused algorithmic depth
+$gray-700: #2d3748 !default; // Shadow steel - determined electric presence
+$gray-800: #1a202c !default; // Deep electric - commanding algorithmic authority
+$gray-900: #0f1419 !default; // Electric obsidian - absolute algorithmic certainty
+$black: #000000 !default; // Perfect electric void - ultimate algorithmic truth
+
+// Primary electric intelligence - algorithmic precision with intensity
+$primary: $gray-900 !default; // Electric obsidian - the algorithmic foundation of understanding
+$secondary: $gray-700 !default; // Shadow steel - supporting electric clarity
+$success: #047857 !default; // Electric emerald - algorithmic verification
+$danger: #b91c1c !default; // Electric crimson - precise algorithmic error
+$warning: #b45309 !default; // Electric amber - calculated algorithmic attention
+$info: $gray-600 !default; // Dark electric - processed algorithmic information
+$light: $gray-100 !default; // Quantum foam - subtle electric background
+$dark: $gray-900 !default; // Electric obsidian - commanding algorithmic certainty
+
+// Electric body foundation - algorithmic canvas with subtle texture
+$body-bg: $white !default;
+$body-color: $gray-800 !default;
+$body-secondary-bg: $gray-50 !default;
+$body-tertiary-bg: $gray-100 !default;
+$body-secondary-color: rgba($gray-800, 0.75) !default;
+$body-tertiary-color: rgba($gray-800, 0.55) !default;
+$body-emphasis-color: $gray-900 !default;
+
+// Typography - electric algorithmic precision with intensity
+$font-family-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !default;
+$font-size-base: 0.9375rem !default; // 15px - mathematically precise electric base
+$line-height-base: 1.55 !default; // Tighter for electric intensity
+$font-weight-light: 300 !default;
+$font-weight-normal: 400 !default;
+$font-weight-medium: 500 !default;
+$font-weight-semibold: 600 !default;
+$font-weight-bold: 700 !default;
+
+// Headings - commanding electric presence with algorithmic hierarchy
+$headings-font-weight: 700 !default; // Bolder for electric intensity
+$headings-line-height: 1.15 !default; // Compressed for electric impact
+$headings-color: $gray-900 !default;
+
+// Spacing - electric fibonacci-inspired algorithmic precision
+$spacer: 1rem !default;
+$spacers: (
+  0: 0,
+  1: $spacer * 0.25,
+  // 4px - minimal electric unit
+  2: $spacer * 0.5,
+  // 8px - atomic electric charge
+  3: $spacer * 0.75,
+  // 12px - compound electric flow
+  4: $spacer,
+  // 16px - base electric current
+  5: $spacer * 1.5,
+  // 24px - extended electric field
+  6: $spacer * 2.5,
+  // 40px - section electric intensity
+  7: $spacer * 4,
+  // 64px - major electric discharge
+) !default;
+
+// Borders - ELECTRIC SHARP EDGES (algorithmic precision with intensity)
+$border-width: 1px !default;
+$border-color: $gray-300 !default;
+$border-radius: 0 !default; // ELECTRIC SHARP - no ambiguity, pure algorithmic precision
+$border-radius-sm: 0 !default; // ELECTRIC PRECISION
+$border-radius-lg: 0 !default; // ELECTRIC CLARITY
+$border-radius-xl: 0 !default; // ELECTRIC DEFINITIVE
+$border-radius-pill: 0 !default; // ELECTRIC LOGICAL - even pills are sharp for intensity
+
+// Electric shadows - dramatic depth and algorithmic intensity
+$box-shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.04) !default;
+$box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.12), 0 2px 4px 0 rgba(0, 0, 0, 0.06) !default;
+$box-shadow-lg: 0 8px 16px 0 rgba(0, 0, 0, 0.16), 0 4px 8px 0 rgba(0, 0, 0, 0.08) !default;
+
+// Component-specific electric intensity - algorithmic precision with dynamic energy
+
+// Inputs - electric algorithmic focus with intense energy
+$input-bg: $white !default;
+$input-border-color: $gray-400 !default;
+$input-border-radius: 0 !default; // ELECTRIC SHARP FOCUS
+$input-focus-border-color: $gray-800 !default;
+$input-focus-box-shadow: 0 0 0 3px rgba($gray-800, 0.15), 0 2px 8px 0 rgba(0, 0, 0, 0.1) !default;
+
+// Buttons - electric algorithmic instruments with dynamic energy
+$btn-border-radius: 0 !default; // ELECTRIC SHARP DECISIONS
+$btn-border-radius-sm: 0 !default;
+$btn-border-radius-lg: 0 !default;
+$btn-font-weight: 600 !default; // Confident electric weight
+$btn-box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1) !default;
+$btn-focus-box-shadow: 0 0 0 3px rgba($primary, 0.2), 0 4px 12px 0 rgba(0, 0, 0, 0.15) !default;
+
+// Cards - electric algorithmic containers with intense depth
+$card-border-color: $gray-300 !default;
+$card-border-radius: 0 !default; // ELECTRIC SHARP CONTAINMENT
+$card-box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.08), 0 2px 4px 0 rgba(0, 0, 0, 0.04) !default;
+$card-bg: $white !default;
+
+// Navigation - electric algorithmic pathways with intensity
+$navbar-light-color: $gray-700 !default;
+$navbar-light-hover-color: $gray-900 !default;
+$navbar-light-active-color: $gray-900 !default;
+$navbar-light-brand-color: $gray-900 !default;
+$navbar-light-brand-hover-color: $gray-900 !default;
+
+// Tables - electric algorithmic data with intense structure
+$table-border-color: $gray-300 !default;
+$table-striped-bg: rgba($gray-100, 0.6) !default;
+$table-hover-bg: rgba($gray-200, 0.8) !default;
+
+// Alerts - electric algorithmic notifications with sharp intensity
+$alert-border-radius: 0 !default; // ELECTRIC SHARP ALERTS
+$alert-border-width: 0 !default;
+
+// Modals - electric algorithmic dialogs with dramatic depth
+$modal-content-border-radius: 0 !default; // ELECTRIC SHARP FOCUS
+$modal-content-box-shadow-xs: 0 8px 24px 0 rgba(0, 0, 0, 0.2) !default;
+$modal-content-box-shadow-sm-up: 0 16px 48px 0 rgba(0, 0, 0, 0.25) !default;
+
+// Dropdowns - electric algorithmic decision trees with intensity
+$dropdown-border-color: $gray-300 !default;
+$dropdown-border-radius: 0 !default; // ELECTRIC SHARP CHOICES
+$dropdown-box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.15), 0 4px 8px 0 rgba(0, 0, 0, 0.08) !default;
+$dropdown-link-color: $gray-700 !default;
+$dropdown-link-hover-color: $gray-900 !default;
+$dropdown-link-hover-bg: $gray-100 !default;
+
+// Forms - electric algorithmic input with precise intensity
+$form-select-border-color: $input-border-color !default;
+$form-select-focus-border-color: $input-focus-border-color !default;
+$form-select-focus-box-shadow: $input-focus-box-shadow !default;
+$form-select-border-radius: 0 !default; // ELECTRIC SHARP SELECTION
+
+// Pagination - electric algorithmic navigation with intensity
+$pagination-border-radius: 0 !default; // ELECTRIC SHARP PAGES
+$pagination-color: $gray-600 !default;
+$pagination-hover-color: $gray-900 !default;
+$pagination-focus-color: $gray-900 !default;
+
+// Progress bars - electric algorithmic completion with intense energy
+$progress-border-radius: 0 !default; // ELECTRIC SHARP PROGRESS
+$progress-bar-bg: $gray-900 !default;
+
+// Badges - electric algorithmic indicators with sharp intensity
+$badge-border-radius: 0 !default; // ELECTRIC SHARP MARKERS
+
+// Breadcrumbs - electric algorithmic trails with intensity
+$breadcrumb-border-radius: 0 !default; // ELECTRIC SHARP PATHS
+
+// List groups - electric algorithmic organization with dynamic energy
+$list-group-border-radius: 0 !default; // ELECTRIC SHARP LISTS
+
+// Popovers and tooltips - electric algorithmic overlays with intense depth
+$popover-border-radius: 0 !default; // ELECTRIC SHARP INSIGHTS
+$tooltip-border-radius: 0 !default; // ELECTRIC SHARP HINTS
+
+// Import Bootstrap with algorithmic precision overrides
+@import "../bootstrap.scss";
+
+// Electric algorithmic enhancements - CSS-only dynamic intensity movements
+// These additions work within Bootstrap's framework constraints with maximum electric energy
+
+// Electric button intensity - dynamic algorithmic energy
+.btn {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0);
+  position: relative;
+
+  // Electric gradient overlay for depth
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.15), 0 3px 8px 0 rgba(0, 0, 0, 0.1), 0 1px 3px 0 rgba(0, 0, 0, 0.08);
+
+    &::before {
+      opacity: 1;
+    }
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.12), 0 1px 4px 0 rgba(0, 0, 0, 0.08);
+
+    &::before {
+      opacity: 0.5;
+    }
+  }
+
+  &.btn-primary:hover {
+    box-shadow: 0 6px 16px 0 rgba($gray-900, 0.25), 0 3px 8px 0 rgba($gray-900, 0.15), 0 1px 3px 0 rgba($gray-900, 0.1);
+  }
+}
+
+// Electric card intensity - dynamic algorithmic containers
+.card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+
+  // Electric border animation
+  &::after {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    background: linear-gradient(135deg, $gray-300, $gray-200, $gray-300);
+    opacity: 0;
+    z-index: -1;
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px 0 rgba(0, 0, 0, 0.12), 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 2px 8px 0 rgba(0, 0, 0, 0.06);
+
+    &::after {
+      opacity: 0.3;
+    }
+  }
+}
+
+// Electric input intensity - dynamic algorithmic focus
+.form-control,
+.form-select {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+
+  // Electric focus border effect
+  &::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(135deg, $gray-800, $gray-600, $gray-800);
+    opacity: 0;
+    z-index: -1;
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 3px rgba($gray-800, 0.15), 0 4px 12px 0 rgba(0, 0, 0, 0.12), 0 2px 6px 0 rgba(0, 0, 0, 0.08);
+
+    &::before {
+      opacity: 0.4;
+    }
+  }
+}
+
+// Electric navbar intensity - dynamic algorithmic navigation
+.navbar-brand {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+
+  // Electric text glow effect
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba($gray-900, 0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &:hover {
+    transform: scale(1.02);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.08);
+
+    &::before {
+      opacity: 1;
+    }
+  }
+}
+
+// Electric dropdown intensity - dynamic algorithmic menus
+.dropdown-menu {
+  animation-duration: 0.15s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(-2px);
+  opacity: 0;
+  animation: dropdown-fade-in 0.15s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes dropdown-fade-in {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+// Electric table intensity - dynamic algorithmic data
+.table-hover tbody tr {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    transform: translateX(2px);
+    background: linear-gradient(90deg, rgba($gray-100, 0.8) 0%, rgba($gray-200, 0.6) 100%);
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08);
+  }
+}
+
+// Electric alert intensity - dynamic algorithmic notifications
+.alert {
+  border-left: 4px solid;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  // Electric accent line animation
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(to bottom, currentColor, rgba(255, 255, 255, 0.2), currentColor);
+    opacity: 0.8;
+  }
+
+  &:hover {
+    transform: translateX(2px);
+    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.08);
+  }
+
+  &.alert-primary {
+    border-left-color: #{$primary};
+  }
+  &.alert-secondary {
+    border-left-color: #{$secondary};
+  }
+  &.alert-success {
+    border-left-color: #{$success};
+  }
+  &.alert-danger {
+    border-left-color: #{$danger};
+  }
+  &.alert-warning {
+    border-left-color: #{$warning};
+  }
+  &.alert-info {
+    border-left-color: #{$info};
+  }
+}
+
+// Electric badge intensity - dynamic algorithmic indicators
+.badge {
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.15);
+  }
+}
+
+// Electric progress intensity - dynamic algorithmic completion
+.progress-bar {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.15) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.15) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 1rem 1rem;
+  animation: progress-bar-stripes 1s linear infinite;
+  position: relative;
+
+  // Electric progress glow
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: progress-glow 2s ease-in-out infinite;
+  }
+}
+
+@keyframes progress-glow {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// Electric modal intensity - dynamic algorithmic dialogs
+.modal.fade .modal-dialog {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(0.95) translateY(-10px);
+  opacity: 0;
+}
+
+.modal.show .modal-dialog {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+// Electric list intensity - dynamic algorithmic organization
+.list-group-item {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+
+  &:hover:not(.disabled) {
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1), 0 2px 6px 0 rgba(0, 0, 0, 0.08);
+    background: linear-gradient(90deg, rgba($gray-100, 0.5) 0%, rgba($gray-50, 0.8) 100%);
+  }
+}
+
+// Electric pagination intensity - dynamic algorithmic navigation
+.page-link {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.12), 0 2px 6px 0 rgba(0, 0, 0, 0.08);
+  }
+
+  // Electric page link glow
+  &::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, rgba($gray-800, 0.1) 0%, transparent 70%);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+  }
+
+  &:hover::before {
+    width: 120%;
+    height: 120%;
+  }
+}
+
+// Electric focus ring intensity - dynamic algorithmic precision
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba($primary, 0.3), 0 0 0 4px rgba($primary, 0.1);
+  transition: box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// Electric link intensity - dynamic algorithmic connections
+a {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+
+  // Electric link underline animation
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, $gray-800, $gray-600);
+    transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &:hover {
+    text-decoration: none;
+    transform: translateY(-1px);
+
+    &::after {
+      width: 100%;
+    }
+  }
+}
+
+// Electric body texture - subtle algorithmic background pattern
+body {
+  position: relative;
+
+  &::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: radial-gradient(circle at 25% 25%, rgba($gray-200, 0.02) 0%, transparent 50%),
+      radial-gradient(circle at 75% 75%, rgba($gray-300, 0.02) 0%, transparent 50%);
+    background-size: 100px 100px;
+    pointer-events: none;
+    z-index: -2;
+  }
+}
+
+// Electric heading intensity - dynamic algorithmic typography
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  position: relative;
+
+  // Electric heading glow effect
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba($gray-900, 0.02), transparent);
+    opacity: 0;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: -1;
+  }
+
+  &:hover::before {
+    opacity: 1;
+  }
+}
+
+// ============================================================================
+// RAVEN INTELLIGENCE ENHANCEMENTS - Apex Predator Design System
+// ============================================================================
+// This section implements the complete RavenJS CODEX philosophy through visual design.
+// Each effect represents a core principle of raven intelligence, surgical precision,
+// and institutional memory. All effects use CSS-only techniques for zero dependencies.
+
+// Raven Territory Markers - Institutional Memory Boundaries
+// CODEX: "Institutional memory that preserves architectural decisions"
+// EFFECT: Subtle gradient borders that activate on hover, claiming digital territory
+// TECHNIQUE: ::before pseudo-element with linear-gradient for smooth boundary definition
+// WHY: Ravens remember faces for decades - this creates persistent visual boundaries
+// IMPACT: Users feel the interface has "memory" and "personality"
+// PERFORMANCE: Lightweight opacity transition, no layout impact
+.raven-territory {
+  position: relative;
+
+  &::before {
+    content: ""; // Required for pseudo-element to render
+    position: absolute;
+    top: -2px; // 2px offset creates subtle breathing room
+    left: -2px; // Consistent spacing around all edges
+    right: -2px;
+    bottom: -2px;
+    // Diagonal gradient creates "claimed territory" effect
+    // Transparent edges prevent harsh boundaries, suggesting fluid intelligence
+    background: linear-gradient(
+      135deg,
+      transparent 0%,
+      // Soft entry point
+      rgba($gray-900, 0.03) 25%,
+      // Dark boundary marker (institutional memory)
+      rgba($gray-700, 0.02) 50%,
+      // Mid-tone intelligence layer
+      rgba($gray-900, 0.03) 75%,
+      // Dark boundary marker (preserved knowledge)
+      transparent 100% // Soft exit point
+    );
+    opacity: 0; // Hidden by default for clean resting state
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1); // Material Design curve for natural feel
+    z-index: -1; // Behind content to avoid interaction interference
+  }
+
+  &:hover::before {
+    opacity: 1; // Full activation reveals the territory boundaries
+  }
+}
+
+// Raven Feather Pattern - Surgical Precision Texture
+// CODEX: "Surgical precision" - every pixel serves algorithmic clarity
+// EFFECT: Subtle cross-hatch texture suggesting raven plumage and precision
+// TECHNIQUE: Multiple linear gradients creating a woven fabric-like pattern
+// WHY: Ravens have incredibly detailed feathers - this suggests microscopic precision
+// IMPACT: Adds visual depth without overwhelming, suggests "crafted" quality
+// PERFORMANCE: CSS-only background pattern, zero performance cost
+.raven-feather-texture {
+  position: relative;
+
+  &::before {
+    content: ""; // Required for pseudo-element
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    // Four separate gradients create cross-hatch "feather" pattern
+    // Each gradient represents a different layer of precision
+    background-image:
+      // Primary diagonal lines (45°) - main feather structure
+      linear-gradient(45deg, rgba($gray-800, 0.01) 25%, transparent 25%),
+      // Counter diagonal lines (-45°) - secondary feather layer
+      linear-gradient(-45deg, rgba($gray-800, 0.01) 25%, transparent 25%),
+      // Offset primary lines - tertiary feather details
+      linear-gradient(45deg, transparent 75%, rgba($gray-600, 0.005) 75%),
+      // Offset counter lines - quaternary feather details
+      linear-gradient(-45deg, transparent 75%, rgba($gray-600, 0.005) 75%);
+    // Small 2px size creates microscopic precision feel
+    background-size: 2px 2px;
+    // Staggered positions create woven fabric effect
+    background-position: 0 0, 0 1px, 1px -1px, -1px 0px;
+    // Low opacity prevents overwhelming the content
+    opacity: 0.3;
+    // Non-interactive overlay
+    pointer-events: none;
+  }
+}
+
+// Raven Eye Focus - Predatory Intelligence Indicator
+// CODEX: "Apex predators of intelligence" - cunning observation and focus
+// EFFECT: Pupil-like indicators that dilate on focus/hover, simulating raven gaze
+// TECHNIQUE: ::before pseudo-element with radial-gradient for pupil effect
+// WHY: Ravens have incredible visual acuity - this represents intelligent observation
+// IMPACT: Creates feeling of being "watched" and "analyzed" by intelligent system
+// PERFORMANCE: Lightweight transform and opacity changes only
+.raven-eye-focus {
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  // Raven pupil effect - simulates intelligent observation
+  &::before {
+    content: ""; // Required for pseudo-element
+    position: absolute;
+    top: 50%; // Center vertically
+    left: 50%; // Center horizontally
+    width: 2px; // Small initial size (constricted pupil)
+    height: 2px;
+    // Radial gradient creates realistic pupil effect
+    // Dark center (pupil), mid-tone (iris), transparent edge
+    background: radial-gradient(circle, $gray-900 0%, $gray-700 50%, transparent 100%);
+    border-radius: 50%; // Perfect circle for pupil
+    transform: translate(-50%, -50%); // Perfect centering
+    opacity: 0; // Hidden by default (closed eye)
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); // Smooth dilation
+  }
+
+  &:focus::before,
+  &:hover::before {
+    opacity: 0.6; // Partially visible (alert state)
+    width: 4px; // Dilated pupil (focused attention)
+    height: 4px; // Maintains circular ratio
+  }
+}
+
+// Raven Algorithmic Grid - Institutional Memory Pattern
+// CODEX: "Institutional memory that preserves architectural decisions"
+// EFFECT: Mathematical grid overlay that reveals algorithmic foundations
+// TECHNIQUE: CSS background-image with linear-gradients creating grid pattern
+// WHY: Represents the mathematical precision underlying RavenJS architecture
+// IMPACT: Suggests computational thinking and preserved architectural knowledge
+// PERFORMANCE: CSS-only background, reveals on demand, no layout impact
+.raven-algorithmic-grid {
+  position: relative;
+
+  &::before {
+    content: ""; // Required for pseudo-element
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    // Two perpendicular gradients create perfect grid
+    // Vertical lines (default direction)
+    // Horizontal lines (90deg rotation)
+    background-image: linear-gradient(rgba($gray-600, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba($gray-600, 0.03) 1px, transparent 1px);
+    // 20px grid creates mathematical precision feel
+    // Perfect squares represent algorithmic order
+    background-size: 20px 20px;
+    opacity: 0; // Hidden by default (invisible intelligence)
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1); // Slow reveal suggests depth
+    pointer-events: none; // Non-interactive overlay
+  }
+
+  &:hover::before {
+    opacity: 0.4; // Reveals the algorithmic foundation on interaction
+  }
+}
+
+// Raven Surgical Incision - Precision Cutting Effect
+// CODEX: "Algorithm over patches" - surgical logic flow rather than bandaids
+// EFFECT: Sharp gradient lines that simulate precise surgical cuts
+// TECHNIQUE: ::after pseudo-element with horizontal linear-gradient
+// WHY: Represents the surgical precision of RavenJS problem-solving
+// IMPACT: Suggests calculated, precise interventions rather than quick fixes
+// PERFORMANCE: Lightweight opacity transition, no performance cost
+.raven-surgical-incision {
+  position: relative;
+
+  // Incision line effect - simulates surgical precision
+  &::after {
+    content: ""; // Required for pseudo-element
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    // Horizontal gradient creates "incision" line effect
+    // Transparent edges prevent harsh boundaries
+    // Darker center suggests depth of surgical cut
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      // Clean entry point
+      rgba($gray-900, 0.1) 20%,
+      // Surgical incision begins
+      rgba($gray-900, 0.05) 50%,
+      // Deepest point of precision
+      rgba($gray-900, 0.1) 80%,
+      // Surgical incision ends
+      transparent 100% // Clean exit point
+    );
+    opacity: 0; // Hidden by default (no intervention needed)
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1); // Quick, precise transition
+    z-index: 1; // Above content to be visible
+  }
+
+  &:hover::after {
+    opacity: 1; // Reveals the surgical precision on interaction
+  }
+}
+
+// Raven Collective Intelligence - Interconnected Element Animation
+// CODEX: "Collective intelligence while maintaining individual cunning"
+// EFFECT: Network of radial gradients suggesting interconnected intelligence nodes
+// TECHNIQUE: Multiple radial-gradients creating node network pattern
+// WHY: Ravens work in murder groups - represents collective problem-solving
+// IMPACT: Suggests collaborative intelligence beyond individual components
+// PERFORMANCE: CSS-only gradients, reveal on demand, no layout impact
+.raven-collective-intelligence {
+  position: relative;
+
+  // Intelligence network pattern - represents collective nodes
+  &::before {
+    content: ""; // Required for pseudo-element
+    position: absolute;
+    top: -5px; // Extended bounds for network feel
+    left: -5px; // Creates breathing room for intelligence
+    right: -5px;
+    bottom: -5px;
+    // Three radial gradients create intelligence network nodes
+    // Each represents a different aspect of collective intelligence
+    background: radial-gradient(circle at 20% 20%, rgba($gray-700, 0.02) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba($gray-600, 0.02) 0%, transparent 50%),
+      radial-gradient(circle at 60% 40%, rgba($gray-800, 0.01) 0%, transparent 50%);
+    opacity: 0; // Hidden by default (latent intelligence)
+    transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1); // Slow reveal suggests emergence
+  }
+
+  &:hover::before {
+    opacity: 1; // Activates the collective intelligence network
+  }
+}
+
+// Raven Platform Mastery - Zero Dependencies Indicator
+// CODEX: "Zero external dependencies as unbreakable guarantee"
+// EFFECT: Conic gradient ring suggesting mastery and self-sufficiency
+// TECHNIQUE: ::before pseudo-element with conic-gradient for circular mastery ring
+// WHY: Represents platform-native strength without external dependencies
+// IMPACT: Suggests unbreakable reliability and self-contained intelligence
+// PERFORMANCE: CSS-only gradient, lightweight opacity transition
+.raven-platform-mastery {
+  position: relative;
+
+  // Mastery ring effect - symbolizes complete platform control
+  &::before {
+    content: ""; // Required for pseudo-element
+    position: absolute;
+    top: -3px; // 3px ring thickness
+    left: -3px; // Consistent ring around element
+    right: -3px;
+    bottom: -3px;
+    // Conic gradient creates rotating mastery ring
+    // Different opacity levels suggest layered mastery
+    background: conic-gradient(
+      from 0deg,
+      rgba($gray-900, 0.05) 0deg,
+      // Primary mastery (absolute control)
+      rgba($gray-700, 0.03) 90deg,
+      // Secondary mastery (platform knowledge)
+      rgba($gray-600, 0.05) 180deg,
+      // Tertiary mastery (native integration)
+      rgba($gray-800, 0.03) 270deg,
+      // Quaternary mastery (optimization)
+      rgba($gray-900, 0.05) 360deg // Complete mastery (unbreakable guarantee)
+    );
+    border-radius: 0; // Maintains sharp edges for precision
+    opacity: 0; // Hidden by default (latent mastery)
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1); // Confident reveal
+    z-index: -1; // Behind content for subtle presence
+  }
+
+  &:hover::before {
+    opacity: 0.3; // Reveals the mastery ring on interaction
+  }
+}
+
+// Raven Apex Predator - Commanding Presence Effect
+.raven-apex-predator {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  // Predator shadow effect
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(
+      ellipse at center,
+      rgba($gray-900, 0.02) 0%,
+      rgba($gray-700, 0.01) 50%,
+      transparent 100%
+    );
+    opacity: 0;
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: -1;
+  }
+
+  &:hover::before {
+    opacity: 1;
+  }
+
+  // Predator gaze effect
+  &::after {
+    content: "";
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 2px;
+    height: 2px;
+    background: $gray-900;
+    border-radius: 50%;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &:hover::after {
+    opacity: 0.4;
+    width: 4px;
+    height: 4px;
+  }
+}
+
+// Raven Institutional Memory - Preserved Knowledge Pattern
+.raven-institutional-memory {
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: repeating-linear-gradient(
+        45deg,
+        rgba($gray-600, 0.01),
+        rgba($gray-600, 0.01) 1px,
+        transparent 1px,
+        transparent 4px
+      ),
+      repeating-linear-gradient(
+        -45deg,
+        rgba($gray-700, 0.005),
+        rgba($gray-700, 0.005) 1px,
+        transparent 1px,
+        transparent 4px
+      );
+    opacity: 0;
+    transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+  }
+
+  &:hover::before {
+    opacity: 0.5;
+  }
+}
+
+// Raven Surgical Precision - Micro-Adjustment Animations
+.raven-surgical-precision {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+
+  // Precision targeting effect
+  &::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, rgba($gray-900, 0.05) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: -1;
+  }
+
+  &:hover::before {
+    width: 150%;
+    height: 150%;
+    opacity: 0.3;
+  }
+}
+
+// Raven Zero Dependencies - Pure Platform Mastery
+.raven-zero-dependencies {
+  position: relative;
+
+  // Dependency-free purity indicator
+  &::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    background: linear-gradient(
+      135deg,
+      rgba($gray-900, 0.04) 0%,
+      transparent 25%,
+      transparent 75%,
+      rgba($gray-900, 0.04) 100%
+    );
+    opacity: 0;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: -1;
+  }
+
+  &:hover::before {
+    opacity: 1;
+  }
+}
+
+// Raven Algorithmic Flow - Data Processing Visualization
+.raven-algorithmic-flow {
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba($gray-600, 0.02) 20%,
+      rgba($gray-500, 0.01) 50%,
+      rgba($gray-600, 0.02) 80%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: raven-data-flow 3s ease-in-out infinite;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &:hover::before {
+    opacity: 0.6;
+  }
+}
+
+@keyframes raven-data-flow {
+  0%,
+  100% {
+    background-position: -200% 0;
+  }
+  50% {
+    background-position: 200% 0;
+  }
+}
+
+// Raven Collective Cunning - Multi-Element Coordination
+.raven-collective-cunning {
+  position: relative;
+
+  // Cunning network connections
+  &::before {
+    content: "";
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    background-image: radial-gradient(circle at 25% 25%, rgba($gray-700, 0.01) 0%, transparent 40%),
+      radial-gradient(circle at 75% 25%, rgba($gray-600, 0.01) 0%, transparent 40%),
+      radial-gradient(circle at 50% 75%, rgba($gray-800, 0.01) 0%, transparent 40%);
+    background-size: 30px 30px;
+    opacity: 0;
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+  }
+
+  &:hover::before {
+    opacity: 0.4;
+  }
+}
+
+// ============================================================================
+// INTEGRATION: Apply Raven Intelligence to Core Bootstrap Components
+// ============================================================================
+// This section extends Bootstrap components with Raven Intelligence patterns.
+// Each component receives specific intelligence traits that enhance its behavior
+// while maintaining full Bootstrap compatibility and API transparency.
+
+// Buttons - Primary interaction elements receive surgical precision and platform mastery
+// WHY: Buttons are command centers - they need surgical accuracy and unbreakable reliability
+.btn {
+  @extend .raven-surgical-precision; // Micro-adjustment animations for precision
+  @extend .raven-platform-mastery; // Zero-dependencies mastery ring effect
+}
+
+// Cards - Content containers receive territory markers and algorithmic grids
+// WHY: Cards contain information - they need boundaries and computational structure
+.card {
+  @extend .raven-territory; // Institutional memory boundaries
+  @extend .raven-algorithmic-grid; // Mathematical precision overlay
+}
+
+// Form Controls - Input elements receive eye focus and surgical incisions
+// WHY: Forms collect data - they need intelligent observation and precise handling
+.form-control {
+  @extend .raven-eye-focus; // Predatory intelligence observation
+  @extend .raven-surgical-incision; // Precision cutting effect
+}
+
+// Navigation Brand - Logo receives apex predator presence and institutional memory
+// WHY: Brand represents the system - it needs commanding presence and preserved knowledge
+.navbar-brand {
+  @extend .raven-apex-predator; // Commanding presence with gaze effect
+  @extend .raven-institutional-memory; // Preserved architectural knowledge
+}
+
+// Alerts - Notification elements receive collective intelligence and zero dependencies
+// WHY: Alerts communicate system state - they need collaborative wisdom and reliability
+.alert {
+  @extend .raven-collective-intelligence; // Network intelligence patterns
+  @extend .raven-zero-dependencies; // Purity and self-sufficiency
+}
+
+// Badges - Status indicators receive surgical precision
+// WHY: Badges show state - they need calculated, precise presentation
+.badge {
+  @extend .raven-surgical-precision; // Micro-adjustment animations
+}
+
+// Progress Bars - Completion indicators receive algorithmic flow
+// WHY: Progress shows computation - it needs data processing visualization
+.progress {
+  @extend .raven-algorithmic-flow; // Animated data flow patterns
+}
+
+// List Group Items - List elements receive collective cunning
+// WHY: Lists organize information - they need coordinated intelligence
+.list-group-item {
+  @extend .raven-collective-cunning; // Multi-element coordination
+}
+
+// ============================================================================
+// GLOBAL RAVEN INTELLIGENCE OVERLAY & SYSTEM EFFECTS
+// ============================================================================
+
+// Global Raven Intelligence Overlay - Body-level Intelligence Enhancement
+// CODEX: "Collective intelligence while maintaining individual cunning"
+// EFFECT: Subtle feather texture applied globally for cohesive intelligence feel
+// TECHNIQUE: Body element extends raven-feather-texture pattern
+// WHY: Creates unified intelligence atmosphere across entire interface
+// IMPACT: Every pixel feels part of the intelligent system
+body {
+  @extend .raven-feather-texture; // Applies woven precision texture globally
+}
+
+// ============================================================================
+// RAVEN INTELLIGENCE CURSOR & SELECTION SYSTEM
+// ============================================================================
+
+// Raven Intelligence Cursor Effects - Behavioral Intelligence Indicators
+// CODEX: "Apex predators of intelligence" - intelligent behavioral cues
+// EFFECT: Cursor behavior that suggests system awareness and responsiveness
+// TECHNIQUE: CSS cursor property modifications for different interaction types
+* {
+  cursor: default; // Neutral cursor suggests intelligent observation
+}
+
+button,
+.btn,
+a,
+[role="button"],
+input[type="submit"],
+input[type="button"] {
+  cursor: pointer; // Pointer cursor indicates interactive intelligence
+}
+
+// Raven Intelligence Selection Effects - Text Selection Intelligence
+// CODEX: "Surgical precision" - calculated text selection behavior
+// EFFECT: Intelligent text selection styling that suggests careful consideration
+// TECHNIQUE: ::selection pseudo-element for custom selection appearance
+// WHY: Even text selection should feel intelligent and deliberate
+// IMPACT: Users feel the system is thoughtfully designed at every level
+::selection {
+  background: rgba($gray-900, 0.1); // Subtle dark background for selection
+  color: $gray-900; // High contrast for readability
+}
+
+::-moz-selection {
+  background: rgba($gray-900, 0.1); // Firefox-specific selection styling
+  color: $gray-900; // Consistent cross-browser intelligence
+}
+
+// ============================================================================
+// RAVEN INTELLIGENCE DESIGN SYSTEM SUMMARY
+// ============================================================================
+// This theme implements 13 distinct Raven Intelligence patterns:
+//
+// 1. Territory Markers - Institutional memory boundaries (cards, containers)
+// 2. Feather Pattern - Surgical precision texture (global, micro-details)
+// 3. Eye Focus - Predatory intelligence observation (inputs, interactive elements)
+// 4. Algorithmic Grid - Mathematical foundation overlay (content areas)
+// 5. Surgical Incision - Precision cutting effects (forms, boundaries)
+// 6. Collective Intelligence - Network node patterns (alerts, notifications)
+// 7. Platform Mastery - Zero dependencies rings (buttons, controls)
+// 8. Apex Predator - Commanding presence (navigation, branding)
+// 9. Institutional Memory - Preserved knowledge patterns (headers, logos)
+// 10. Surgical Precision - Micro-adjustment animations (all interactive elements)
+// 11. Zero Dependencies - Purity indicators (system elements)
+// 12. Algorithmic Flow - Data processing visualization (progress, loading)
+// 13. Collective Cunning - Multi-element coordination (lists, groups)
+//
+// Each pattern connects to a specific CODEX principle while maintaining:
+// - Zero performance impact (CSS-only, no JavaScript)
+// - Full Bootstrap API transparency
+// - Surgical precision in implementation
+// - Institutional memory through consistent patterns
+// - Platform mastery through native CSS techniques

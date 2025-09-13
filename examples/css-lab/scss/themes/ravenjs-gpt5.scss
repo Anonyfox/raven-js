@@ -1,25 +1,28 @@
 // RavenJS GPT-5 Monochrome Theme
 // Focus: surgical minimalism, high-contrast ink on luminous ceramic
-// Override Bootstrap variables FIRST, then import the main bootstrap entry LAST.
+// Intention: document each effect and the method used to achieve it in pure SCSS vars/selectors
+// Rules: override Bootstrap variables FIRST, import Bootstrap, then transparent selector tweaks (no opt-ins)
+// Methods used: hairline borders, inset specular highlights, matte shadows, precise underlines, crisp focus rings,
+//               controlled transforms/opacity transitions, and optional backdrop blur for a floating navbar
 
-// Core palette (monochrome)
+// Core palette (monochrome): grayscale-only system; $primary is the ink anchor
 $primary: #0b0c0c !default; // near-black ink
 $secondary: #3f3f46 !default; // graphite
 $light: #f7f7f8 !default; // ceramic white
 $dark: #0b0c0c !default;
 
-// Body canvas
+// Body canvas: luminous base for black-on-transparent assets; legible but not stark
 $body-bg: #f7f7f8 !default; // luminous near-white
 $body-color: #1a1b1e !default; // deep graphite for comfortable reading
 
-// Secondary/tertiary backgrounds for layered panels
+// Secondary/tertiary backgrounds: create depth via subtle surface shifts rather than color
 $body-secondary-bg: #eff0f2 !default; // matte panel
 $body-tertiary-bg: #f3f4f6 !default; // hover/active canvas
 $body-secondary-color: rgba(#1a1b1e, 0.75) !default;
 $body-tertiary-color: rgba(#1a1b1e, 0.55) !default;
 $body-emphasis-color: #0b0c0c !default; // dense ink for emphasis
 
-// Typography
+// Typography: headings tightened for authority; body stays relaxed for readability
 $font-family-sans-serif: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !default;
 $font-size-base: 1rem !default;
 $line-height-base: 1.5 !default;
@@ -27,7 +30,7 @@ $headings-font-weight: 600 !default;
 $headings-line-height: 1.15 !default; // command presence
 $headings-color: #0b0c0c !default;
 
-// Spacing
+// Spacing: keep Bootstrap defaults for familiarity; we express personality via depth/contrast
 $spacer: 1rem !default;
 $spacers: (
   0: 0,
@@ -38,7 +41,7 @@ $spacers: (
   5: $spacer * 3,
 ) !default;
 
-// Borders (hairline-first depth)
+// Borders (hairline-first depth): remove rounding globally; visual separation comes from hairlines + shadows
 $border-width: 1px !default;
 $border-color: #e6e7eb !default; // ~8% ink on ceramic
 $enable-rounded: false !default; // global square edges
@@ -49,36 +52,36 @@ $border-radius-xl: 0 !default;
 $border-radius-xxl: 0 !default;
 $border-radius-pill: 0 !default;
 
-// Enable shadows + transitions globally for tactile feel
+// Enable tactile primitives globally: allow built-in Bootstrap shadow/transition/gradient features
 $enable-shadows: true !default;
 $enable-transitions: true !default;
 $enable-gradients: true !default; // allow subtle specular highlights
 
-// Shadows (matte with specular top highlight)
+// Shadows (matte + specular): the inset white 1px line fakes a specular highlight; soft drops add weight
 $box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32), 0 1px 1px rgba(0, 0, 0, 0.08), 0 10px 24px rgba(0, 0, 0, 0.08) !default;
 $box-shadow-sm: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 1px 1px rgba(0, 0, 0, 0.06) !default;
 $box-shadow-lg: inset 0 1px 0 rgba(255, 255, 255, 0.36), 0 12px 30px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06) !default;
 $box-shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.06) !default;
 
-// Border translucency tuning for elegant separation
+// Border translucency: unify hairline aesthetic across components
 $border-color-translucent: rgba(0, 0, 0, 0.12) !default;
 
-// Subtle component gradient used by .bg-gradient and select components
+// Specular gradient: faint top wash used where Bootstrap applies $gradient
 $gradient: linear-gradient(180deg, rgba(#ffffff, 0.16), rgba(#ffffff, 0)) !default;
 
-// Links: ink with precise underline and confident hover
+// Links: precise underline (thickness/offset); hover deepens ink without color changes
 $link-color: $primary !default;
 $link-decoration: underline !default;
 $link-hover-color: rgba(#000, 0.88) !default;
 $link-hover-decoration: underline !default;
 
-// Focus ring: crisp inner ring, slightly more electric
+// Focus ring: crisp inner ring using $primary at low alpha; avoids neon/glow artifacts
 $focus-ring-width: 0.1875rem !default; // tighter
 $focus-ring-opacity: 0.26 !default;
 $focus-ring-color: rgba($primary, $focus-ring-opacity) !default;
 $focus-ring-blur: 0 !default;
 
-// Buttons: subtle weight, ghost clarity, specular highlight
+// Buttons: specular highlight via inset white; kinetic feel added by transform in selector tweaks
 $btn-font-weight: 500 !default;
 $btn-border-radius: 0 !default;
 $btn-border-radius-sm: 0 !default;
@@ -88,14 +91,14 @@ $btn-active-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.12) !default;
 $btn-transition: color 0.16s ease-out, background-color 0.16s ease-out, border-color 0.16s ease-out,
   box-shadow 0.16s ease-out, transform 0.16s ease-out !default;
 
-// Inputs: inset for tactile depth
+// Inputs: inset bed by default; on focus combine inner ring with inset shadow for tactile precision
 $input-bg: $body-bg !default;
 $input-border-color: $border-color !default;
 $input-box-shadow: $box-shadow-inset !default;
 $input-focus-border-color: rgba(#0b0c0c, 0.45) !default;
 $input-focus-box-shadow: 0 0 0 $focus-ring-width rgba(#0b0c0c, $focus-ring-opacity) !default;
 
-// Cards and dropdowns: subtle separation and lift
+// Cards/Dropdowns: reuse global shadow+gradient recipe to keep depth language consistent
 $card-bg: $body-bg !default;
 $card-border-color: rgba(#000, 0.09) !default;
 $card-box-shadow: $box-shadow !default;
@@ -103,7 +106,7 @@ $dropdown-bg: $body-bg !default;
 $dropdown-border-color: rgba(#000, 0.12) !default;
 $dropdown-box-shadow: $box-shadow !default; // includes specular
 
-// Navbar: floating bar with hairline and slight blur suggestion
+// Navbar: floating glass-like bar; subtle blur with hairline provides prominence without color
 $navbar-padding-y: $spacer * 0.5 !default;
 $navbar-light-color: rgba(#0b0c0c, 0.75) !default;
 $navbar-light-hover-color: rgba(#0b0c0c, 0.95) !default;
@@ -111,16 +114,119 @@ $navbar-light-brand-color: rgba(#0b0c0c, 1) !default;
 $navbar-light-brand-hover-color: rgba(#0b0c0c, 1) !default;
 $nav-link-transition: color 0.16s ease-out, background-color 0.16s ease-out, border-color 0.16s ease-out !default;
 
-// Global transition snap for a sharper feel
+// Global transition snap: unify timing/curve to avoid jittery mix of defaults
 $transition-base: all 0.16s ease-out !default;
 
-// Badges and code: minimal one-bit accents (still monochrome)
+// Badges/Code: keep strictly monochrome; slightly bolder badges for legibility
 $badge-font-weight: 600 !default;
 $code-color: #0b0c0c !default;
 
-// Icon link kinetics and accordion icon motion
+// Icon/Accordion kinetics: fast but disciplined motion; avoid bouncy curves
 $icon-link-icon-transition: 0.16s ease-out transform !default;
 $accordion-icon-transition: transform 0.16s ease-out !default;
 
 // Import Bootstrap AFTER overrides
 @import "../bootstrap.scss";
+
+// Transparent Raven enhancements (no opt-in classes)
+// These target default Bootstrap selectors to transparently apply the visual language
+
+// Body: fixed specular gradient to add premium subtlety (background-attachment: fixed implies faint parallax)
+body {
+  background-color: $body-bg;
+  background-image: $gradient;
+  background-attachment: fixed;
+}
+
+// Links: rely on underline color/offset rather than color shifts; reads as energy without color
+a,
+.nav-link {
+  text-decoration-color: rgba(#0b0c0c, 0.28);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  transition: $transition-base;
+}
+a:hover,
+.nav-link:hover {
+  text-decoration-color: rgba(#0b0c0c, 0.6);
+  text-underline-offset: 3px;
+}
+
+// Buttons: 1px hover lift and active compression; pairs with box-shadow changes for tactile click
+.btn {
+  transition: $btn-transition;
+}
+.btn:hover {
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: translateY(0);
+  box-shadow: $btn-active-box-shadow;
+}
+
+// Cards: add specular wash and hairline; hover elevation increases drop to stand off canvas
+.card {
+  background-image: $gradient;
+  border-color: $border-color-translucent;
+  box-shadow: $box-shadow;
+  transition: $transition-base;
+}
+.card:hover {
+  transform: translateY(-1px);
+  box-shadow: $box-shadow-lg;
+}
+
+// Navbar: translucent background + backdrop-filter blur for glass; hairline border for precision
+.navbar {
+  border: 1px solid $border-color-translucent;
+  background-color: rgba($body-bg, 0.72);
+  box-shadow: $box-shadow;
+  -webkit-backdrop-filter: saturate(180%) blur(10px);
+  backdrop-filter: saturate(180%) blur(10px);
+}
+
+// Dropdowns: fade + translateY to appear from canvas; uses .show state managed by Bootstrap JS
+.dropdown-menu {
+  transform: translateY(2px);
+  opacity: 0;
+  transition: opacity 0.16s ease-out, transform 0.16s ease-out, box-shadow 0.16s ease-out;
+  box-shadow: $box-shadow;
+}
+.dropdown-menu.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+// Inputs: increase border alpha on focus and stack inner ring over inset bed for crispness
+.form-control {
+  box-shadow: $box-shadow-inset;
+}
+.form-control:focus {
+  outline: 0;
+  border-color: rgba($primary, 0.45);
+  box-shadow: 0 0 0 $focus-ring-width rgba($primary, $focus-ring-opacity), $box-shadow-inset;
+}
+
+// Dividers: composite gradient to emulate a 1px hairline with a faint specular top edge
+hr {
+  border: 0;
+  height: 1px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.08)),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
+}
+
+// Tables: faint matte hover helps scan without heavy row stripes
+.table-hover > tbody > tr:hover > * {
+  background-color: rgba($body-emphasis-color, 0.03);
+}
+
+// Accessibility: disable transforms and transitions when users prefer reduced motion
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .nav-link,
+  .card,
+  .dropdown-menu {
+    transition: none !important;
+    transform: none !important;
+  }
+}
