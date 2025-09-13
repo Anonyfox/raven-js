@@ -951,11 +951,33 @@ a {
   transition: $transition-base;
   position: relative;
 
-  &:hover:not(.disabled) {
+  &:hover:not(.disabled):not(.active) {
     // Simple hover effect - no movement, no adjacent item effects
     box-shadow: $box-shadow-sm;
     background: linear-gradient(90deg, rgba($gray-100, 0.5) 0%, rgba($gray-50, 0.8) 100%);
     z-index: 1; // Ensure proper stacking
+
+    // When background becomes light, text needs to be dark
+    color: $gray-900 !important;
+
+    // Ensure all child elements also get dark text
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    .h1,
+    .h2,
+    .h3,
+    .h4,
+    .h5,
+    .h6,
+    p,
+    small,
+    .small {
+      color: $gray-900 !important;
+    }
   }
 }
 
@@ -1041,6 +1063,587 @@ hr {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+// ========================================
+// PHASE 17: TEXT CONTRAST FIXES
+// ========================================
+// Ensure readable text on all backgrounds
+
+// Dark buttons need light text (including all states)
+.btn-primary,
+.btn-dark,
+.btn-secondary,
+.btn-info {
+  color: $white !important;
+
+  &:hover,
+  &:focus,
+  &:active,
+  &.active,
+  &:focus-visible {
+    color: $white !important;
+  }
+}
+
+// Outline buttons on hover/active need proper contrast
+.btn-outline-primary,
+.btn-outline-dark,
+.btn-outline-secondary,
+.btn-outline-info {
+  &:hover,
+  &:active,
+  &.active {
+    color: $white !important;
+  }
+}
+
+// Dark backgrounds need light text
+.bg-dark,
+.bg-primary,
+.bg-secondary {
+  color: $white !important;
+
+  * {
+    color: inherit;
+  }
+}
+
+// Navbar dark variants
+.navbar-dark {
+  .navbar-brand,
+  .navbar-nav .nav-link {
+    color: rgba($white, 0.9) !important;
+
+    &:hover,
+    &:focus {
+      color: $white !important;
+    }
+  }
+}
+
+// Table dark variants
+.table-dark {
+  color: $white;
+
+  th,
+  td {
+    color: $white;
+  }
+}
+
+// Cards with dark backgrounds
+.card {
+  &.bg-dark,
+  &.bg-primary,
+  &.bg-secondary {
+    .card-header,
+    .card-body,
+    .card-footer {
+      color: $white;
+    }
+  }
+}
+
+// List group dark items
+.list-group-item {
+  &.list-group-item-dark {
+    color: $white;
+  }
+
+  &.bg-dark,
+  &.bg-primary,
+  &.bg-secondary {
+    color: $white;
+  }
+}
+
+// Badges - ensure contrast
+.badge {
+  &.bg-primary,
+  &.bg-secondary,
+  &.bg-dark {
+    color: $white !important;
+  }
+
+  &.bg-light {
+    color: $gray-900 !important;
+  }
+}
+
+// Alerts - fix text contrast
+.alert {
+  &.alert-dark {
+    color: $white;
+    background-color: $gray-800;
+    border-color: $gray-700;
+  }
+}
+
+// Dropdown dark items
+.dropdown-menu-dark {
+  .dropdown-item {
+    color: rgba($white, 0.8);
+
+    &:hover,
+    &:focus {
+      color: $white;
+    }
+  }
+}
+
+// Modal dark headers/footers
+.modal-header,
+.modal-footer {
+  &.bg-dark {
+    color: $white;
+
+    .btn-close {
+      filter: invert(1) grayscale(100%) brightness(200%);
+    }
+  }
+}
+
+// Progress bars - ensure text is visible
+.progress-bar {
+  color: $white;
+}
+
+// Page item dark
+.page-item {
+  &.active .page-link {
+    background-color: $gray-800;
+    border-color: $gray-800;
+    color: $white;
+  }
+}
+
+// Breadcrumb dark
+.breadcrumb {
+  &.bg-dark {
+    .breadcrumb-item {
+      color: rgba($white, 0.8);
+
+      &.active {
+        color: $white;
+      }
+
+      + .breadcrumb-item::before {
+        color: rgba($white, 0.6);
+      }
+    }
+  }
+}
+
+// Form controls in dark contexts
+.bg-dark,
+.navbar-dark,
+.card.bg-dark {
+  .form-control,
+  .form-select {
+    background-color: rgba($white, 0.1);
+    border-color: rgba($white, 0.2);
+    color: $white;
+
+    &::placeholder {
+      color: rgba($white, 0.5);
+    }
+
+    &:focus {
+      background-color: rgba($white, 0.15);
+      border-color: rgba($white, 0.4);
+      color: $white;
+    }
+  }
+}
+
+// Nav pills - fix active state contrast
+.nav-pills {
+  .nav-link.active,
+  .show > .nav-link {
+    background-color: $gray-800;
+    color: $white !important;
+  }
+}
+
+// Table contextual classes - ensure proper contrast
+.table {
+  // Primary, secondary, info can have dark text (they're light enough)
+  .table-primary,
+  .table-secondary,
+  .table-info {
+    color: $gray-900 !important;
+
+    th,
+    td {
+      color: $gray-900 !important;
+    }
+  }
+
+  // Dark needs white text
+  .table-dark {
+    color: $white !important;
+
+    th,
+    td {
+      color: $white !important;
+    }
+  }
+
+  .table-light {
+    color: $gray-900 !important;
+
+    th,
+    td {
+      color: $gray-900 !important;
+    }
+  }
+
+  // Hover states need contrast too
+  &.table-hover tbody tr {
+    &.table-primary:hover,
+    &.table-secondary:hover,
+    &.table-info:hover {
+      color: $gray-900 !important;
+
+      td,
+      th {
+        color: $gray-900 !important;
+      }
+    }
+
+    &.table-dark:hover {
+      color: $white !important;
+
+      td,
+      th {
+        color: $white !important;
+      }
+    }
+  }
+}
+
+// List group contextual items
+.list-group-item {
+  &.list-group-item-primary,
+  &.list-group-item-secondary,
+  &.list-group-item-info {
+    // These can have dark text
+    color: $gray-900 !important;
+  }
+
+  &.list-group-item-dark {
+    // Dark needs white text
+    color: $white !important;
+  }
+
+  // Active state
+  &.active {
+    background-color: $gray-800;
+    border-color: $gray-800;
+    color: $white !important;
+
+    // Fix heading colors in active state
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    .h1,
+    .h2,
+    .h3,
+    .h4,
+    .h5,
+    .h6 {
+      color: $white !important;
+    }
+
+    small,
+    .small {
+      color: rgba($white, 0.8) !important;
+    }
+
+    p {
+      color: $white !important;
+    }
+  }
+
+  // Action items
+  &.list-group-item-action {
+    // For action items, hover should maintain readability
+    &:hover:not(.active):not(.disabled) {
+      // Default action items get light background on hover
+      // So they need dark text
+      color: $gray-900 !important;
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      .h1,
+      .h2,
+      .h3,
+      .h4,
+      .h5,
+      .h6,
+      p,
+      small,
+      .small {
+        color: $gray-900 !important;
+      }
+    }
+
+    // Dark items should stay dark on hover with white text
+    &.list-group-item-dark:hover:not(.active) {
+      background-color: darken($gray-800, 5%);
+      color: $white !important;
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      .h1,
+      .h2,
+      .h3,
+      .h4,
+      .h5,
+      .h6,
+      p,
+      small,
+      .small {
+        color: $white !important;
+      }
+    }
+
+    // Override the general hover for contextual variants
+    &.list-group-item-primary:hover:not(.active),
+    &.list-group-item-secondary:hover:not(.active),
+    &.list-group-item-info:hover:not(.active) {
+      // These get light background on hover, need dark text
+      color: $gray-900 !important;
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      .h1,
+      .h2,
+      .h3,
+      .h4,
+      .h5,
+      .h6,
+      p,
+      small,
+      .small {
+        color: $gray-900 !important;
+      }
+    }
+
+    &.active {
+      color: $white !important;
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      .h1,
+      .h2,
+      .h3,
+      .h4,
+      .h5,
+      .h6 {
+        color: $white !important;
+      }
+
+      &:hover,
+      &:focus {
+        color: $white !important;
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        .h1,
+        .h2,
+        .h3,
+        .h4,
+        .h5,
+        .h6 {
+          color: $white !important;
+        }
+      }
+    }
+  }
+}
+
+// Navbar with bg-primary needs white text
+.navbar {
+  &.bg-primary,
+  &.bg-dark,
+  &.bg-secondary {
+    .navbar-brand,
+    .navbar-nav .nav-link,
+    .navbar-text {
+      color: rgba($white, 0.9) !important;
+
+      &:hover,
+      &:focus,
+      &.active {
+        color: $white !important;
+      }
+    }
+
+    .navbar-toggler {
+      border-color: rgba($white, 0.3);
+    }
+
+    .navbar-toggler-icon {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.8%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    }
+  }
+}
+
+// Card contextual backgrounds
+.card {
+  &.bg-primary,
+  &.bg-secondary,
+  &.bg-dark,
+  &.bg-info,
+  &.bg-success,
+  &.bg-danger,
+  &.bg-warning {
+    color: $white !important;
+
+    .card-header,
+    .card-body,
+    .card-footer,
+    .card-title,
+    .card-subtitle,
+    .card-text {
+      color: $white !important;
+    }
+
+    .card-link {
+      color: rgba($white, 0.9);
+
+      &:hover {
+        color: $white;
+      }
+    }
+  }
+}
+
+// Alert links in dark alerts
+.alert {
+  &.alert-primary,
+  &.alert-secondary,
+  &.alert-dark {
+    color: $white !important;
+
+    .alert-link {
+      color: rgba($white, 0.9);
+
+      &:hover {
+        color: $white;
+      }
+    }
+  }
+}
+
+// Badge inside dark elements
+.bg-primary,
+.bg-secondary,
+.bg-dark,
+.btn-primary,
+.btn-secondary,
+.btn-dark {
+  .badge {
+    &.bg-light {
+      color: $gray-900 !important;
+    }
+
+    &.bg-primary,
+    &.bg-secondary,
+    &.bg-dark {
+      background-color: rgba($white, 0.2) !important;
+      color: $white !important;
+    }
+  }
+}
+
+// Dropdown items in dark dropdowns
+.dropdown-menu {
+  .dropdown-item {
+    &.active,
+    &:active {
+      background-color: $gray-800;
+      color: $white !important;
+    }
+  }
+}
+
+// Pagination active state
+.pagination {
+  .page-item.active .page-link {
+    background-color: $gray-800;
+    border-color: $gray-800;
+    color: $white !important;
+  }
+}
+
+// Nav tabs active state
+.nav-tabs {
+  .nav-link.active {
+    color: $gray-900 !important;
+    background-color: $body-bg;
+    border-color: $gray-300 $gray-300 $body-bg;
+  }
+}
+
+// Accordion buttons
+.accordion-button {
+  &:not(.collapsed) {
+    color: $gray-900 !important;
+    background-color: rgba($gray-100, 0.5);
+  }
+}
+
+// Text utility classes - ensure they work in all contexts
+.text-muted {
+  color: $gray-600 !important;
+}
+
+.text-body-secondary {
+  color: $body-secondary-color !important;
+}
+
+.text-body-tertiary {
+  color: $body-tertiary-color !important;
+}
+
+// Inside dark containers, lighten muted text
+.bg-dark,
+.bg-primary,
+.bg-secondary,
+.card.bg-dark,
+.card.bg-primary,
+.card.bg-secondary {
+  .text-muted,
+  .text-body-secondary,
+  .text-body-tertiary {
+    color: rgba($white, 0.6) !important;
   }
 }
 
