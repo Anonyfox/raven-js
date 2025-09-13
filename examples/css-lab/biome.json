@@ -1,6 +1,5 @@
 {
   "root": false,
-  "$schema": "https://biomejs.dev/schemas/2.2.2/schema.json",
   "linter": {
     "enabled": true,
     "rules": {
@@ -19,5 +18,9 @@
       "trailingCommas": "es5",
       "semicolons": "always"
     }
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": ["**", "!public"]
   }
 }

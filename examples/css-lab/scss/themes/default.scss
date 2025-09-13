@@ -1,0 +1,43 @@
+// Custom theme overrides for Bootstrap
+// These variables override Bootstrap's defaults before importing the main bootstrap.scss
+
+// Primary color palette
+$primary: #4f46e5 !default;
+$secondary: #64748b !default;
+$success: #16a34a !default;
+$danger: #dc2626 !default;
+$warning: #f59e0b !default;
+$info: #0891b2 !default;
+$light: #f8fafc !default;
+$dark: #0f172a !default;
+
+// Typography
+$font-family-sans-serif: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !default;
+$font-size-base: 1rem !default;
+$line-height-base: 1.5 !default;
+
+// Spacing
+$spacer: 1rem !default;
+$spacers: (
+  0: 0,
+  1: $spacer * 0.25,
+  2: $spacer * 0.5,
+  3: $spacer,
+  4: $spacer * 1.5,
+  5: $spacer * 3,
+) !default;
+
+// Borders
+$border-width: 1px !default;
+$border-color: #e5e7eb !default;
+$border-radius: 0.5rem !default;
+$border-radius-sm: 0.25rem !default;
+$border-radius-lg: 0.75rem !default;
+
+// Shadows
+$box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !default;
+$box-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !default;
+$box-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !default;
+
+// Import Bootstrap with our overrides
+@import "../bootstrap.scss";

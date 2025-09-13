@@ -1,0 +1,22 @@
+# Global exclusions for the entire monorepo
+**/public/**
+**/public
+public/**
+public
+
+# Also exclude other common build/asset folders
+**/dist/**
+**/build/**
+**/static/**
+**/bundles/**
+
+# Exclude minified files
+**/*.min.js
+**/*.min.css
+
+# Exclude documentation
+docs/**
+
+# Exclude other common folders
+node_modules/**
+.git/**

@@ -1,4 +1,5 @@
 {
+  "root": false,
   "linter": {
     "enabled": true,
     "rules": {
@@ -27,14 +28,6 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": [
-      "**",
-      "!docs",
-      "!plugins/vscode",
-      "!**/bin/*.min.js",
-      "!**/static",
-      "!**/bundles",
-      "!dist"
-    ]
+    "includes": ["**", "!docs", "!plugins/vscode", "!**/bin/*.min.js", "!**/static", "!**/bundles", "!dist"]
   }
 }

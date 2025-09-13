@@ -34,15 +34,6 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": [
-      "**",
-      "!docs",
-      "!plugins/vscode",
-      "!**/bin/*.min.js",
-      "!**/static",
-      "!**/bundles",
-      "!dist",
-      "!**/dist"
-    ]
+    "includes": ["**", "!docs", "!plugins/vscode", "!**/bin/*.min.js", "!**/static", "!**/bundles", "!dist", "!**/dist"]
   }
 }
