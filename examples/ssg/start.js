@@ -11,27 +11,27 @@
  */
 
 import { DevServer, Logger, Resolve } from "@raven-js/wings/server";
-import { router } from "./routes.js";
+import { router } from "./src/router.js";
 
 /**
  * Start development server
  */
 async function startServer() {
-	// Add logging middleware
-	router.useEarly(new Logger());
-	router.use(new Resolve({ sourceFolder: "./src" }));
+  // Add logging middleware
+  router.useEarly(new Logger());
 
-	// Create development server
-	const server = new DevServer(router);
+  // Add Resolve middleware for nobuild ESM development in the browser
+  router.use(new Resolve({ sourceFolder: "./src" }));
 
-	// Start server
-	const port = Number(process.env.PORT) || 3000;
-	await server.listen(port);
+  // Create development server
+  const server = new DevServer(router);
 
-	console.log(
-		`🦅 RavenJS SSG development server running at: http://localhost:${port}`,
-	);
-	console.log(`
+  // Start server
+  const port = Number(process.env.PORT) || 3000;
+  await server.listen(port);
+
+  console.log(`🦅 RavenJS SSG development server running at: http://localhost:${port}`);
+  console.log(`
 📝 Content As Code:
    • Edit pages in src/pages/
    • Components in src/components/
@@ -44,6 +44,6 @@ async function startServer() {
 
 // Start server
 startServer().catch((error) => {
-	console.error("Failed to start server:", error);
-	process.exit(1);
+  console.error("Failed to start server:", error);
+  process.exit(1);
 });

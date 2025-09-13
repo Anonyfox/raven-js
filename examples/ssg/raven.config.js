@@ -11,10 +11,10 @@
  */
 
 import { Context } from "@raven-js/wings";
-import { router } from "./cfg/routes.js";
 import { getBlogUrls } from "./src/collections/blog-posts.js";
 import { getDocUrls } from "./src/collections/doc-pages.js";
 import { getShopUrls } from "./src/collections/shop-products.js";
+import { router } from "./src/router.js";
 
 /**
  * Static site generation configuration
