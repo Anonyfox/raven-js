@@ -11,8 +11,8 @@
  */
 
 import { code, md } from "@raven-js/beak";
+import { island } from "@raven-js/reflex/dom";
 import { Counter } from "../../apps/counter.js";
-import { island } from "../../components/island.js";
 import { pageExampleSnippet } from "./snippets.js";
 
 /**
