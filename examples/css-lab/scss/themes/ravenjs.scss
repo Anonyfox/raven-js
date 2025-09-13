@@ -1,0 +1,1052 @@
+// RavenJS Theme - The Apex Intelligence
+// ========================================
+// Surgical precision meets electric monochrome elegance.
+// Every pixel serves algorithmic clarity. Zero dependencies, pure platform mastery.
+// Swift as a raven's feather, sharp as its intelligence.
+//
+// CODEX PRINCIPLES:
+// - Algorithm over patches (surgical refactoring, not bandaids)
+// - Institutional memory (every choice preserves architectural wisdom)
+// - Zero external dependencies (unbreakable guarantee)
+// - Collective intelligence (elements coordinate like a murder of ravens)
+// - Platform mastery (native CSS, no hacks)
+
+// ========================================
+// PHASE 1: CORE COLOR PALETTE
+// ========================================
+// Pure monochrome discipline with surgical color exceptions
+// Each gray serves a specific depth/hierarchy purpose
+
+$white: #ffffff !default; // Pure canvas - absolute clarity
+$gray-50: #fafbfc !default; // Whisper - barely there
+$gray-100: #f4f5f7 !default; // Mist - subtle presence
+$gray-200: #e1e5e9 !default; // Fog - gentle boundary
+$gray-300: #c7d0d9 !default; // Cloud - soft division
+$gray-400: #9aa4b2 !default; // Storm - medium emphasis
+$gray-500: #6b7785 !default; // Steel - balanced weight
+$gray-600: #4a5568 !default; // Iron - strong presence
+$gray-700: #2d3748 !default; // Shadow - deep emphasis
+$gray-800: #1a202c !default; // Twilight - near black
+$gray-900: #0f1419 !default; // Obsidian - commanding black
+$black: #000000 !default; // Void - absolute black
+
+// Primary palette - monochrome with surgical color exceptions
+$primary: $gray-900 !default; // Obsidian - primary intelligence
+$secondary: $gray-600 !default; // Iron - supporting depth
+$success: #047857 !default; // Electric emerald - precise success
+$danger: #b91c1c !default; // Electric crimson - critical alert
+$warning: #b45309 !default; // Electric amber - calculated warning
+$info: $gray-700 !default; // Shadow - information depth
+$light: $gray-100 !default; // Mist - light backgrounds
+$dark: $gray-900 !default; // Obsidian - dark elements
+
+// Body hierarchy - creating depth through grayscale
+$body-bg: #fafbfc !default; // Slightly off-white prevents sterility
+$body-color: $gray-800 !default; // Comfortable reading contrast
+$body-secondary-bg: #eff0f2 !default; // Subtle panel differentiation
+$body-tertiary-bg: #f3f4f6 !default; // Hover state canvas
+$body-secondary-color: rgba($gray-800, 0.75) !default;
+$body-tertiary-color: rgba($gray-800, 0.55) !default;
+$body-emphasis-color: $gray-900 !default; // Maximum emphasis
+
+// ========================================
+// PHASE 2: TYPOGRAPHY SYSTEM
+// ========================================
+// Tight, commanding, systematic - every character has purpose
+
+$font-family-sans-serif: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !default;
+$font-family-monospace: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace !default;
+
+$font-size-base: 0.9375rem !default; // 15px - precise, not too small
+$font-size-sm: 0.875rem !default; // 14px - subtle reduction
+$font-size-lg: 1.0625rem !default; // 17px - gentle increase
+
+$line-height-base: 1.55 !default; // Tight but readable
+$line-height-sm: 1.4 !default; // Compressed for density
+$line-height-lg: 1.6 !default; // Relaxed for emphasis
+
+// Heading hierarchy - commanding presence
+$h1-font-size: 2.25rem !default; // 36px
+$h2-font-size: 1.875rem !default; // 30px
+$h3-font-size: 1.5rem !default; // 24px
+$h4-font-size: 1.25rem !default; // 20px
+$h5-font-size: 1.125rem !default; // 18px
+$h6-font-size: 1rem !default; // 16px
+
+$headings-font-weight: 700 !default; // Bold for authority
+$headings-line-height: 1.15 !default; // Tight for impact
+$headings-color: $gray-900 !default; // Maximum contrast
+$headings-margin-bottom: 0.75rem !default; // Controlled spacing
+
+// Font weights - precise hierarchy
+$font-weight-light: 300 !default;
+$font-weight-normal: 400 !default;
+$font-weight-medium: 500 !default;
+$font-weight-semibold: 600 !default;
+$font-weight-bold: 700 !default;
+
+// ========================================
+// PHASE 3: SPACING SYSTEM
+// ========================================
+// Fibonacci-inspired for natural rhythm
+
+$spacer: 1rem !default;
+$spacers: (
+  0: 0,
+  1: $spacer * 0.25,
+  // 4px - atomic unit
+  2: $spacer * 0.5,
+  // 8px - small gap
+  3: $spacer * 0.75,
+  // 12px - medium gap
+  4: $spacer,
+  // 16px - standard gap
+  5: $spacer * 1.5,
+  // 24px - large gap
+  6: $spacer * 2.5,
+  // 40px - section gap
+  7: $spacer * 4,
+  // 64px - major gap
+) !default;
+
+// ========================================
+// PHASE 4: BORDER SYSTEM
+// ========================================
+// SHARP EDGES - No ambiguity, pure precision
+
+$border-width: 1px !default;
+$border-style: solid !default;
+$border-color: rgba($gray-300, 0.8) !default;
+$border-color-translucent: rgba($black, 0.09) !default;
+
+// CRITICAL: All radius values are 0 for surgical sharpness
+$enable-rounded: false !default;
+$border-radius: 0 !default;
+$border-radius-sm: 0 !default;
+$border-radius-lg: 0 !default;
+$border-radius-xl: 0 !default;
+$border-radius-xxl: 0 !default;
+$border-radius-pill: 0 !default;
+
+// ========================================
+// PHASE 5: SHADOW SYSTEM
+// ========================================
+// Three-layer depth: immediate, soft, atmospheric
+
+$enable-shadows: true !default;
+
+// Specular highlight (inset white) + immediate shadow + soft shadow + atmospheric shadow
+$box-shadow-sm: inset 0 1px 0 rgba($white, 0.28),
+  // Subtle specular highlight
+  0 1px 2px rgba($black, 0.06),
+  // Immediate shadow
+  0 2px 4px rgba($black, 0.04) !default; // Soft shadow
+
+$box-shadow: inset 0 1px 0 rgba($white, 0.32),
+  // Specular highlight
+  0 2px 4px rgba($black, 0.08),
+  // Immediate shadow
+  0 4px 8px rgba($black, 0.06),
+  // Soft shadow
+  0 8px 16px rgba($black, 0.04) !default; // Atmospheric shadow
+
+$box-shadow-lg: inset 0 1px 0 rgba($white, 0.36),
+  // Strong specular
+  0 4px 8px rgba($black, 0.1),
+  // Immediate shadow
+  0 8px 16px rgba($black, 0.08),
+  // Soft shadow
+  0 16px 32px rgba($black, 0.06) !default; // Deep atmospheric
+
+$box-shadow-inset: inset 0 1px 2px rgba($black, 0.06) !default;
+
+// ========================================
+// PHASE 6: COMPONENT VARIABLES
+// ========================================
+
+// Links - precise underlines with energy
+$link-color: $primary !default;
+$link-decoration: underline !default;
+$link-hover-color: rgba($black, 0.88) !default;
+$link-hover-decoration: underline !default;
+$link-shade-percentage: 20% !default;
+
+// Buttons - kinetic precision instruments
+$btn-font-weight: 600 !default;
+$btn-border-width: $border-width !default;
+$btn-line-height: $line-height-base !default;
+$btn-border-radius: 0 !default;
+$btn-border-radius-sm: 0 !default;
+$btn-border-radius-lg: 0 !default;
+$btn-box-shadow: $box-shadow-sm !default;
+$btn-focus-width: 0.1875rem !default;
+$btn-focus-box-shadow: 0 0 0 $btn-focus-width rgba($primary, 0.25) !default;
+$btn-active-box-shadow: inset 0 1px 2px rgba($black, 0.12) !default;
+$btn-transition: color 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+  border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+  transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !default;
+
+// Forms - intelligent input with triple-ring focus
+$input-bg: $white !default;
+$input-border-color: $gray-400 !default;
+$input-border-radius: 0 !default;
+$input-border-width: $border-width !default;
+$input-box-shadow: $box-shadow-inset !default;
+$input-focus-bg: $input-bg !default;
+$input-focus-border-color: rgba($gray-800, 0.5) !default;
+$input-focus-color: $body-color !default;
+$input-focus-width: 0.1875rem !default;
+$input-focus-box-shadow: 0 0 0 $input-focus-width rgba($primary, 0.2), 0 2px 8px rgba($black, 0.08), $box-shadow-inset !default;
+
+$input-placeholder-color: $gray-500 !default;
+$input-transition: border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+  transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !default;
+
+$form-select-border-radius: 0 !default;
+$form-select-focus-box-shadow: $input-focus-box-shadow !default;
+$form-check-input-border-radius: 0 !default;
+
+// Cards - intelligent containers with depth
+$card-spacer-y: 1rem !default;
+$card-spacer-x: 1.25rem !default;
+$card-border-width: $border-width !default;
+$card-border-color: rgba($black, 0.09) !default;
+$card-border-radius: 0 !default;
+$card-box-shadow: $box-shadow !default;
+$card-bg: $white !default;
+
+// Dropdowns - precision menus
+$dropdown-border-color: rgba($black, 0.12) !default;
+$dropdown-border-radius: 0 !default;
+$dropdown-box-shadow: $box-shadow !default;
+$dropdown-link-color: $gray-700 !default;
+$dropdown-link-hover-color: $gray-900 !default;
+$dropdown-link-hover-bg: $gray-100 !default;
+
+// Navbar - floating intelligence bar
+$navbar-padding-y: $spacer * 0.5 !default;
+$navbar-padding-x: null !default;
+$navbar-nav-link-padding-x: 0.75rem !default;
+$navbar-light-color: rgba($gray-900, 0.7) !default;
+$navbar-light-hover-color: rgba($gray-900, 0.95) !default;
+$navbar-light-active-color: rgba($gray-900, 1) !default;
+$navbar-light-disabled-color: rgba($gray-900, 0.3) !default;
+$navbar-light-brand-color: $gray-900 !default;
+$navbar-light-brand-hover-color: $gray-900 !default;
+
+// Pagination - navigation precision
+$pagination-border-radius: 0 !default;
+$pagination-focus-box-shadow: $input-focus-box-shadow !default;
+$pagination-hover-bg: $gray-100 !default;
+
+// Badges - precise indicators
+$badge-font-weight: 600 !default;
+$badge-border-radius: 0 !default;
+
+// Modals - focused dialogs
+$modal-content-border-radius: 0 !default;
+$modal-content-box-shadow-xs: $box-shadow !default;
+$modal-content-box-shadow-sm-up: $box-shadow-lg !default;
+
+// Alerts - intelligent notifications
+$alert-border-radius: 0 !default;
+$alert-border-width: 0 !default;
+
+// Progress - algorithmic completion
+$progress-border-radius: 0 !default;
+$progress-bar-bg: $gray-900 !default;
+
+// List groups - organized intelligence
+$list-group-border-radius: 0 !default;
+
+// Breadcrumbs - navigation memory
+$breadcrumb-border-radius: 0 !default;
+
+// Tooltips & Popovers - precision overlays
+$tooltip-border-radius: 0 !default;
+$popover-border-radius: 0 !default;
+
+// Tables - data precision
+$table-cell-padding-y: 0.75rem !default;
+$table-cell-padding-x: 0.75rem !default;
+$table-border-color: $border-color !default;
+$table-striped-bg: rgba($gray-100, 0.5) !default;
+$table-hover-bg: rgba($gray-100, 0.8) !default;
+
+// Code - monospace precision
+$code-color: $primary !default;
+$pre-color: $gray-900 !default;
+
+// Global transitions - consistent timing with smoother, lazier feel
+$transition-base: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !default; // Increased from 0.15s for smoother feel
+$transition-fade: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1) !default;
+$transition-collapse: height 0.3s cubic-bezier(0.4, 0, 0.2, 1) !default;
+
+// Enable gradients for specular effects
+$enable-gradients: true !default;
+$enable-transitions: true !default;
+
+// Gradient - subtle specular wash
+$gradient: linear-gradient(180deg, rgba($white, 0.12), rgba($white, 0)) !default;
+
+// Focus ring - precise and subtle
+$focus-ring-width: 0.1875rem !default;
+$focus-ring-opacity: 0.25 !default;
+$focus-ring-color: rgba($primary, $focus-ring-opacity) !default;
+$focus-ring-blur: 0 !default;
+$focus-ring-box-shadow: 0 0 0 $focus-ring-width $focus-ring-color !default;
+
+// ========================================
+// IMPORT BOOTSTRAP
+// ========================================
+@import "../bootstrap.scss";
+
+// ========================================
+// PHASE 7: KEYFRAME ANIMATIONS
+// ========================================
+// Subtle, purposeful animations that suggest intelligence
+
+// Memory pulse - expanding rings when clicked
+@keyframes memory-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba($gray-900, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 4px rgba($gray-900, 0.1);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba($gray-900, 0);
+  }
+}
+
+// Shadow emergence - blur to sharp focus (with subtle scale, no vertical movement for stability)
+@keyframes shadow-emergence {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.99); // Very subtle scale, no translateY to prevent layout jumps
+    filter: blur(0.5px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+// Intelligence scan - gradient sweep
+@keyframes intelligence-scan {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+// Pack coordination - subtle oscillation forward (brief and snappy)
+@keyframes pack-coordination-forward {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(2px);
+  }
+}
+
+// Pack coordination - subtle oscillation backward (inverse, brief and snappy)
+@keyframes pack-coordination-backward {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-2px);
+  }
+}
+
+// Content shift animations for vertical elements - no layout shift!
+@keyframes content-shift-up {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes content-shift-down {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(2px);
+  }
+}
+
+// ========================================
+// PHASE 8: GLOBAL ENHANCEMENTS
+// ========================================
+
+// Body - fixed gradient background for depth
+body {
+  background-color: $body-bg;
+  background-image: $gradient;
+  background-attachment: fixed;
+  position: relative;
+
+  // Feather texture overlay - elegant cross-hatch pattern reminiscent of raven plumage
+  &::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    // Create a feather-like cross-hatch with varying line weights
+    background-image:
+      // Primary feather strokes - diagonal lines
+      linear-gradient(45deg, rgba($gray-700, 0.03) 25%, transparent 25%),
+      linear-gradient(-45deg, rgba($gray-700, 0.03) 25%, transparent 25%),
+      // Secondary feather details - offset diagonals
+      linear-gradient(45deg, transparent 75%, rgba($gray-600, 0.02) 75%),
+      linear-gradient(-45deg, transparent 75%, rgba($gray-600, 0.02) 75%);
+    background-size: 4px 4px;
+    background-position: 0 0, 0 2px, 2px -2px, -2px 0px;
+    opacity: 1; // Full opacity since the colors are already very subtle
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  // Additional organic feather texture - subtle noise pattern
+  &::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    // Larger scale pattern for depth - like feather barbs
+    background-image: repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 20px,
+        rgba($gray-400, 0.015) 20px,
+        rgba($gray-400, 0.015) 21px
+      ),
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 20px,
+        rgba($gray-400, 0.015) 20px,
+        rgba($gray-400, 0.015) 21px
+      );
+    pointer-events: none;
+    z-index: -1;
+  }
+}
+
+// Text selection - intelligent highlighting
+::selection {
+  background: rgba($gray-900, 0.1);
+  color: $gray-900;
+}
+
+::-moz-selection {
+  background: rgba($gray-900, 0.1);
+  color: $gray-900;
+}
+
+// ========================================
+// PHASE 9: LINK ENHANCEMENTS
+// ========================================
+
+a {
+  text-decoration-color: rgba($primary, 0.3);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  transition: $transition-base;
+
+  &:hover {
+    text-decoration-color: rgba($primary, 0.6);
+    text-underline-offset: 3px;
+  }
+}
+
+// Navigation links - special treatment
+.nav-link {
+  text-decoration: none;
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, $gray-800, $gray-600);
+    transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &:hover::after {
+    width: 100%;
+  }
+}
+
+// ========================================
+// PHASE 10: BUTTON ENHANCEMENTS
+// ========================================
+
+.btn {
+  position: relative;
+  transition: $btn-transition;
+
+  // Specular highlight overlay
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba($white, 0.1) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+  }
+
+  // Hover state - NO VERTICAL MOVEMENT, only shadow enhancement
+  &:hover:not(:disabled) {
+    // transform: translateY(-2px); // REMOVED - breaks layouts
+    box-shadow: inset 0 1px 0 rgba($white, 0.4), 0 4px 8px rgba($black, 0.12), 0 8px 16px rgba($black, 0.08),
+      0 12px 24px rgba($black, 0.04);
+
+    &::before {
+      opacity: 1;
+    }
+  }
+
+  // Active state - slight compression DOWN (not back to 0, but slightly down)
+  &:active:not(:disabled) {
+    transform: translateY(1px); // Slight downward press
+    box-shadow: $btn-active-box-shadow;
+
+    &::before {
+      opacity: 0.5;
+    }
+  }
+
+  // Memory pulse on click
+  &:active {
+    animation: memory-pulse 0.6s ease-out;
+  }
+
+  // Focus state - shadow emergence
+  &:focus-visible {
+    animation: shadow-emergence 0.15s ease-out;
+  }
+}
+
+// Button groups - pack coordination for grouped buttons
+.btn-group {
+  .btn {
+    &:hover {
+      // Horizontal button groups - next button moves away
+      & + .btn {
+        animation: pack-coordination-forward 0.4s ease-out;
+        box-shadow: $box-shadow-sm;
+      }
+    }
+  }
+}
+
+// Previous button coordination in horizontal groups
+.btn-group:has(.btn:hover) .btn:has(+ .btn:hover) {
+  animation: pack-coordination-backward 0.4s ease-out;
+  box-shadow: $box-shadow-sm;
+}
+
+// Vertical button groups - use content animation instead
+.btn-group-vertical {
+  .btn {
+    position: relative;
+    overflow: hidden;
+
+    &:hover {
+      // Next button's content shifts down
+      & + .btn {
+        > * {
+          animation: content-shift-down 0.4s ease-out;
+        }
+      }
+    }
+  }
+}
+
+// Previous button's content shifts up in vertical groups
+.btn-group-vertical:has(.btn:hover) .btn:has(+ .btn:hover) > * {
+  animation: content-shift-up 0.4s ease-out;
+}
+
+// ========================================
+// PHASE 11: CARD ENHANCEMENTS
+// ========================================
+
+.card {
+  position: relative;
+  background-image: $gradient;
+  border-color: $card-border-color;
+  box-shadow: $card-box-shadow;
+  transition: $transition-base;
+
+  // Algorithmic grid overlay
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: linear-gradient(rgba($gray-600, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba($gray-600, 0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+    opacity: 0;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+  }
+
+  // Hover state - elevation
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $box-shadow-lg;
+
+    &::before {
+      opacity: 0.4;
+    }
+  }
+}
+
+// ========================================
+// PHASE 12: FORM ENHANCEMENTS
+// ========================================
+
+.form-control,
+.form-select {
+  box-shadow: $input-box-shadow;
+  transition: $input-transition;
+  position: relative;
+
+  // Create animated border glow effect on focus
+  &::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    background: linear-gradient(90deg, $gray-800, $gray-600, $gray-800, $gray-600);
+    background-size: 300% 100%;
+    opacity: 0;
+    z-index: -1;
+    transition: opacity 0.3s ease;
+    animation: border-flow 3s linear infinite;
+  }
+
+  // Focus state - animated border with triple ring system
+  &:focus {
+    outline: 0;
+    border-color: transparent; // Hide static border
+    box-shadow: $input-focus-box-shadow;
+
+    &::before {
+      opacity: 0.5; // Reveal animated border
+    }
+  }
+
+  // Valid state - green intelligence bar
+  &:valid:not(:placeholder-shown) {
+    border-left: 3px solid rgba($success, 0.6);
+    padding-left: calc(0.75rem - 2px);
+  }
+
+  // Invalid state - red correction bar
+  &:invalid:not(:placeholder-shown):not(:focus) {
+    border-left: 3px solid rgba($danger, 0.6);
+    padding-left: calc(0.75rem - 2px);
+  }
+
+  // Shadow emergence on focus (no vertical movement)
+  &:focus-visible {
+    animation: shadow-emergence 0.25s ease-out;
+  }
+}
+
+// Animated border flow for focused inputs
+@keyframes border-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+// ========================================
+// PHASE 13: NAVBAR ENHANCEMENTS
+// ========================================
+
+.navbar {
+  border: 1px solid $border-color-translucent;
+  background-color: rgba($body-bg, 0.85);
+  box-shadow: $box-shadow;
+  -webkit-backdrop-filter: saturate(180%) blur(10px);
+  backdrop-filter: saturate(180%) blur(10px);
+  transition: $transition-base;
+}
+
+.navbar-brand {
+  transition: $transition-base;
+  font-weight: $font-weight-bold;
+
+  &:hover {
+    transform: scale(1.02);
+    text-shadow: 0 2px 4px rgba($black, 0.1);
+  }
+}
+
+// Pack coordination for nav items - bidirectional
+.navbar-nav .nav-item {
+  transition: $transition-base;
+
+  &:hover {
+    // Next item moves forward
+    & + .nav-item {
+      animation: pack-coordination-forward 0.4s ease-out;
+    }
+
+    // Previous item moves backward (using general sibling selector trick)
+    // This is achieved through the parent hover state
+  }
+}
+
+// Parent-level hover to affect previous sibling
+.navbar-nav:has(.nav-item:hover) .nav-item:has(+ .nav-item:hover) {
+  animation: pack-coordination-backward 0.4s ease-out;
+}
+
+// ========================================
+// PHASE 14: DROPDOWN ENHANCEMENTS
+// ========================================
+
+.dropdown-menu {
+  // Remove initial transform that causes position jump
+  // transform: translateY(2px); // REMOVED - causes position glitch
+  opacity: 0;
+  transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.show {
+    // transform: translateY(0); // REMOVED - not needed without initial transform
+    opacity: 1;
+    // Keep shadow emergence for the fade-in effect without position change
+    animation: shadow-emergence-no-move 0.15s ease-out;
+  }
+}
+
+// New animation for dropdowns - shadow emergence without vertical movement
+@keyframes shadow-emergence-no-move {
+  0% {
+    opacity: 0.7;
+    filter: blur(0.5px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.dropdown-item {
+  transition: $transition-base;
+  position: relative;
+
+  // Intelligence scan on hover
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba($gray-900, 0.03) 50%, transparent 100%);
+    background-size: 200% 100%;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+
+  &:hover::before {
+    opacity: 1;
+    animation: intelligence-scan 1.2s ease-in-out infinite;
+  }
+}
+
+// ========================================
+// PHASE 15: TABLE ENHANCEMENTS
+// ========================================
+
+.table {
+  // Hover state with content animation - no layout shift!
+  tbody tr {
+    transition: $transition-base;
+    position: relative;
+
+    // Create wrapper for content animation
+    td,
+    th {
+      position: relative;
+      overflow: hidden; // Prevent content from breaking bounds
+    }
+
+    &:hover {
+      background: linear-gradient(90deg, rgba($gray-100, 0.5) 0%, rgba($gray-50, 0.8) 100%);
+      // NO transform on the row itself - no layout shift!
+      z-index: 1; // Prevent border clipping
+
+      // Next row's content shifts DOWN (making space)
+      & + tr td,
+      & + tr th {
+        animation: content-shift-down 0.4s ease-out;
+      }
+    }
+
+    // Memory effect on click
+    &:active {
+      background: linear-gradient(
+        90deg,
+        rgba($gray-900, 0.02) 0%,
+        rgba($gray-900, 0.05) 50%,
+        rgba($gray-900, 0.02) 100%
+      );
+    }
+  }
+}
+
+// Previous row's content shifts UP (making space) - synchronized
+.table tbody:has(tr:hover) tr:has(+ tr:hover) td,
+.table tbody:has(tr:hover) tr:has(+ tr:hover) th {
+  animation: content-shift-up 0.4s ease-out;
+}
+
+// ========================================
+// PHASE 16: ADDITIONAL COMPONENTS
+// ========================================
+
+// Alerts - intelligent notifications
+.alert {
+  border-left: 4px solid;
+  position: relative;
+  transition: $transition-base;
+
+  &:hover {
+    transform: translateX(2px);
+    box-shadow: $box-shadow-sm;
+  }
+
+  &.alert-primary {
+    border-left-color: $primary;
+  }
+  &.alert-secondary {
+    border-left-color: $secondary;
+  }
+  &.alert-success {
+    border-left-color: $success;
+  }
+  &.alert-danger {
+    border-left-color: $danger;
+  }
+  &.alert-warning {
+    border-left-color: $warning;
+  }
+  &.alert-info {
+    border-left-color: $info;
+  }
+
+  // Intelligence pulse for critical alerts
+  &.alert-danger,
+  &.alert-warning {
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent 0%, rgba($white, 0.1) 50%, transparent 100%);
+      animation: intelligence-scan 3s ease-in-out infinite;
+      pointer-events: none;
+    }
+  }
+}
+
+// Badges - precise indicators
+.badge {
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  transition: $transition-base;
+
+  &:hover {
+    transform: scale(1.05);
+    animation: memory-pulse 0.4s ease-out;
+  }
+}
+
+// Progress bars - algorithmic completion
+.progress-bar {
+  background-image: linear-gradient(
+    45deg,
+    rgba($white, 0.15) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba($white, 0.15) 50%,
+    rgba($white, 0.15) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 1rem 1rem;
+  animation: progress-bar-stripes 1s linear infinite;
+  position: relative;
+
+  // Intelligence overlay
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba($white, 0.1) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: intelligence-scan 2s linear infinite;
+    pointer-events: none;
+  }
+}
+
+// Modals - focused intelligence
+.modal {
+  &.show .modal-dialog {
+    animation: shadow-emergence 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .modal-backdrop {
+    background: radial-gradient(ellipse at center, rgba($black, 0.5) 0%, rgba($gray-900, 0.6) 100%);
+  }
+}
+
+// List groups - organized intelligence (simple hover, no animations)
+.list-group-item {
+  transition: $transition-base;
+  position: relative;
+
+  &:hover:not(.disabled) {
+    // Simple hover effect - no movement, no adjacent item effects
+    box-shadow: $box-shadow-sm;
+    background: linear-gradient(90deg, rgba($gray-100, 0.5) 0%, rgba($gray-50, 0.8) 100%);
+    z-index: 1; // Ensure proper stacking
+  }
+}
+
+// Pagination - navigation precision with bidirectional pack coordination
+.pagination {
+  .page-item {
+    .page-link {
+      transition: $transition-base;
+    }
+
+    &:hover {
+      .page-link {
+        transform: translateY(-1px);
+        box-shadow: $box-shadow-sm;
+      }
+
+      // Next page item moves away (for horizontal layout, slight transform)
+      & + .page-item .page-link {
+        animation: pack-coordination-forward 0.4s ease-out;
+        // NO background color change
+      }
+    }
+  }
+}
+
+// Previous page item moves away (same direction for repelling effect)
+.pagination:has(.page-item:hover) .page-item:has(+ .page-item:hover) .page-link {
+  animation: pack-coordination-backward 0.4s ease-out;
+  // NO background color change
+}
+
+// Breadcrumbs - navigation memory
+.breadcrumb {
+  position: relative;
+
+  // Memory trail overlay
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba($gray-900, 0.02) 20%,
+      rgba($gray-900, 0.05) 50%,
+      rgba($gray-900, 0.02) 80%,
+      transparent 100%
+    );
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  &:hover::before {
+    opacity: 1;
+  }
+}
+
+// Dividers - precise separation
+hr {
+  border: 0;
+  height: 1px;
+  background: linear-gradient(180deg, rgba($black, 0.08), rgba($black, 0.08)),
+    linear-gradient(0deg, rgba($white, 0.5), rgba($white, 0));
+}
+
+// Focus visible - universal enhancement
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba($primary, 0.3), 0 0 0 4px rgba($primary, 0.1);
+  transition: box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// Accessibility - respect user preferences
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+// ========================================
+// END RAVENJS THEME
+// ========================================
+// Every pixel serves algorithmic clarity.
+// Zero dependencies. Pure platform mastery.
+// Swift as a raven's feather, sharp as its intelligence.
