@@ -1,27 +1,28 @@
 {
-	"name": "@raven-js/css-lab-example",
-	"version": "1.0.0",
-	"description": "Bootstrap SCSS theming sandbox using RavenJS wings + beak",
-	"type": "module",
-	"private": true,
-	"scripts": {
-		"start": "node --watch-path=./src cfg/start.js",
-		"build": "node ../../packages/fledge/bin/fledge.js static ./raven.config.js:build",
-		"scss:build": "npx sass --no-source-map scss/themes/default.scss public/bootstrap.css",
-		"scss:build:bootstrap": "npx sass --no-source-map scss/bootstrap.scss public/bootstrap.css",
-		"scss:watch": "npx sass --no-source-map --watch scss/themes/default.scss public/bootstrap.css",
-		"scss:watch:bootstrap": "npx sass --no-source-map --watch scss/bootstrap.scss public/bootstrap.css",
-		"format": "npx @biomejs/biome format --write .",
-		"lint": "npx @biomejs/biome lint ."
-	},
-	"dependencies": {
-		"@raven-js/wings": "*",
-		"@raven-js/beak": "*",
-		"@raven-js/reflex": "*"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "^1.8.0"
-	},
-	"author": "RavenJS",
-	"license": "MIT"
+  "name": "@raven-js/css-lab-example",
+  "version": "1.0.0",
+  "description": "Bootstrap SCSS theming sandbox using RavenJS wings + beak",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node --watch-path=./src cfg/start.js",
+    "build": "node ./scripts/build-themes.mjs",
+    "build:themes": "node ./scripts/build-themes.mjs",
+    "scss:build": "npx sass --no-source-map scss/themes/default.scss public/bootstrap.css",
+    "scss:build:bootstrap": "npx sass --no-source-map scss/bootstrap.scss public/bootstrap.css",
+    "scss:watch": "npx sass --no-source-map --watch scss/themes/default.scss public/bootstrap.css",
+    "scss:watch:bootstrap": "npx sass --no-source-map --watch scss/bootstrap.scss public/bootstrap.css",
+    "format": "npx @biomejs/biome format --write .",
+    "lint": "npx @biomejs/biome lint ."
+  },
+  "dependencies": {
+    "@raven-js/wings": "*",
+    "@raven-js/beak": "*",
+    "@raven-js/reflex": "*"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.8.0"
+  },
+  "author": "RavenJS",
+  "license": "MIT"
 }
