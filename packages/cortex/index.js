@@ -73,18 +73,29 @@ export function hello(name) {
 
 // Export language analysis functions
 export {
-  analyzeAITransitionPhrases,
+  analyzeAITransitionPhrases, // Default (general/language-agnostic)
+  analyzeAITransitionPhrasesEnglish,
+  analyzeAITransitionPhrasesGerman,
   analyzeNgramRepetition,
-  analyzeWithEnsemble,
   analyzeZipfDeviation,
   approximatePerplexity,
   calculateBurstiness,
   calculateShannonEntropy,
-  detectEmDashEpidemic,
-  detectParticipalPhraseFormula,
-  detectPerfectGrammar,
-  detectRuleOfThreeObsession,
-  isAIText,
+  detectEmDashEpidemic, // Default (general/language-agnostic)
+  detectEmDashEpidemicEnglish,
+  detectEmDashEpidemicGerman,
+  detectParticipalPhraseFormula, // Default (general/language-agnostic)
+  detectParticipalPhraseFormulaEnglish,
+  detectParticipalPhraseFormulaGerman,
+  detectPerfectGrammar, // Default (general/language-agnostic)
+  detectPerfectGrammarEnglish,
+  detectPerfectGrammarGerman,
+  detectRuleOfThreeObsession, // Default (general/language-agnostic)
+  detectRuleOfThreeObsessionEnglish,
+  detectRuleOfThreeObsessionGerman,
+  detectTextType, // Default (general/language-agnostic)
+  detectTextTypeEnglish,
+  detectTextTypeGerman,
 } from "./language/index.js";
 // Export learning algorithms
 export {

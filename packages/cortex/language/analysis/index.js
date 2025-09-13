@@ -14,15 +14,38 @@
  * JavaScript implementations without external dependencies.
  */
 
-export { analyzeAITransitionPhrases } from "./ai-transition-phrases.js";
+export {
+  analyzeAITransitionPhrases, // Default (general/language-agnostic)
+  analyzeAITransitionPhrasesEnglish,
+  analyzeAITransitionPhrasesGerman,
+} from "./ai-transition-phrases/index.js";
 export { calculateBurstiness } from "./burstiness.js";
-export { detectTextType } from "./detect-text-type.js";
-export { detectEmDashEpidemic } from "./em-dash-detector.js";
-export { analyzeWithEnsemble } from "./ensemble-scorer.js";
+export {
+  detectEmDashEpidemic, // Default (general/language-agnostic)
+  detectEmDashEpidemicEnglish,
+  detectEmDashEpidemicGerman,
+} from "./em-dash-detector/index.js";
 export { analyzeNgramRepetition } from "./ngram-repetition.js";
-export { detectParticipalPhraseFormula } from "./participial-phrase-detector.js";
-export { detectPerfectGrammar } from "./perfect-grammar-detector.js";
+export {
+  detectParticipalPhraseFormula, // Default (general/language-agnostic)
+  detectParticipalPhraseFormulaEnglish,
+  detectParticipalPhraseFormulaGerman,
+} from "./participial-phrase-detector/index.js";
+export {
+  detectPerfectGrammar, // Default (general/language-agnostic)
+  detectPerfectGrammarEnglish,
+  detectPerfectGrammarGerman,
+} from "./perfect-grammar-detector/index.js";
 export { approximatePerplexity } from "./perplexity-approximator.js";
-export { detectRuleOfThreeObsession } from "./rule-of-three-detector.js";
+export {
+  detectRuleOfThreeObsession, // Default (general/language-agnostic)
+  detectRuleOfThreeObsessionEnglish,
+  detectRuleOfThreeObsessionGerman,
+} from "./rule-of-three-detector/index.js";
 export { calculateShannonEntropy } from "./shannon-entropy.js";
+export {
+  detectTextType, // Default (general/language-agnostic)
+  detectTextTypeEnglish,
+  detectTextTypeGerman,
+} from "./text-type-detector/index.js";
 export { analyzeZipfDeviation } from "./zipf-deviation.js";

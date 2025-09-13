@@ -23,7 +23,6 @@ export * from "./extraction/index.js";
 // Re-export all featurization functions from the featurization submodule
 export * from "./featurization/index.js";
 // Note: RAKE and TextRank are now available as rake() and textrank() functions
-export { isAIText } from "./is-ai-text.js";
 // Re-export all normalization functions from the normalization submodule
 export * from "./normalization/index.js";
 // Re-export all segmentation functions from the segmentation submodule
