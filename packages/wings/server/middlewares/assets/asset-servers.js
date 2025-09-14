@@ -44,16 +44,16 @@ import { setAssetResponse } from "./response-utils.js";
  * ```
  */
 export async function serveAssetSEA(ctx, assetPath) {
-	try {
-		const sea = require("node:sea");
-		const content = sea.getAsset(assetPath);
-		const buffer = Buffer.from(content);
-		setAssetResponse(ctx, buffer, assetPath);
-	} catch {
-		// Asset not found in SEA - let request continue
-		// This allows other middleware or routes to handle the path
-		return;
-	}
+  try {
+    const sea = require("node:sea");
+    const content = sea.getAsset(assetPath);
+    const buffer = Buffer.from(content);
+    setAssetResponse(ctx, buffer, assetPath);
+  } catch {
+    // Asset not found in SEA - let request continue
+    // This allows other middleware or routes to handle the path
+    return;
+  }
 }
 
 /**
@@ -90,6 +90,20 @@ export async function serveAssetSEA(ctx, assetPath) {
  * // Both types result in Buffer responses with proper Content-Type
  * ```
  *
+ * @example Bundled Asset Format
+ * ```javascript
+ * // Assets embedded by Fledge bundler
+ * globalThis.RavenJS.assets = {
+ *   '/favicon.ico': {
+ *     content: 'base64-encoded-data',
+ *     meta: { encoding: 'base64', type: 'image/x-icon' }
+ *   }
+ * };
+ *
+ * await serveAssetGlobal(ctx, '/favicon.ico');
+ * // → Content decoded from base64, Content-Type set from meta, response finalized
+ * ```
+ *
  * @example Missing Asset Handling
  * ```javascript
  * await serveAssetGlobal(ctx, '/nonexistent.css');
@@ -97,15 +111,44 @@ export async function serveAssetSEA(ctx, assetPath) {
  * ```
  */
 export async function serveAssetGlobal(ctx, assetPath) {
-	const global = /** @type {any} */ (globalThis);
-	const content = global.RavenJS.assets[assetPath];
-	if (content === undefined || content === null) return;
+  const global = /** @type {any} */ (globalThis);
+  const asset = global.RavenJS.assets[assetPath];
+  if (asset === undefined || asset === null) return;
 
-	// Convert content to Buffer if it's a string
-	const buffer =
-		typeof content === "string" ? Buffer.from(content, "utf8") : content;
+  // Handle different asset formats
+  let content,
+    encoding = "utf8";
 
-	setAssetResponse(ctx, buffer, assetPath);
+  if (typeof asset === "string") {
+    // Legacy format: direct string content
+    content = asset;
+  } else if (asset && typeof asset === "object" && asset.content) {
+    // Bundled format: { content, meta } object
+    content = asset.content;
+    encoding = asset.meta?.encoding || "utf8";
+  } else if (Buffer.isBuffer(asset)) {
+    // Direct Buffer content
+    setAssetResponse(ctx, asset, assetPath);
+    return;
+  } else {
+    // Unknown format
+    return;
+  }
+
+  // Convert content to Buffer based on encoding
+  let buffer;
+  try {
+    if (encoding === "base64") {
+      buffer = Buffer.from(content, "base64");
+    } else {
+      buffer = Buffer.from(content, "utf8");
+    }
+  } catch {
+    // Invalid content format
+    return;
+  }
+
+  setAssetResponse(ctx, buffer, assetPath);
 }
 
 /**
@@ -148,22 +191,22 @@ export async function serveAssetGlobal(ctx, assetPath) {
  * ```
  */
 export async function serveAssetFileSystem(ctx, assetPath, assetsPath) {
-	try {
-		const fullPath = path.join(assetsPath, assetPath);
+  try {
+    const fullPath = path.join(assetsPath, assetPath);
 
-		// Additional security check: ensure the resolved path is within assets directory
-		const resolvedPath = path.resolve(fullPath);
-		const resolvedAssetsPath = path.resolve(assetsPath);
+    // Additional security check: ensure the resolved path is within assets directory
+    const resolvedPath = path.resolve(fullPath);
+    const resolvedAssetsPath = path.resolve(assetsPath);
 
-		if (!resolvedPath.startsWith(resolvedAssetsPath)) {
-			// Path traversal attempt - reject
-			return;
-		}
+    if (!resolvedPath.startsWith(resolvedAssetsPath)) {
+      // Path traversal attempt - reject
+      return;
+    }
 
-		const content = await fs.readFile(resolvedPath);
-		setAssetResponse(ctx, content, assetPath);
-	} catch {
-		// File not found or can't be read - let request continue
-		return;
-	}
+    const content = await fs.readFile(resolvedPath);
+    setAssetResponse(ctx, content, assetPath);
+  } catch {
+    // File not found or can't be read - let request continue
+    return;
+  }
 }

@@ -15,15 +15,13 @@ export default {
 	// Embed static assets for standalone deployment
 	assets: [
 		"./public", // Static assets (favicon, etc.)
-		"./src/client", // Client-side source for bundling
-		"./src/shared", // Shared utilities
-		"./src/server", // Server-side rendering logic
 	],
 
 	// Client bundles to pre-build and embed
 	bundles: {
-		"/client/app.js": "./src/client/app.js", // Main client app
-		"/client/todos.js": "./src/shared/todos.js", // Todos functionality
+		"/client/index.js": "./src/client/index.js", // generic hydrations
+		"/client/greet.js": "./src/client/greet.js", // Greeter functionality
+		"/shared/todos.js": "./src/shared/todos.js", // Todos functionality
 	},
 
 	// Node.js runtime flags

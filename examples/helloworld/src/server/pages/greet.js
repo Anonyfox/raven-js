@@ -157,7 +157,7 @@ export const Greet = html`
     </div>
 
     <!-- Load the client-side application using ES modules -->
-    <script type="module" src="/client/app.js"></script>
+    <script type="module" src="/client/greet.js"></script>
   </body>
   </html>
 `;

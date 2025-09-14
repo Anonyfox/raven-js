@@ -14,7 +14,7 @@ import { hydrateIslands } from "@raven-js/reflex/dom";
 
 // Auto-hydrate islands when DOM is ready
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", hydrateIslands);
+	document.addEventListener("DOMContentLoaded", hydrateIslands);
 } else {
-  hydrateIslands();
+	hydrateIslands();
 }
