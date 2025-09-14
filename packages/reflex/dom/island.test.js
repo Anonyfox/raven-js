@@ -27,17 +27,17 @@ describe("island() function", () => {
     ok(html.endsWith("</div>"));
   });
 
-  it("with SSR content", () => {
-    const mockComponent = (props) => `<span>Count: ${props.initial}</span>`;
+  it("without SSR content (client-only)", () => {
     const html = island({
       src: "/apps/counter.js#Counter",
-      ssr: mockComponent,
       props: { initial: 42 },
     });
 
-    ok(html.includes("Count: 42"));
     ok(html.includes("data-island"));
-    ok(html.includes("<span>Count: 42</span>"));
+    ok(html.includes('data-props="%7B%22initial%22%3A42%7D"'));
+    // Should NOT have server-rendered content
+    ok(!html.includes("Count: 42"));
+    ok(html.endsWith("></div>"));
   });
 
   it("with loading strategy", () => {
@@ -181,7 +181,6 @@ describe("island() function", () => {
   it("produces valid HTML structure", () => {
     const html = island({
       src: "/apps/counter.js#Counter",
-      ssr: () => "<span>content</span>",
       props: { test: true },
       on: "visible",
       id: "test-island",
@@ -192,7 +191,8 @@ describe("island() function", () => {
     ok(html.endsWith("</div>"));
     ok(html.includes('id="test-island"'));
     ok(html.includes("data-island"));
-    ok(html.includes("<span>content</span>"));
+    // Should NOT have SSR content (client-only)
+    ok(!html.includes("<span>content</span>"));
 
     // Count opening/closing tags
     const openDivs = (html.match(/<div/g) || []).length;

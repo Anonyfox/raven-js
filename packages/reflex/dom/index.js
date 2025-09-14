@@ -11,6 +11,10 @@
  */
 
 import { __getWriteVersion, effect, withTemplateContext } from "../index.js";
+import { ssr } from "./ssr.js";
+
+// Re-export ssr for convenience
+export { ssr } from "./ssr.js";
 
 /**
  * Replace element HTML efficiently with scroll position preservation.
@@ -246,34 +250,31 @@ async function hydrateIsland(el) {
 }
 
 /**
- * Generate an island placeholder with hydration metadata.
+ * Generate an island placeholder for client-side hydration.
  *
- * Creates a div with data attributes for client-side hydration. Supports SSR content
- * and multiple loading strategies (load, idle, visible).
+ * Creates a div with data attributes for client-side hydration. Use this for islands
+ * that don't need server-side rendering, only client-side interactivity.
  *
  * @example
- * // Basic island
+ * // Basic island for client-side only
  * import { island } from '@raven-js/reflex/dom';
  * const html = island({ src: '/apps/counter.js#Counter', props: { initial: 0 } });
  *
  * @example
- * // With SSR and loading strategy
- * import { Counter } from './counter.js';
+ * // With loading strategy
  * const html = island({
  *   src: '/apps/counter.js#Counter',
- *   ssr: Counter,
  *   props: { initial: 10 },
  *   on: 'visible'
  * });
  *
- * @param {{ src: string, ssr?: Function, props?: Object, on?: 'load'|'idle'|'visible', id?: string }} cfg
- * @returns {string} HTML placeholder with SSR content and hydration data attributes
+ * @param {{ src: string, props?: Object, on?: 'load'|'idle'|'visible', id?: string }} cfg
+ * @returns {string} HTML placeholder for hydration
  */
 export function island(cfg) {
   const on = cfg?.on ?? "load";
   const src = cfg?.src;
   const props = cfg?.props ?? {};
-  const ssrFn = cfg?.ssr;
   if (!src) {
     throw new Error("island(): src is required (e.g. '/apps/counter.js' or '/apps/counter.js#Counter')");
   }
@@ -286,14 +287,78 @@ export function island(cfg) {
   // Serialize props into attribute using URI encoding to avoid HTML escaping issues
   const propsAttr = encodeURIComponent(JSON.stringify(props));
 
-  // Server-side render the component output if available
+  return `<div id="${id}" data-island data-module="${modulePath}" data-export="${exportName}" data-client="${on}" data-props="${propsAttr}"></div>`;
+}
+
+/**
+ * Generate an island with server-side rendering and hydration metadata.
+ *
+ * Creates a div with pre-rendered content and data attributes for client-side hydration.
+ * The component is automatically wrapped in the ssr() function for multi-pass rendering,
+ * promise settlement, and fetch caching.
+ *
+ * @example
+ * // Basic SSR island
+ * import { islandSSR } from '@raven-js/reflex/dom';
+ * import { Counter } from './counter.js';
+ * const html = await islandSSR({
+ *   src: '/apps/counter.js#Counter',
+ *   ssr: Counter,
+ *   props: { initial: 0 }
+ * });
+ *
+ * @example
+ * // With loading strategy
+ * const html = await islandSSR({
+ *   src: '/apps/counter.js#Counter',
+ *   ssr: Counter,
+ *   props: { initial: 10 },
+ *   on: 'visible'
+ * });
+ *
+ * @example
+ * // In async page templates
+ * export const body = async () => md`
+ *   # My Page
+ *   ${await islandSSR({ src: '/apps/counter.js', ssr: Counter })}
+ * `;
+ *
+ * @param {{ src: string, ssr: Function, props?: Object, on?: 'load'|'idle'|'visible', id?: string }} cfg
+ * @returns {Promise<string>} HTML with SSR content and hydration metadata
+ */
+export async function islandSSR(cfg) {
+  const on = cfg?.on ?? "load";
+  const src = cfg?.src;
+  const props = cfg?.props ?? {};
+  const ssrFn = cfg?.ssr;
+
+  if (!src) {
+    throw new Error("islandSSR(): src is required (e.g. '/apps/counter.js' or '/apps/counter.js#Counter')");
+  }
+  if (!ssrFn || typeof ssrFn !== "function") {
+    throw new Error("islandSSR(): ssr function is required");
+  }
+
+  // Parse module path and export from src (e.g. "/apps/counter.js#Counter")
+  const [modulePath, exportName = "default"] = src.split("#");
+
+  const id = cfg?.id || `island-${Math.random().toString(36).substr(2, 9)}`;
+
+  // Serialize props into attribute using URI encoding to avoid HTML escaping issues
+  const propsAttr = encodeURIComponent(JSON.stringify(props));
+
+  // Wrap the component in ssr() if not already wrapped
+  const wrappedFn = /** @type {any} */ (ssrFn)._ssrWrapped ? ssrFn : ssr(/** @type {(...a:any) => any} */ (ssrFn));
+
+  // Server-side render the component with full async support
   let ssrContent = "";
   try {
-    if (typeof ssrFn === "function") {
-      const out = ssrFn(props);
-      ssrContent = String(out ?? "");
-    }
-  } catch {
+    const result = await wrappedFn(props);
+    // Convert null/undefined to empty string
+    ssrContent = result == null ? "" : String(result);
+  } catch (err) {
+    // Log error but don't throw - return empty content
+    console.error("islandSSR component error:", err);
     ssrContent = "";
   }
 

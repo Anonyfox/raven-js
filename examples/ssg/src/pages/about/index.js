@@ -11,7 +11,7 @@
  */
 
 import { code, md } from "@raven-js/beak";
-import { island } from "@raven-js/reflex/dom";
+import { islandSSR } from "@raven-js/reflex/dom";
 import { Counter } from "../../apps/counter.js";
 import { pageExampleSnippet } from "./snippets.js";
 
@@ -28,7 +28,15 @@ export const description = "Learn about the RavenJS approach to static site gene
 /**
  * About page content using markdown with embedded components
  */
-export const body = md`
+export const body = async () => {
+  // Pre-render all islands in parallel for optimal performance
+  const [loadIsland, idleIsland, visibleIsland] = await Promise.all([
+    islandSSR({ src: "/apps/counter.js#Counter", ssr: Counter, props: { initial: 0 } }),
+    islandSSR({ src: "/apps/counter.js#Counter", ssr: Counter, on: "idle", props: { initial: 10 } }),
+    islandSSR({ src: "/apps/counter.js#Counter", ssr: Counter, on: "visible", props: { initial: 100 } }),
+  ]);
+
+  return md`
 # About RavenJS SSG
 
 RavenJS SSG represents a fundamental shift in how we think about static site generation. Instead of learning new templating languages or dealing with complex build systems, you work with pure JavaScript.
@@ -38,13 +46,13 @@ RavenJS SSG represents a fundamental shift in how we think about static site gen
 Including seamless reactivity with **selective hydration** - interactive components on static pages:
 
 ### Load Strategy (immediate)
-${island({ src: "/apps/counter.js#Counter", ssr: Counter, props: { initial: 0 } })}
+${loadIsland}
 
 ### Idle Strategy (when browser idle)
-${island({ src: "/apps/counter.js#Counter", ssr: Counter, on: "idle", props: { initial: 10 } })}
+${idleIsland}
 
 ### Visible Strategy (when scrolled into view)
-${island({ src: "/apps/counter.js#Counter", ssr: Counter, on: "visible", props: { initial: 100 } })}
+${visibleIsland}
 
 ## The Philosophy
 
@@ -80,3 +88,4 @@ Start with static content, evolve to dynamic applications:
 
 Same codebase, same patterns, seamless growth.
 `;
+};

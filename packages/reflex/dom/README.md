@@ -1,4 +1,4 @@
-# Reflex DOM: Automatic Signal Tracking
+# Reflex DOM: Reactive Templates & Islands
 
 [![Website](https://img.shields.io/badge/website-ravenjs.dev-blue.svg)](https://ravenjs.dev)
 [![Documentation](https://img.shields.io/badge/docs-docs.ravenjs.dev/reflex-blue.svg)](https://docs.ravenjs.dev/reflex)
@@ -6,7 +6,13 @@
 [![ESM Only](https://img.shields.io/badge/ESM-Only-blue.svg)](https://nodejs.org/api/esm.html)
 [![Node.js 22.5+](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
 
-Mount reactive templates with automatic signal tracking, efficient DOM updates, and islands architecture for selective hydration.
+Mount reactive templates with automatic signal tracking, efficient DOM updates, and islands architecture for selective hydration with optional server-side rendering.
+
+## Purpose
+
+Modern web applications demand instant interactivity without sacrificing initial load performance. Traditional frameworks force a choice: full hydration (slow) or static rendering (non-interactive). Reflex DOM eliminates this tradeoff through surgical reactivity and islands architecture.
+
+Signal reads inside templates automatically trigger DOM updates. No virtual DOM, no diffing algorithms, no framework overhead. Islands enable selective hydration - static HTML with interactive components that load precisely when needed. Server-side rendering with multi-pass stability ensures content appears instantly while maintaining full interactivity.
 
 ## Installation
 
@@ -16,6 +22,8 @@ npm install @raven-js/reflex
 
 ## Usage
 
+### Reactive Templates
+
 ```javascript
 import { mount } from "@raven-js/reflex/dom";
 import { signal } from "@raven-js/reflex";
@@ -24,78 +32,141 @@ import { signal } from "@raven-js/reflex";
 const count = signal(0);
 
 // Template function reads signals
-const App = () => `<h1>Count: ${count()}</h1>`;
+const Counter = () => `<h1>Count: ${count()}</h1>`;
 
 // Mount to DOM - automatic updates
-mount(App, "#app");
+mount(Counter, "#app");
 
 // Changes trigger DOM updates
 count.set(5); // DOM shows "Count: 5"
 ```
 
-## API
-
-### mount(templateFn, target, options)
-
-Mount reactive template to DOM element with automatic signal tracking.
-
-- `templateFn: () => string` - Function returning HTML string
-- `target: string | Element` - CSS selector or DOM element
-- `options: Object` - Optional configuration
-- Returns: Mount instance with `unmount()` method
+### Islands Architecture
 
 ```javascript
-// CSS selector (browser only)
-const app = mount(App, "#app");
+import { island, islandSSR } from "@raven-js/reflex/dom";
+import { Counter } from "./counter.js";
 
-// DOM element
-const app = mount(App, document.querySelector("#app"));
+// Client-only island (synchronous)
+const clientIsland = island({
+  src: "/apps/counter.js#Counter",
+  props: { initial: 0 }
+});
 
-// Replace existing content instead of preserving
-const app = mount(App, "#app", { replace: true });
+// SSR island (asynchronous)
+const ssrIsland = await islandSSR({
+  src: "/apps/counter.js#Counter",
+  ssr: Counter,
+  props: { initial: 0 }
+});
+```
 
-// Optional manual cleanup (automatic when element removed)
+### Server-Side Rendering
+
+```javascript
+import { ssr } from "@raven-js/reflex/dom";
+
+// Wrap component for multi-pass rendering
+const StableCounter = ssr(async () => {
+  const data = await fetch('/api/count');
+  const count = await data.json();
+  return `<div>Count: ${count}</div>`;
+});
+
+// Renders with automatic fetch caching
+const html = await StableCounter();
+```
+
+## Core Functions
+
+### mount(templateFn, target, options?)
+
+Mount reactive template to DOM with automatic signal tracking and efficient updates.
+
+```javascript
+// Basic mounting
+const app = mount(() => `<h1>${title()}</h1>`, "#app");
+
+// Async templates
+const widget = mount(async () => {
+  const data = await fetch('/api/data');
+  return `<div>${await data.text()}</div>`;
+}, "#widget");
+
+// Manual cleanup
 app.unmount();
 ```
 
 ### island(config)
 
-Generate island placeholder for selective client-side hydration.
-
-- `config.src: string` - Module path with optional export (e.g., `/apps/counter.js#Counter`)
-- `config.ssr?: Function` - Server-side render function
-- `config.props?: Object` - Initial props object
-- `config.on?: 'load'|'idle'|'visible'` - Loading strategy (default: 'load')
-- `config.id?: string` - Custom element ID
-- Returns: HTML string with island placeholder
+Generate island placeholder for client-side hydration without server rendering.
 
 ```javascript
-import { island } from "@raven-js/reflex/dom";
-import { Counter } from "./counter.js";
-
-// Basic island
-const html = island({
-  src: "/apps/counter.js#Counter",
+// Basic client-only island
+island({
+  src: "/apps/counter.js",
   props: { initial: 0 }
 });
 
-// With SSR and loading strategy
-const html = island({
+// With loading strategy
+island({
+  src: "/apps/widget.js#Widget",
+  props: { data: "test" },
+  on: "visible"  // Load when scrolled into view
+});
+```
+
+### islandSSR(config)
+
+Generate island with server-side rendering and hydration metadata. Always asynchronous.
+
+```javascript
+// Server-rendered island
+await islandSSR({
   src: "/apps/counter.js#Counter",
-  ssr: Counter,           // Render on server
-  props: { initial: 10 },
-  on: "visible"          // Load when scrolled into view
+  ssr: Counter,  // Required SSR function
+  props: { initial: 10 }
+});
+
+// Parallel rendering for performance
+const [nav, content, footer] = await Promise.all([
+  islandSSR({ src: "/nav.js", ssr: Nav }),
+  islandSSR({ src: "/content.js", ssr: Content }),
+  islandSSR({ src: "/footer.js", ssr: Footer })
+]);
+```
+
+### ssr(fn, options?)
+
+Wrap functions for server-side rendering with multi-pass stability and fetch caching.
+
+```javascript
+// Simple component
+const Widget = ssr(() => `<div>Static content</div>`);
+
+// Async with fetch caching
+const DataWidget = ssr(async () => {
+  const res = await fetch('/api/data');
+  const data = await res.json();
+  return `<div>${data.value}</div>`;
+});
+
+// Multi-pass rendering for reactive stability
+const ReactiveWidget = ssr(() => {
+  const count = signal(0);
+  effect(() => {
+    if (count() === 0) count.set(1);
+  });
+  return `<div>Count: ${count()}</div>`;
 });
 ```
 
 ### hydrateIslands()
 
-Hydrate all islands on the page with selective loading strategies.
+Hydrate all islands on the page with their configured loading strategies.
 
 ```javascript
-import { hydrateIslands } from "@raven-js/reflex/dom";
-
-// Auto-hydrate all islands
+// Auto-hydrate on DOM ready
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", hydrateIslands);
 } else {
@@ -103,146 +174,113 @@ if (document.readyState === "loading") {
 }
 ```
 
-## Islands Architecture
+## Loading Strategies
 
-Islands enable selective hydration - static HTML with interactive components that load on demand.
+Islands support three loading strategies:
 
-```javascript
-import { island, hydrateIslands } from "@raven-js/reflex/dom";
-import { Counter } from "./counter.js";
-
-// Server: Generate static HTML with island placeholders
-const page = `
-  <h1>My Blog Post</h1>
-  <p>Static content loads instantly...</p>
-
-  ${island({
-    src: "/apps/counter.js#Counter",
-    ssr: Counter,                    // Pre-render on server
-    props: { initial: 0 },
-    on: "visible"                   // Load when scrolled into view
-  })}
-
-  <p>More static content...</p>
-`;
-
-// Client: Auto-hydrate islands
-hydrateIslands();
-```
-
-### Loading Strategies
-
-- **`load`** (default): Immediate hydration
-- **`idle`**: When browser is idle (requestIdleCallback)
-- **`visible`**: When scrolled into viewport (IntersectionObserver)
-
-## Server Rendering
-
-Server: call template function directly. Client: mount for reactivity.
+- **`load`** - Immediate hydration (default)
+- **`idle`** - When browser is idle via requestIdleCallback
+- **`visible`** - When scrolled into viewport via IntersectionObserver
 
 ```javascript
-// Server route
-const html = App();
+// Immediate loading
+island({ src: "/critical.js", on: "load" });
 
-// Browser script
-mount(App, "#app");
+// Deferred loading
+island({ src: "/analytics.js", on: "idle" });
+
+// Lazy loading
+island({ src: "/comments.js", on: "visible" });
 ```
 
-## Signal Integration
+## Advanced Patterns
 
-Templates automatically track signal dependencies:
+### Reactive Composition
 
 ```javascript
 const todos = signal([]);
 const filter = signal("all");
 
-const TodoApp = () => `
-  <div>
-    <h1>Todos (${todos().length})</h1>
-    <p>Filter: ${filter()}</p>
-    <ul>
-      ${todos()
-        .filter((t) => filter() === "all" || t.status === filter())
-        .map((t) => `<li>${t.text}</li>`)
-        .join("")}
-    </ul>
-  </div>
-`;
+const TodoApp = () => {
+  const filtered = todos().filter(t =>
+    filter() === "all" || t.status === filter()
+  );
+
+  return `
+    <div>
+      <h1>Todos (${filtered.length})</h1>
+      <ul>
+        ${filtered.map(t => `<li>${t.text}</li>`).join("")}
+      </ul>
+    </div>
+  `;
+};
 
 mount(TodoApp, "#app");
-
-// These automatically update DOM
-todos.set([{ text: "Learn RavenJS", status: "active" }]);
-filter.set("active");
 ```
 
-## Integration
-
-### With Beak Templates
+### SSR with Hydration
 
 ```javascript
-import { html } from "@raven-js/beak";
+// Server route
+router.get("/page", async (ctx) => {
+  const content = await islandSSR({
+    src: "/apps/interactive.js",
+    ssr: InteractiveComponent,
+    props: { userId: ctx.params.id }
+  });
 
-const items = signal(["Apple", "Banana"]);
-
-const List = () => html`
-  <ul>
-    ${items().map((item) => html`<li>${item}</li>`)}
-  </ul>
-`;
-
-mount(List, "#list");
-```
-
-### With Wings Server
-
-```javascript
-import { Router } from "@raven-js/wings";
-
-const router = new Router();
-
-router.get("/app", (ctx) => {
-  // Server: direct template call
-  const html = App();
-
-  return ctx.html(`
-    <div id="app">${html}</div>
-    <script>
-      import { mount } from "@raven-js/reflex/dom";
-      mount(App, "#app");
-    </script>
+  ctx.html(`
+    <!DOCTYPE html>
+    <html>
+      <body>
+        ${content}
+        <script type="module">
+          import { hydrateIslands } from "@raven-js/reflex/dom";
+          hydrateIslands();
+        </script>
+      </body>
+    </html>
   `);
 });
 ```
 
-## Performance
-
-- requestAnimationFrame scheduling for paint alignment
-- Automatic cleanup prevents memory leaks
-- WeakRef tracking assists garbage collection
-
-## Error Handling
+### Error Boundaries
 
 ```javascript
-// Element not found
-mount(App, "#nonexistent"); // Error: Element not found for selector: #nonexistent
+const SafeWidget = ssr(async (props) => {
+  try {
+    const data = await riskyOperation(props);
+    return `<div>${data}</div>`;
+  } catch (err) {
+    return `<div class="error">Failed to load</div>`;
+  }
+});
 
-// Invalid template function
-mount("not a function", "#app"); // Error: mount() requires a template function as first argument
-
-// CSS selectors in Node.js
-mount(App, "#app"); // Error: CSS selectors only work in browser. Use DOM/virtual elements for isomorphic code.
+// islandSSR catches component errors automatically
+const html = await islandSSR({
+  src: "/widget.js",
+  ssr: SafeWidget,
+  props: {}
+}); // Returns island wrapper even if component fails
 ```
+
+## Performance Characteristics
+
+- **Mount**: O(1) signal subscription, requestAnimationFrame batching
+- **Islands**: Zero runtime until hydration trigger
+- **SSR**: Multi-pass stabilization, automatic fetch deduplication
+- **Memory**: WeakRef tracking, automatic cleanup on unmount
 
 ## Requirements
 
 - **Node.js:** 22.5+
-- **Browsers:** ES2020+ support
+- **Browsers:** ES2020+ (Chrome 84+, Firefox 80+, Safari 14+)
 - **Dependencies:** Zero
 
 ## The Raven's Perch
 
-Like a raven perched high above, watching the territory below and reacting instantly to changes, Reflex DOM observes signal changes and updates the DOM with surgical precision - no wasted motion, maximum awareness.
+Like a raven surveying its territory from high above, Reflex DOM maintains perfect awareness of signal changes below. Each update strikes with surgical precision - no wasted motion, no missed opportunities. The raven sees all, reacts instantly, wastes nothing.
 
 ## 🦅 Support RavenJS Development
 
