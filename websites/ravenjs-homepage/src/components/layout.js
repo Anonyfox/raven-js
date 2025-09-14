@@ -57,8 +57,6 @@ export const Layout = ({ title, description, content }) => {
     title,
     description,
     cardType: "summary",
-    site: "@AnonyfoxCom",
-    creator: "@AnonyfoxCom",
     image: {
       url: "/raven-logo.webp",
       alt: "RavenJS Logo - Zero-dependency toolkit for experienced developers",

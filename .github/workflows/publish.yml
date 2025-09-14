@@ -51,3 +51,12 @@ jobs:
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
+
+      - name: Deploy Homepage to Cloudflare Workers
+        run: |
+          cd websites/ravenjs-homepage
+          npm ci
+          npm run deploy
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
