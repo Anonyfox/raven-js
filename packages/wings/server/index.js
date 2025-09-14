@@ -21,6 +21,7 @@ export { Armor } from "./middlewares/armor/index.js";
 export { Assets } from "./middlewares/assets/index.js";
 export { Compression } from "./middlewares/compression.js";
 export { CORS } from "./middlewares/cors.js";
+export { LocalFetch } from "./middlewares/localfetch.js";
 export { Logger } from "./middlewares/logger.js";
 export { Resolve } from "./middlewares/resolve/index.js";
 export * from "./server-options.js";

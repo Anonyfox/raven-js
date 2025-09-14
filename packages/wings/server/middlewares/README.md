@@ -31,6 +31,29 @@ const compression = new Compression({ algorithms: ["brotli", "gzip"] });
 
 Intelligent content-type detection, algorithm selection. Graceful fallback, memory-efficient streaming.
 
+### LocalFetch
+
+```javascript
+import { LocalFetch } from "@raven-js/wings/server/middlewares";
+
+// Blanket-forward all request headers to relative fetch() calls
+router.use(new LocalFetch());
+
+// Allow-list example: only forward specific headers (case-insensitive)
+router.use(new LocalFetch({ allow: ["authorization", /^x-/i] }));
+
+// Deny-list example: forward everything except cookies
+router.use(new LocalFetch({ deny: ["cookie"] }));
+```
+
+Transparent, request-scoped enhancement for server-side `fetch()`:
+
+- Resolves relative URLs against `ctx.origin`
+- Forwards incoming request headers to `fetch()` (caller-provided headers win)
+- Absolute/external URLs are untouched
+
+Isolation is guaranteed via AsyncLocalStorage; no cross-request leakage. After-callback performs best-effort cleanup; ALS scope end ensures GC even on errors.
+
 ## Security & Performance
 
 ### [Armor](./armor/)
