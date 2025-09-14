@@ -19,7 +19,7 @@ export const Todos = async () => {
 	// Fetch initial examples from API - reactive side effect
 	effect(async () => {
 		try {
-			// Relative URL - RAVENJS_ORIGIN handles origin resolution automatically
+			// Relative URL - just works thanks to LocalFetch from wings
 			const response = await fetch("/api/todos/examples");
 			if (response.ok) {
 				const examples = await response.json();

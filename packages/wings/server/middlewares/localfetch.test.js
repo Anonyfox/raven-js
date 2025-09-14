@@ -9,7 +9,7 @@
 import { strict as assert } from "node:assert";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { Context as CtxA } from "../../core/context.js";
-import { LocalFetch as LF } from "./localfetch.js";
+import { LocalFetch as LF, patchFetchForTesting, restoreOriginalDispatcher } from "./localfetch.js";
 
 describe("LocalFetch middleware", () => {
   /** @type {typeof globalThis.fetch} */
@@ -17,10 +17,13 @@ describe("LocalFetch middleware", () => {
 
   beforeEach(() => {
     savedFetch = globalThis.fetch;
+    // Ensure fetch patch is applied for testing independent of dispatcher
+    patchFetchForTesting(true);
   });
 
   afterEach(() => {
     globalThis.fetch = savedFetch;
+    restoreOriginalDispatcher();
   });
 
   function createCtx(origin = "https://app.example.com/") {
@@ -36,6 +39,8 @@ describe("LocalFetch middleware", () => {
       calls.push({ url: String(url), options });
       return new Response("{}", { status: 200, headers: { "content-type": "application/json" } });
     };
+    // Now patch to wrap the stub
+    patchFetchForTesting(true);
 
     const ctx = createCtx("https://api.example.com/");
     const mw = new LF();
@@ -56,6 +61,8 @@ describe("LocalFetch middleware", () => {
       calls.push({ url: String(url), options });
       return new Response("{}", { status: 200 });
     };
+    // Wrap the stub
+    patchFetchForTesting(true);
 
     const url = new URL("https://secure.example.com/");
     const headers = new Headers({ authorization: "Bearer abc", cookie: "sid=123" });
@@ -97,6 +104,8 @@ describe("LocalFetch middleware", () => {
       calls.push({ url: String(url), options });
       return new Response("{}", { status: 200 });
     };
+    // Wrap the stub
+    patchFetchForTesting(true);
 
     const mw = new LF();
 

@@ -1,9 +1,13 @@
 import { Router } from "@raven-js/wings";
+import { Assets, LocalFetch } from "@raven-js/wings/server";
 import { Greet } from "./server/pages/greet.js";
 import { Index } from "./server/pages/index.js";
 import { TodosPage } from "./server/pages/todos.js";
 
 export const router = new Router();
+
+router.use(new Assets({ assetsDir: "public" }));
+router.use(new LocalFetch());
 
 router.get("/", (ctx) => {
 	ctx.html(Index);

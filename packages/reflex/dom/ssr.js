@@ -300,10 +300,6 @@ export function ssr(fn, options = {}) {
       // Save the original fetch (might be localfetch enhanced)
       const orig = globalThis.fetch;
 
-      // Mark that we're in SSR to prevent localfetch from re-patching
-      const prevSSRFlag = /** @type {any} */ (globalThis).__SSR_FETCH_ACTIVE__;
-      /** @type {any} */ (globalThis).__SSR_FETCH_ACTIVE__ = true;
-
       // Create SSR wrapper that calls the original
       const ssrFetch = async (/** @type {any} */ url, /** @type {RequestInit} */ opts = {}) => {
         const method = (opts.method || "GET").toUpperCase();
@@ -425,7 +421,6 @@ export function ssr(fn, options = {}) {
         }
       } finally {
         globalThis.fetch = orig;
-        /** @type {any} */ (globalThis).__SSR_FETCH_ACTIVE__ = prevSSRFlag;
         contextStack.pop();
       }
 
