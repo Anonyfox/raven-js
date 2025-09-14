@@ -14,30 +14,99 @@
  * - ultra-lean, zero deps, cross-platform
  */
 
-/** @type {Function|null} */
-let listener = null;
-
-/** Reactive contexts for SSR/hydration to track promises. */
-// Always use a global singleton to avoid duplicate module instances.
+//
+// Global, bundler-agnostic singleton runtime
+//
 const __g = /** @type {any} */ (globalThis);
-if (!__g.__REFLEX_CONTEXT_STACK__) __g.__REFLEX_CONTEXT_STACK__ = [];
-export const contextStack = /** @type {Array<{promises:Set<Promise<any>>, track(p:Promise<any>):void} >} */ (
-  __g.__REFLEX_CONTEXT_STACK__
-);
+const __KEY__ = Symbol.for("@raven-js/reflex/runtime");
+const __VERSION__ = "0.1.0";
 
-// Single source of truth for write version across all module instances
-if (typeof __g.__REFLEX_WRITE_VERSION__ !== "number") {
-  __g.__REFLEX_WRITE_VERSION__ = 0;
+/**
+ * @typedef {Object} ReflexRuntime
+ * @property {string} version
+ * @property {Function|null} listener
+ * @property {boolean} isRenderingTemplate
+ * @property {Array<() => void>} deferredEffects
+ * @property {{slots:any,cursor:number}|null} currentRenderScope
+ * @property {Set<() => void>} pendingComputeds
+ * @property {Set<() => void>} pendingEffects
+ * @property {boolean} scheduled
+ * @property {boolean} flushing
+ * @property {Array<(v?:any)=>void>} afterFlushWaiters
+ * @property {(err:any, where:string) => void} onError
+ * @property {() => void} bumpWriteVersion
+ * @property {Array<{promises:Set<Promise<any>>, track(p:Promise<any>):void}>} contextStack
+ * @property {(opts?:{hard?:boolean}) => void} reset
+ */
+
+/**
+ * Create the shared runtime state and API. This ensures all bundles/pages
+ * use the same reactive graph, scheduler and hydration coordination.
+ */
+/** @returns {ReflexRuntime} */
+function __createRuntime() {
+  // Ensure global write version exists
+  if (typeof __g.__REFLEX_WRITE_VERSION__ !== "number") {
+    __g.__REFLEX_WRITE_VERSION__ = 0;
+  }
+  // Ensure global SSR/hydration context stack exists (browser-only usage)
+  if (!__g.__REFLEX_CONTEXT_STACK__) __g.__REFLEX_CONTEXT_STACK__ = [];
+
+  /** @type {ReflexRuntime} */
+  const runtime = {
+    version: __VERSION__,
+    listener: null,
+    isRenderingTemplate: false,
+    deferredEffects: [],
+    currentRenderScope: null,
+    pendingComputeds: new Set(),
+    pendingEffects: new Set(),
+    scheduled: false,
+    flushing: false,
+    afterFlushWaiters: [],
+    onError(err, where) {
+      try {
+        __g.__REFLEX_ON_ERROR__?.(err, where);
+      } catch {}
+      // eslint-disable-next-line no-console
+      console.error(err);
+    },
+    bumpWriteVersion() {
+      __g.__REFLEX_WRITE_VERSION__++;
+    },
+    contextStack: /** @type {any[]} */ (__g.__REFLEX_CONTEXT_STACK__),
+    reset(opts) {
+      // Clear only scheduler queues and listeners; avoid clearing global stacks
+      this.pendingComputeds.clear();
+      this.pendingEffects.clear();
+      this.afterFlushWaiters.length = 0;
+      this.scheduled = false;
+      this.flushing = false;
+      this.listener = null;
+      this.isRenderingTemplate = false;
+      this.deferredEffects.length = 0;
+      this.currentRenderScope = null;
+      if (opts?.hard) {
+        // Hard reset write version for tests if requested
+        __g.__REFLEX_WRITE_VERSION__ = 0;
+      }
+    },
+  };
+  return runtime;
 }
 
-/* ---------------- template rendering context ---------------- */
+/** @type {ReflexRuntime} */
+let __R = /** @type {ReflexRuntime} */ (__g[__KEY__]);
+if (!__R) {
+  __R = __createRuntime();
+  __g[__KEY__] = __R;
+} else if (__R.version !== __VERSION__ && typeof console !== "undefined") {
+  // Prefer the first loaded version to keep graph stable
+  console.warn("[reflex] multiple versions loaded; using", __R.version, "ignoring", __VERSION__);
+}
 
-/** @type {boolean} */
-let isRenderingTemplate = false;
-/** @type {Array<() => void>} */
-let deferredEffects = [];
-/** @type {{slots:any,cursor:number}|null} */
-let currentRenderScope = null;
+// Public, test-friendly handle to the SSR/hydration context stack
+export const contextStack = __R.contextStack;
 
 /**
  * Run function in template rendering context with deferred effect execution.
@@ -67,18 +136,18 @@ let currentRenderScope = null;
  * @returns {T | Promise<T>}
  */
 export function withTemplateContext(fn, scope) {
-  const wasRendering = isRenderingTemplate;
-  isRenderingTemplate = true;
+  const wasRendering = __R.isRenderingTemplate;
+  __R.isRenderingTemplate = true;
 
   // Root call owns the defer queue
-  const savedQueue = wasRendering ? deferredEffects : [];
-  if (!wasRendering) deferredEffects = [];
+  const savedQueue = wasRendering ? __R.deferredEffects : [];
+  if (!wasRendering) __R.deferredEffects = [];
 
   // Push render scope
-  const prevScope = currentRenderScope;
+  const prevScope = __R.currentRenderScope;
   if (scope) {
-    currentRenderScope = scope;
-    currentRenderScope.cursor = 0;
+    __R.currentRenderScope = scope;
+    __R.currentRenderScope.cursor = 0;
   }
 
   let finalized = false;
@@ -87,21 +156,21 @@ export function withTemplateContext(fn, scope) {
     finalized = true;
 
     // Only root executes deferred effects
-    if (!wasRendering && deferredEffects.length) {
-      const queue = deferredEffects;
-      deferredEffects = [];
+    if (!wasRendering && __R.deferredEffects.length) {
+      const queue = __R.deferredEffects;
+      __R.deferredEffects = [];
       for (const fx of queue) {
         try {
           fx();
         } catch (e) {
-          onError(e, "deferred effect");
+          __R.onError(e, "deferred effect");
         }
       }
     }
 
-    isRenderingTemplate = wasRendering;
-    if (!wasRendering) deferredEffects = savedQueue;
-    currentRenderScope = prevScope;
+    __R.isRenderingTemplate = wasRendering;
+    if (!wasRendering) __R.deferredEffects = savedQueue;
+    __R.currentRenderScope = prevScope;
   };
 
   try {
@@ -134,11 +203,11 @@ export function withTemplateContext(fn, scope) {
  * @returns {T}
  */
 function useRenderSlot(factory) {
-  if (isRenderingTemplate && currentRenderScope) {
-    const i = currentRenderScope.cursor++;
-    if (i in currentRenderScope.slots) return currentRenderScope.slots[i];
+  if (__R.isRenderingTemplate && __R.currentRenderScope) {
+    const i = __R.currentRenderScope.cursor++;
+    if (i in __R.currentRenderScope.slots) return __R.currentRenderScope.slots[i];
     const v = factory();
-    currentRenderScope.slots[i] = v;
+    __R.currentRenderScope.slots[i] = v;
     return v;
   }
   return factory();
@@ -146,16 +215,9 @@ function useRenderSlot(factory) {
 
 /* ---------------- scheduler (computed-first) ---------------- */
 
-const pendingComputeds = new Set(); // Set<() => void> updates
-const pendingEffects = new Set(); // Set<() => void>
-let scheduled = false;
-let flushing = false;
-/** @type {Array<(v?:any)=>void>} */
-let _afterFlushWaiters = [];
-
 /** Increment global write version to track reactive state changes. */
 function __bumpWriteVersion() {
-  __g.__REFLEX_WRITE_VERSION__++;
+  __R.bumpWriteVersion();
 }
 
 /**
@@ -174,64 +236,55 @@ function __bumpWriteVersion() {
  */
 export function afterFlush() {
   return new Promise((res) => {
-    _afterFlushWaiters.push(res);
+    __R.afterFlushWaiters.push(res);
     scheduleFlush();
   });
 }
 
 /** Schedule microtask flush if not already scheduled. */
 function scheduleFlush() {
-  if (!scheduled) {
-    scheduled = true;
+  if (!__R.scheduled) {
+    __R.scheduled = true;
     queueMicrotask(flush);
   }
 }
 
 /** Execute computed updates first, then effects, with error isolation. */
 function flush() {
-  if (flushing) return;
-  flushing = true;
+  if (__R.flushing) return;
+  __R.flushing = true;
   try {
     // 1) propagate computeds until stable
-    while (pendingComputeds.size) {
-      const batch = Array.from(pendingComputeds);
-      pendingComputeds.clear();
+    while (__R.pendingComputeds.size) {
+      const batch = Array.from(__R.pendingComputeds);
+      __R.pendingComputeds.clear();
       for (const update of batch) {
         try {
           update();
         } catch (e) {
-          onError(e, "computed");
+          __R.onError(e, "computed");
         }
       }
     }
     // 2) run effects
-    if (pendingEffects.size) {
-      const ef = Array.from(pendingEffects);
-      pendingEffects.clear();
+    if (__R.pendingEffects.size) {
+      const ef = Array.from(__R.pendingEffects);
+      __R.pendingEffects.clear();
       for (const run of ef) {
         try {
           run();
         } catch (e) {
-          onError(e, "effect");
+          __R.onError(e, "effect");
         }
       }
     }
   } finally {
-    const waiters = _afterFlushWaiters;
-    _afterFlushWaiters = [];
+    const waiters = __R.afterFlushWaiters;
+    __R.afterFlushWaiters = [];
     for (const w of waiters) w();
-    scheduled = false;
-    flushing = false;
+    __R.scheduled = false;
+    __R.flushing = false;
   }
-}
-
-/** Handle reactive system errors with custom hook and console fallback. */
-function onError(/** @type {any} */ err, /** @type {string} */ where) {
-  try {
-    /** @type {any} */ (globalThis).__REFLEX_ON_ERROR__?.(err, where);
-  } catch {}
-  // eslint-disable-next-line no-console
-  console.error(err);
 }
 
 /** @returns {number} internal - current write version (global) */
@@ -287,9 +340,9 @@ export function signal(initial) {
 
     /** @returns {T} */
     const read = () => {
-      if (listener) {
-        subs.add(listener);
-        const l = /** @type {any} */ (listener);
+      if (__R.listener) {
+        subs.add(__R.listener);
+        const l = /** @type {any} */ (__R.listener);
         if (l._isEffect && l._addDependency) l._addDependency(read);
         else if (l._isComputed && l._trackDependency) l._trackDependency(read);
       }
@@ -314,14 +367,14 @@ export function signal(initial) {
       for (const s of subs) {
         if (s._isComputed) {
           s._invalidate();
-          pendingComputeds.add(s._update);
+          __R.pendingComputeds.add(s._update);
         } else if (s._isEffect) {
-          pendingEffects.add(s);
+          __R.pendingEffects.add(s);
         } else if (typeof s === "function") {
           try {
             s(value);
           } catch (e) {
-            onError(e, "subscriber");
+            __R.onError(e, "subscriber");
           }
         }
       }
@@ -386,9 +439,9 @@ export function computed(fn) {
     function recompute() {
       if (computing) throw new Error("Circular dependency in computed");
       computing = true;
-      const prev = listener;
+      const prev = __R.listener;
       cleanup();
-      listener = comp;
+      __R.listener = comp;
       try {
         const next = fn();
         const changed = !Object.is(value, next);
@@ -398,21 +451,21 @@ export function computed(fn) {
           for (const dep of dependents) {
             if (dep._isComputed) {
               dep._invalidate();
-              pendingComputeds.add(dep._update);
+              __R.pendingComputeds.add(dep._update);
             } else if (dep._isEffect) {
-              pendingEffects.add(dep);
+              __R.pendingEffects.add(dep);
             }
           }
         }
       } finally {
-        listener = prev;
+        __R.listener = prev;
         computing = false;
       }
     }
 
     /** @type {any} */
     const comp = () => {
-      if (listener) dependents.add(listener);
+      if (__R.listener) dependents.add(__R.listener);
       if (!valid) recompute();
       return value;
     };
@@ -482,20 +535,20 @@ export function effect(fn) {
 
     function run() {
       if (disposed) return;
-      const prevListener = listener;
+      const prevListener = __R.listener;
 
       // reset deps (unsubscribe from old first)
       for (const d of Array.from(deps)) d._unsubscribe(runAny);
       deps.clear();
 
-      listener = runAny;
+      __R.listener = runAny;
       try {
         const out = fn();
         const ctx = contextStack[contextStack.length - 1];
         if (out && typeof out.then === "function" && ctx) ctx.track(out);
         return out;
       } finally {
-        listener = prevListener;
+        __R.listener = prevListener;
       }
     }
 
@@ -507,19 +560,19 @@ export function effect(fn) {
     };
 
     // Initial run: defer if inside template
-    if (isRenderingTemplate) {
-      deferredEffects.push(() => {
+    if (__R.isRenderingTemplate) {
+      __R.deferredEffects.push(() => {
         try {
           run();
         } catch (e) {
-          onError(e, "effect");
+          __R.onError(e, "effect");
         }
       });
     } else {
       try {
         run();
       } catch (e) {
-        onError(e, "effect");
+        __R.onError(e, "effect");
       }
     }
 
@@ -552,11 +605,16 @@ export function effect(fn) {
  * @returns {T}
  */
 export function untrack(fn) {
-  const prev = listener;
-  listener = null;
+  const prev = __R.listener;
+  __R.listener = null;
   try {
     return fn();
   } finally {
-    listener = prev;
+    __R.listener = prev;
   }
+}
+
+/** Test helper: reset scheduler state; use wisely in tests only. */
+export function __resetReflexForTests() {
+  __R.reset({ hard: false });
 }
