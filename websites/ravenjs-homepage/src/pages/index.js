@@ -27,27 +27,31 @@ export const description =
  * Homepage content
  */
 export const body = md`
-<section class="position-relative overflow-hidden">
-  <div class="position-absolute w-100 h-100" style="background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.4)), url('/raven-landscape.webp'); background-size: cover; background-position: center; background-attachment: fixed;"></div>
-  <div class="position-relative text-white py-5" style="min-height: 70vh;">
-    <div class="container py-5">
-      <div class="row align-items-center justify-content-center text-center">
-        <div class="col-lg-8">
-          <h1 class="display-4 fw-light mb-4 text-white">
-            Zero-dependency JS/ESM toolkit for experienced developers
-          </h1>
-          <p class="lead mb-5 text-light fs-5">
-            Pure JavaScript. Modern platform primitives. Surgical precision.<br>
-            <em>Built by developers who remember the framework wars.</em>
-          </p>
-          <div class="d-flex justify-content-center gap-3 flex-wrap">
-            <a href="https://github.com/Anonyfox/ravenjs" class="btn btn-outline-light btn-lg px-4 py-3">
-              View on GitHub
-            </a>
-            <a href="#intelligence" class="btn btn-light btn-lg px-4 py-3 text-dark">
-              <strong>Learn More</strong>
-            </a>
-          </div>
+<!-- Fixed background for hero -->
+<div class="hero-bg"></div>
+
+<!-- Hero Section -->
+<section class="hero-section text-white">
+  <div class="container py-5">
+    <div class="row justify-content-center text-center">
+      <div class="col-lg-8">
+        <div class="mb-4">
+          <img src="/raven-logo.webp" alt="RavenJS" class="img-fluid mb-3" style="max-height: 120px; filter: brightness(0) invert(1);">
+        </div>
+        <h1 class="display-4 fw-light mb-4 text-white">
+          Zero-dependency JS/ESM toolkit for experienced developers
+        </h1>
+        <p class="lead mb-5 text-light fs-5">
+          Pure JavaScript. Modern platform primitives. Surgical precision.<br>
+          <em>Built by developers who remember the framework wars.</em>
+        </p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+          <a href="https://github.com/Anonyfox/ravenjs" class="btn btn-outline-light btn-lg px-4 py-3">
+            View on GitHub
+          </a>
+          <a href="#intelligence" class="btn btn-light btn-lg px-4 py-3 text-dark">
+            <strong>Learn More</strong>
+          </a>
         </div>
       </div>
     </div>
@@ -92,15 +96,16 @@ export const body = md`
   </div>
 </section>
 
+<!-- Fixed background for arsenal -->
+<div class="arsenal-bg"></div>
+
 <!-- Packages Section -->
-<section id="packages" class="position-relative overflow-hidden py-5">
-  <div class="position-absolute w-100 h-100" style="background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.6)), url('/raven-landscape.webp'); background-size: cover; background-position: center; background-attachment: fixed;"></div>
-  <div class="position-relative py-5">
-    <div class="container py-5">
-      <div class="text-center mb-5">
-        <h2 class="display-6 fw-light text-white mb-4">The Arsenal</h2>
-        <p class="lead text-light">Surgical tools. Zero dependencies. Pick what you need.</p>
-      </div>
+<section id="packages" class="arsenal-section text-white">
+  <div class="container py-5">
+    <div class="text-center mb-5">
+      <h2 class="display-6 fw-light text-white mb-4">The Arsenal</h2>
+      <p class="lead text-light">Surgical tools. Zero dependencies. Pick what you need.</p>
+    </div>
 
       <!-- Libraries -->
       <div class="mb-5">
@@ -187,7 +192,6 @@ export const body = md`
           </div>
         </div>
       </div>
-    </div>
   </div>
 </section>
 

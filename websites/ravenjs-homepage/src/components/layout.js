@@ -79,6 +79,66 @@ export const Layout = ({ title, description, content }) => {
 
         <link rel="stylesheet" href="/bootstrap.css" />
         <link rel="icon" href="/favicon.ico" />
+
+        <style>
+          /* iOS-compatible parallax using position: fixed */
+          .hero-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.4)), url('/raven-landscape.webp');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: -1;
+          }
+
+          .arsenal-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.6)), url('/raven-landscape.webp');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: -1;
+          }
+
+          /* Content containers */
+          .hero-section, .arsenal-section {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+          }
+
+          .hero-section .container,
+          .arsenal-section .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+          }
+
+          /* Mobile text adjustments */
+          @media (max-width: 767px) {
+            .hero-section .display-4 {
+              font-size: 2rem;
+            }
+
+            .hero-section .lead {
+              font-size: 1.1rem;
+            }
+
+            .hero-section, .arsenal-section {
+              min-height: 100vh;
+            }
+          }
+        </style>
       </head>
       <body class="d-flex flex-column h-100 bg-white text-dark">
         <!-- Navigation -->
