@@ -1,12 +1,9 @@
 import { html, style } from "@raven-js/beak";
+import { islandSSR } from "@raven-js/reflex/dom";
 import { Todos } from "../../shared/todos.js";
 
 // Minimal todos battleground - pure framework competence test
 export const TodosPage = async () => {
-	console.log(process.env.PUBLIC_ORIGIN);
-
-	const todos = await Todos();
-
 	return html`
   <!DOCTYPE html>
   <html lang="en">
@@ -17,12 +14,10 @@ export const TodosPage = async () => {
     ${styles}
   </head>
   <body>
-    <div id="todos-app">
-      ${todos}
-    </div>
+    ${await islandSSR({ ssr: Todos, src: "/shared/todos.js#Todos" })}
 
     <!-- Load the todos app using reflex -->
-    <script type="module" src="/client/todos.js"></script>
+    <script type="module" src="/client/index.js" defer></script>
   </body>
   </html>
 `;

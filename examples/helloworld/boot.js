@@ -3,6 +3,7 @@ import {
 	ClusteredServer,
 	DevServer,
 	generateSSLCert,
+	LocalFetch,
 	Logger,
 	Resolve,
 } from "@raven-js/wings/server";
@@ -13,6 +14,7 @@ const port = 3000;
 // Enable zero-build ESM development with automatic import maps
 router.use(new Resolve({ sourceFolder: "src" }));
 router.use(new Assets({ assetsDir: "public" }));
+router.use(new LocalFetch());
 
 /**
  * Check if we're running in production environment

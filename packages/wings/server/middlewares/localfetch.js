@@ -114,6 +114,9 @@ function shouldAttachInsecureAgent(url, requestOrigin) {
  * Patch global fetch() once with a context-aware resolver.
  */
 function patchFetchOnce() {
+  // Don't patch if SSR is active (it wraps fetch temporarily)
+  if (/** @type {any} */ (globalThis).__SSR_FETCH_ACTIVE__) return;
+
   // Re-patch if global fetch changed since last enhancement
   if (enhancedFetchFn && globalThis.fetch === enhancedFetchFn) return;
   originalFetch = globalThis.fetch;

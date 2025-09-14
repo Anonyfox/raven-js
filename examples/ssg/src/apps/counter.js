@@ -12,7 +12,6 @@
 
 import { html } from "@raven-js/beak";
 import { signal } from "@raven-js/reflex";
-import { mount } from "@raven-js/reflex/dom";
 
 /**
  * Create interactive counter component with reactive state
@@ -21,14 +20,14 @@ import { mount } from "@raven-js/reflex/dom";
  * @returns {string} HTML string with reactive functionality
  */
 export const Counter = ({ initial = 0 } = {}) => {
-	// Create reactive signal for counter state
-	const count = signal(initial);
+  // Create reactive signal for counter state
+  const count = signal(initial);
 
-	// Event handlers
-	const increment = () => count.update((n) => n + 1);
-	const decrement = () => count.update((n) => n - 1);
+  // Event handlers
+  const increment = () => count.update((n) => n + 1);
+  const decrement = () => count.update((n) => n - 1);
 
-	return html`
+  return html`
 		<div class="counter">
 			<button
 				class="counter__btn counter__btn--decrement"
@@ -130,13 +129,4 @@ export const Counter = ({ initial = 0 } = {}) => {
 			}
 		</style>
 	`;
-};
-
-/**
- * Hydrate counter component to DOM element
- * @param {string} selector - CSS selector for target element
- * @param {Object} [props={}] - Component props
- */
-export const hydrate = (selector, props = {}) => {
-	mount(() => Counter(props), selector, { replace: true });
 };

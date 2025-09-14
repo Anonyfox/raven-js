@@ -297,9 +297,15 @@ export function ssr(fn, options = {}) {
       };
       contextStack.push(ctx);
 
+      // Save the original fetch (might be localfetch enhanced)
       const orig = globalThis.fetch;
 
-      globalThis.fetch = async (url, opts = {}) => {
+      // Mark that we're in SSR to prevent localfetch from re-patching
+      const prevSSRFlag = /** @type {any} */ (globalThis).__SSR_FETCH_ACTIVE__;
+      /** @type {any} */ (globalThis).__SSR_FETCH_ACTIVE__ = true;
+
+      // Create SSR wrapper that calls the original
+      const ssrFetch = async (/** @type {any} */ url, /** @type {RequestInit} */ opts = {}) => {
         const method = (opts.method || "GET").toUpperCase();
         const key = createCacheKey(url, opts);
         if (method === "GET" && ctx.fetchCache.has(key)) return ctx.fetchCache.get(key);
@@ -376,6 +382,9 @@ export function ssr(fn, options = {}) {
         return p;
       };
 
+      // Set our wrapper
+      globalThis.fetch = ssrFetch;
+
       // stable render scope across passes (prevents instance churn)
       const scope = { slots: /** @type {any[]} */ ([]), cursor: 0 };
       let html = "";
@@ -416,6 +425,7 @@ export function ssr(fn, options = {}) {
         }
       } finally {
         globalThis.fetch = orig;
+        /** @type {any} */ (globalThis).__SSR_FETCH_ACTIVE__ = prevSSRFlag;
         contextStack.pop();
       }
 

@@ -23,7 +23,7 @@ export default {
 	// Client bundles to pre-build and embed
 	bundles: {
 		"/client/app.js": "./src/client/app.js", // Main client app
-		"/client/todos.js": "./src/client/todos.js", // Todos functionality
+		"/client/todos.js": "./src/shared/todos.js", // Todos functionality
 	},
 
 	// Node.js runtime flags
@@ -60,7 +60,7 @@ export const binary = {
 	// Client bundles to build and embed
 	bundles: {
 		"/client/app.js": "./src/client/app.js", // Main client app
-		"/client/todos.js": "./src/client/todos.js", // Todos functionality
+		"/client/todos.js": "./src/shared/todos.js", // Todos functionality
 	},
 
 	// Embed static assets into the executable

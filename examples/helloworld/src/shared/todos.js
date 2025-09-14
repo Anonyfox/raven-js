@@ -1,22 +1,15 @@
 import { html } from "@raven-js/beak/html";
 import { computed, effect, signal } from "@raven-js/reflex";
-import { ssr } from "@raven-js/reflex/ssr";
 
-export const Todos = ssr(async () => {
+export const Todos = async () => {
 	const todos = signal([]);
 	const totalCount = computed(() => todos().length);
-	const activeCount = computed(
-		() => todos().filter((t) => !t.completed).length,
-	);
-	const completedCount = computed(
-		() => todos().filter((t) => t.completed).length,
-	);
+	const activeCount = computed(() => todos().filter((t) => !t.completed).length);
+	const completedCount = computed(() => todos().filter((t) => t.completed).length);
 	const isEmpty = computed(() => todos().length === 0);
 
 	const toggleTodo = (id) => {
-		todos.set(
-			todos().map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)),
-		);
+		todos.set(todos().map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
 	};
 
 	const deleteTodo = (id) => {
@@ -61,8 +54,8 @@ export const Todos = ssr(async () => {
                     onclick=${() => deleteTodo(todo.id)}
                 >×</button>
             </li>
-        `,
-			)}`,
+        `
+			)}`
 	);
 
 	const onSubmit = (e) => {
@@ -108,4 +101,4 @@ export const Todos = ssr(async () => {
       <a href="/" class="back-link">← Back to Home</a>
     </div>
 	`;
-});
+};
