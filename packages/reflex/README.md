@@ -184,47 +184,16 @@ router.listen(3000);
 
 **Integration Benefits:**
 
-- Wings automatically sets `RAVENJS_ORIGIN` for URL resolution
+- Wings `LocalFetch` transparently resolves relative URLs and forwards headers
 - Component-scoped SSR data injection with cache isolation
 - SSR components work in any HTML structure
 - Client hydration uses server response cache, eliminates duplicate requests
 - Signal changes trigger efficient DOM updates
 - Beak template integration for HTML generation
 
-### Origin Resolution for SSR
+### SSR Fetch Behavior
 
-Reflex automatically resolves relative URLs during SSR using `RAVENJS_ORIGIN` environment variable:
-
-```javascript
-// SSR components use relative URLs:
-const response = await fetch("/api/data");
-// Wings automatically sets RAVENJS_ORIGIN
-
-// Reflex resolves to: http://localhost:3000/api/data (development)
-//                or: https://your-domain.com/api/data (production)
-```
-
-**Implementation:**
-
-1. Wings sets `RAVENJS_ORIGIN` based on server configuration
-2. Reflex resolves relative URLs in `fetch()` calls using this origin
-3. No configuration required with Wings integration
-
-**Error handling:**
-
-```javascript
-// If RAVENJS_ORIGIN not set (non-Wings usage):
-const response = await fetch("/api/data");
-// Throws: "RAVENJS_ORIGIN environment variable must be set for SSR"
-```
-
-**Manual override** (containers, reverse proxies):
-
-```bash
-# Set before starting Wings server
-export RAVENJS_ORIGIN=https://api.example.com
-node server.js
-```
+In SSR, use relative URLs in `fetch()` and register Wings `LocalFetch` middleware. It resolves relative URLs against the current request, forwards headers (and self-signed HTTPS agent for internal hosts), and isolates per request.
 
 ## Requirements
 

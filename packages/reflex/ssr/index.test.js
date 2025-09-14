@@ -16,288 +16,279 @@ import { createCacheKey, ssr } from "./index.js";
 
 // Test helpers
 const mockResponse = (data) => ({
-	ok: true,
-	status: 200,
-	statusText: "OK",
-	headers: new Map([["content-type", "application/json"]]),
-	clone() {
-		return this;
-	},
-	json: () => Promise.resolve(data),
-	text: () => Promise.resolve(JSON.stringify(data)),
+  ok: true,
+  status: 200,
+  statusText: "OK",
+  headers: new Map([["content-type", "application/json"]]),
+  clone() {
+    return this;
+  },
+  json: () => Promise.resolve(data),
+  text: () => Promise.resolve(JSON.stringify(data)),
 });
 
 const mockFetch = (data) => () => Promise.resolve(mockResponse(data));
 
 describe("ssr", () => {
-	let origWindow, origFetch, origLocalStorage, origNavigator, origRavenOrigin;
+  let origWindow, origFetch, origLocalStorage, origNavigator;
 
-	beforeEach(() => {
-		origWindow = globalThis.window;
-		origFetch = globalThis.fetch;
-		origLocalStorage = globalThis.localStorage;
-		origNavigator = globalThis.navigator;
-		origRavenOrigin = process.env.RAVENJS_ORIGIN;
+  beforeEach(() => {
+    origWindow = globalThis.window;
+    origFetch = globalThis.fetch;
+    origLocalStorage = globalThis.localStorage;
+    origNavigator = globalThis.navigator;
+    // No origin env required
+  });
 
-		// Set RAVENJS_ORIGIN for SSR tests
-		process.env.RAVENJS_ORIGIN = "http://localhost:3000";
-	});
+  afterEach(() => {
+    globalThis.window = origWindow;
+    globalThis.fetch = origFetch;
+    // No env cleanup needed
+    try {
+      if (origLocalStorage) globalThis.localStorage = origLocalStorage;
+      else delete globalThis.localStorage;
+    } catch {}
+    try {
+      if (origNavigator) globalThis.navigator = origNavigator;
+      else delete globalThis.navigator;
+    } catch {}
+  });
 
-	afterEach(() => {
-		globalThis.window = origWindow;
-		globalThis.fetch = origFetch;
-		if (origRavenOrigin !== undefined) {
-			process.env.RAVENJS_ORIGIN = origRavenOrigin;
-		} else {
-			delete process.env.RAVENJS_ORIGIN;
-		}
-		try {
-			if (origLocalStorage) globalThis.localStorage = origLocalStorage;
-			else delete globalThis.localStorage;
-		} catch {}
-		try {
-			if (origNavigator) globalThis.navigator = origNavigator;
-			else delete globalThis.navigator;
-		} catch {}
-	});
+  it("basic wrapper function", () => {
+    const fn = () => "test";
+    const wrapped = ssr(fn);
 
-	it("basic wrapper function", () => {
-		const fn = () => "test";
-		const wrapped = ssr(fn);
+    assert.strictEqual(typeof wrapped, "function");
+    assert.strictEqual(wrapped._ssrWrapped, true);
 
-		assert.strictEqual(typeof wrapped, "function");
-		assert.strictEqual(wrapped._ssrWrapped, true);
+    // Prevents double-wrapping
+    assert.strictEqual(ssr(wrapped), wrapped);
+  });
 
-		// Prevents double-wrapping
-		assert.strictEqual(ssr(wrapped), wrapped);
-	});
+  it("server-side rendering with fetch interception", async () => {
+    delete globalThis.window; // Server env
+    globalThis.fetch = mockFetch({ message: "hello" });
 
-	it("server-side rendering with fetch interception", async () => {
-		delete globalThis.window; // Server env
-		globalThis.fetch = mockFetch({ message: "hello" });
+    const handler = async () => {
+      const resp = await fetch("/api/test");
+      const data = await resp.json();
+      return `<div>${data.message}</div>`;
+    };
 
-		const handler = async () => {
-			const resp = await fetch("/api/test");
-			const data = await resp.json();
-			return `<div>${data.message}</div>`;
-		};
+    const wrapped = ssr(handler);
+    const result = await wrapped();
 
-		const wrapped = ssr(handler);
-		const result = await wrapped();
+    // Should contain component content + inline SSR script
+    assert.ok(result.includes("<div>hello</div>"));
+    assert.ok(result.includes("window.__SSR_DATA__"));
+    assert.ok(result.includes("<script>"));
+    assert.ok(result.endsWith("</script>"));
+  });
 
-		// Should contain component content + inline SSR script
-		assert.ok(result.includes("<div>hello</div>"));
-		assert.ok(result.includes("window.__SSR_DATA__"));
-		assert.ok(result.includes("<script>"));
-		assert.ok(result.endsWith("</script>"));
-	});
+  it("client-side hydration with component-scoped cache", async () => {
+    // Mock client environment first
+    globalThis.window = {
+      location: {
+        href: "http://localhost:3000/",
+        origin: "http://localhost:3000",
+      },
+      document: { createElement: () => ({}) },
+      navigator: { userAgent: "Mozilla/5.0" },
+    };
+    globalThis.location = globalThis.window.location;
 
-	it("client-side hydration with component-scoped cache", async () => {
-		// Mock client environment first
-		globalThis.window = {
-			location: {
-				href: "http://localhost:3000/",
-				origin: "http://localhost:3000",
-			},
-			document: { createElement: () => ({}) },
-			navigator: { userAgent: "Mozilla/5.0" },
-		};
-		globalThis.location = globalThis.window.location;
+    // Create cache key in client context
+    const cacheKey = createCacheKey("/api/test", {});
 
-		// Create cache key in client context
-		const cacheKey = createCacheKey("/api/test", {});
+    // Add SSR data to window
+    globalThis.window.__SSR_DATA__abc123 = {
+      fetch: {
+        [cacheKey]: {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          headers: [["content-type", "application/json"]],
+          json: { cached: "data" },
+        },
+      },
+    };
 
-		// Add SSR data to window
-		globalThis.window.__SSR_DATA__abc123 = {
-			fetch: {
-				[cacheKey]: {
-					ok: true,
-					status: 200,
-					statusText: "OK",
-					headers: [["content-type", "application/json"]],
-					json: { cached: "data" },
-				},
-			},
-		};
+    globalThis.fetch = () => Promise.reject(new Error("Should use cache"));
 
-		globalThis.fetch = () => Promise.reject(new Error("Should use cache"));
+    const handler = async () => {
+      const resp = await fetch("/api/test");
+      const data = await resp.json();
+      return `result: ${data.cached}`;
+    };
 
-		const handler = async () => {
-			const resp = await fetch("/api/test");
-			const data = await resp.json();
-			return `result: ${data.cached}`;
-		};
+    const wrapped = ssr(handler, { _testComponentId: "abc123" });
+    const result = await wrapped();
 
-		const wrapped = ssr(handler, { _testComponentId: "abc123" });
-		const result = await wrapped();
+    assert.strictEqual(result, "result: data");
+    assert.strictEqual(globalThis.window.__SSR_DATA__abc123, undefined); // Cleaned up
+  });
 
-		assert.strictEqual(result, "result: data");
-		assert.strictEqual(globalThis.window.__SSR_DATA__abc123, undefined); // Cleaned up
-	});
+  it("cache key creation", () => {
+    const key1 = createCacheKey("/api/test", {});
+    const key2 = createCacheKey("http://localhost:3000/api/test", {});
+    assert.notStrictEqual(key1, key2); // No absolute normalization
 
-	it("cache key creation", () => {
-		const key1 = createCacheKey("/api/test", {});
-		const key2 = createCacheKey("http://localhost:3000/api/test", {});
+    const key3 = createCacheKey("/api/test", { method: "POST", body: "data" });
+    assert.notStrictEqual(key1, key3); // Different for POST with body
+  });
 
-		assert.strictEqual(key1, key2); // Should normalize to same URL
+  it("promise tracking and settlement", async () => {
+    delete globalThis.window;
+    let resolveCount = 0;
 
-		const key3 = createCacheKey("/api/test", { method: "POST", body: "data" });
-		assert.notStrictEqual(key1, key3); // Different for POST with body
-	});
+    globalThis.fetch = () =>
+      new Promise((resolve) => {
+        setTimeout(() => {
+          resolveCount++;
+          resolve(mockResponse({ count: resolveCount }));
+        }, 10);
+      });
 
-	it("promise tracking and settlement", async () => {
-		delete globalThis.window;
-		let resolveCount = 0;
+    const handler = async () => {
+      const resp = await fetch("/api/async");
+      const data = await resp.json();
+      return `<div>count: ${data.count}</div>`;
+    };
 
-		globalThis.fetch = () =>
-			new Promise((resolve) => {
-				setTimeout(() => {
-					resolveCount++;
-					resolve(mockResponse({ count: resolveCount }));
-				}, 10);
-			});
+    const wrapped = ssr(handler, { timeout: 100 });
+    const result = await wrapped();
 
-		const handler = async () => {
-			const resp = await fetch("/api/async");
-			const data = await resp.json();
-			return `<div>count: ${data.count}</div>`;
-		};
+    assert.ok(result.includes("count: 1"));
+    assert.strictEqual(resolveCount, 1);
+  });
 
-		const wrapped = ssr(handler, { timeout: 100 });
-		const result = await wrapped();
+  it("error handling and fetch restoration", async () => {
+    delete globalThis.window;
+    const mockFn = () => Promise.resolve(mockResponse({}));
+    globalThis.fetch = mockFn;
 
-		assert.ok(result.includes("count: 1"));
-		assert.strictEqual(resolveCount, 1);
-	});
+    const handler = async () => {
+      await fetch("/api/test");
+      throw new Error("Handler error");
+    };
 
-	it("error handling and fetch restoration", async () => {
-		delete globalThis.window;
-		const mockFn = () => Promise.resolve(mockResponse({}));
-		globalThis.fetch = mockFn;
+    const wrapped = ssr(handler);
 
-		const handler = async () => {
-			await fetch("/api/test");
-			throw new Error("Handler error");
-		};
+    await assert.rejects(() => wrapped(), /Handler error/);
+    assert.strictEqual(globalThis.fetch, mockFn); // Restored
+  });
 
-		const wrapped = ssr(handler);
+  it("XSS escaping in SSR data", async () => {
+    delete globalThis.window;
+    globalThis.fetch = mockFetch({
+      safe: "normal data",
+    });
 
-		await assert.rejects(() => wrapped(), /Handler error/);
-		assert.strictEqual(globalThis.fetch, mockFn); // Restored
-	});
+    const handler = async () => {
+      await fetch("/api/xss");
+      return "<div>content</div>";
+    };
 
-	it("XSS escaping in SSR data", async () => {
-		delete globalThis.window;
-		globalThis.fetch = mockFetch({
-			safe: "normal data",
-		});
+    const wrapped = ssr(handler);
+    const result = await wrapped();
 
-		const handler = async () => {
-			await fetch("/api/xss");
-			return "<div>content</div>";
-		};
+    // Just verify basic SSR injection works and no obvious XSS
+    assert.ok(result.includes("window.__SSR_DATA__"));
+    assert.ok(!result.includes("<script>alert")); // No inline alerts
+    assert.ok(result.includes("normal data")); // Data is present
+  });
 
-		const wrapped = ssr(handler);
-		const result = await wrapped();
+  it("size cap for large payloads", async () => {
+    delete globalThis.window;
+    // Create data that when JSON stringified exceeds 512KB
+    const largeArray = new Array(60000).fill("x".repeat(10)); // ~600KB when stringified
+    globalThis.fetch = mockFetch({ large: largeArray });
 
-		// Just verify basic SSR injection works and no obvious XSS
-		assert.ok(result.includes("window.__SSR_DATA__"));
-		assert.ok(!result.includes("<script>alert")); // No inline alerts
-		assert.ok(result.includes("normal data")); // Data is present
-	});
+    let warned = false;
+    const origWarn = console.warn;
+    console.warn = (msg) => {
+      if (typeof msg === "string" && msg.includes("too large")) warned = true;
+    };
 
-	it("size cap for large payloads", async () => {
-		delete globalThis.window;
-		// Create data that when JSON stringified exceeds 512KB
-		const largeArray = new Array(60000).fill("x".repeat(10)); // ~600KB when stringified
-		globalThis.fetch = mockFetch({ large: largeArray });
+    try {
+      const handler = async () => {
+        await fetch("/api/large");
+        return "<div>content</div>";
+      };
 
-		let warned = false;
-		const origWarn = console.warn;
-		console.warn = (msg) => {
-			if (typeof msg === "string" && msg.includes("too large")) warned = true;
-		};
+      const wrapped = ssr(handler);
+      const result = await wrapped();
 
-		try {
-			const handler = async () => {
-				await fetch("/api/large");
-				return "<div>content</div>";
-			};
+      // Should not inject SSR data due to size OR should warn
+      assert.ok(!result.includes("window.__SSR_DATA__") || warned);
+    } finally {
+      console.warn = origWarn;
+    }
+  });
 
-			const wrapped = ssr(handler);
-			const result = await wrapped();
+  it("CSP nonce support", async () => {
+    delete globalThis.window;
+    globalThis.__REFLEX_CSP_NONCE__ = "test-nonce";
+    globalThis.fetch = mockFetch({ test: "data" });
 
-			// Should not inject SSR data due to size OR should warn
-			assert.ok(!result.includes("window.__SSR_DATA__") || warned);
-		} finally {
-			console.warn = origWarn;
-		}
-	});
+    try {
+      const handler = async () => {
+        await fetch("/api/csp");
+        return "<div>content</div>";
+      };
 
-	it("CSP nonce support", async () => {
-		delete globalThis.window;
-		globalThis.__REFLEX_CSP_NONCE__ = "test-nonce";
-		globalThis.fetch = mockFetch({ test: "data" });
+      const wrapped = ssr(handler);
+      const result = await wrapped();
 
-		try {
-			const handler = async () => {
-				await fetch("/api/csp");
-				return "<div>content</div>";
-			};
+      assert.ok(result.includes('nonce="test-nonce"'));
+    } finally {
+      delete globalThis.__REFLEX_CSP_NONCE__;
+    }
+  });
 
-			const wrapped = ssr(handler);
-			const result = await wrapped();
+  it("timeout handling with graceful degradation", async () => {
+    delete globalThis.window;
+    let _timeoutWarned = false;
 
-			assert.ok(result.includes('nonce="test-nonce"'));
-		} finally {
-			delete globalThis.__REFLEX_CSP_NONCE__;
-		}
-	});
+    globalThis.fetch = () => new Promise(() => {}); // Never resolves
 
-	it("timeout handling with graceful degradation", async () => {
-		delete globalThis.window;
-		let _timeoutWarned = false;
+    const origWarn = console.warn;
+    console.warn = (msg) => {
+      if (typeof msg === "string" && msg.includes("timeout")) _timeoutWarned = true;
+    };
 
-		globalThis.fetch = () => new Promise(() => {}); // Never resolves
+    try {
+      const handler = async () => {
+        fetch("/api/slow"); // Fire and forget
+        return "<div>fast content</div>";
+      };
 
-		const origWarn = console.warn;
-		console.warn = (msg) => {
-			if (typeof msg === "string" && msg.includes("timeout"))
-				_timeoutWarned = true;
-		};
+      const wrapped = ssr(handler, { timeout: 50, maxSettleAttempts: 2 });
+      const result = await wrapped();
 
-		try {
-			const handler = async () => {
-				fetch("/api/slow"); // Fire and forget
-				return "<div>fast content</div>";
-			};
+      assert.ok(result.includes("fast content"));
+      // Timeout warning may or may not happen depending on timing
+    } finally {
+      console.warn = origWarn;
+    }
+  });
 
-			const wrapped = ssr(handler, { timeout: 50, maxSettleAttempts: 2 });
-			const result = await wrapped();
+  it("browser API shims in server environment", async () => {
+    delete globalThis.window;
+    delete globalThis.localStorage;
+    delete globalThis.navigator;
 
-			assert.ok(result.includes("fast content"));
-			// Timeout warning may or may not happen depending on timing
-		} finally {
-			console.warn = origWarn;
-		}
-	});
+    const handler = () => {
+      // These should work due to shims being installed
+      const theme = globalThis.localStorage?.getItem("theme") || "dark";
+      const online = globalThis.navigator?.onLine || true;
+      return `<div>theme: ${theme}, online: ${online}</div>`;
+    };
 
-	it("browser API shims in server environment", async () => {
-		delete globalThis.window;
-		delete globalThis.localStorage;
-		delete globalThis.navigator;
+    const wrapped = ssr(handler);
+    const result = await wrapped();
 
-		const handler = () => {
-			// These should work due to shims being installed
-			const theme = globalThis.localStorage?.getItem("theme") || "dark";
-			const online = globalThis.navigator?.onLine || true;
-			return `<div>theme: ${theme}, online: ${online}</div>`;
-		};
-
-		const wrapped = ssr(handler);
-		const result = await wrapped();
-
-		assert.ok(result.includes("theme: dark"));
-		assert.ok(result.includes("online: true"));
-	});
+    assert.ok(result.includes("theme: dark"));
+    assert.ok(result.includes("online: true"));
+  });
 });
