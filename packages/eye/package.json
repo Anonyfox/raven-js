@@ -1,7 +1,7 @@
 {
   "name": "@raven-js/eye",
   "description": "Zero-dependency reconnaissance intelligence library for modern JavaScript - digital fingerprinting and security assessment",
-  "version": "0.4.37",
+  "version": "0.4.38",
   "type": "module",
   "main": "index.js",
   "files": [

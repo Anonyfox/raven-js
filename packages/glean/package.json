@@ -1,6 +1,6 @@
 {
   "name": "@raven-js/glean",
-  "version": "0.4.37",
+  "version": "0.4.38",
   "description": "Glean documentation gold from your codebase - JSDoc parsing, validation, and beautiful doc generation",
   "type": "module",
   "main": "index.js",

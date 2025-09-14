@@ -240,9 +240,22 @@ async function hydrateIsland(el) {
       console.error(`[islands] Export "${exportName}" not found or not a function in ${modulePath}`);
       return;
     }
+
+    // Check if this island was SSR'd and needs wrapping
+    const needsSSR = el.getAttribute("data-ssr") === "true";
+
     // Clear SSR children and mount reactive component
     el.textContent = "";
-    mount(() => Component(props), el, { replace: true });
+
+    if (needsSSR) {
+      // Wrap with ssr() to consume cached data
+      const wrappedComponent = ssr(Component);
+      mount(() => wrappedComponent(props), el, { replace: true });
+    } else {
+      // Direct mount for client-only islands
+      mount(() => Component(props), el, { replace: true });
+    }
+
     el.setAttribute("data-hydrated", "1");
   } catch (err) {
     console.error(`[islands] Failed to load ${modulePath}`, err);
@@ -362,7 +375,7 @@ export async function islandSSR(cfg) {
     ssrContent = "";
   }
 
-  return `<div id="${id}" data-island data-module="${modulePath}" data-export="${exportName}" data-client="${on}" data-props="${propsAttr}">${ssrContent}</div>`;
+  return `<div id="${id}" data-island data-ssr="true" data-module="${modulePath}" data-export="${exportName}" data-client="${on}" data-props="${propsAttr}">${ssrContent}</div>`;
 }
 
 /**

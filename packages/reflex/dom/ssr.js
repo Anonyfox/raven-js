@@ -305,7 +305,6 @@ export function ssr(fn, options = {}) {
         if (method === "GET" && ctx.fetchCache.has(key)) return ctx.fetchCache.get(key);
 
         const p = orig(url, opts).then(async (resp) => {
-          const clone = resp.clone();
           const data = {
             ok: resp.ok,
             status: resp.status,
@@ -317,35 +316,53 @@ export function ssr(fn, options = {}) {
             blob: /** @type {any} */ (null),
           };
 
-          // Track body reads on the response we return
-          const proxy = new Proxy(resp, {
-            get(target, prop) {
-              const v = /** @type {any} */ (target)[/** @type {any} */ (prop)];
-              if (
-                typeof v === "function" &&
-                ["json", "text", "arrayBuffer", "blob", "formData"].includes(String(prop))
-              ) {
-                return (/** @type {...any} */ ...a) => {
-                  const bp = v.apply(target, a);
-                  ctx.track(bp);
-                  return bp;
-                };
-              }
-              return v;
-            },
-          });
-
-          // Try to pre-read a representation for hydration cache
+          // Pre-read the body for caching (consumes the original response)
           try {
             const ct = resp.headers.get("content-type") || "";
-            if (ct.includes("application/json")) data.json = await clone.json();
-            else if (ct.includes("text/")) data.text = await clone.text();
-            else data.arrayBuffer = await clone.arrayBuffer();
+            if (ct.includes("application/json")) {
+              data.json = await resp.json();
+            } else if (ct.includes("text/")) {
+              data.text = await resp.text();
+            } else {
+              data.arrayBuffer = await resp.arrayBuffer();
+            }
           } catch {
             try {
-              data.text = await clone.text();
+              data.text = await resp.text();
             } catch {}
           }
+
+          // Create a mock response that returns cached data
+          const proxy = {
+            ok: resp.ok,
+            status: resp.status,
+            statusText: resp.statusText,
+            headers: resp.headers,
+            url: resp.url,
+            redirected: resp.redirected,
+            type: resp.type,
+            bodyUsed: true,
+            json: () => {
+              ctx.track(Promise.resolve(data.json));
+              return Promise.resolve(data.json);
+            },
+            text: () => {
+              ctx.track(Promise.resolve(data.text));
+              return Promise.resolve(data.text);
+            },
+            arrayBuffer: () => {
+              ctx.track(Promise.resolve(data.arrayBuffer));
+              return Promise.resolve(data.arrayBuffer);
+            },
+            blob: () => {
+              ctx.track(Promise.resolve(data.blob));
+              return Promise.resolve(data.blob);
+            },
+            clone() {
+              return this;
+            },
+            formData: () => Promise.reject(new Error("formData not available in SSR")),
+          };
 
           if (method === "GET") {
             if (!ctx.ssrData) ctx.ssrData = { fetch: {} };

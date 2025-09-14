@@ -99,6 +99,17 @@ describe("island()", () => {
     });
     match(result, /><\/div>$/); // Empty content between tags
   });
+
+  it("does NOT include data-ssr attribute", () => {
+    const result = island({
+      src: "/app.js",
+      props: { test: true },
+    });
+
+    // Should NOT have data-ssr attribute
+    ok(!result.includes("data-ssr"));
+    match(result, /data-island data-module/);
+  });
 });
 
 describe("islandSSR()", () => {
@@ -111,7 +122,7 @@ describe("islandSSR()", () => {
       props: { count: 5 },
     });
 
-    match(result, /^<div id="island-[a-z0-9]+" data-island/);
+    match(result, /^<div id="island-[a-z0-9]+" data-island data-ssr="true"/);
     match(result, />Count: 5<\/div><\/div>$/);
   });
 
@@ -282,6 +293,20 @@ describe("islandSSR()", () => {
     // Should still have the wrapper div with all attributes
     match(result, /^<div id="island-[a-z0-9]+" data-island/);
     match(result, /data-props="%7B%7D"><\/div>$/); // Empty object encoded
+  });
+
+  it("includes data-ssr attribute", async () => {
+    const Component = () => "<span>Test</span>";
+
+    const result = await islandSSR({
+      src: "/app.js",
+      ssr: Component,
+      props: {},
+    });
+
+    // Should have data-ssr="true" attribute
+    ok(result.includes('data-ssr="true"'));
+    match(result, /data-island data-ssr="true"/);
   });
 
   it("handles null/undefined component output", async () => {

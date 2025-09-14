@@ -5,7 +5,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "start": "node --watch-path=./src cfg/start.js",
+    "start": "node --watch-path=./src start.js",
     "build": "node ../../packages/fledge/bin/fledge.js static ./raven.config.js:build",
     "format": "npx @biomejs/biome format --write .",
     "lint": "npx @biomejs/biome lint ."
