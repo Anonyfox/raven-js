@@ -86,7 +86,7 @@ export const Arsenal = () => {
       <div class="container py-5">
         <div class="text-center mb-5">
           <h2 class="display-6 fw-light text-white mb-4">The Arsenal</h2>
-          <p class="lead text-light mb-4">Surgical tools. Zero dependencies. Pick what you need.</p>
+          <p class="lead text-light mb-4">Standalone capabilities instead of another framework. Pick what you need.</p>
           <div class="d-flex justify-content-center gap-4 text-light opacity-75">
             <small><i class="bi bi-check-circle-fill text-success me-1"></i>${libraries.filter((p) => p.status === "production").length + tools.filter((p) => p.status === "production").length} Production Ready</small>
             <small><i class="bi bi-clock-fill text-warning me-1"></i>${libraries.filter((p) => p.status === "development").length + tools.filter((p) => p.status === "development").length} In Development</small>
