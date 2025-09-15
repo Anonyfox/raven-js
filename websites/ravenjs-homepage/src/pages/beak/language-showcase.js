@@ -24,13 +24,13 @@ import { XmlSection } from "./xml-section.js";
  */
 export const LanguageShowcase = () => {
   return html`
-    <section class="py-5 bg-dark text-white">
+    <section class="py-5 bg-dark text-white position-relative">
+      <div class="spine-dot" style="top: 2.25rem;"></div>
       <div class="container py-5">
         <div class="text-center mb-5">
-          <h2 class="display-6 mb-4 text-white">Seven Languages, One Syntax</h2>
-          <p class="lead text-light">
-            Each language module provides full syntax highlighting, IDE support, and zero-dependency deployment.
-          </p>
+          <div class="text-uppercase text-white-50 small section-kicker mb-1">02 — Languages</div>
+          <h2 class="display-6 mb-2 text-white">Seven Languages, One Syntax</h2>
+          <p class="lead text-light mb-0">Each module provides first-class syntax handling with zero-dependency deployment.</p>
         </div>
 
         <div class="accordion" id="languageAccordion">

@@ -42,15 +42,15 @@ const query = sql\`SELECT * FROM users\`
  * Problem section for Beak page - RavenJS electric elegance
  */
 export const Problem = () => html`
-  <section id="problem" class="py-5 bg-white">
+  <section id="problem" class="py-5 bg-white position-relative">
+    <div class="spine-dot" style="top: 2.25rem;"></div>
     <div class="container py-5">
       <div class="row justify-content-center">
         <div class="col-lg-11 col-xl-10">
           <!-- Cheeky Problem Statement -->
           <div class="text-center mb-5">
-            <h2 class="display-6 fw-bold text-dark mb-4">
-              Template Engine Fatigue Syndrome
-            </h2>
+            <div class="text-uppercase text-muted small section-kicker mb-1">01 — Problem</div>
+            <h2 class="display-6 fw-bold text-dark mb-2">Template Engine Fatigue Syndrome</h2>
             <p class="lead text-muted mb-0" style="max-width: 700px; margin: 0 auto;">
               Every content type demands its own loader, plugin, build step, and deployment pipeline.
               <span class="text-dark fw-semibold">Meanwhile, JavaScript already has template literals.</span>

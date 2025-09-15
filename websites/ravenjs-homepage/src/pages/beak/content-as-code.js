@@ -38,12 +38,14 @@ const microEdgeImport = `import { html } from '@raven-js/beak' // edge/worker`;
  * Content-as-Code manifesto section - RavenJS electric elegance
  */
 export const ContentAsCode = () => html`
-  <section class="py-5 bg-white">
+  <section class="py-5 bg-white position-relative">
+    <div class="spine-dot" style="top: 2.25rem;"></div>
     <div class="container py-5">
       <div class="row g-5">
         <!-- Left: Editorial manifesto content -->
         <div class="col-md-8">
           <header class="mb-4">
+            <div class="text-uppercase text-muted small section-kicker mb-1">03 — Manifesto</div>
             <h2 class="display-6 fw-bold text-dark mb-2" style="letter-spacing: 0.01em;">Content-as-Code: One Language, Everything.</h2>
             <p class="text-muted fs-5 mb-0">Refactor content like code. Enforce safety once. Run everywhere.</p>
           </header>
