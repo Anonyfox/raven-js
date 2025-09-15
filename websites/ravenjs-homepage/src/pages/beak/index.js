@@ -12,7 +12,6 @@
 
 import { html } from "@raven-js/beak";
 import { ContentAsCode } from "./content-as-code.js";
-import { DeveloperExperience } from "./developer-experience.js";
 import { Hero } from "./hero.js";
 import { LanguageShowcase } from "./language-showcase.js";
 import { Problem } from "./problem.js";
@@ -36,5 +35,4 @@ export const body = html`
   ${Problem()}
   ${LanguageShowcase()}
   ${ContentAsCode()}
-  ${DeveloperExperience()}
 `;
