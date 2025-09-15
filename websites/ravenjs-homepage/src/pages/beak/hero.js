@@ -10,7 +10,7 @@
  * @file Beak hero section component
  */
 
-import { highlightHTML, highlightJS } from "@raven-js/beak/highlight";
+import { highlightJS } from "@raven-js/beak/highlight";
 import { escapeHtml, html } from "@raven-js/beak/html";
 
 // Code examples for before/after comparison
@@ -33,7 +33,7 @@ const afterCode = html`const page = html\`
  */
 export const Hero = () =>
   html`
-  <section class="py-5 position-relative overflow-hidden" style="background: linear-gradient(135deg, #212529 0%, #343a40 100%); min-height: 85vh;">
+    <section class="py-5 bg-dark text-white position-relative overflow-hidden" style="min-height: 85vh;">
     <div class="container py-5 h-100">
       <div class="row h-100 align-items-center justify-content-center text-center">
         <div class="col-lg-10 col-xl-8">
@@ -88,18 +88,18 @@ export const Hero = () =>
           <!-- Quick Demo - Elegant Comparison -->
           <div class="row g-4 mb-5 justify-content-center">
             <div class="col-lg-6 col-xl-6">
-              <div class="card border-0 shadow-sm h-100 d-flex flex-column" style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);">
+              <div class="card bg-secondary bg-opacity-10 border border-secondary border-opacity-25 shadow-sm h-100 d-flex flex-column">
                 <div class="card-body p-4 d-flex flex-column">
                   <div class="text-light small mb-3 opacity-75 text-uppercase tracking-wide" style="letter-spacing: 0.1em;">Before</div>
                   <div class="bg-light rounded p-3 border flex-grow-1 text-start" style="min-height: 140px;">
                     <pre class="mb-0"><code class="text-dark">${escapeHtml(beforeCode)}</code></pre>
                   </div>
-                  <div class="text-light small mt-3 opacity-50 align-self-end">Just gray strings. No help from your IDE.</div>
+                  <div class="text-light small mt-3 opacity-50 align-self-end">Just bland template literals. No help.</div>
                 </div>
               </div>
             </div>
             <div class="col-lg-6 col-xl-6">
-              <div class="card border-0 shadow-lg h-100 d-flex flex-column" style="background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1) !important;">
+              <div class="card bg-light bg-opacity-10 border border-light border-opacity-25 shadow-lg h-100 d-flex flex-column electric-card">
                 <div class="card-body p-4 d-flex flex-column">
                   <div class="text-white small mb-3 fw-semibold text-uppercase tracking-wide" style="letter-spacing: 0.1em;">After</div>
                   <div class="bg-light rounded p-3 border flex-grow-1 text-start" style="min-height: 140px;">
@@ -115,15 +115,13 @@ export const Hero = () =>
           <div class="d-flex gap-3 justify-content-center flex-wrap">
             <a
               href="https://www.npmjs.com/package/@raven-js/beak"
-              class="btn btn-light btn-lg px-4 py-3 fw-semibold electric-btn"
-              style="border-radius: 8px; transition: all 0.2s ease;"
+              class="btn btn-light btn-lg px-4 py-3 fw-semibold rounded-3 electric-btn"
             >
               <i class="bi bi-download me-2"></i>npm install @raven-js/beak
             </a>
             <a
               href="#languageAccordion"
-              class="btn btn-outline-light btn-lg px-4 py-3 fw-semibold"
-              style="border-radius: 8px; transition: all 0.2s ease;"
+              class="btn btn-outline-light btn-lg px-4 py-3 fw-semibold rounded-3 hover-lift"
             >
               Explore Languages
             </a>
@@ -132,22 +130,39 @@ export const Hero = () =>
       </div>
     </div>
 
-    <!-- Subtle Electric Accent -->
-    <div
-      class="position-absolute top-50 start-50 translate-middle opacity-10 pointer-events-none"
-      style="width: 800px; height: 800px; background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%); z-index: 0;"
-    ></div>
   </section>
 
   <style>
     .letter-spacing-tight { letter-spacing: -0.02em; }
     .tracking-wide { letter-spacing: 0.1em; }
-    .hover-glow:hover { filter: brightness(0) invert(1) drop-shadow(0 0 20px rgba(255,255,255,0.3)); }
+    .hover-glow:hover {
+      filter: brightness(0) invert(1) drop-shadow(0 0 15px rgba(255,255,255,0.4));
+      transform: scale(1.05);
+      transition: all 0.3s ease;
+    }
+    .electric-btn {
+      transition: all 0.2s ease;
+      border: 2px solid transparent;
+    }
     .electric-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+      box-shadow: 0 8px 25px rgba(255,255,255,0.2);
+      border-color: rgba(255,255,255,0.3);
     }
-    .pointer-events-none { pointer-events: none; }
+    .hover-lift {
+      transition: all 0.2s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255,255,255,0.1);
+    }
+    .electric-card {
+      transition: all 0.3s ease;
+    }
+    .electric-card:hover {
+      border-color: rgba(255,255,255,0.4) !important;
+      box-shadow: 0 8px 30px rgba(255,255,255,0.1) !important;
+    }
     .subtitle-indent { margin-left: 0; }
     @media (min-width: 768px) {
       .subtitle-indent { margin-left: 8px; }
