@@ -71,8 +71,6 @@ export const ContentAsCode = () => html`
 
           <!-- Removed micro-proof strips and oversized pull-quote to improve readability on narrow screens -->
 
-          <!-- Closing line -->
-          <div class="text-center text-uppercase text-muted small" style="letter-spacing: 0.12em;">One language. Infinite possibilities.</div>
         </div>
 
         <!-- Right: Evidence chips + marginalia -->

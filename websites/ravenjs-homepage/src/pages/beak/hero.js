@@ -33,7 +33,7 @@ const afterCode = html`const page = html\`
  */
 export const Hero = () =>
   html`
-    <section class="py-5 bg-dark text-white position-relative overflow-hidden" style="min-height: 85vh;">
+    <section class="py-5 bg-dark text-white position-relative overflow-hidden" style="min-height: 55vh;">
     <div class="container py-5 h-100">
       <div class="row h-100 align-items-center justify-content-center text-center">
         <div class="col-lg-10 col-xl-8">
@@ -73,40 +73,6 @@ export const Hero = () =>
               <div class="text-center px-3">
                 <div class="text-white fw-semibold mb-2">Runtime? What Runtime?</div>
                 <div class="text-light small opacity-75">Zero deps, zero build step</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- The Hook - Centered & Punchy -->
-          <div class="mb-5">
-            <h2 class="h3 text-white fw-normal mb-3 lh-base" style="max-width: 600px; margin: 0 auto;">
-              Your IDE thinks template literals are just strings.<br/>
-              <span class="fw-bold text-white">We taught it seven languages.</span>
-            </h2>
-          </div>
-
-          <!-- Quick Demo - Elegant Comparison -->
-          <div class="row g-4 mb-5 justify-content-center">
-            <div class="col-lg-6 col-xl-6">
-              <div class="card bg-secondary bg-opacity-10 border border-secondary border-opacity-25 shadow-sm h-100 d-flex flex-column">
-                <div class="card-body p-4 d-flex flex-column">
-                  <div class="text-light small mb-3 opacity-75 text-uppercase tracking-wide" style="letter-spacing: 0.1em;">Before</div>
-                  <div class="bg-light rounded p-3 border flex-grow-1 text-start" style="min-height: 140px;">
-                    <pre class="mb-0"><code class="text-dark">${escapeHtml(beforeCode)}</code></pre>
-                  </div>
-                  <div class="text-light small mt-3 opacity-50 align-self-end">Just bland template literals. No help.</div>
-                </div>
-              </div>
-            </div>
-            <div class="col-lg-6 col-xl-6">
-              <div class="card bg-light bg-opacity-10 border border-light border-opacity-25 shadow-lg h-100 d-flex flex-column electric-card">
-                <div class="card-body p-4 d-flex flex-column">
-                  <div class="text-white small mb-3 fw-semibold text-uppercase tracking-wide" style="letter-spacing: 0.1em;">After</div>
-                  <div class="bg-light rounded p-3 border flex-grow-1 text-start" style="min-height: 140px;">
-                    <pre class="mb-0"><code>${highlightJS(afterCode)}</code></pre>
-                  </div>
-                  <div class="text-light small mt-3 opacity-75 align-self-end">Syntax highlighting. IntelliSense. Formatting.</div>
-                </div>
               </div>
             </div>
           </div>
