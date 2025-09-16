@@ -122,7 +122,7 @@ const searchQuery = sql\`
               <div class="mb-0">
                 <div class="alert alert-warning border-0 shadow-sm" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);">
                   <div class="d-flex align-items-start">
-                    <i class="bi bi-exclamation-triangle-fill text-warning me-2 mt-1"></i>
+                    <span class="text-warning me-2 mt-1">⚠️</span>
                     <div>
                       <p class="fw-bold mb-2 text-dark">Security Boundary (Honest Engineering)</p>
                       <p class="mb-0 small text-dark">Prevents string literal breakouts and binary injection. <span class="fw-semibold">Does NOT prevent logical injection patterns.</span> Use parameterized queries for complete protection.</p>
@@ -137,7 +137,7 @@ const searchQuery = sql\`
               <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                 <div class="card-body">
                   <h6 class="text-dark mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-shield-check me-2"></i>6 Critical Characters
+                    🛡️ 6 Critical Characters
                   </h6>
                   <ul class="list-unstyled mb-0 small">
                     <li class="mb-2 d-flex justify-content-between">
@@ -172,7 +172,7 @@ const searchQuery = sql\`
               <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #212529 0%, #343a40 100%);">
                 <div class="card-body">
                   <h6 class="text-white mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-speedometer me-2"></i>Tiered Performance
+                    🚀 Tiered Performance
                   </h6>
                   <ul class="list-unstyled mb-0 small">
                     <li class="mb-2 d-flex justify-content-between">
@@ -193,7 +193,7 @@ const searchQuery = sql\`
                     </li>
                   </ul>
                   <hr class="border-secondary my-3">
-                  <p class="text-light small mb-0"><i class="bi bi-cpu me-2"></i>Monomorphic functions for V8 JIT optimization</p>
+                  <p class="text-light small mb-0">🔧 Monomorphic functions for V8 JIT optimization</p>
                 </div>
               </div>
 
@@ -201,13 +201,13 @@ const searchQuery = sql\`
               <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                 <div class="card-body">
                   <h6 class="text-dark mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-gear-wide-connected me-2"></i>Engineering Edge
+                    ⚙️ Engineering Edge
                   </h6>
                   <ul class="list-unstyled mb-3 small">
-                    <li class="mb-2"><i class="bi bi-search text-dark me-2"></i><span class="text-dark fw-medium">Character scanning</span> (not regex)</li>
-                    <li class="mb-2"><i class="bi bi-globe text-dark me-2"></i><span class="text-dark fw-medium">Unicode safe</span> (emoji, international)</li>
-                    <li class="mb-2"><i class="bi bi-type text-dark me-2"></i><span class="text-dark fw-medium">Type coercion</span> (String() consistent)</li>
-                    <li class="mb-2"><i class="bi bi-scissors text-dark me-2"></i><span class="text-dark fw-medium">Smart trimming</span> (boundary detection)</li>
+                    <li class="mb-2">🔍 <span class="text-dark fw-medium">Character scanning</span> (not regex)</li>
+                    <li class="mb-2">🌐 <span class="text-dark fw-medium">Unicode safe</span> (emoji, international)</li>
+                    <li class="mb-2">📝 <span class="text-dark fw-medium">Type coercion</span> (String() consistent)</li>
+                    <li class="mb-2">✂️ <span class="text-dark fw-medium">Smart trimming</span> (boundary detection)</li>
                     <li class="mb-2"><i class="bi bi-shield-x text-dark me-2"></i><span class="text-dark fw-medium">Binary injection</span> prevention</li>
                     <li><i class="bi bi-check-circle text-dark me-2"></i><span class="text-dark fw-medium">Zero dependencies</span></li>
                   </ul>

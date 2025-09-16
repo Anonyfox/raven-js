@@ -117,7 +117,7 @@ const result = md\`\${config}\`;
               <div class="mb-0">
                 <div class="alert alert-info border-0 shadow-sm" style="background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);">
                   <div class="d-flex align-items-start">
-                    <i class="bi bi-lightning-charge-fill text-info me-2 mt-1"></i>
+                    <span class="text-info me-2 mt-1">⚡</span>
                     <div>
                       <p class="fw-bold mb-2 text-dark">Performance Intelligence</p>
                       <p class="mb-0 small text-dark">WeakMap template caching, single-pass AST construction, 69K+ ops/sec HTML conversion. <span class="fw-semibold">CommonMark compliant</span> with GitHub extensions.</p>
@@ -132,7 +132,7 @@ const result = md\`\${config}\`;
               <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                 <div class="card-body">
                   <h6 class="text-dark mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-cpu me-2"></i>Context Detection
+                    🔧 Context Detection
                   </h6>
                   <ul class="list-unstyled mb-0 small">
                     <li class="mb-2 d-flex justify-content-between">
@@ -163,28 +163,28 @@ const result = md\`\${config}\`;
               <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #212529 0%, #343a40 100%);">
                 <div class="card-body">
                   <h6 class="text-white mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-diagram-3 me-2"></i>Dual Architecture
+                    📊 Dual Architecture
                   </h6>
                   <ul class="list-unstyled mb-0 small">
                     <li class="mb-2 d-flex align-items-center">
-                      <i class="bi bi-pencil text-light me-2"></i>
+                      ✏️
                       <span class="text-white fw-medium">Template Composition</span>
                     </li>
                     <li class="mb-2 d-flex align-items-center">
-                      <i class="bi bi-code-slash text-light me-2"></i>
+                      💻
                       <span class="text-white fw-medium">HTML Conversion</span>
                     </li>
                     <li class="mb-2 d-flex align-items-center">
-                      <i class="bi bi-type text-light me-2"></i>
+                      📝
                       <span class="text-white fw-medium">Text Extraction</span>
                     </li>
                     <li class="d-flex align-items-center">
-                      <i class="bi bi-link text-light me-2"></i>
+                      🔗
                       <span class="text-white fw-medium">Reference Management</span>
                     </li>
                   </ul>
                   <hr class="border-secondary my-3">
-                  <p class="text-light small mb-0"><i class="bi bi-award me-2"></i>CommonMark compliant + GitHub extensions</p>
+                  <p class="text-light small mb-0">🏆 CommonMark compliant + GitHub extensions</p>
                 </div>
               </div>
 
@@ -192,15 +192,15 @@ const result = md\`\${config}\`;
               <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                 <div class="card-body">
                   <h6 class="text-dark mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-gear-wide-connected me-2"></i>Engineering Excellence
+                    ⚙️ Engineering Excellence
                   </h6>
                   <ul class="list-unstyled mb-3 small">
-                    <li class="mb-2"><i class="bi bi-memory text-dark me-2"></i><span class="text-dark fw-medium">WeakMap caching</span> (template identity)</li>
-                    <li class="mb-2"><i class="bi bi-tree text-dark me-2"></i><span class="text-dark fw-medium">Single-pass AST</span> construction</li>
-                    <li class="mb-2"><i class="bi bi-scissors text-dark me-2"></i><span class="text-dark fw-medium">Surgical text extraction</span></li>
-                    <li class="mb-2"><i class="bi bi-normalize-whitespace text-dark me-2"></i><span class="text-dark fw-medium">Intelligent whitespace</span></li>
-                    <li class="mb-2"><i class="bi bi-github text-dark me-2"></i><span class="text-dark fw-medium">GitHub extensions</span></li>
-                    <li><i class="bi bi-check-circle text-dark me-2"></i><span class="text-dark fw-medium">Zero dependencies</span></li>
+                    <li class="mb-2">📦 <span class="text-dark fw-medium">WeakMap caching</span> (template identity)</li>
+                    <li class="mb-2">🌳 <span class="text-dark fw-medium">Single-pass AST</span> construction</li>
+                    <li class="mb-2">✂️ <span class="text-dark fw-medium">Surgical text extraction</span></li>
+                    <li class="mb-2">📏 <span class="text-dark fw-medium">Intelligent whitespace</span></li>
+                    <li class="mb-2">🐙 <span class="text-dark fw-medium">GitHub extensions</span></li>
+                    <li>✅ <span class="text-dark fw-medium">Zero dependencies</span></li>
                   </ul>
                   <div class="border-top border-secondary pt-3">
                     <p class="text-muted small mb-0 fst-italic">

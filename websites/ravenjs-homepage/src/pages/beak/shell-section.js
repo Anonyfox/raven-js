@@ -125,7 +125,7 @@ const dangerous = sh\`echo \${userInput}\`; // You own this risk`;
               <div class="mb-0">
                 <div class="alert alert-danger border-0 shadow-sm" style="background: linear-gradient(135deg, #f8d7da 0%, #f5c2c7 100%);">
                   <div class="d-flex align-items-start">
-                    <i class="bi bi-shield-exclamation-fill text-danger me-2 mt-1"></i>
+                    <span class="text-danger me-2 mt-1">⚠️</span>
                     <div>
                       <p class="fw-bold mb-2 text-dark">Security By Design (No Magic)</p>
                       <div class="bg-light rounded p-2 mb-2 border">
@@ -143,23 +143,23 @@ const dangerous = sh\`echo \${userInput}\`; // You own this risk`;
               <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                 <div class="card-body">
                   <h6 class="text-dark mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-list-ul me-2"></i>Array Intelligence
+                    📋 Array Intelligence
                   </h6>
                   <ul class="list-unstyled mb-0 small">
                     <li class="mb-2 d-flex align-items-center">
-                      <i class="bi bi-arrow-right text-dark me-2"></i>
+                      ➡️
                       <span class="text-dark fw-medium">Space-separated joining</span>
                     </li>
                     <li class="mb-2 d-flex align-items-center">
-                      <i class="bi bi-funnel text-dark me-2"></i>
+                      📦
                       <span class="text-dark fw-medium">Falsy value filtering</span>
                     </li>
                     <li class="mb-2 d-flex align-items-center">
-                      <i class="bi bi-layers text-dark me-2"></i>
+                      📋
                       <span class="text-dark fw-medium">Recursive processing</span>
                     </li>
                     <li class="d-flex align-items-center">
-                      <i class="bi bi-check-circle text-dark me-2"></i>
+                      ✅
                       <span class="text-dark fw-medium">Mixed type handling</span>
                     </li>
                   </ul>
@@ -170,28 +170,28 @@ const dangerous = sh\`echo \${userInput}\`; // You own this risk`;
               <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #212529 0%, #343a40 100%);">
                 <div class="card-body">
                   <h6 class="text-white mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-terminal me-2"></i>DevOps Patterns
+                    💻 DevOps Patterns
                   </h6>
                   <ul class="list-unstyled mb-0 small">
                     <li class="mb-2 d-flex align-items-center">
-                      <i class="bi bi-box text-light me-2"></i>
+                      📦
                       <span class="text-white fw-medium">Docker Commands</span>
                     </li>
                     <li class="mb-2 d-flex align-items-center">
-                      <i class="bi bi-git text-light me-2"></i>
+                      🌳
                       <span class="text-white fw-medium">Git Operations</span>
                     </li>
                     <li class="mb-2 d-flex align-items-center">
-                      <i class="bi bi-server text-light me-2"></i>
+                      🖥️
                       <span class="text-white fw-medium">Node.js Execution</span>
                     </li>
                     <li class="d-flex align-items-center">
-                      <i class="bi bi-files text-light me-2"></i>
+                      📁
                       <span class="text-white fw-medium">File Operations</span>
                     </li>
                   </ul>
                   <hr class="border-secondary my-3">
-                  <p class="text-light small mb-0"><i class="bi bi-lightning me-2"></i>Built for real DevOps workflows</p>
+                  <p class="text-light small mb-0">⚡ Built for real DevOps workflows</p>
                 </div>
               </div>
 
@@ -199,15 +199,15 @@ const dangerous = sh\`echo \${userInput}\`; // You own this risk`;
               <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                 <div class="card-body">
                   <h6 class="text-dark mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-cpu me-2"></i>Performance Engine
+                    🚀 Performance Engine
                   </h6>
                   <ul class="list-unstyled mb-3 small">
-                    <li class="mb-2"><i class="bi bi-memory text-dark me-2"></i><span class="text-dark fw-medium">WeakMap caching</span> (template identity)</li>
-                    <li class="mb-2"><i class="bi bi-lightning text-dark me-2"></i><span class="text-dark fw-medium">Static optimization</span> (no interpolations)</li>
-                    <li class="mb-2"><i class="bi bi-arrow-repeat text-dark me-2"></i><span class="text-dark fw-medium">Whitespace normalization</span> (/\\s+/g)</li>
-                    <li class="mb-2"><i class="bi bi-layers text-dark me-2"></i><span class="text-dark fw-medium">Large array handling</span> (1000+ items)</li>
-                    <li class="mb-2"><i class="bi bi-globe text-dark me-2"></i><span class="text-dark fw-medium">Unicode support</span> (international)</li>
-                    <li><i class="bi bi-shield-x text-dark me-2"></i><span class="text-dark fw-medium">No escaping</span> (developer control)</li>
+                    <li class="mb-2">📦 <span class="text-dark fw-medium">WeakMap caching</span> (template identity)</li>
+                    <li class="mb-2">⚡ <span class="text-dark fw-medium">Static optimization</span> (no interpolations)</li>
+                    <li class="mb-2">🔄 <span class="text-dark fw-medium">Whitespace normalization</span> (/\\s+/g)</li>
+                    <li class="mb-2">📋 <span class="text-dark fw-medium">Large array handling</span> (1000+ items)</li>
+                    <li class="mb-2">🌐 <span class="text-dark fw-medium">Unicode support</span> (international)</li>
+                    <li>🛡️ <span class="text-dark fw-medium">No escaping</span> (developer control)</li>
                   </ul>
                   <div class="border-top border-secondary pt-3">
                     <p class="text-muted small mb-0 fst-italic">

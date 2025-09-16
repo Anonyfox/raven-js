@@ -37,7 +37,7 @@ export const Hero = () => html`
           </p>
           <div class="d-flex justify-content-center gap-3 flex-wrap">
             <a href="https://github.com/Anonyfox/ravenjs" class="btn btn-outline-light btn-lg px-4 py-3">
-              <i class="bi bi-github me-2"></i>View on GitHub
+              🐙 View on GitHub
             </a>
             <a href="#intelligence" class="btn btn-light btn-lg px-4 py-3 text-dark">
               <strong>Why Ravens Dominate</strong>

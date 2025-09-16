@@ -76,7 +76,7 @@ export const body = html`
       <div class="mb-4">
         <div class="mb-4">
           <h6 class="fw-bold text-dark mb-2 d-flex align-items-center">
-            <i class="bi bi-gear me-2 text-muted"></i>What is it?
+            ⚙️ What is it?
           </h6>
           <p class="text-dark mb-0 lh-sm">
             Tagged template literals + IDE plugin = native syntax highlighting for HTML/CSS/SQL in JS strings.
@@ -85,7 +85,7 @@ export const body = html`
 
         <div class="mb-4">
           <h6 class="fw-bold text-dark mb-2 d-flex align-items-center">
-            <i class="bi bi-lightning me-2 text-muted"></i>How it works
+            ⚡ How it works
           </h6>
           <ul class="text-dark mb-0 lh-sm small">
             <li class="mb-1">Custom tag functions handle context-aware serialization</li>
@@ -97,7 +97,7 @@ export const body = html`
 
         <div class="mb-4">
           <h6 class="fw-bold text-dark mb-2 d-flex align-items-center">
-            <i class="bi bi-target me-2 text-muted"></i>Why care
+            🎯 Why care
           </h6>
           <ul class="text-dark mb-0 lh-sm small">
             <li class="mb-1">No webpack loaders for HTML/CSS/SQL files</li>
@@ -109,7 +109,7 @@ export const body = html`
 
         <div class="bg-light rounded p-3 mb-4">
           <div class="d-flex align-items-start">
-            <i class="bi bi-lightbulb text-warning me-2 mt-1 flex-shrink-0"></i>
+            <span class="me-2 mt-1 flex-shrink-0">💡</span>
             <div>
               <div class="fw-semibold text-dark small mb-1">The insight</div>
               <div class="text-dark small lh-sm">
@@ -133,7 +133,7 @@ const query = sql\`SELECT * FROM users\`
 
         <div class="d-grid">
           <a href="https://www.npmjs.com/package/@raven-js/beak" class="btn btn-dark btn-lg fw-semibold" target="_blank">
-            <i class="bi bi-download me-2"></i>npm install @raven-js/beak
+            📦 npm install @raven-js/beak
           </a>
         </div>
       </div>

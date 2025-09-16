@@ -137,23 +137,23 @@ const dynamic = css\`
               <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                 <div class="card-body">
                   <h6 class="text-dark mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-magic me-2"></i>Smart Transforms
+                    ✨ Smart Transforms
                   </h6>
                   <ul class="list-unstyled mb-0">
                     <li class="mb-2 d-flex align-items-center">
-                      <i class="bi bi-arrow-left-right text-dark me-2"></i>
+                      ↔️
                       <span class="text-dark fw-medium">camelCase → kebab-case</span>
                     </li>
                     <li class="mb-2 d-flex align-items-center">
-                      <i class="bi bi-list-nested text-dark me-2"></i>
+                      📋
                       <span class="text-dark fw-medium">Array Flattening</span>
                     </li>
                     <li class="mb-2 d-flex align-items-center">
-                      <i class="bi bi-gear text-dark me-2"></i>
+                      ⚙️
                       <span class="text-dark fw-medium">Vendor Prefixes</span>
                     </li>
                     <li class="d-flex align-items-center">
-                      <i class="bi bi-funnel text-dark me-2"></i>
+                      📦
                       <span class="text-dark fw-medium">Null Filtering</span>
                     </li>
                   </ul>
@@ -164,7 +164,7 @@ const dynamic = css\`
               <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #212529 0%, #343a40 100%);">
                 <div class="card-body">
                   <h6 class="text-white mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-lightning me-2"></i>Performance
+                    ⚡ Performance
                   </h6>
                   <div class="row text-center">
                     <div class="col-6">
@@ -178,9 +178,9 @@ const dynamic = css\`
                   </div>
                   <hr class="border-secondary my-3">
                   <ul class="list-unstyled mb-0 small">
-                    <li class="mb-1 text-light"><i class="bi bi-cpu me-2"></i>Pre-compiled regex patterns</li>
-                    <li class="mb-1 text-light"><i class="bi bi-graph-up me-2"></i>Monomorphic value paths</li>
-                    <li class="text-light"><i class="bi bi-memory me-2"></i>Minimal object allocation</li>
+                    <li class="mb-1 text-light">🔧 Pre-compiled regex patterns</li>
+                    <li class="mb-1 text-light">📈 Monomorphic value paths</li>
+                    <li class="text-light">📦 Minimal object allocation</li>
                   </ul>
                 </div>
               </div>

@@ -132,7 +132,7 @@ const head = html\`
 
               <!-- SEO Built-ins: Search & Share -->
               <div class="mt-4">
-                <h6 class="text-dark fw-bold mb-1 d-flex align-items-center"><i class="bi bi-search me-2"></i>Search & Share: built-ins</h6>
+                <h6 class="text-dark fw-bold mb-1 d-flex align-items-center">🔍 Search & Share: built-ins</h6>
                 <p class="text-muted small mb-3">Generate canonical, Open Graph, Twitter cards, and robots — zero boilerplate.</p>
                 <div class="d-flex flex-wrap gap-2 mb-3 small">
                   <span class="badge bg-dark text-white">canonical()</span>
@@ -164,23 +164,23 @@ const head = html\`
               <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                 <div class="card-body">
                   <h6 class="text-dark mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-lightning-charge me-2"></i>Key Features
+                    ⚡ Key Features
                   </h6>
                   <ul class="list-unstyled mb-0">
                     <li class="mb-2 d-flex align-items-center">
-                      <i class="bi bi-shield-check text-dark me-2"></i>
+                      🛡️
                       <span class="text-dark fw-medium">XSS Protection</span>
                     </li>
                     <li class="mb-2 d-flex align-items-center">
-                      <i class="bi bi-lightning text-dark me-2"></i>
+                      ⚡
                       <span class="text-dark fw-medium">Event Binding</span>
                     </li>
                     <li class="mb-2 d-flex align-items-center">
-                      <i class="bi bi-search text-dark me-2"></i>
+                      🔍
                       <span class="text-dark fw-medium">Progressive SEO</span>
                     </li>
                     <li class="d-flex align-items-center">
-                      <i class="bi bi-speedometer2 text-dark me-2"></i>
+                      📊
                       <span class="text-dark fw-medium">WeakMap Caching</span>
                     </li>
                   </ul>
@@ -191,7 +191,7 @@ const head = html\`
               <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #212529 0%, #343a40 100%);">
                 <div class="card-body">
                   <h6 class="text-white mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-speedometer me-2"></i>Performance
+                    🚀 Performance
                   </h6>
                   <div class="row text-center">
                     <div class="col-6">
@@ -205,9 +205,9 @@ const head = html\`
                   </div>
                   <hr class="border-secondary my-3">
                   <ul class="list-unstyled mb-0 small">
-                    <li class="mb-1 text-light"><i class="bi bi-cpu me-2"></i>WeakMap cached compilation</li>
-                    <li class="mb-1 text-light"><i class="bi bi-graph-up me-2"></i>V8 optimized processing</li>
-                    <li class="text-light"><i class="bi bi-arrow-repeat me-2"></i>Specialized function generation</li>
+                    <li class="mb-1 text-light">🔧 WeakMap cached compilation</li>
+                    <li class="mb-1 text-light">📈 V8 optimized processing</li>
+                    <li class="text-light">🔄 Specialized function generation</li>
                   </ul>
                 </div>
               </div>
@@ -216,15 +216,15 @@ const head = html\`
               <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                 <div class="card-body">
                   <h6 class="text-dark mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-gear me-2"></i>Technical Edge
+                    ⚙️ Technical Edge
                   </h6>
                   <ul class="list-unstyled mb-3 small">
-                    <li class="mb-2"><i class="bi bi-check-circle text-dark me-2"></i><span class="text-dark fw-medium">Zero build step</span> required</li>
-                    <li class="mb-2"><i class="bi bi-globe text-dark me-2"></i><span class="text-dark fw-medium">Isomorphic</span> (Node.js + Browser)</li>
-                    <li class="mb-2"><i class="bi bi-shield text-dark me-2"></i><span class="text-dark fw-medium">Circular reference</span> protection</li>
-                    <li class="mb-2"><i class="bi bi-x-octagon text-dark me-2"></i><span class="text-dark fw-medium">Protocol blocking</span> (javascript:, data:)</li>
-                    <li class="mb-2"><i class="bi bi-list-nested text-dark me-2"></i><span class="text-dark fw-medium">Array flattening</span> with recursion</li>
-                    <li><i class="bi bi-scissors text-dark me-2"></i><span class="text-dark fw-medium">Surgical escaping</span> (fast probe)</li>
+                    <li class="mb-2">✅ <span class="text-dark fw-medium">Zero build step</span> required</li>
+                    <li class="mb-2">🌐 <span class="text-dark fw-medium">Isomorphic</span> (Node.js + Browser)</li>
+                    <li class="mb-2">🛡️ <span class="text-dark fw-medium">Circular reference</span> protection</li>
+                    <li class="mb-2">🚫 <span class="text-dark fw-medium">Protocol blocking</span> (javascript:, data:)</li>
+                    <li class="mb-2">📋 <span class="text-dark fw-medium">Array flattening</span> with recursion</li>
+                    <li>✂️ <span class="text-dark fw-medium">Surgical escaping</span> (fast probe)</li>
                   </ul>
                   <div class="border-top border-secondary pt-3">
                     <p class="text-muted small mb-0 fst-italic">

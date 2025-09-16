@@ -65,7 +65,7 @@ export const Problem = () => html`
               <div class="card bg-dark text-white border-0 shadow-lg h-100 problem-card">
                 <div class="card-header bg-danger bg-opacity-10 border-bottom border-danger border-opacity-25">
                   <div class="d-flex align-items-center">
-                    <i class="bi bi-exclamation-triangle text-danger me-3 fs-5"></i>
+                    <span class="text-danger me-3 fs-5">⚠️</span>
                     <h5 class="mb-0 text-white">The Traditional Way</h5>
                   </div>
                 </div>
@@ -107,7 +107,7 @@ export const Problem = () => html`
               <div class="card bg-dark text-white border-0 shadow-lg h-100 solution-card">
                 <div class="card-header bg-success bg-opacity-10 border-bottom border-success border-opacity-25">
                   <div class="d-flex align-items-center">
-                    <i class="bi bi-check-circle text-success me-3 fs-5"></i>
+                    <span class="text-success me-3 fs-5">✅</span>
                     <h5 class="mb-0 text-white">The Beak Way</h5>
                   </div>
                 </div>

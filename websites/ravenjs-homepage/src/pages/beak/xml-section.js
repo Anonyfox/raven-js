@@ -148,7 +148,7 @@ const seoSitemap = sitemap({
               <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                 <div class="card-body">
                   <h6 class="text-dark mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-shield-check me-2"></i>5 XML Entities
+                    🛡️ 5 XML Entities
                   </h6>
                   <ul class="list-unstyled mb-0 small">
                     <li class="mb-2 d-flex justify-content-between">
@@ -179,28 +179,28 @@ const seoSitemap = sitemap({
               <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #212529 0%, #343a40 100%);">
                 <div class="card-body">
                   <h6 class="text-white mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-layers me-2"></i>Content Ecosystems
+                    📋 Content Ecosystems
                   </h6>
                   <ul class="list-unstyled mb-0 small">
                     <li class="mb-2 d-flex align-items-center">
-                      <i class="bi bi-rss text-light me-2"></i>
+                      📰
                       <span class="text-white fw-medium">RSS/Atom Feeds</span>
                     </li>
                     <li class="mb-2 d-flex align-items-center">
-                      <i class="bi bi-diagram-3 text-light me-2"></i>
+                      📊
                       <span class="text-white fw-medium">XML Sitemaps</span>
                     </li>
                     <li class="mb-2 d-flex align-items-center">
-                      <i class="bi bi-mic text-light me-2"></i>
+                      🎤
                       <span class="text-white fw-medium">Podcast Enclosures</span>
                     </li>
                     <li class="d-flex align-items-center">
-                      <i class="bi bi-search text-light me-2"></i>
+                      🔍
                       <span class="text-white fw-medium">SEO Optimization</span>
                     </li>
                   </ul>
                   <hr class="border-secondary my-3">
-                  <p class="text-light small mb-0"><i class="bi bi-arrow-up-right me-2"></i>Progressive enhancement: basic → enterprise</p>
+                  <p class="text-light small mb-0">↗️ Progressive enhancement: basic → enterprise</p>
                 </div>
               </div>
 
@@ -208,15 +208,15 @@ const seoSitemap = sitemap({
               <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                 <div class="card-body">
                   <h6 class="text-dark mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-cpu me-2"></i>Performance Engine
+                    🚀 Performance Engine
                   </h6>
                   <ul class="list-unstyled mb-3 small">
-                    <li class="mb-2"><i class="bi bi-lightning text-dark me-2"></i><span class="text-dark fw-medium">Fast-path escaping</span> (regex probe)</li>
-                    <li class="mb-2"><i class="bi bi-memory text-dark me-2"></i><span class="text-dark fw-medium">WeakMap caching</span> (template identity)</li>
-                    <li class="mb-2"><i class="bi bi-layers text-dark me-2"></i><span class="text-dark fw-medium">4-tier optimization</span> (0,1,2-3,4+ values)</li>
-                    <li class="mb-2"><i class="bi bi-scissors text-dark me-2"></i><span class="text-dark fw-medium">Slice builder</span> (first hit start)</li>
-                    <li class="mb-2"><i class="bi bi-shield-x text-dark me-2"></i><span class="text-dark fw-medium">CDATA protection</span> (]]> splitting)</li>
-                    <li><i class="bi bi-arrow-left-right text-dark me-2"></i><span class="text-dark fw-medium">Object attributes</span> (kebab-case)</li>
+                    <li class="mb-2">⚡ <span class="text-dark fw-medium">Fast-path escaping</span> (regex probe)</li>
+                    <li class="mb-2">📦 <span class="text-dark fw-medium">WeakMap caching</span> (template identity)</li>
+                    <li class="mb-2">📋 <span class="text-dark fw-medium">4-tier optimization</span> (0,1,2-3,4+ values)</li>
+                    <li class="mb-2">✂️ <span class="text-dark fw-medium">Slice builder</span> (first hit start)</li>
+                    <li class="mb-2">🛡️ <span class="text-dark fw-medium">CDATA protection</span> (]]> splitting)</li>
+                    <li>↔️ <span class="text-dark fw-medium">Object attributes</span> (kebab-case)</li>
                   </ul>
                   <div class="border-top border-secondary pt-3">
                     <p class="text-muted small mb-0 fst-italic">

@@ -136,7 +136,7 @@ const many = js\`setup({
               <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                 <div class="card-body">
                   <h6 class="text-dark mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-funnel me-2"></i>Smart Filtering
+                    📦 Smart Filtering
                   </h6>
                   <ul class="list-unstyled mb-0 small">
                     <li class="mb-2 d-flex justify-content-between">
@@ -167,7 +167,7 @@ const many = js\`setup({
               <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #212529 0%, #343a40 100%);">
                 <div class="card-body">
                   <h6 class="text-white mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-speedometer me-2"></i>4-Tier Optimization
+                    🚀 4-Tier Optimization
                   </h6>
                   <ul class="list-unstyled mb-0 small">
                     <li class="mb-2 d-flex justify-content-between">
@@ -188,7 +188,7 @@ const many = js\`setup({
                     </li>
                   </ul>
                   <hr class="border-secondary my-3">
-                  <p class="text-light small mb-0"><i class="bi bi-cpu me-2"></i>V8-optimized monomorphic processing</p>
+                  <p class="text-light small mb-0">🔧 V8-optimized monomorphic processing</p>
                 </div>
               </div>
 
@@ -196,15 +196,15 @@ const many = js\`setup({
               <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                 <div class="card-body">
                   <h6 class="text-dark mb-3 fw-bold d-flex align-items-center">
-                    <i class="bi bi-gear-wide-connected me-2"></i>Engineering Edge
+                    ⚙️ Engineering Edge
                   </h6>
                   <ul class="list-unstyled mb-3 small">
-                    <li class="mb-2"><i class="bi bi-lightning text-dark me-2"></i><span class="text-dark fw-medium">Fast-path validation</span> (extracted function)</li>
-                    <li class="mb-2"><i class="bi bi-list-nested text-dark me-2"></i><span class="text-dark fw-medium">Array flattening</span> (join with no separator)</li>
-                    <li class="mb-2"><i class="bi bi-memory text-dark me-2"></i><span class="text-dark fw-medium">Pre-allocation</span> (exact size calculation)</li>
-                    <li class="mb-2"><i class="bi bi-code-slash text-dark me-2"></i><span class="text-dark fw-medium">Script variants</span> (defer/async attributes)</li>
-                    <li class="mb-2"><i class="bi bi-scissors text-dark me-2"></i><span class="text-dark fw-medium">Whitespace trimming</span> (automatic)</li>
-                    <li><i class="bi bi-type text-dark me-2"></i><span class="text-dark fw-medium">Type safety</span> (consistent String() conversion)</li>
+                    <li class="mb-2">⚡ <span class="text-dark fw-medium">Fast-path validation</span> (extracted function)</li>
+                    <li class="mb-2">📋 <span class="text-dark fw-medium">Array flattening</span> (join with no separator)</li>
+                    <li class="mb-2">📦 <span class="text-dark fw-medium">Pre-allocation</span> (exact size calculation)</li>
+                    <li class="mb-2">💻 <span class="text-dark fw-medium">Script variants</span> (defer/async attributes)</li>
+                    <li class="mb-2">✂️ <span class="text-dark fw-medium">Whitespace trimming</span> (automatic)</li>
+                    <li>📝 <span class="text-dark fw-medium">Type safety</span> (consistent String() conversion)</li>
                   </ul>
                   <div class="border-top border-secondary pt-3">
                     <p class="text-muted small mb-0 fst-italic">

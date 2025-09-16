@@ -76,7 +76,7 @@ export const Hero = () =>
               href="https://www.npmjs.com/package/@raven-js/beak"
               class="btn btn-light btn-lg px-4 py-3 fw-semibold rounded-3 electric-btn"
             >
-              <i class="bi bi-download me-2"></i>npm install @raven-js/beak
+              📦 npm install @raven-js/beak
             </a>
             <a
               href="#languageAccordion"
@@ -91,7 +91,7 @@ export const Hero = () =>
               data-bs-target="#tldrOffcanvas"
               aria-controls="tldrOffcanvas"
             >
-              <i class="bi bi-lightning-charge me-2"></i>TL;DR
+              ⚡ TL;DR
             </button>
           </div>
         </div>
