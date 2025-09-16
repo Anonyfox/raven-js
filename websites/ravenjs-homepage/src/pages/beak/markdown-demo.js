@@ -71,19 +71,12 @@ export const MarkdownDemo = () => html`
         </div>
       </div>
 
-      <!-- Usage blocks (bridge) -->
-      <div class="row g-3 mt-3 pt-3 border-top border-light border-opacity-25">
-        <div class="col-12 col-lg-6">
-          <div class="bg-light rounded-1 border p-3">
-            <div class="text-uppercase small text-muted mb-2" style="letter-spacing: .08em;">md → html</div>
-            <pre class="mb-0 text-start"><code>${highlightJS(usageHtml)}</code></pre>
-          </div>
-        </div>
-        <div class="col-12 col-lg-6">
-          <div class="bg-light rounded-1 border p-3">
-            <div class="text-uppercase small text-muted mb-2" style="letter-spacing: .08em;">md → text</div>
-            <pre class="mb-0 text-start"><code>${highlightJS(usageText)}</code></pre>
-          </div>
+      <!-- Lean note instead of code blocks -->
+      <div class="row mt-3">
+        <div class="col-12">
+          <p class="text-center text-light mb-0">
+            Powered by <code class="text-white">markdownToHTML()</code> and <code class="text-white">markdownToText()</code> from <code class="text-white">@raven-js/beak/md</code>.
+          </p>
         </div>
       </div>
     </div>

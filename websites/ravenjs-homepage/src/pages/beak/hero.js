@@ -33,7 +33,7 @@ const afterCode = html`const page = html\`
  */
 export const Hero = () =>
   html`
-    <section class="py-5 bg-dark text-white position-relative overflow-hidden" style="min-height: 55vh;">
+    <section class="py-5 bg-dark text-white position-relative overflow-hidden">
     <div class="container py-5 h-100">
       <div class="row h-100 align-items-center justify-content-center text-center">
         <div class="col-lg-10 col-xl-8">

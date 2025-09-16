@@ -52,14 +52,14 @@ export const body = html`
     <section class="py-2 bg-white">
       <div class="container text-center">
         <div class="text-uppercase text-muted small" style="letter-spacing: 0.12em;">One language. Infinite possibilities.</div>
-      </div>
-    </section>
+    </div>
+  </section>
     ${MarkdownDemo()}
     <section class="py-2 bg-white">
       <div class="container text-center">
         <div class="text-muted small fst-italic">Semantics over style. Power without ceremony.</div>
-      </div>
-    </section>
+    </div>
+  </section>
     ${HighlightSection()}
       </div>
 
