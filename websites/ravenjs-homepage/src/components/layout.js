@@ -153,11 +153,105 @@ export const Layout = ({ title, description, content }) => {
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
               <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                  <a class="nav-link" href="#intelligence">Philosophy</a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="#packages">Arsenal</a>
+                <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Packages
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li><h6 class="dropdown-header text-muted small text-uppercase fw-bold" style="letter-spacing: 0.05em;">Libraries</h6></li>
+                    <li><a class="dropdown-item" href="/beak/">
+                      <div class="d-flex align-items-center">
+                        <img src="/raven-logo-beak.webp" alt="Beak" class="me-2" style="height: 16px;">
+                        <div>
+                          <div class="fw-medium">Beak</div>
+                          <small class="text-muted">Template literals without the engine</small>
+                        </div>
+                      </div>
+                    </a></li>
+                    <li><a class="dropdown-item" href="https://docs.ravenjs.dev/wings/" target="_blank">
+                      <div class="d-flex align-items-center">
+                        <img src="/raven-logo-wings.webp" alt="Wings" class="me-2" style="height: 16px;">
+                        <div>
+                          <div class="fw-medium">Wings</div>
+                          <small class="text-muted">Isomorphic routing & clustering</small>
+                        </div>
+                      </div>
+                    </a></li>
+                    <li><a class="dropdown-item" href="https://docs.ravenjs.dev/reflex/" target="_blank">
+                      <div class="d-flex align-items-center">
+                        <img src="/raven-logo-reflex.webp" alt="Reflex" class="me-2" style="height: 16px;">
+                        <div>
+                          <div class="fw-medium">Reflex</div>
+                          <small class="text-muted">Reactive signals & DOM</small>
+                        </div>
+                      </div>
+                    </a></li>
+                    <li><a class="dropdown-item" href="https://docs.ravenjs.dev/cortex/" target="_blank">
+                      <div class="d-flex align-items-center">
+                        <img src="/raven-logo-cortex.webp" alt="Cortex" class="me-2" style="height: 16px;">
+                        <div>
+                          <div class="fw-medium">Cortex</div>
+                          <small class="text-muted">AI & data processing</small>
+                        </div>
+                      </div>
+                    </a></li>
+                    <li><a class="dropdown-item" href="https://docs.ravenjs.dev/eye/" target="_blank">
+                      <div class="d-flex align-items-center">
+                        <img src="/raven-logo-eye.webp" alt="Eye" class="me-2" style="height: 16px;">
+                        <div>
+                          <div class="fw-medium">Eye</div>
+                          <small class="text-muted">Digital fingerprinting</small>
+                        </div>
+                      </div>
+                    </a></li>
+                    <li><a class="dropdown-item" href="https://docs.ravenjs.dev/talons/" target="_blank">
+                      <div class="d-flex align-items-center">
+                        <img src="/raven-logo-talons.webp" alt="Talons" class="me-2" style="height: 16px;">
+                        <div>
+                          <div class="fw-medium">Talons</div>
+                          <small class="text-muted">Data interaction patterns</small>
+                        </div>
+                      </div>
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header text-muted small text-uppercase fw-bold" style="letter-spacing: 0.05em;">Tools</h6></li>
+                    <li><a class="dropdown-item" href="https://docs.ravenjs.dev/fledge/" target="_blank">
+                      <div class="d-flex align-items-center">
+                        <img src="/raven-logo-fledge.webp" alt="Fledge" class="me-2" style="height: 16px;">
+                        <div>
+                          <div class="fw-medium">Fledge</div>
+                          <small class="text-muted">Static site generation</small>
+                        </div>
+                      </div>
+                    </a></li>
+                    <li><a class="dropdown-item" href="https://docs.ravenjs.dev/soar/" target="_blank">
+                      <div class="d-flex align-items-center">
+                        <img src="/raven-logo-soar.webp" alt="Soar" class="me-2" style="height: 16px;">
+                        <div>
+                          <div class="fw-medium">Soar</div>
+                          <small class="text-muted">Deployment automation</small>
+                        </div>
+                      </div>
+                    </a></li>
+                    <li><a class="dropdown-item" href="https://docs.ravenjs.dev/glean/" target="_blank">
+                      <div class="d-flex align-items-center">
+                        <img src="/raven-logo-glean.webp" alt="Glean" class="me-2" style="height: 16px;">
+                        <div>
+                          <div class="fw-medium">Glean</div>
+                          <small class="text-muted">Documentation generation</small>
+                        </div>
+                      </div>
+                    </a></li>
+                    <li><a class="dropdown-item" href="https://docs.ravenjs.dev/hatch/" target="_blank">
+                      <div class="d-flex align-items-center">
+                        <img src="/raven-logo-hatch.webp" alt="Hatch" class="me-2" style="height: 16px;">
+                        <div>
+                          <div class="fw-medium">Hatch</div>
+                          <small class="text-muted">Project bootstrapping</small>
+                        </div>
+                      </div>
+                    </a></li>
+                  </ul>
                 </li>
                 <li class="nav-item">
                   <a class="nav-link" href="https://docs.ravenjs.dev" target="_blank">
