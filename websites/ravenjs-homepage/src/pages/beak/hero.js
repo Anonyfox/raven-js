@@ -84,6 +84,15 @@ export const Hero = () =>
             >
               Explore Languages
             </a>
+            <button
+              type="button"
+              class="btn btn-outline-light btn-lg px-4 py-3 fw-semibold rounded-3 hover-lift tldr-btn"
+              data-bs-toggle="offcanvas"
+              data-bs-target="#tldrOffcanvas"
+              aria-controls="tldrOffcanvas"
+            >
+              <i class="bi bi-lightning-charge me-2"></i>TL;DR
+            </button>
           </div>
         </div>
       </div>
@@ -125,6 +134,23 @@ export const Hero = () =>
     .subtitle-indent { margin-left: 0; }
     @media (min-width: 768px) {
       .subtitle-indent { margin-left: 8px; }
+    }
+    .tldr-btn {
+      position: relative;
+      overflow: hidden;
+    }
+    .tldr-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s ease;
+    }
+    .tldr-btn:hover::before {
+      left: 100%;
     }
   </style>
 `;

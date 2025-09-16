@@ -61,7 +61,84 @@ export const body = html`
     </div>
   </section>
     ${HighlightSection()}
+  </div>
+
+  <!-- TL;DR Offcanvas Drawer -->
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="tldrOffcanvas" aria-labelledby="tldrOffcanvasLabel">
+    <div class="offcanvas-header border-bottom">
+      <h5 class="offcanvas-title fw-bold d-flex align-items-center" id="tldrOffcanvasLabel">
+        <img src="/raven-logo-beak.webp" alt="Beak" class="me-2" style="height: 24px;">
+        TL;DR: Beak
+      </h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+      <div class="mb-4">
+        <div class="mb-4">
+          <h6 class="fw-bold text-dark mb-2 d-flex align-items-center">
+            <i class="bi bi-gear me-2 text-muted"></i>What is it?
+          </h6>
+          <p class="text-dark mb-0 lh-sm">
+            Tagged template literals + IDE plugin = native syntax highlighting for HTML/CSS/SQL in JS strings.
+          </p>
+        </div>
+
+        <div class="mb-4">
+          <h6 class="fw-bold text-dark mb-2 d-flex align-items-center">
+            <i class="bi bi-lightning me-2 text-muted"></i>How it works
+          </h6>
+          <ul class="text-dark mb-0 lh-sm small">
+            <li class="mb-1">Custom tag functions handle context-aware serialization</li>
+            <li class="mb-1">VSCode plugin treats <code>html\`...\`</code> as actual HTML files</li>
+            <li class="mb-1">Optimal string concat based on data shapes</li>
+            <li class="mb-0">Zero bundler configuration needed</li>
+          </ul>
+        </div>
+
+        <div class="mb-4">
+          <h6 class="fw-bold text-dark mb-2 d-flex align-items-center">
+            <i class="bi bi-target me-2 text-muted"></i>Why care
+          </h6>
+          <ul class="text-dark mb-0 lh-sm small">
+            <li class="mb-1">No webpack loaders for HTML/CSS/SQL files</li>
+            <li class="mb-1">Full IntelliSense in template literals</li>
+            <li class="mb-1">Arrays auto-join, objects auto-serialize</li>
+            <li class="mb-0">Deploy pure JS anywhere</li>
+          </ul>
+        </div>
+
+        <div class="bg-light rounded p-3 mb-4">
+          <div class="d-flex align-items-start">
+            <i class="bi bi-lightbulb text-warning me-2 mt-1 flex-shrink-0"></i>
+            <div>
+              <div class="fw-semibold text-dark small mb-1">The insight</div>
+              <div class="text-dark small lh-sm">
+                All your non-JS assets become JS strings again. No build pipeline. No bundler plugins. Just JavaScript.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-dark rounded p-3 mb-4">
+          <pre class="mb-0 text-light small"><code>import { html, css, sql } from "@raven-js/beak"
+
+const page = html\`<div class="hero">Hello</div>\`
+const styles = css\`body { margin: 0; }\`
+const query = sql\`SELECT * FROM users\`
+
+// Arrays join, objects serialize, strings escape.
+// IDE highlights, autocompletes, validates.
+// Deploy anywhere. Zero config.</code></pre>
+        </div>
+
+        <div class="d-grid">
+          <a href="https://www.npmjs.com/package/@raven-js/beak" class="btn btn-dark btn-lg fw-semibold" target="_blank">
+            <i class="bi bi-download me-2"></i>npm install @raven-js/beak
+          </a>
+        </div>
       </div>
+    </div>
+  </div>
 
   <style>
     .spine-wrapper { isolation: isolate; }
