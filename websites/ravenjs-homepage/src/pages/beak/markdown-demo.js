@@ -31,6 +31,11 @@ export const MarkdownDemo = () => html`
         <div class="text-uppercase text-white-50 small section-kicker mb-1">04 — Markdown</div>
         <h2 class="display-6 mb-2 text-white">Markdown, Three Ways</h2>
         <p class="lead text-light mb-0">Source in the middle. HTML on the left. Plain text on the right.</p>
+        <div class="mt-2 small">
+          <a href="https://docs.ravenjs.dev/beak/modules/md/" class="text-white-50" target="_blank" rel="noopener" title="Markdown module docs">Docs</a>
+          <span class="text-white-50">·</span>
+          <a href="https://github.com/Anonyfox/raven-js/tree/main/packages/beak/md" class="text-white-50" target="_blank" rel="noopener" title="Markdown module source">Source</a>
+        </div>
       </div>
 
       <div class="row g-4 align-items-stretch md-code">
@@ -69,7 +74,9 @@ export const MarkdownDemo = () => html`
       <div class="row mt-3">
         <div class="col-12">
           <p class="text-center text-light mb-0">
-            Powered by <code class="text-white">markdownToHTML()</code> and <code class="text-white">markdownToText()</code> from <code class="text-white">@raven-js/beak/md</code>.
+            Powered by <a class="text-white" target="_blank" rel="noopener" href="https://docs.ravenjs.dev/beak/modules/md/markdownToHTML/">markdownToHTML()</a> and
+            <a class="text-white" target="_blank" rel="noopener" href="https://docs.ravenjs.dev/beak/modules/md/markdownToText/">markdownToText()</a> from
+            <a class="text-white" target="_blank" rel="noopener" href="https://docs.ravenjs.dev/beak/modules/md/">@raven-js/beak/md</a>.
           </p>
         </div>
       </div>

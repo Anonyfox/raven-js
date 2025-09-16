@@ -35,11 +35,16 @@ export const HighlightSection = () => html`
   <section class="py-5 bg-white position-relative">
     <div class="spine-dot" style="top: 2.25rem;"></div>
     <div class="container py-5">
-      <div class="text-center mb-5">
-        <div class="text-uppercase text-muted small section-kicker mb-1">05 — Highlight</div>
-        <h2 class="display-6 fw-bold text-dark mb-2">Bootstrap‑Semantic Highlighting</h2>
-        <p class="lead text-muted mb-0">Clean <span class="text-dark">span</span> output with Bootstrap color classes — inherits your theme, no custom CSS required.</p>
-      </div>
+        <div class="text-center mb-5">
+          <div class="text-uppercase text-muted small section-kicker mb-1">05 — Highlight</div>
+          <h2 class="display-6 fw-bold text-dark mb-2">Bootstrap‑Semantic Highlighting</h2>
+          <p class="lead text-muted mb-0">Clean <span class="text-dark">span</span> output with Bootstrap color classes — inherits your theme, no custom CSS required.</p>
+          <div class="mt-2 small">
+            <a href="https://docs.ravenjs.dev/beak/modules/highlight/" class="text-muted" target="_blank" rel="noopener" title="Beak Highlight docs">📖 Docs</a>
+            <span class="text-muted">·</span>
+            <a href="https://github.com/Anonyfox/raven-js/tree/main/packages/beak/highlight" class="text-muted" target="_blank" rel="noopener" title="Highlight source on GitHub">🔗 Source</a>
+          </div>
+        </div>
 
       <!-- Usage ribbon (full width) -->
       <div class="row g-3 mb-4">
@@ -55,7 +60,7 @@ export const HighlightSection = () => html`
         <!-- JavaScript Column -->
         <div class="col-12 col-lg-4">
           <div class="bg-dark text-white border-0 rounded-2 h-100 p-3 hl-stack">
-            <div class="text-uppercase small text-white-50" style="letter-spacing: .08em;">Raw</div>
+            <div class="text-uppercase small text-white-50" style="letter-spacing: .08em;">Raw <a class="text-white-50 ms-1" href="https://docs.ravenjs.dev/beak/modules/highlight/highlightJS/" target="_blank" rel="noopener" title="highlightJS">docs</a></div>
             <div class="bg-light rounded-1 border p-2 hl-box" aria-label="Raw source (JavaScript)">
               <pre class="mb-0 text-start"><code class="text-dark">${escapeHtml(jsSource)}</code></pre>
             </div>
@@ -75,7 +80,7 @@ export const HighlightSection = () => html`
         <!-- HTML Column -->
         <div class="col-12 col-lg-4">
           <div class="bg-dark text-white border-0 rounded-2 h-100 p-3 hl-stack">
-            <div class="text-uppercase small text-white-50" style="letter-spacing: .08em;">Raw</div>
+            <div class="text-uppercase small text-white-50" style="letter-spacing: .08em;">Raw <a class="text-white-50 ms-1" href="https://docs.ravenjs.dev/beak/modules/highlight/highlightHTML/" target="_blank" rel="noopener" title="highlightHTML">docs</a></div>
             <div class="bg-light rounded-1 border p-2 hl-box" aria-label="Raw source (HTML)">
               <pre class="mb-0 text-start"><code class="text-dark">${escapeHtml(htmlSource)}</code></pre>
             </div>
@@ -95,7 +100,7 @@ export const HighlightSection = () => html`
         <!-- CSS Column -->
         <div class="col-12 col-lg-4">
           <div class="bg-dark text-white border-0 rounded-2 h-100 p-3 hl-stack">
-            <div class="text-uppercase small text-white-50" style="letter-spacing: .08em;">Raw</div>
+            <div class="text-uppercase small text-white-50" style="letter-spacing: .08em;">Raw <a class="text-white-50 ms-1" href="https://docs.ravenjs.dev/beak/modules/highlight/highlightCSS/" target="_blank" rel="noopener" title="highlightCSS">docs</a></div>
             <div class="bg-light rounded-1 border p-2 hl-box" aria-label="Raw source (CSS)">
               <pre class="mb-0 text-start"><code class="text-dark">${escapeHtml(cssSource)}</code></pre>
             </div>
@@ -122,6 +127,14 @@ export const HighlightSection = () => html`
             <span class="badge bg-warning text-dark rounded-pill">text-warning = numbers</span>
             <span class="badge bg-secondary text-white rounded-pill">text-muted = comments</span>
           </div>
+        </div>
+      </div>
+      <div class="row justify-content-center mt-2">
+        <div class="col-auto small text-muted">
+          API:
+          <a href="https://docs.ravenjs.dev/beak/modules/highlight/highlightHTML/" class="text-muted" target="_blank" rel="noopener">highlightHTML()</a>
+          · <a href="https://docs.ravenjs.dev/beak/modules/highlight/highlightJS/" class="text-muted" target="_blank" rel="noopener">highlightJS()</a>
+          · <a href="https://docs.ravenjs.dev/beak/modules/highlight/highlightCSS/" class="text-muted" target="_blank" rel="noopener">highlightCSS()</a>
         </div>
       </div>
       <div class="row justify-content-center mt-3">

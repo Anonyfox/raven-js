@@ -57,6 +57,12 @@ const dangerous = sh\`echo \${userInput}\`; // You own this risk`;
             <div class="col-lg-8">
               <!-- Opening Hook -->
               <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <div class="small text-muted">
+                    <a href="https://docs.ravenjs.dev/beak/modules/sh/" class="text-muted me-2" target="_blank" rel="noopener">📖 Docs</a>
+                    <a href="https://github.com/Anonyfox/raven-js/tree/main/packages/beak/sh" class="text-muted" target="_blank" rel="noopener">🔗 Source</a>
+                  </div>
+                </div>
                 <div class="bg-light rounded p-3 mb-3 border shadow-sm">
                   <pre><code>${highlightJS(shellImport)}</code></pre>
                 </div>
