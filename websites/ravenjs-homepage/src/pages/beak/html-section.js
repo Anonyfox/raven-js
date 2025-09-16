@@ -50,6 +50,22 @@ const TodoItem = (todo) => html\`
   <a href="/about">About</a>
 </nav>`;
 
+  // SEO built-ins: compose + preview
+  const seoCompose = js`import { html, canonical, openGraph, twitter, robots } from "@raven-js/beak/html";
+
+const head = html\`
+  \${canonical({ domain: 'example.com', url: '/post/nevermore' })}
+  \${openGraph({ title: 'The Raven', description: 'Once upon a midnight dreary…', image: '/hero.jpg' })}
+  \${twitter({ card: 'summary_large_image', title: 'The Raven', description: '…nevermore', image: '/hero.jpg' })}
+  \${robots({ index: true, follow: true })}
+\`;`;
+
+  const seoPreview = js`<meta property="og:title" content="The Raven">
+<meta property="og:description" content="Once upon a midnight dreary…">
+<meta property="og:image" content="/hero.jpg">
+<link rel="canonical" href="https://example.com/post/nevermore">
+<meta name="robots" content="index,follow">`;
+
   return html`
     <div class="accordion-item border-0 mb-3 shadow-lg" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
       <h2 class="accordion-header">
@@ -106,6 +122,34 @@ const TodoItem = (todo) => html\`
                   <pre><code>${highlightHTML(htmlOutput)}</code></pre>
                 </div>
                 <p class="text-muted small mt-2 mb-0"><span class="text-dark fw-semibold">Functions auto-register globally.</span> Events work in SSR and client-side.</p>
+              </div>
+
+              <!-- SEO Built-ins: Search & Share -->
+              <div class="mt-4">
+                <h6 class="text-dark fw-bold mb-1 d-flex align-items-center"><i class="bi bi-search me-2"></i>Search & Share: built-ins</h6>
+                <p class="text-muted small mb-3">Generate canonical, Open Graph, Twitter cards, and robots — zero boilerplate.</p>
+                <div class="d-flex flex-wrap gap-2 mb-3 small">
+                  <span class="badge bg-dark text-white">canonical()</span>
+                  <span class="badge bg-dark text-white">openGraph()</span>
+                  <span class="badge bg-dark text-white">twitter()</span>
+                  <span class="badge bg-dark text-white">robots()</span>
+                  <span class="badge bg-dark text-white">author()</span>
+                </div>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <div class="bg-light rounded p-3 border shadow-sm h-100">
+                      <div class="text-muted small fw-semibold mb-2">Compose</div>
+                      <pre><code>${highlightJS(seoCompose)}</code></pre>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="bg-light rounded p-3 border shadow-sm h-100">
+                      <div class="text-muted small fw-semibold mb-2">Preview</div>
+                      <pre><code>${highlightHTML(seoPreview)}</code></pre>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-2 small text-muted">Advanced: i18n hreflang, rich video cards, pagination/syndication.</div>
               </div>
             </div>
 

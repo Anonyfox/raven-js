@@ -10,23 +10,7 @@
  * @file Beak hero section component
  */
 
-import { highlightJS } from "@raven-js/beak/highlight";
-import { escapeHtml, html } from "@raven-js/beak/html";
-
-// Code examples for before/after comparison
-const beforeCode = html`const page = \`
-  <div class="card">
-    <h3>Welcome</h3>
-    <p>Hello World</p>
-  </div>
-\``;
-
-const afterCode = html`const page = html\`
-  <div class="card">
-    <h3>Welcome</h3>
-    <p>Hello World</p>
-  </div>
-\``;
+import { html } from "@raven-js/beak/html";
 
 /**
  * Hero section for Beak page - RavenJS elegance

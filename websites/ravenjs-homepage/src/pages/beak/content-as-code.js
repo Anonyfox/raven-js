@@ -30,10 +30,6 @@ const query = sql\`
   SELECT id, name FROM users WHERE active = true
 \``;
 
-const microSnapshot = `assert.equal(render(page), expected)`;
-const microEscapeAtTag = `const output = html\`<script>\${userInput}</script>\``;
-const microEdgeImport = `import { html } from '@raven-js/beak' // edge/worker`;
-
 /**
  * Content-as-Code manifesto section - RavenJS electric elegance
  */

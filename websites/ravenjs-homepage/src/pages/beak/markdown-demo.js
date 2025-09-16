@@ -11,7 +11,7 @@
  */
 
 import { highlightJS } from "@raven-js/beak/highlight";
-import { escapeHtml, html } from "@raven-js/beak/html";
+import { html } from "@raven-js/beak/html";
 import { markdownToHTML, markdownToText } from "@raven-js/beak/md";
 
 // Static sample: Poe's The Raven (short, elegant)
@@ -19,12 +19,6 @@ const markdownSample = `# The Raven\n\n> Once upon a midnight dreary, while I po
 
 const htmlOutput = markdownToHTML(markdownSample, { escapeHtml: false });
 const textOutput = markdownToText(markdownSample);
-
-const usageHtml = `import { markdownToHTML } from '@raven-js/beak/md';
-const html = markdownToHTML(markdownSource);`;
-
-const usageText = `import { markdownToText } from '@raven-js/beak/md';
-const text = markdownToText(markdownSource);`;
 
 /**
  * Markdown demo section (dark) with magazine spine

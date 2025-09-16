@@ -50,15 +50,6 @@ const result = md\`\${config}\`;
 // → **name**: RavenJS
 //   **version**: 1.0.0`;
 
-  const mdOutput = js`# Getting Started
-
-A comprehensive guide to RavenJS.
-
-## Features
-- Fast
-- Lean
-- Zero dependencies`;
-
   return html`
     <div class="accordion-item border-0 mb-3 shadow-lg" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
       <h2 class="accordion-header">
