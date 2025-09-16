@@ -37,8 +37,8 @@ export const HighlightSection = () => html`
     <div class="container py-5">
         <div class="text-center mb-5">
           <div class="text-uppercase text-muted small section-kicker mb-1">05 — Highlight</div>
-          <h2 class="display-6 fw-bold text-dark mb-2">Bootstrap‑Semantic Highlighting</h2>
-          <p class="lead text-muted mb-0">Clean <span class="text-dark">span</span> output with Bootstrap color classes — inherits your theme, no custom CSS required.</p>
+          <h2 class="display-6 fw-bold text-dark mb-2">Mimetic Perfection</h2>
+          <p class="lead text-muted mb-0">Your beak learns Bootstrap's color vocabulary and speaks it flawlessly—no custom CSS training required.</p>
           <div class="mt-2 small">
             <a href="https://docs.ravenjs.dev/beak/modules/highlight/" class="text-muted" target="_blank" rel="noopener" title="Beak Highlight docs">📖 Docs</a>
             <span class="text-muted">·</span>

@@ -27,10 +27,10 @@ export const MarkdownDemo = () => html`
   <section class="py-5 bg-dark text-white position-relative">
     <div class="spine-dot" style="top: 2.25rem;"></div>
     <div class="container py-5">
-      <div class="text-center mb-5">
-        <div class="text-uppercase text-white-50 small section-kicker mb-1">04 — Markdown</div>
-        <h2 class="display-6 mb-2 text-white">Markdown, Three Ways</h2>
-        <p class="lead text-light mb-0">Source in the middle. HTML on the left. Plain text on the right.</p>
+        <div class="text-center mb-5">
+          <div class="text-uppercase text-white-50 small section-kicker mb-1">04 — Markdown</div>
+          <h2 class="display-6 mb-2 text-white">Perfect Translation</h2>
+          <p class="lead text-light mb-0">From markdown to HTML/text - like a raven switching between human speech, bird calls, and silent understanding.</p>
         <div class="mt-2 small">
           <a href="https://docs.ravenjs.dev/beak/modules/md/" class="text-white-50" target="_blank" rel="noopener" title="Markdown module docs">Docs</a>
           <span class="text-white-50">·</span>

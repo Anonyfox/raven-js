@@ -50,9 +50,10 @@ export const Problem = () => html`
           <!-- Cheeky Problem Statement -->
           <div class="text-center mb-5">
             <div class="text-uppercase text-muted small section-kicker mb-1">01 — Problem</div>
-            <h2 class="display-6 fw-bold text-dark mb-2">Template Engine Fatigue Syndrome</h2>
+            <h2 class="display-6 fw-bold text-dark mb-2">Template Engine Cacophony</h2>
             <p class="lead text-muted mb-0" style="max-width: 700px; margin: 0 auto;">
-              Every content type demands its own loader, plugin, build step, and deployment pipeline.
+              While other tools squawk in proprietary dialects, every content type demands its own loader, plugin, build step, and deployment pipeline.
+              <br/>
               <span class="text-dark fw-semibold">Meanwhile, JavaScript already has template literals.</span>
             </p>
           </div>

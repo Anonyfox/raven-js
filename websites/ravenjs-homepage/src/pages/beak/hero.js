@@ -61,6 +61,15 @@ export const Hero = () =>
             </div>
           </div>
 
+          <!-- The Raven Connection - Perfect Balance -->
+          <div class="mb-5 text-center position-relative">
+            <p class="text-light opacity-75 fst-italic mx-auto pt-3" style="max-width: 520px; line-height: 1.6; font-size: 1.05rem;">
+              Ravens are notorious polyglots—they mimic human speech, learn local dialects,
+              even fool other birds with perfect imitations.
+              <span class="text-white fw-medium opacity-100">Your beak does the same.</span>
+            </p>
+          </div>
+
           <!-- CTA - Clean & Electric -->
           <div class="d-flex gap-3 justify-content-center flex-wrap">
             <a

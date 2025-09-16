@@ -39,7 +39,7 @@ export const body = html`
     ${Problem()}
     <section class="py-2 bg-white">
       <div class="container text-center">
-        <div class="text-muted small text-uppercase" style="letter-spacing: 0.12em;">One import. Seven languages.</div>
+        <div class="text-muted small text-uppercase" style="letter-spacing: 0.12em;">One beak. Seven voices.</div>
     </div>
   </section>
     ${LanguageShowcase()}
@@ -51,7 +51,7 @@ export const body = html`
     ${ContentAsCode()}
     <section class="py-2 bg-white">
       <div class="container text-center">
-        <div class="text-uppercase text-muted small" style="letter-spacing: 0.12em;">One language. Infinite possibilities.</div>
+        <div class="text-uppercase text-muted small" style="letter-spacing: 0.12em;">Perfect mimicry. Zero training.</div>
     </div>
   </section>
     ${MarkdownDemo()}

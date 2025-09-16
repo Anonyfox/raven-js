@@ -49,7 +49,6 @@ const searchQuery = sql\`
   ORDER BY p.created_at DESC
 \`;`;
 
-  const sqlOutput = js`SELECT * FROM users WHERE name = 'O''Connor' AND status = 'active'`;
   const sqlInjectionOutput = js`SELECT * FROM users WHERE name = '''; DROP TABLE users; --'`;
 
   return html`
