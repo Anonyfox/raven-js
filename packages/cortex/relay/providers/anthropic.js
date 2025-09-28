@@ -10,6 +10,7 @@
  * @file Anthropic adapter.
  */
 
+import { schemaToJsonObject } from "../tool.js";
 import { PROVIDERS } from "./detect.js";
 
 export const ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages";
@@ -70,4 +71,47 @@ export function extractAnthropicText(json) {
     throw new Error("Empty response content");
   }
   return text.trim();
+}
+
+/**
+ * Build Anthropic tools array from Tool instances.
+ * @param {import("../tool.js").Tool[]} tools
+ */
+export function buildAnthropicTools(tools) {
+  return tools.map((t) => ({
+    name: t.name,
+    description: t.description,
+    input_schema: schemaToJsonObject(t.parameters),
+  }));
+}
+
+/**
+ * Parse Anthropic tool uses from assistant response JSON.
+ * @param {any} json
+ * @returns {Array<{ id: string, name: string, args: any }>}
+ */
+export function parseAnthropicToolUses(json) {
+  const content = json?.content;
+  if (!Array.isArray(content)) return [];
+  return content
+    .filter((c) => c?.type === "tool_use")
+    .map((c) => ({ id: String(c.id), name: c.name, args: c.input || {} }));
+}
+
+/**
+ * Build Anthropic tool_result block.
+ * @param {string} toolUseId
+ * @param {any} result
+ */
+export function buildAnthropicToolResult(toolUseId, result) {
+  return {
+    role: "user",
+    content: [
+      {
+        type: "tool_result",
+        tool_use_id: toolUseId,
+        content: typeof result === "string" ? result : JSON.stringify(result),
+      },
+    ],
+  };
 }

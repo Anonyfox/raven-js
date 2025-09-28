@@ -46,6 +46,32 @@ chat.addSystemMessage("Act as Edgar Allan Poe.");
 const reply = await chat.generateText("While I pondered weak and weary...");
 ```
 
+## Tools & Agents
+
+Subclass `Tool`, register instances with `chat.addTool()`, and the model will autonomously invoke them via tool-calling.
+
+```javascript
+import { Chat, Tool } from "@raven-js/cortex/relay";
+import { Schema } from "@raven-js/cortex/structures";
+
+class WeatherArgs extends Schema {
+  city = Schema.field("", { description: "City name" });
+}
+
+class GetWeather extends Tool {
+  constructor() {
+    super({ name: "getWeather", description: "Return weather for a city", parameters: new WeatherArgs() });
+  }
+  async execute({ args }) {
+    return { forecast: `Sunny in ${args.city}` };
+  }
+}
+
+const chat = new Chat("gpt-4o-mini").addTool(new GetWeather());
+chat.addSystemMessage("Use tools to answer precisely.");
+const answer = await chat.generateText("What's the weather in Berlin?");
+```
+
 ## Provider control
 
 - **Activation**: A provider is active if its API key env var is set.

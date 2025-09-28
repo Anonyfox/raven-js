@@ -10,6 +10,7 @@
  * @file OpenAI-compatible adapter (also used for xAI due to API shape).
  */
 
+import { schemaToJsonObject } from "../tool.js";
 import { PROVIDERS } from "./detect.js";
 
 export const OPENAI_ENDPOINT = "https://api.openai.com/v1/chat/completions";
@@ -60,4 +61,70 @@ export function extractOpenAIText(json) {
     throw new Error("Empty response content");
   }
   return content.trim();
+}
+
+/**
+ * Build OpenAI tools array from Tool instances.
+ * @param {import("../tool.js").Tool[]} tools
+ */
+/**
+ * @param {import("../tool.js").Tool[]} tools
+ */
+export function buildOpenAITools(tools) {
+  return tools.map((t) => ({
+    type: "function",
+    function: {
+      name: t.name,
+      description: t.description,
+      parameters: schemaToJsonObject(t.parameters),
+    },
+  }));
+}
+
+/**
+ * Parse OpenAI tool calls from assistant message JSON.
+ * @param {any} json
+ * @returns {Array<{ id: string, name: string, args: any }>}
+ */
+/**
+ * @param {any} json
+ */
+export function parseOpenAIToolCalls(json) {
+  const choice = json?.choices?.[0];
+  const callList = choice?.message?.tool_calls;
+  if (!Array.isArray(callList) || callList.length === 0) return [];
+  return callList.map((c) => ({
+    id: String(c.id),
+    name: c.function?.name,
+    args: safeParse(c.function?.arguments),
+  }));
+}
+
+/**
+ * @param {any} s
+ */
+function safeParse(s) {
+  if (typeof s !== "string") return {};
+  try {
+    return JSON.parse(s);
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Build tool result message for OpenAI tool_call.
+ * @param {string} toolCallId
+ * @param {any} result
+ */
+/**
+ * @param {string} toolCallId
+ * @param {any} result
+ */
+export function buildOpenAIToolResult(toolCallId, result) {
+  return {
+    role: "tool",
+    tool_call_id: toolCallId,
+    content: typeof result === "string" ? result : JSON.stringify(result),
+  };
 }

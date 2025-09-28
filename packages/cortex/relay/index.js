@@ -18,3 +18,4 @@
 export { Chat } from "./chat.js";
 export { Message } from "./message.js";
 export { genData, genText } from "./shortcuts.js";
+export { Tool } from "./tool.js";

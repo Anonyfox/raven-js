@@ -14,7 +14,7 @@
  */
 
 /**
- * @typedef {"system"|"user"|"assistant"} MessageRole
+ * @typedef {"system"|"user"|"assistant"|"tool"} MessageRole
  */
 
 export class Message {

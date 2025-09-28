@@ -10,6 +10,7 @@
  * @file xAI adapter (OpenAI-compatible surface but distinct env/endpoint).
  */
 
+import { schemaToJsonObject } from "../tool.js";
 import { PROVIDERS } from "./detect.js";
 
 export const XAI_ENDPOINT = "https://api.x.ai/v1/chat/completions";
@@ -58,4 +59,56 @@ export function extractXAIText(json) {
     throw new Error("Empty response content");
   }
   return content.trim();
+}
+
+/**
+ * @param {import("../tool.js").Tool[]} tools
+ */
+export function buildXAITools(tools) {
+  return tools.map((t) => ({
+    type: "function",
+    function: {
+      name: t.name,
+      description: t.description,
+      parameters: schemaToJsonObject(t.parameters),
+    },
+  }));
+}
+
+/**
+ * @param {any} json
+ */
+export function parseXAIToolCalls(json) {
+  const choice = json?.choices?.[0];
+  const callList = choice?.message?.tool_calls;
+  if (!Array.isArray(callList) || callList.length === 0) return [];
+  return callList.map((c) => ({
+    id: String(c.id),
+    name: c.function?.name,
+    args: safeParse(c.function?.arguments),
+  }));
+}
+
+/**
+ * @param {any} s
+ */
+function safeParse(s) {
+  if (typeof s !== "string") return {};
+  try {
+    return JSON.parse(s);
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * @param {string} toolCallId
+ * @param {any} result
+ */
+export function buildXAIToolResult(toolCallId, result) {
+  return {
+    role: "tool",
+    tool_call_id: toolCallId,
+    content: typeof result === "string" ? result : JSON.stringify(result),
+  };
 }

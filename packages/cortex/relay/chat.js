@@ -15,11 +15,31 @@ import {
   ANTHROPIC_ENDPOINT,
   anthropicHeaders,
   buildAnthropicRequest,
+  buildAnthropicToolResult,
+  buildAnthropicTools,
   extractAnthropicText,
+  parseAnthropicToolUses,
 } from "./providers/anthropic.js";
 import { activeProviders, assertProviderActive, detectProviderByModel } from "./providers/detect.js";
-import { buildOpenAIRequest, extractOpenAIText, OPENAI_ENDPOINT, openAIHeaders } from "./providers/openai.js";
-import { buildXAIRequest, extractXAIText, XAI_ENDPOINT, xaiHeaders } from "./providers/xai.js";
+import {
+  buildOpenAIRequest,
+  buildOpenAIToolResult,
+  buildOpenAITools,
+  extractOpenAIText,
+  OPENAI_ENDPOINT,
+  openAIHeaders,
+  parseOpenAIToolCalls,
+} from "./providers/openai.js";
+import {
+  buildXAIRequest,
+  buildXAIToolResult,
+  buildXAITools,
+  extractXAIText,
+  parseXAIToolCalls,
+  XAI_ENDPOINT,
+  xaiHeaders,
+} from "./providers/xai.js";
+import { Tool } from "./tool.js";
 import { postJson, stripCodeFences } from "./transport.js";
 
 /**
@@ -39,6 +59,8 @@ export class Chat {
   model;
   /** @type {Message[]} */
   messages = [];
+  /** @type {Tool[]} */
+  tools = [];
 
   /**
    * Create a new Chat.
@@ -78,6 +100,16 @@ export class Chat {
    */
   addAssistantMessage(content) {
     this.messages.push(new Message("assistant", content));
+    return this;
+  }
+
+  /**
+   * Register a tool instance for tool-calling.
+   * @param {Tool} tool
+   * @returns {this}
+   */
+  addTool(tool) {
+    this.tools.push(tool);
     return this;
   }
 
@@ -224,29 +256,118 @@ export class Chat {
     /** @type {any} */
     let body;
 
+    const usingTools = this.tools.length > 0;
     if (provider === "openai") {
       endpoint = OPENAI_ENDPOINT;
       headers = openAIHeaders();
       body = buildOpenAIRequest({ model: this.model, messages: messages.map((m) => m.toJSON()), forceJson });
+      if (usingTools) body.tools = buildOpenAITools(this.tools);
     } else if (provider === "xai") {
       endpoint = XAI_ENDPOINT;
       headers = xaiHeaders();
       body = buildXAIRequest({ model: this.model, messages: messages.map((m) => m.toJSON()), forceJson });
+      if (usingTools) body.tools = buildXAITools(this.tools);
     } else if (provider === "anthropic") {
       endpoint = ANTHROPIC_ENDPOINT;
       headers = anthropicHeaders();
       body = buildAnthropicRequest({ model: this.model, messages: messages.map((m) => m.toJSON()), forceJson });
+      if (usingTools) body.tools = buildAnthropicTools(this.tools);
     } else {
       throw new Error("Unsupported provider");
     }
 
-    const json = await postJson(endpoint, headers, body, { timeoutMs: opts?.timeoutMs, retries: opts?.retries });
-    let text;
-    if (provider === "anthropic") text = extractAnthropicText(json);
-    else if (provider === "openai") text = extractOpenAIText(json);
-    else text = extractXAIText(json);
-    this.#lastProvider = provider;
-    this.#callIndex++;
-    return text;
+    // Tool-aware loop
+    let step = 0;
+    /** @type {any[]} */
+    const localMessages = messages.map((m) => m.toJSON());
+    while (true) {
+      const json = await postJson(endpoint, headers, body, { timeoutMs: opts?.timeoutMs, retries: opts?.retries });
+      this.#lastProvider = provider;
+      this.#callIndex++;
+
+      // Parse tool calls
+      const calls =
+        provider === "anthropic"
+          ? parseAnthropicToolUses(json)
+          : provider === "openai"
+            ? parseOpenAIToolCalls(json)
+            : parseXAIToolCalls(json);
+      if (!usingTools || calls.length === 0) {
+        // Final content path
+        let text;
+        if (provider === "anthropic") text = extractAnthropicText(json);
+        else if (provider === "openai") text = extractOpenAIText(json);
+        else text = extractXAIText(json);
+        return text;
+      }
+
+      // Execute tools sequentially
+      /** @type {any[]} */
+      const toolResults = [];
+      for (const call of calls) {
+        const tool = this.tools.find((t) => t.name === call.name);
+        if (!tool) {
+          toolResults.push({ id: call.id, result: { error: `Unknown tool: ${call.name}` } });
+          continue;
+        }
+        // Validate args
+        if (!tool.parameters.validate(call.args)) {
+          const msg = `Invalid arguments for ${tool.name}`;
+          toolResults.push({ id: call.id, result: { error: msg } });
+          continue;
+        }
+        // Execute with timeout
+        const exec = tool.execute({ args: call.args, ctx: { model: this.model } });
+        const result = await withTimeout(exec, tool.options.timeoutMs).catch((e) => ({
+          error: String(e?.message || e),
+        }));
+        // Validate result if schema present
+        if (tool.resultSchema && !tool.resultSchema.validate(result)) {
+          toolResults.push({ id: call.id, result: { error: `Invalid result for ${tool.name}` } });
+        } else {
+          toolResults.push({ id: call.id, result });
+        }
+      }
+
+      // Append tool results as messages and continue loop
+      if (provider === "anthropic") {
+        for (const tr of toolResults) {
+          const msg = buildAnthropicToolResult(tr.id, tr.result);
+          localMessages.push(msg);
+        }
+        body.messages = localMessages;
+      } else if (provider === "openai") {
+        const toolMsgs = toolResults.map((tr) => buildOpenAIToolResult(tr.id, tr.result));
+        localMessages.push(...toolMsgs);
+        body.messages = localMessages;
+      } else {
+        const toolMsgs = toolResults.map((tr) => buildXAIToolResult(tr.id, tr.result));
+        localMessages.push(...toolMsgs);
+        body.messages = localMessages;
+      }
+
+      step++;
+      if (step >= 4) return ""; // graceful stop if model keeps looping
+    }
   }
+}
+
+/**
+ * @param {Promise<any>} promise
+ * @param {number} ms
+ */
+async function withTimeout(promise, ms) {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error("Tool timed out")), ms);
+    promise.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      }
+    );
+  });
 }
