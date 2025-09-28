@@ -138,5 +138,4 @@ class AlternatingChat extends Chat {
 
 ## Notes
 
-- This module does not add tool/function calling yet; adapters are structured to extend later without breaking the public API.
 - Secrets are never accepted via parameters; only environment variables are used.
