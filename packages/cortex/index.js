@@ -104,6 +104,15 @@ export {
   NeuralNetwork,
   Tfidf,
 } from "./learning/index.js";
+// Export parsing utilities
+export {
+  extractAssetsFromHtml,
+  extractLinksFromHtml,
+  extractUrlsFromHtml,
+  htmlToContent,
+  htmlToText,
+  isProbablyReadableHtml,
+} from "./parsing/index.js";
 // Export primitive functions
 export { fnv1a32, fnv1a64, fnv32 } from "./primitives/index.js";
 // Export relay (LLM abstraction)

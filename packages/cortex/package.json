@@ -41,6 +41,10 @@
       "import": "./primitives/index.js",
       "types": "./primitives/index.js"
     },
+    "./parsing": {
+      "import": "./parsing/index.js",
+      "types": "./parsing/index.js"
+    },
     "./relay": {
       "import": "./relay/index.js",
       "types": "./relay/index.js"
