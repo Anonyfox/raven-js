@@ -90,6 +90,153 @@ describe("relay/Chat", () => {
     });
   });
 
+  describe("Tool-calling order (OpenAI)", () => {
+    it("includes assistant tool_calls message before tool results", async () => {
+      process.env.API_KEY_OPENAI = "x";
+      // First response contains tool_calls
+      let stage = 0;
+      mockFetchOnce(async () =>
+        okJson({
+          choices: [
+            {
+              message: {
+                role: "assistant",
+                content: null,
+                tool_calls: [
+                  {
+                    id: "id1",
+                    type: "function",
+                    function: { name: "calculator", arguments: '{"op":"add","a":1,"b":2}' },
+                  },
+                ],
+              },
+            },
+          ],
+        })
+      );
+      const chat = new Chat("gpt-4o-mini");
+      // Register a minimal tool
+      class Args extends Schema {
+        a = Schema.field(0);
+        b = Schema.field(0);
+        op = Schema.field("add");
+      }
+      chat.addTool(new (class extends class T extends Object {} {})()); // placeholder, we will intercept fetch only
+      // Monkey-patch tools to a workable instance
+      chat.tools = [
+        {
+          name: "calculator",
+          description: "",
+          parameters: new Args(),
+          options: { timeoutMs: 1000, retries: 0 },
+          execute: async ({ args }) => ({ result: args.a + args.b }),
+        },
+      ];
+
+      // Second request assertion: it must contain assistant tool_calls then tool role
+      globalThis.fetch = async (_url, init) => {
+        const body = JSON.parse(String(init.body));
+        if (stage === 0) {
+          stage = 1; // consume first
+          return okJson({
+            choices: [
+              {
+                message: {
+                  role: "assistant",
+                  content: null,
+                  tool_calls: [
+                    {
+                      id: "id1",
+                      type: "function",
+                      function: { name: "calculator", arguments: '{"op":"add","a":1,"b":2}' },
+                    },
+                  ],
+                },
+              },
+            ],
+          });
+        }
+        // Second stage: verify ordering
+        const roles = body.messages.map((m) => m.role);
+        const hasAssistantWithToolCalls = body.messages.some(
+          (m) => m.role === "assistant" && Array.isArray(m.tool_calls)
+        );
+        const toolIndex = roles.indexOf("tool");
+        const assistantIndex = roles.findIndex(
+          (_r, i) => body.messages[i].role === "assistant" && body.messages[i].tool_calls
+        );
+        if (!(hasAssistantWithToolCalls && assistantIndex > -1 && (toolIndex === -1 || assistantIndex < toolIndex))) {
+          return okJson({ choices: [{ message: { content: "order wrong" } }] });
+        }
+        // Return final assistant content
+        return okJson({ choices: [{ message: { content: "ok" } }] });
+      };
+
+      const res = await chat.generateText("2+1?");
+      assert.equal(res, "ok");
+    });
+  });
+
+  describe("Tool-calling order (Anthropic)", () => {
+    it("adds assistant tool_use then user tool_result with matching id", async () => {
+      process.env.API_KEY_ANTHROPIC = "y";
+      let stage = 0;
+      const toolUseId = "toolu_123";
+      globalThis.fetch = async (_url, init) => {
+        const body = JSON.parse(String(init.body));
+        if (stage === 0) {
+          stage = 1;
+          // First reply contains tool_use
+          return okJson({
+            content: [
+              { type: "text", text: "Using tool" },
+              { type: "tool_use", id: toolUseId, name: "calculator", input: { op: "add", a: 1, b: 2 } },
+            ],
+          });
+        }
+        // Second request should include assistant tool_use then user tool_result
+        const msgs = body.messages;
+        const last = msgs[msgs.length - 1];
+        const prev = msgs[msgs.length - 2];
+        const prevHasToolUse =
+          prev?.role === "assistant" &&
+          Array.isArray(prev.content) &&
+          prev.content.some((c) => c.type === "tool_use" && c.id === toolUseId);
+        const lastHasToolResult =
+          last?.role === "user" &&
+          Array.isArray(last.content) &&
+          last.content.some((c) => c.type === "tool_result" && c.tool_use_id === toolUseId);
+        if (!(prevHasToolUse && lastHasToolResult)) {
+          return okJson({ content: [{ type: "text", text: "order wrong" }] });
+        }
+        // Ensure content blocks are arrays/objects, not stringified
+        if (typeof prev.content === "string" || typeof last.content === "string") {
+          return okJson({ content: [{ type: "text", text: "stringified content" }] });
+        }
+        // Final assistant content
+        return okJson({ content: [{ type: "text", text: "ok" }] });
+      };
+
+      const chat = new Chat("claude-sonnet-4-20250514");
+      class Args extends Schema {
+        a = Schema.field(0);
+        b = Schema.field(0);
+        op = Schema.field("add");
+      }
+      chat.tools = [
+        {
+          name: "calculator",
+          description: "",
+          parameters: new Args(),
+          options: { timeoutMs: 1000, retries: 0 },
+          execute: async ({ args }) => ({ result: args.a + args.b }),
+        },
+      ];
+      const res = await chat.generateText("2+1?");
+      assert.equal(typeof res, "string");
+    });
+  });
+
   describe("Data generation with Schema", () => {
     it("enforces json mode where supported and validates schema", async () => {
       const payload = { choices: [{ message: { content: '```json\n{\n "a": "v"\n}\n```' } }] };

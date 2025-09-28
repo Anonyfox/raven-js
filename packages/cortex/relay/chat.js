@@ -15,7 +15,6 @@ import {
   ANTHROPIC_ENDPOINT,
   anthropicHeaders,
   buildAnthropicRequest,
-  buildAnthropicToolResult,
   buildAnthropicTools,
   extractAnthropicText,
   parseAnthropicToolUses,
@@ -257,6 +256,8 @@ export class Chat {
     let body;
 
     const usingTools = this.tools.length > 0;
+    /** @type {string|undefined} */
+    let anthropicSystem;
     if (provider === "openai") {
       endpoint = OPENAI_ENDPOINT;
       headers = openAIHeaders();
@@ -272,6 +273,8 @@ export class Chat {
       headers = anthropicHeaders();
       body = buildAnthropicRequest({ model: this.model, messages: messages.map((m) => m.toJSON()), forceJson });
       if (usingTools) body.tools = buildAnthropicTools(this.tools);
+      // Preserve top-level system prompt and ensure it's not echoed in messages
+      anthropicSystem = body.system;
     } else {
       throw new Error("Unsupported provider");
     }
@@ -329,18 +332,37 @@ export class Chat {
         }
       }
 
-      // Append tool results as messages and continue loop
+      // Append assistant tool_calls message when required, then tool results
       if (provider === "anthropic") {
-        for (const tr of toolResults) {
-          const msg = buildAnthropicToolResult(tr.id, tr.result);
-          localMessages.push(msg);
+        // Include the assistant message containing tool_use blocks
+        const assistantContent = json?.content;
+        if (Array.isArray(assistantContent)) {
+          // Preserve full content array without stringifying
+          localMessages.push({ role: "assistant", content: assistantContent });
         }
-        body.messages = localMessages;
+
+        // Build a single user message containing all tool_result blocks
+        const resultBlocks = toolResults.map((tr) => ({
+          type: "tool_result",
+          tool_use_id: tr.id,
+          content: typeof tr.result === "string" ? tr.result : JSON.stringify(tr.result),
+        }));
+        localMessages.push({ role: "user", content: resultBlocks });
+
+        // Ensure system prompt stays top-level and is not inside messages
+        if (anthropicSystem) body.system = anthropicSystem;
+        body.messages = localMessages.filter((m) => m.role !== "system");
       } else if (provider === "openai") {
+        // Include the assistant message containing tool_calls
+        const assistant = json?.choices?.[0]?.message;
+        if (assistant) localMessages.push(assistant);
         const toolMsgs = toolResults.map((tr) => buildOpenAIToolResult(tr.id, tr.result));
         localMessages.push(...toolMsgs);
         body.messages = localMessages;
       } else {
+        // xAI follows OpenAI shape: include assistant tool_calls first
+        const assistant = json?.choices?.[0]?.message;
+        if (assistant) localMessages.push(assistant);
         const toolMsgs = toolResults.map((tr) => buildXAIToolResult(tr.id, tr.result));
         localMessages.push(...toolMsgs);
         body.messages = localMessages;
