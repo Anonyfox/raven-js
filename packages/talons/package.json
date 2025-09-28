@@ -1,7 +1,7 @@
 {
   "name": "@raven-js/talons",
   "description": "Zero-dependency data interaction library for modern JavaScript - databases, APIs, and data sources",
-  "version": "0.4.41",
+  "version": "0.4.42",
   "type": "module",
   "main": "index.js",
   "files": [
