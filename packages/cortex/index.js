@@ -106,6 +106,8 @@ export {
 } from "./learning/index.js";
 // Export primitive functions
 export { fnv1a32, fnv1a64, fnv32 } from "./primitives/index.js";
+// Export relay (LLM abstraction)
+export { Chat, Message } from "./relay/index.js";
 // Export structural primitives
 export { Matrix, Schema } from "./structures/index.js";
 // Export temporal functions and classes

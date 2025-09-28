@@ -40,6 +40,10 @@
     "./primitives": {
       "import": "./primitives/index.js",
       "types": "./primitives/index.js"
+    },
+    "./relay": {
+      "import": "./relay/index.js",
+      "types": "./relay/index.js"
     }
   },
   "scripts": {

@@ -110,6 +110,7 @@ Cortex organizes intelligence into four specialized modules:
 - **Language** - AI text detection with hierarchical cascade architecture and multi-language support
 - **Structures** - Matrix operations and schema validation for data manipulation and type safety
 - **Temporal** - Holiday calculations and date utilities covering 30+ countries with governmental precision
+- **Relay** - Provider‑agnostic LLM chat abstraction (OpenAI, Anthropic, xAI) with schema‑validated structured outputs
 
 Each module can be imported individually for tree-shaking optimization:
 
@@ -118,6 +119,7 @@ import { NeuralNetwork } from "@raven-js/cortex/learning";
 import { isAIText } from "@raven-js/cortex/language";
 import { Matrix } from "@raven-js/cortex/structures";
 import { calculateEasterSunday } from "@raven-js/cortex/temporal";
+import { Chat } from "@raven-js/cortex/relay";
 ```
 
 ## Requirements
