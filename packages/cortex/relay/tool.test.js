@@ -9,14 +9,22 @@ class Args extends Schema {
 
 describe("relay/Tool", () => {
   it("constructs and exports schema json", () => {
-    const t = new Tool({ name: "noop", parameters: new Args() });
+    class TestTool extends Tool {
+      name = "noop";
+      parameters = new Args();
+    }
+    const t = new TestTool();
     assert.equal(t.name, "noop");
     const json = schemaToJsonObject(t.parameters);
     assert.equal(json.type, "object");
   });
 
   it("enforces execute abstract", async () => {
-    const t = new Tool({ name: "noop", parameters: new Args() });
+    class TestTool extends Tool {
+      name = "noop";
+      parameters = new Args();
+    }
+    const t = new TestTool();
     await assert.rejects(() => t.execute({ args: {} }));
   });
 });
