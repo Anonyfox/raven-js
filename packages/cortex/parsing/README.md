@@ -5,13 +5,13 @@
 [![ESM Only](https://img.shields.io/badge/ESM-Only-purple.svg)](https://nodejs.org/api/esm.html)
 [![Node.js 22.5+](https://img.shields.io/badge/Node.js-22.5+-green.svg)](https://nodejs.org/)
 
-Pure, DOM-free HTML parsing utilities: fast text conversion, readability checks, content extraction, and URL/asset discovery. Zero deps, string-only, deterministic.
+Pure, DOM-free parsing utilities: HTML text conversion, content extraction, URL/asset discovery, and .env loading. Zero deps, string-only, deterministic.
 
 ## Purpose
 
-- **DOM-free**: Stream-style regex tokenization; no jsdom, no browser APIs
+- **Zero dependencies**: Pure string processing; no jsdom, no browser APIs, no dotenv package
 - **Fast + deterministic**: O(n) over input slices, stable outputs, no side effects
-- **Just-enough knobs**: Base URL normalization, internal/external scoping, dedupe, and safety filters
+- **Just-enough knobs**: Essential options only—URL normalization, scoping filters, quote stripping
 
 ## Install
 
@@ -83,14 +83,31 @@ const assets = extractAssetsFromHtml(html, { base: "https://example.com" });
 // assets.images, assets.stylesheets, assets.scripts, assets.fonts, assets.media, assets.icons, assets.manifest
 ```
 
+```javascript
+// Parse .env file content (string → object)
+import { parseEnv } from "@raven-js/cortex/parsing";
+
+const config = parseEnv('KEY=value\nSECRET="quoted"\nURL=https://example.com?a=1&b=2');
+// { KEY: 'value', SECRET: 'quoted', URL: 'https://example.com?a=1&b=2' }
+```
+
+```javascript
+// Load .env file and apply to process.env
+import { loadEnv } from "@raven-js/cortex/parsing";
+
+loadEnv();              // loads .env from current directory
+loadEnv('.env.local');  // or specify path
+// process.env now contains all parsed variables
+```
+
 ## Requirements
 
 - Node.js 22.5+
 - ESM only ("type": "module")
 
-## The Raven’s Parsing
+## The Raven's Parsing
 
-Ravens learn structures without ceremony—these parsers harvest signal from raw HTML, fast. No DOM, minimal knobs, outputs that downstream systems can trust.
+Ravens learn structures without ceremony—these parsers harvest signal from raw formats, fast. No DOM, no dependencies, minimal knobs. Outputs that downstream systems can trust.
 
 ## 🦅 Support RavenJS Development
 

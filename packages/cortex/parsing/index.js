@@ -14,6 +14,7 @@
  * language semantics.
  */
 
+export { loadEnv, parseEnv } from "./dotenv.js";
 export { extractAssetsFromHtml } from "./extract-assets-from-html.js";
 export { extractLinksFromHtml } from "./extract-links-from-html.js";
 export { extractUrlsFromHtml } from "./extract-urls-from-html.js";
