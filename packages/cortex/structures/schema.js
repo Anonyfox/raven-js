@@ -10,12 +10,15 @@
  * @file JSON Schema implementation for data structure validation and type safety.
  *
  * Provides schema definition, validation, and serialization using vanilla JavaScript classes.
- * Supports primitive types, nested schemas, arrays, field metadata, optional fields, and enum constraints.
+ * Supports primitive types, nested schemas, arrays with explicit item types, field metadata,
+ * optional fields, and enum constraints. Array items can be defined using native constructors
+ * (String, Number, Boolean) or Schema instances for clean empty array defaults.
  */
 
 /**
  * @typedef {string | number | boolean} PrimitiveType
  * @typedef {PrimitiveType | Schema | Array<PrimitiveType | Schema>} SchemaField
+ * @typedef {StringConstructor | NumberConstructor | BooleanConstructor} PrimitiveConstructor
  */
 
 /**
@@ -23,6 +26,7 @@
  * @property {string} description
  * @property {boolean} optional
  * @property {Array<any>} [enum]
+ * @property {PrimitiveType | PrimitiveConstructor | Schema} [items]
  */
 
 /**
@@ -93,6 +97,28 @@
  * const doc = new Document();
  * doc.validate({ status: "published", priority: 3, tags: ["feature", "docs"] }); // true
  * doc.validate({ status: "invalid", priority: 99, tags: [] }); // false
+ *
+ * @example
+ * // Define arrays with explicit items type
+ * class Task extends Schema {
+ *   tags = Schema.field([], {
+ *     description: "Task tags",
+ *     items: String,
+ *     enum: ["urgent", "normal", "low"]
+ *   });
+ *   scores = Schema.field([], {
+ *     description: "Task scores",
+ *     items: Number
+ *   });
+ *   flags = Schema.field([], {
+ *     description: "Boolean flags",
+ *     items: Boolean
+ *   });
+ *   users = Schema.field([], {
+ *     description: "Assigned users",
+ *     items: new User()
+ *   });
+ * }
  */
 export class Schema {
   /**
@@ -159,7 +185,7 @@ export class Schema {
         isOptional = field.metadata.optional || false;
         description = field.metadata.description || "";
         enumValues = field.metadata.enum;
-        fieldSchema = this.#getFieldSchema(field.value);
+        fieldSchema = this.#getFieldSchema(field.value, field.metadata);
       } else {
         fieldSchema = this.#getFieldSchema(field);
       }
@@ -185,20 +211,52 @@ export class Schema {
    * Handles primitives, nested schemas, and arrays recursively.
    *
    * @param {SchemaField} field - Field to analyze
+   * @param {FieldMetadata} [metadata] - Optional field metadata with items type
    * @returns {object} Field schema definition
    */
-  #getFieldSchema(field) {
+  #getFieldSchema(field, metadata) {
     if (field instanceof Schema) {
       return this.#buildSchema(field);
     }
     if (Array.isArray(field)) {
-      const arrayItem = field[0];
+      // Use metadata.items if present, otherwise fallback to field[0]
+      const arrayItem = metadata?.items !== undefined ? metadata.items : field[0];
+      const itemSchema =
+        arrayItem instanceof Schema ? this.#buildSchema(arrayItem) : { type: this.#getTypeString(arrayItem) };
       return {
         type: "array",
-        items: arrayItem instanceof Schema ? this.#buildSchema(arrayItem) : { type: typeof arrayItem },
+        items: itemSchema,
       };
     }
     return { type: typeof field };
+  }
+
+  /**
+   * Convert value or constructor to JSON Schema type string.
+   * Maps native constructors and primitive values to their type names.
+   *
+   * @param {PrimitiveType | PrimitiveConstructor} value - Value or constructor
+   * @returns {string} JSON Schema type string
+   */
+  #getTypeString(value) {
+    if (value === String) return "string";
+    if (value === Number) return "number";
+    if (value === Boolean) return "boolean";
+    return typeof value;
+  }
+
+  /**
+   * Normalize constructor to primitive value for validation.
+   * Converts String/Number/Boolean constructors to sample primitive values.
+   *
+   * @param {PrimitiveType | PrimitiveConstructor | Schema} value - Value or constructor
+   * @returns {SchemaField} Normalized value (constructor converted to primitive)
+   */
+  #normalizeToPrimitive(value) {
+    if (value === String) return "";
+    if (value === Number) return 0;
+    if (value === Boolean) return false;
+    return /** @type {SchemaField} */ (value);
   }
 
   /**
@@ -218,7 +276,7 @@ export class Schema {
           }
           // Keep existing default value for optional fields
         } else {
-          field.value = this.#deserializeField(field.value, jsonData[key]);
+          field.value = this.#deserializeField(field.value, jsonData[key], field.metadata.items);
         }
       } else {
         if (jsonData[key] === undefined) {
@@ -245,7 +303,7 @@ export class Schema {
           throw new Error(`Missing required property: ${key}`);
         }
         if (value !== undefined) {
-          this.#validateField(field.value, value, key, field.metadata.enum);
+          this.#validateField(field.value, value, key, field.metadata.enum, field.metadata.items);
         }
       } else {
         if (value === undefined) {
@@ -264,9 +322,10 @@ export class Schema {
    * @param {any} value - Actual value to validate
    * @param {string} key - Field name for error context
    * @param {Array<any>} [enumValues] - Optional enum constraint for value validation
+   * @param {PrimitiveType | PrimitiveConstructor | Schema} [items] - Optional array items type
    * @throws {Error} Type mismatch or structure validation errors
    */
-  #validateField(field, value, key, enumValues) {
+  #validateField(field, value, key, enumValues, items) {
     if (field instanceof Schema) {
       if (typeof value !== "object" || value === null) {
         throw new Error(`Invalid type for ${key}: expected object`);
@@ -277,9 +336,12 @@ export class Schema {
       if (!Array.isArray(value)) {
         throw new Error(`Invalid type for ${key}: expected array`);
       }
-      const arrayItem = field[0];
+      // Use items if present, otherwise fallback to field[0]
+      const arrayItem = items !== undefined ? items : field[0];
+      // Normalize constructors to primitives for validation
+      const normalizedItem = this.#normalizeToPrimitive(arrayItem);
       value.forEach((item, index) => {
-        this.#validateField(arrayItem, item, `${key}[${index}]`, enumValues);
+        this.#validateField(normalizedItem, item, `${key}[${index}]`, enumValues);
       });
     } else if (value !== undefined && typeof value !== typeof field) {
       throw new Error(`Invalid type for ${key}: expected ${typeof field}, got ${typeof value}`);
@@ -312,9 +374,10 @@ export class Schema {
    *
    * @param {SchemaField} field - Field type definition
    * @param {any} value - Value to deserialize
+   * @param {PrimitiveType | PrimitiveConstructor | Schema} [items] - Optional array items type
    * @returns {any} Deserialized value with correct types
    */
-  #deserializeField(field, value) {
+  #deserializeField(field, value, items) {
     if (field instanceof Schema) {
       const NestedSchemaConstructor = /** @type {new () => Schema} */ (field.constructor);
       const nestedInstance = new NestedSchemaConstructor();
@@ -322,9 +385,12 @@ export class Schema {
       return nestedInstance;
     }
     if (Array.isArray(field)) {
-      const arrayItem = field[0];
+      // Use items if present, otherwise fallback to field[0]
+      const arrayItem = items !== undefined ? items : field[0];
+      // Normalize constructors to primitives for deserialization
+      const normalizedItem = this.#normalizeToPrimitive(arrayItem);
       return value.map((/** @type {any} */ item) =>
-        arrayItem instanceof Schema ? this.#deserializeField(arrayItem, item) : item
+        normalizedItem instanceof Schema ? this.#deserializeField(normalizedItem, item) : item
       );
     }
     return value;
@@ -340,13 +406,17 @@ export class Schema {
    * @param {string} [options.description] - Human-readable field description
    * @param {boolean} [options.optional=false] - Whether field is optional
    * @param {Array<any>} [options.enum] - Array of allowed values for enum validation
+   * @param {PrimitiveType | PrimitiveConstructor | Schema} [options.items] - Array item type (for arrays)
    * @returns {{ value: T, metadata: FieldMetadata }} Field with metadata
    */
-  static field(value, { description = "", optional = false, enum: enumValues } = {}) {
+  static field(value, { description = "", optional = false, enum: enumValues, items } = {}) {
     /** @type {FieldMetadata} */
     const metadata = { description, optional };
     if (enumValues !== undefined) {
       metadata.enum = enumValues;
+    }
+    if (items !== undefined) {
+      metadata.items = items;
     }
     return { value, metadata };
   }

@@ -82,6 +82,40 @@ describe("Schema", () => {
     });
   }
 
+  class ItemsConstructorSchema extends Schema {
+    tags = Schema.field([], {
+      description: "String array",
+      items: String,
+      enum: ["bug", "feature", "docs"],
+    });
+    scores = Schema.field([], {
+      description: "Number array",
+      items: Number,
+    });
+    flags = Schema.field([], {
+      description: "Boolean array",
+      items: Boolean,
+    });
+  }
+
+  class ItemsPrimitiveSchema extends Schema {
+    names = Schema.field([], {
+      description: "Names",
+      items: "",
+    });
+    counts = Schema.field([], {
+      description: "Counts",
+      items: 0,
+    });
+  }
+
+  class ItemsSchemaArray extends Schema {
+    users = Schema.field([], {
+      description: "User list",
+      items: new SimpleSchema(),
+    });
+  }
+
   describe("Static field method", () => {
     it("should create field with default metadata", () => {
       const field = Schema.field("test");
@@ -703,6 +737,160 @@ describe("Schema", () => {
 
       assert.strictEqual(json.properties.name.enum, undefined);
       assert.strictEqual(json.properties.age.enum, undefined);
+    });
+  });
+
+  describe("Array items with constructors", () => {
+    it("should create field with items metadata", () => {
+      const field = Schema.field([], {
+        items: String,
+        enum: ["a", "b", "c"],
+      });
+
+      assert.deepStrictEqual(field.value, []);
+      assert.strictEqual(field.metadata.items, String);
+      assert.ok(field.metadata.enum);
+    });
+
+    it("should generate JSON schema with constructor types", () => {
+      const schema = new ItemsConstructorSchema();
+      const json = JSON.parse(schema.toJSON());
+
+      assert.strictEqual(json.properties.tags.type, "array");
+      assert.strictEqual(json.properties.tags.items.type, "string");
+      assert.strictEqual(json.properties.scores.type, "array");
+      assert.strictEqual(json.properties.scores.items.type, "number");
+      assert.strictEqual(json.properties.flags.type, "array");
+      assert.strictEqual(json.properties.flags.items.type, "boolean");
+    });
+
+    it("should validate arrays with constructor items", () => {
+      const schema = new ItemsConstructorSchema();
+      const validData = {
+        tags: ["bug", "feature"],
+        scores: [1, 2, 3],
+        flags: [true, false],
+      };
+      const invalidStringData = {
+        tags: ["bug"],
+        scores: [1, "two"],
+        flags: [true],
+      };
+      const invalidBoolData = {
+        tags: ["bug"],
+        scores: [1],
+        flags: [true, "false"],
+      };
+
+      assert.strictEqual(schema.validate(validData), true);
+      assert.strictEqual(schema.validate(invalidStringData), false);
+      assert.strictEqual(schema.validate(invalidBoolData), false);
+    });
+
+    it("should validate empty arrays with items", () => {
+      const schema = new ItemsConstructorSchema();
+      const emptyData = {
+        tags: [],
+        scores: [],
+        flags: [],
+      };
+
+      assert.strictEqual(schema.validate(emptyData), true);
+    });
+
+    it("should populate arrays with constructor items", () => {
+      const schema = new ItemsConstructorSchema();
+      const data = {
+        tags: ["bug", "docs"],
+        scores: [5, 10, 15],
+        flags: [true],
+      };
+
+      schema.fromJSON(data);
+
+      assert.deepStrictEqual(schema.tags.value, ["bug", "docs"]);
+      assert.deepStrictEqual(schema.scores.value, [5, 10, 15]);
+      assert.deepStrictEqual(schema.flags.value, [true]);
+    });
+
+    it("should validate enum with constructor items", () => {
+      const schema = new ItemsConstructorSchema();
+      const validData = {
+        tags: ["bug", "feature"],
+        scores: [1],
+        flags: [true],
+      };
+      const invalidEnum = {
+        tags: ["invalid"],
+        scores: [1],
+        flags: [true],
+      };
+
+      assert.strictEqual(schema.validate(validData), true);
+      assert.strictEqual(schema.validate(invalidEnum), false);
+    });
+
+    it("should work with primitive items values (backward compat)", () => {
+      const schema = new ItemsPrimitiveSchema();
+      const json = JSON.parse(schema.toJSON());
+
+      assert.strictEqual(json.properties.names.items.type, "string");
+      assert.strictEqual(json.properties.counts.items.type, "number");
+    });
+
+    it("should validate arrays with primitive items", () => {
+      const schema = new ItemsPrimitiveSchema();
+      const validData = {
+        names: ["Alice", "Bob"],
+        counts: [1, 2, 3],
+      };
+      const invalidData = {
+        names: ["Alice"],
+        counts: ["not a number"],
+      };
+
+      assert.strictEqual(schema.validate(validData), true);
+      assert.strictEqual(schema.validate(invalidData), false);
+    });
+
+    it("should handle schema arrays with items", () => {
+      const schema = new ItemsSchemaArray();
+      const json = JSON.parse(schema.toJSON());
+
+      assert.strictEqual(json.properties.users.type, "array");
+      assert.strictEqual(json.properties.users.items.type, "object");
+      assert.ok(json.properties.users.items.properties.name);
+    });
+
+    it("should validate and populate schema arrays with items", () => {
+      const schema = new ItemsSchemaArray();
+      const validData = {
+        users: [
+          { name: "Alice", age: 30, active: true },
+          { name: "Bob", age: 25, active: false },
+        ],
+      };
+      const invalidData = {
+        users: [{ name: "Alice", age: 30 }], // missing active
+      };
+
+      assert.strictEqual(schema.validate(validData), true);
+      assert.strictEqual(schema.validate(invalidData), false);
+
+      schema.fromJSON(validData);
+      assert.strictEqual(schema.users.value.length, 2);
+      assert.ok(schema.users.value[0] instanceof SimpleSchema);
+      assert.strictEqual(schema.users.value[0].name.value, "Alice");
+    });
+
+    it("should handle empty arrays with schema items", () => {
+      const schema = new ItemsSchemaArray();
+      const emptyData = { users: [] };
+
+      assert.strictEqual(schema.validate(emptyData), true);
+
+      schema.fromJSON(emptyData);
+      assert.deepStrictEqual(schema.users.value, []);
     });
   });
 });
