@@ -82,24 +82,54 @@ random.reluInPlace(); // Apply ReLU activation
 // Schema validation for type safety
 import { Schema } from "@raven-js/cortex/structures";
 
+// Define schemas with validation rules
 class User extends Schema {
   name = Schema.field("", { description: "User's full name" });
   age = Schema.field(0, { description: "Age in years" });
   email = Schema.field("", { description: "Email address", optional: true });
+  status = Schema.field("active", {
+    description: "Account status",
+    enum: ["active", "inactive", "suspended"],
+  });
+  roles = Schema.field([], {
+    description: "User roles",
+    items: String,
+    enum: ["admin", "user", "guest"],
+  });
 }
 
-const userSchema = new User();
+const user = new User();
 
-// Validate data structures
-const validData = { name: "Alice", age: 30, email: "alice@example.com" };
-const isValid = userSchema.validate(validData);
-console.log(isValid); // true
+// Boolean validation without modification
+const validData = {
+  name: "Alice",
+  age: 30,
+  status: "active",
+  roles: ["admin", "user"],
+};
+console.log(user.validate(validData)); // true
 
-const invalidData = { name: "Bob" }; // Missing required 'age'
-try {
-  userSchema.validate(invalidData);
-} catch (error) {
-  console.log(error.message); // Validation error details
+// Deserialize and populate schema fields
+user.fromJSON(validData);
+console.log(user.name.value); // "Alice"
+console.log(user.roles.value); // ["admin", "user"]
+
+// Generate JSON Schema output
+const schema = JSON.parse(user.toJSON());
+console.log(schema.properties.status.enum); // ["active", "inactive", "suspended"]
+
+// Arrays with explicit types (clean empty defaults)
+class Task extends Schema {
+  tags = Schema.field([], {
+    description: "Task tags",
+    items: String, // Use native constructors
+  });
+  scores = Schema.field([], {
+    items: Number,
+  });
+  assignees = Schema.field([], {
+    items: new User(), // Nested schema arrays
+  });
 }
 ```
 
