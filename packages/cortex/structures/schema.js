@@ -164,6 +164,78 @@ export class Schema {
   }
 
   /**
+   * Create a deep clone of this schema instance with all field values.
+   * Prevents mutation of original schema when passed to functions.
+   *
+   * @returns {this} New schema instance with cloned values
+   */
+  clone() {
+    const Ctor = /** @type {new () => this} */ (this.constructor);
+    const cloned = new Ctor();
+    for (const [key, field] of Object.entries(this)) {
+      if (field?.metadata) {
+        /** @type {any} */ (cloned)[key] = {
+          value: this.#cloneValue(field.value),
+          metadata: { ...field.metadata },
+        };
+      } else {
+        /** @type {any} */ (cloned)[key] = this.#cloneValue(field);
+      }
+    }
+    return cloned;
+  }
+
+  /**
+   * Extract plain JavaScript object from populated schema.
+   * Recursively converts nested schemas and arrays to plain data.
+   *
+   * @returns {Record<string, any>} Plain object with schema data
+   */
+  toObject() {
+    /** @type {Record<string, any>} */
+    const obj = {};
+    for (const [key, field] of Object.entries(this)) {
+      obj[key] = field?.metadata ? this.#extractValue(field.value) : this.#extractValue(field);
+    }
+    return obj;
+  }
+
+  /**
+   * Deep clone a field value recursively.
+   * Handles primitives, arrays, and nested schemas.
+   *
+   * @param {any} value - Value to clone
+   * @returns {any} Cloned value
+   */
+  #cloneValue(value) {
+    if (value instanceof Schema) {
+      return value.clone();
+    }
+    if (Array.isArray(value)) {
+      return value.map((item) => this.#cloneValue(item));
+    }
+    // Primitives are immutable
+    return value;
+  }
+
+  /**
+   * Extract plain value from schema field recursively.
+   * Converts schema instances to plain objects.
+   *
+   * @param {any} value - Value to extract
+   * @returns {any} Plain value
+   */
+  #extractValue(value) {
+    if (value instanceof Schema) {
+      return value.toObject();
+    }
+    if (Array.isArray(value)) {
+      return value.map((item) => this.#extractValue(item));
+    }
+    return value;
+  }
+
+  /**
    * Build JSON Schema object from instance field definitions.
    * Introspects class properties to generate schema structure.
    *

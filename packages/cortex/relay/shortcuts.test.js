@@ -33,4 +33,35 @@ describe("relay/shortcuts", () => {
     const res = await genData("u", schema, { model: "gpt-4o-mini" });
     assert.equal(res.value.value, "x");
   });
+
+  it("genData does not mutate input schema", async () => {
+    const payload = { choices: [{ message: { content: '{"value":"populated"}' } }] };
+    mockFetchOnce(async () => okJson(payload));
+    const schema = new Demo();
+    const originalValue = schema.value.value;
+    const res = await genData("u", schema, { model: "gpt-4o-mini" });
+    assert.equal(schema.value.value, originalValue);
+    assert.equal(res.value.value, "populated");
+  });
+
+  it("genData allows schema reuse", async () => {
+    mockFetchOnce(async () => okJson({ choices: [{ message: { content: '{"value":"first"}' } }] }));
+    const schema = new Demo();
+    const res1 = await genData("u", schema, { model: "gpt-4o-mini" });
+    assert.equal(res1.value.value, "first");
+
+    mockFetchOnce(async () => okJson({ choices: [{ message: { content: '{"value":"second"}' } }] }));
+    const res2 = await genData("u", schema, { model: "gpt-4o-mini" });
+    assert.equal(res2.value.value, "second");
+    assert.equal(schema.value.value, "");
+  });
+
+  it("toObject extracts plain data from result", async () => {
+    const payload = { choices: [{ message: { content: '{"value":"test"}' } }] };
+    mockFetchOnce(async () => okJson(payload));
+    const schema = new Demo();
+    const res = await genData("u", schema, { model: "gpt-4o-mini" });
+    const plain = res.toObject();
+    assert.deepStrictEqual(plain, { value: "test" });
+  });
 });

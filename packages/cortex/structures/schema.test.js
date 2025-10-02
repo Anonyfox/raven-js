@@ -893,4 +893,188 @@ describe("Schema", () => {
       assert.deepStrictEqual(schema.users.value, []);
     });
   });
+
+  describe("clone()", () => {
+    it("should create deep copy with primitives", () => {
+      const original = new SimpleSchema();
+      original.name.value = "Alice";
+      original.age.value = 30;
+      original.active.value = false;
+
+      const cloned = original.clone();
+
+      assert.notStrictEqual(cloned, original);
+      assert.strictEqual(cloned.name.value, "Alice");
+      assert.strictEqual(cloned.age.value, 30);
+      assert.strictEqual(cloned.active.value, false);
+
+      // Mutate clone, original unchanged
+      cloned.name.value = "Bob";
+      assert.strictEqual(original.name.value, "Alice");
+      assert.strictEqual(cloned.name.value, "Bob");
+    });
+
+    it("should deep clone nested schemas", () => {
+      const original = new NestedSchema();
+      original.simple.value.name.value = "Alice";
+      original.simple.value.age.value = 30;
+      original.count.value = 5;
+
+      const cloned = original.clone();
+
+      assert.notStrictEqual(cloned, original);
+      assert.notStrictEqual(cloned.simple.value, original.simple.value);
+      assert.strictEqual(cloned.simple.value.name.value, "Alice");
+      assert.strictEqual(cloned.simple.value.age.value, 30);
+      assert.strictEqual(cloned.count.value, 5);
+
+      // Mutate nested clone
+      cloned.simple.value.name.value = "Bob";
+      assert.strictEqual(original.simple.value.name.value, "Alice");
+      assert.strictEqual(cloned.simple.value.name.value, "Bob");
+    });
+
+    it("should deep clone arrays", () => {
+      const original = new ArraySchema();
+      original.numbers.value = [1, 2, 3];
+      original.strings.value = ["a", "b"];
+
+      const cloned = original.clone();
+
+      assert.notStrictEqual(cloned.numbers.value, original.numbers.value);
+      assert.deepStrictEqual(cloned.numbers.value, [1, 2, 3]);
+
+      // Mutate clone array
+      cloned.numbers.value.push(4);
+      assert.deepStrictEqual(original.numbers.value, [1, 2, 3]);
+      assert.deepStrictEqual(cloned.numbers.value, [1, 2, 3, 4]);
+    });
+
+    it("should deep clone arrays of schemas", () => {
+      const original = new NestedArraySchema();
+      original.fromJSON({
+        schemas: [
+          { name: "Alice", age: 30, active: true },
+          { name: "Bob", age: 25, active: false },
+        ],
+      });
+
+      const cloned = original.clone();
+
+      assert.notStrictEqual(cloned.schemas.value, original.schemas.value);
+      assert.notStrictEqual(cloned.schemas.value[0], original.schemas.value[0]);
+      assert.strictEqual(cloned.schemas.value[0].name.value, "Alice");
+
+      // Mutate nested schema in clone
+      cloned.schemas.value[0].name.value = "Charlie";
+      assert.strictEqual(original.schemas.value[0].name.value, "Alice");
+      assert.strictEqual(cloned.schemas.value[0].name.value, "Charlie");
+    });
+
+    it("should preserve metadata in clone", () => {
+      const original = new SchemaWithOptional();
+      const cloned = original.clone();
+
+      assert.ok(cloned.required.metadata);
+      assert.ok(cloned.optional.metadata);
+      assert.strictEqual(cloned.optional.metadata.optional, true);
+      assert.notStrictEqual(cloned.optional.metadata, original.optional.metadata);
+    });
+  });
+
+  describe("toObject()", () => {
+    it("should extract plain object from simple schema", () => {
+      const schema = new SimpleSchema();
+      schema.name.value = "Alice";
+      schema.age.value = 30;
+      schema.active.value = true;
+
+      const obj = schema.toObject();
+
+      assert.deepStrictEqual(obj, {
+        name: "Alice",
+        age: 30,
+        active: true,
+      });
+      assert.strictEqual(typeof obj, "object");
+      assert.strictEqual(obj.constructor, Object);
+    });
+
+    it("should extract nested schemas recursively", () => {
+      const schema = new NestedSchema();
+      schema.simple.value.name.value = "Alice";
+      schema.simple.value.age.value = 30;
+      schema.simple.value.active.value = false;
+      schema.count.value = 5;
+
+      const obj = schema.toObject();
+
+      assert.deepStrictEqual(obj, {
+        simple: {
+          name: "Alice",
+          age: 30,
+          active: false,
+        },
+        count: 5,
+      });
+    });
+
+    it("should extract arrays with primitives", () => {
+      const schema = new ArraySchema();
+      schema.numbers.value = [1, 2, 3];
+      schema.strings.value = ["a", "b", "c"];
+      schema.booleans.value = [true, false];
+
+      const obj = schema.toObject();
+
+      assert.deepStrictEqual(obj, {
+        numbers: [1, 2, 3],
+        strings: ["a", "b", "c"],
+        booleans: [true, false],
+      });
+    });
+
+    it("should extract arrays of schemas", () => {
+      const schema = new NestedArraySchema();
+      schema.fromJSON({
+        schemas: [
+          { name: "Alice", age: 30, active: true },
+          { name: "Bob", age: 25, active: false },
+        ],
+      });
+
+      const obj = schema.toObject();
+
+      assert.deepStrictEqual(obj, {
+        schemas: [
+          { name: "Alice", age: 30, active: true },
+          { name: "Bob", age: 25, active: false },
+        ],
+      });
+    });
+
+    it("should handle plain fields without metadata", () => {
+      const schema = new PlainFieldSchema();
+      schema.plainString = "test";
+      schema.plainNumber = 42;
+      schema.plainBoolean = true;
+
+      const obj = schema.toObject();
+
+      assert.deepStrictEqual(obj, {
+        plainString: "test",
+        plainNumber: 42,
+        plainBoolean: true,
+      });
+    });
+
+    it("should extract empty arrays", () => {
+      const schema = new ArraySchema();
+
+      const obj = schema.toObject();
+
+      assert.deepStrictEqual(obj.numbers, [0]);
+      assert.deepStrictEqual(obj.strings, [""]);
+    });
+  });
 });

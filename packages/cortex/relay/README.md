@@ -34,8 +34,19 @@ class FlightPlan extends Schema {
   winter = Schema.field("", { description: "Where to fly in winter" });
 }
 
-const data = await genData("Where should Nevermore fly?", new FlightPlan());
+// Input schema is cloned - never mutated
+const schema = new FlightPlan();
+const data = await genData("Where should Nevermore fly?", schema);
+
+// Access via .value wrapper
 console.log(data.summer.value);
+
+// Or extract plain object
+const plain = data.toObject();
+console.log(plain.summer); // Direct access
+
+// Schema reusable
+const data2 = await genData("Different destinations?", schema);
 ```
 
 ## Multi‑step chat

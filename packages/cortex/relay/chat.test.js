@@ -253,6 +253,30 @@ describe("relay/Chat", () => {
       const schema = new SimpleData();
       await assert.rejects(() => chat.generateData("u", schema), /Invalid response data/);
     });
+
+    it("does not mutate input schema", async () => {
+      const payload = { choices: [{ message: { content: '{"a":"populated"}' } }] };
+      mockFetchOnce(async () => okJson(payload));
+      const chat = new Chat("gpt-4o-mini");
+      const schema = new SimpleData();
+      const originalValue = schema.a.value;
+      const res = await chat.generateData("u", schema);
+      assert.equal(schema.a.value, originalValue);
+      assert.equal(res.a.value, "populated");
+    });
+
+    it("allows schema reuse across multiple calls", async () => {
+      mockFetchOnce(async () => okJson({ choices: [{ message: { content: '{"a":"first"}' } }] }));
+      const chat = new Chat("gpt-4o-mini");
+      const schema = new SimpleData();
+      const res1 = await chat.generateData("u1", schema);
+      assert.equal(res1.a.value, "first");
+
+      mockFetchOnce(async () => okJson({ choices: [{ message: { content: '{"a":"second"}' } }] }));
+      const res2 = await chat.generateData("u2", schema);
+      assert.equal(res2.a.value, "second");
+      assert.equal(schema.a.value, "");
+    });
   });
 
   describe("Serialization", () => {

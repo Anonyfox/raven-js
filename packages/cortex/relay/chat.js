@@ -127,6 +127,7 @@ export class Chat {
 
   /**
    * One-shot structured data generation.
+   * Input schema is cloned to prevent mutation of the original.
    * @param {string} userPrompt
    * @param {Schema} schema
    * @param {string} [systemPrompt]
@@ -154,28 +155,30 @@ export class Chat {
 
   /**
    * Generate structured data and populate schema instance.
+   * Input schema is cloned to prevent mutation of the original.
    * @param {string} userPrompt
    * @param {Schema} schema
    * @param {CallOptions} [opts]
    * @returns {Promise<Schema>}
    */
   async generateData(userPrompt, schema, opts) {
+    const instance = schema.clone();
     const prompt = (
       `${userPrompt}\n\n` +
       `Answer with json data that matches this schema:\n` +
-      `${schema.toJSON()}`
+      `${instance.toJSON()}`
     ).trim();
 
     const messages = [...this.messages, new Message("user", prompt)];
     const text = await this.#call(messages, true, opts);
 
     const stripped = stripCodeFences(text);
-    if (!schema.validate(stripped)) {
+    if (!instance.validate(stripped)) {
       throw new Error(`Invalid response data: ${stripped}`);
     }
-    schema.fromJSON(stripped);
+    instance.fromJSON(stripped);
     this.addUserMessage(prompt).addAssistantMessage(stripped);
-    return schema;
+    return instance;
   }
 
   /**
