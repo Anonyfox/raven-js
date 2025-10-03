@@ -121,6 +121,16 @@ describe("Context", () => {
       // Reset for next test
       ctx = new Context("GET", url, headers);
 
+      // Raw response with custom MIME type
+      const rawBuffer = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+      await ctx.raw(rawBuffer, "image/png");
+      assert.equal(ctx.responseHeaders.get("content-type"), "image/png");
+      assert(Buffer.isBuffer(ctx.responseBody));
+      assert.equal(ctx.responseBody.length, 4);
+
+      // Reset for next test
+      ctx = new Context("GET", url, headers);
+
       // Redirect responses
       await ctx.redirect("/new-location");
       assert.equal(ctx.responseStatusCode, 302);
@@ -1104,6 +1114,221 @@ describe("Context", () => {
 
       ctx.responseStatusCode = 403;
       assert.equal(ctx.isNotFound(), false);
+    });
+  });
+
+  describe("raw method", () => {
+    it("should send raw binary data with custom MIME type", async () => {
+      // Simulate PNG header bytes
+      const pngBuffer = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+      await ctx.raw(pngBuffer, "image/png");
+
+      assert.equal(ctx.responseStatusCode, 200);
+      assert.equal(ctx.responseHeaders.get("content-type"), "image/png");
+      assert(Buffer.isBuffer(ctx.responseBody));
+      assert.equal(ctx.responseBody.length, 8);
+      assert.equal(ctx.responseHeaders.get("content-length"), "8");
+    });
+
+    it("should send raw string data with custom MIME type", async () => {
+      const svg = '<svg><circle cx="50" cy="50" r="40"/></svg>';
+      await ctx.raw(svg, "image/svg+xml");
+
+      assert.equal(ctx.responseStatusCode, 200);
+      assert.equal(ctx.responseHeaders.get("content-type"), "image/svg+xml");
+      assert.equal(ctx.responseBody, svg);
+      assert.equal(ctx.responseHeaders.get("content-length"), "43");
+    });
+
+    it("should handle various binary formats", async () => {
+      // PDF
+      const pdfBuffer = Buffer.from([0x25, 0x50, 0x44, 0x46]); // %PDF
+      await ctx.raw(pdfBuffer, "application/pdf");
+      assert.equal(ctx.responseHeaders.get("content-type"), "application/pdf");
+      assert.equal(ctx.responseHeaders.get("content-length"), "4");
+
+      // Reset
+      ctx = new Context("GET", url, headers);
+
+      // WOFF2 font
+      const woff2Buffer = Buffer.from([0x77, 0x4f, 0x46, 0x32]); // wOF2
+      await ctx.raw(woff2Buffer, "font/woff2");
+      assert.equal(ctx.responseHeaders.get("content-type"), "font/woff2");
+      assert.equal(ctx.responseHeaders.get("content-length"), "4");
+
+      // Reset
+      ctx = new Context("GET", url, headers);
+
+      // Audio
+      const mp3Buffer = Buffer.from([0xff, 0xfb]);
+      await ctx.raw(mp3Buffer, "audio/mpeg");
+      assert.equal(ctx.responseHeaders.get("content-type"), "audio/mpeg");
+      assert.equal(ctx.responseHeaders.get("content-length"), "2");
+
+      // Reset
+      ctx = new Context("GET", url, headers);
+
+      // Video
+      const mp4Buffer = Buffer.from([0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70]);
+      await ctx.raw(mp4Buffer, "video/mp4");
+      assert.equal(ctx.responseHeaders.get("content-type"), "video/mp4");
+      assert.equal(ctx.responseHeaders.get("content-length"), "8");
+    });
+
+    it("should handle promise data", async () => {
+      const promiseBuffer = Promise.resolve(Buffer.from("binary data"));
+      await ctx.raw(promiseBuffer, "application/octet-stream");
+
+      assert.equal(ctx.responseStatusCode, 200);
+      assert.equal(ctx.responseHeaders.get("content-type"), "application/octet-stream");
+      assert(Buffer.isBuffer(ctx.responseBody));
+      assert.equal(ctx.responseBody.toString(), "binary data");
+      assert.equal(ctx.responseHeaders.get("content-length"), "11");
+    });
+
+    it("should handle promise string data", async () => {
+      const promiseSvg = Promise.resolve('<svg><rect width="100" height="100"/></svg>');
+      await ctx.raw(promiseSvg, "image/svg+xml");
+
+      assert.equal(ctx.responseStatusCode, 200);
+      assert.equal(ctx.responseHeaders.get("content-type"), "image/svg+xml");
+      assert.equal(ctx.responseBody, '<svg><rect width="100" height="100"/></svg>');
+    });
+
+    it("should support method chaining", async () => {
+      const imageBuffer = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+      const result = await ctx.raw(imageBuffer, "image/png");
+      result.responseHeaders.set("cache-control", "max-age=3600");
+      result.responseHeaders.set("x-source", "cdn");
+
+      assert.equal(ctx.responseStatusCode, 200);
+      assert.equal(ctx.responseHeaders.get("content-type"), "image/png");
+      assert.equal(ctx.responseHeaders.get("cache-control"), "max-age=3600");
+      assert.equal(ctx.responseHeaders.get("x-source"), "cdn");
+    });
+
+    it("should handle empty buffer", async () => {
+      const emptyBuffer = Buffer.from([]);
+      await ctx.raw(emptyBuffer, "application/octet-stream");
+
+      assert.equal(ctx.responseStatusCode, 200);
+      assert.equal(ctx.responseHeaders.get("content-type"), "application/octet-stream");
+      assert.equal(ctx.responseHeaders.get("content-length"), "0");
+    });
+
+    it("should handle empty string", async () => {
+      await ctx.raw("", "text/plain");
+
+      assert.equal(ctx.responseStatusCode, 200);
+      assert.equal(ctx.responseHeaders.get("content-type"), "text/plain");
+      assert.equal(ctx.responseBody, "");
+      assert.equal(ctx.responseHeaders.get("content-length"), "0");
+    });
+
+    it("should handle falsy values", async () => {
+      // Null
+      await ctx.raw(null, "application/octet-stream");
+      assert.equal(ctx.responseBody, "");
+      assert.equal(ctx.responseHeaders.get("content-length"), "0");
+
+      // Reset
+      ctx = new Context("GET", url, headers);
+
+      // Undefined
+      await ctx.raw(undefined, "application/octet-stream");
+      assert.equal(ctx.responseBody, "");
+      assert.equal(ctx.responseHeaders.get("content-length"), "0");
+
+      // Reset
+      ctx = new Context("GET", url, headers);
+
+      // 0
+      await ctx.raw(0, "application/octet-stream");
+      assert.equal(ctx.responseBody, "");
+      assert.equal(ctx.responseHeaders.get("content-length"), "0");
+
+      // Reset
+      ctx = new Context("GET", url, headers);
+
+      // False
+      await ctx.raw(false, "application/octet-stream");
+      assert.equal(ctx.responseBody, "");
+      assert.equal(ctx.responseHeaders.get("content-length"), "0");
+    });
+
+    it("should handle large binary data", async () => {
+      const largeBuffer = Buffer.alloc(10000);
+      largeBuffer.fill(0xff);
+      await ctx.raw(largeBuffer, "application/octet-stream");
+
+      assert.equal(ctx.responseStatusCode, 200);
+      assert.equal(ctx.responseHeaders.get("content-type"), "application/octet-stream");
+      assert.equal(ctx.responseHeaders.get("content-length"), "10000");
+      assert.equal(ctx.responseBody.length, 10000);
+    });
+
+    it("should handle unicode in string data", async () => {
+      const unicodeText = "Hello 世界 🌍";
+      await ctx.raw(unicodeText, "text/plain; charset=utf-8");
+
+      assert.equal(ctx.responseStatusCode, 200);
+      assert.equal(ctx.responseHeaders.get("content-type"), "text/plain; charset=utf-8");
+      assert.equal(ctx.responseBody, unicodeText);
+      assert.equal(ctx.responseHeaders.get("content-length"), "17");
+    });
+
+    it("should handle custom MIME types", async () => {
+      const customData = Buffer.from("custom binary format");
+      await ctx.raw(customData, "application/x-custom-format");
+
+      assert.equal(ctx.responseHeaders.get("content-type"), "application/x-custom-format");
+      assert.equal(ctx.responseBody.toString(), "custom binary format");
+    });
+
+    it("should handle rejected promises", async () => {
+      const rejectedPromise = Promise.reject(new Error("Failed to load data"));
+
+      await assert.rejects(async () => await ctx.raw(rejectedPromise, "image/png"), {
+        message: "Failed to load data",
+      });
+    });
+
+    it("should handle async binary data generation", async () => {
+      const asyncOperation = () =>
+        new Promise((resolve) => {
+          setTimeout(() => resolve(Buffer.from([0x42, 0x4d])), 10); // BM (bitmap)
+        });
+
+      await ctx.raw(asyncOperation(), "image/bmp");
+
+      assert.equal(ctx.responseStatusCode, 200);
+      assert.equal(ctx.responseHeaders.get("content-type"), "image/bmp");
+      assert(Buffer.isBuffer(ctx.responseBody));
+      assert.equal(ctx.responseBody[0], 0x42);
+      assert.equal(ctx.responseBody[1], 0x4d);
+    });
+
+    it("should invalidate byte length cache on new raw() call", async () => {
+      // First call
+      await ctx.raw(Buffer.from("short"), "application/octet-stream");
+      assert.equal(ctx.responseHeaders.get("content-length"), "5");
+
+      // Second call with different data
+      await ctx.raw(Buffer.from("much longer data here"), "application/octet-stream");
+      assert.equal(ctx.responseHeaders.get("content-length"), "21");
+
+      // Verify cache was properly invalidated
+      assert.equal(ctx.responseBody.toString(), "much longer data here");
+    });
+
+    it("should work with toResponse()", async () => {
+      const imageBuffer = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+      await ctx.raw(imageBuffer, "image/png");
+
+      const response = ctx.toResponse();
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get("content-type"), "image/png");
+      assert.equal(response.headers.get("content-length"), "4");
     });
   });
 

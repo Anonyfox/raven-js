@@ -1421,6 +1421,82 @@ export class Context {
   }
 
   /**
+   * Sends a 200 OK response with arbitrary binary or text content and custom MIME type.
+   *
+   * This is a low-level method for sending raw responses with explicit content types.
+   * It handles any content type including images, PDFs, fonts, audio, video, and
+   * other binary or text formats. The content can be provided as a string or Buffer.
+   *
+   * **Promise Support**: If data is a promise, it will be awaited and the resolved
+   * value will be used as the response body. This enables seamless async content
+   * generation for images from S3, dynamically generated PDFs, processed media, etc.
+   *
+   * **Use Cases**:
+   * - Images (PNG, JPEG, WebP, GIF, SVG, etc.)
+   * - Documents (PDF, Word, Excel, etc.)
+   * - Fonts (WOFF, WOFF2, TTF, OTF, etc.)
+   * - Audio/Video (MP3, MP4, WebM, etc.)
+   * - Raw binary data (protobuf, msgpack, etc.)
+   * - Custom text formats with specific MIME types
+   *
+   * **Note**: This method provides no automatic content type detection or validation.
+   * You must explicitly specify the correct MIME type for the content.
+   *
+   * @param {string|Buffer|Promise<string|Buffer>} data - The raw content to send or a promise that resolves to content
+   * @param {string} mimeType - The MIME type for the Content-Type header (e.g., 'image/png', 'application/pdf')
+   * @returns {Promise<Context>} The Context instance for method chaining
+   *
+   * @example
+   * ```javascript
+   * // Send PNG image
+   * const pngBuffer = await fs.readFile('image.png');
+   * await ctx.raw(pngBuffer, 'image/png');
+   * // Result: 200 OK, Content-Type: image/png, Content-Length: [buffer size]
+   *
+   * // Send PDF document
+   * const pdfBuffer = await generatePDF(data);
+   * await ctx.raw(pdfBuffer, 'application/pdf');
+   * // Result: 200 OK, Content-Type: application/pdf
+   *
+   * // Send SVG image (as string)
+   * const svg = '<svg><circle cx="50" cy="50" r="40"/></svg>';
+   * await ctx.raw(svg, 'image/svg+xml');
+   * // Result: 200 OK, Content-Type: image/svg+xml
+   *
+   * // Send async image from S3
+   * await ctx.raw(fetchImageFromS3(key), 'image/webp');
+   * // Automatically awaits the S3 fetch
+   *
+   * // Send WOFF2 font
+   * const fontBuffer = await fs.readFile('font.woff2');
+   * await ctx.raw(fontBuffer, 'font/woff2');
+   *
+   * // Send audio file
+   * const mp3Buffer = await fs.readFile('audio.mp3');
+   * await ctx.raw(mp3Buffer, 'audio/mpeg');
+   *
+   * // Send custom binary format
+   * const protobufData = encodeProtobuf(message);
+   * await ctx.raw(protobufData, 'application/x-protobuf');
+   *
+   * // Method chaining with promises
+   * await ctx.raw(Promise.resolve(imageBuffer), 'image/jpeg');
+   * ctx.responseHeaders.set('cache-control', 'max-age=3600');
+   * ctx.responseHeaders.set('x-image-source', 's3');
+   * ```
+   */
+  async raw(data, mimeType) {
+    // Await data if it's a promise
+    const resolvedData = await data;
+
+    this.responseStatusCode = STATUS_CODES.OK;
+    this.responseHeaders.set(HEADER_NAMES.CONTENT_TYPE, mimeType);
+    this.#setResponseBodyWithCache(resolvedData);
+    this.responseHeaders.set(HEADER_NAMES.CONTENT_LENGTH, this.#getResponseBodyByteLength());
+    return this;
+  }
+
+  /**
    * Redirects the client to a different URL.
    *
    * This method sets up an HTTP redirect response by setting the Location
@@ -1664,7 +1740,8 @@ export class Context {
     }
 
     // Create Response with current context state
-    return new Response(this.responseBody, {
+    // Note: Buffer is a subclass of Uint8Array and is accepted by Response constructor
+    return new Response(/** @type {BodyInit} */ (this.responseBody), {
       status: this.responseStatusCode,
       headers: headersInit,
     });
