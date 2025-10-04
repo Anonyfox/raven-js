@@ -1,7 +1,7 @@
 {
   "name": "@raven-js/hatch",
   "description": "Zero-dependency app bootstrapping and tutorial CLI for modern JavaScript",
-  "version": "0.4.47",
+  "version": "0.4.48",
   "type": "module",
   "main": "index.js",
   "bin": {
