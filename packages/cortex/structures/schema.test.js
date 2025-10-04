@@ -538,6 +538,169 @@ describe("Schema", () => {
     });
   });
 
+  describe("Optional fields with null/undefined", () => {
+    it("should accept null for optional string field", () => {
+      const schema = new SchemaWithOptional();
+      const data = { required: "test", optional: null };
+
+      assert.strictEqual(schema.validate(data), true);
+    });
+
+    it("should accept undefined for optional string field", () => {
+      const schema = new SchemaWithOptional();
+      const data = { required: "test", optional: undefined };
+
+      assert.strictEqual(schema.validate(data), true);
+    });
+
+    it("should accept null in fromJSON for optional field", () => {
+      const schema = new SchemaWithOptional();
+      schema.optional.value = "original";
+      const data = { required: "test", optional: null };
+
+      schema.fromJSON(data);
+
+      assert.strictEqual(schema.required.value, "test");
+      // Null in optional field keeps default value
+      assert.strictEqual(schema.optional.value, "original");
+    });
+
+    it("should accept undefined in fromJSON for optional field", () => {
+      const schema = new SchemaWithOptional();
+      schema.optional.value = "original";
+      const data = { required: "test", optional: undefined };
+
+      schema.fromJSON(data);
+
+      assert.strictEqual(schema.required.value, "test");
+      assert.strictEqual(schema.optional.value, "original");
+    });
+
+    it("should reject null for required field", () => {
+      const schema = new SimpleSchema();
+      const data = { name: null, age: 30, active: true };
+
+      assert.strictEqual(schema.validate(data), false);
+    });
+
+    it("should reject undefined for required field", () => {
+      const schema = new SimpleSchema();
+      const data = { name: undefined, age: 30, active: true };
+
+      assert.strictEqual(schema.validate(data), false);
+    });
+
+    it("should handle optional fields with various null patterns", () => {
+      class MultiOptionalSchema extends Schema {
+        required = Schema.field("", { description: "Required field" });
+        optString = Schema.field("default", {
+          description: "Optional string",
+          optional: true,
+        });
+        optNumber = Schema.field(0, {
+          description: "Optional number",
+          optional: true,
+        });
+        optBool = Schema.field(false, {
+          description: "Optional bool",
+          optional: true,
+        });
+      }
+
+      const schema = new MultiOptionalSchema();
+      const allNull = {
+        required: "test",
+        optString: null,
+        optNumber: null,
+        optBool: null,
+      };
+      const allUndefined = {
+        required: "test",
+        optString: undefined,
+        optNumber: undefined,
+        optBool: undefined,
+      };
+      const mixed = {
+        required: "test",
+        optString: "value",
+        optNumber: null,
+        optBool: undefined,
+      };
+
+      assert.strictEqual(schema.validate(allNull), true);
+      assert.strictEqual(schema.validate(allUndefined), true);
+      assert.strictEqual(schema.validate(mixed), true);
+
+      schema.fromJSON(allNull);
+      assert.strictEqual(schema.required.value, "test");
+      assert.strictEqual(schema.optString.value, "default");
+      assert.strictEqual(schema.optNumber.value, 0);
+      assert.strictEqual(schema.optBool.value, false);
+    });
+
+    it("should handle optional nested schema with null", () => {
+      class OptionalNestedSchema extends Schema {
+        name = Schema.field("", { description: "Name" });
+        profile = Schema.field(new SimpleSchema(), {
+          description: "Profile",
+          optional: true,
+        });
+      }
+
+      const schema = new OptionalNestedSchema();
+      const data = { name: "test", profile: null };
+
+      assert.strictEqual(schema.validate(data), true);
+
+      schema.fromJSON(data);
+      assert.strictEqual(schema.name.value, "test");
+      assert.ok(schema.profile.value instanceof SimpleSchema);
+    });
+
+    it("should handle optional array with null", () => {
+      class OptionalArraySchema extends Schema {
+        required = Schema.field("", { description: "Required" });
+        tags = Schema.field([], {
+          description: "Tags",
+          optional: true,
+          items: String,
+        });
+      }
+
+      const schema = new OptionalArraySchema();
+      const data = { required: "test", tags: null };
+
+      assert.strictEqual(schema.validate(data), true);
+
+      schema.fromJSON(data);
+      assert.strictEqual(schema.required.value, "test");
+      assert.deepStrictEqual(schema.tags.value, []);
+    });
+
+    it("should handle optional enum field with null", () => {
+      class OptionalEnumNullSchema extends Schema {
+        required = Schema.field("", { description: "Required" });
+        status = Schema.field("draft", {
+          description: "Status",
+          optional: true,
+          enum: ["draft", "published"],
+        });
+      }
+
+      const schema = new OptionalEnumNullSchema();
+      const validNull = { required: "test", status: null };
+      const validValue = { required: "test", status: "published" };
+      const invalidValue = { required: "test", status: "invalid" };
+
+      assert.strictEqual(schema.validate(validNull), true);
+      assert.strictEqual(schema.validate(validValue), true);
+      assert.strictEqual(schema.validate(invalidValue), false);
+
+      schema.fromJSON(validNull);
+      assert.strictEqual(schema.status.value, "draft");
+    });
+  });
+
   describe("Error handling and edge cases", () => {
     it("should handle empty objects", () => {
       const schema = new SimpleSchema();
@@ -546,7 +709,7 @@ describe("Schema", () => {
       assert.throws(() => schema.fromJSON({}), /Missing required property/);
     });
 
-    it("should handle null values", () => {
+    it("should handle null values for required fields", () => {
       const schema = new SimpleSchema();
       const data = { name: null, age: 30, active: true };
 
@@ -979,6 +1142,267 @@ describe("Schema", () => {
       assert.ok(cloned.optional.metadata);
       assert.strictEqual(cloned.optional.metadata.optional, true);
       assert.notStrictEqual(cloned.optional.metadata, original.optional.metadata);
+    });
+  });
+
+  describe("Array min/max constraints", () => {
+    class MinMaxArraySchema extends Schema {
+      tags = Schema.field([], {
+        description: "Tags with constraints",
+        items: String,
+        min: 1,
+        max: 5,
+      });
+      scores = Schema.field([], {
+        description: "Scores with min only",
+        items: Number,
+        min: 2,
+      });
+      flags = Schema.field([], {
+        description: "Flags with max only",
+        items: Boolean,
+        max: 3,
+      });
+      unrestricted = Schema.field([], {
+        description: "No constraints",
+        items: String,
+      });
+    }
+
+    it("should create field with min and max metadata", () => {
+      const field = Schema.field([], {
+        items: String,
+        min: 1,
+        max: 10,
+      });
+
+      assert.deepStrictEqual(field.value, []);
+      assert.strictEqual(field.metadata.min, 1);
+      assert.strictEqual(field.metadata.max, 10);
+    });
+
+    it("should include minItems and maxItems in JSON Schema output", () => {
+      const schema = new MinMaxArraySchema();
+      const json = JSON.parse(schema.toJSON());
+
+      assert.strictEqual(json.properties.tags.minItems, 1);
+      assert.strictEqual(json.properties.tags.maxItems, 5);
+      assert.strictEqual(json.properties.scores.minItems, 2);
+      assert.strictEqual(json.properties.scores.maxItems, undefined);
+      assert.strictEqual(json.properties.flags.minItems, undefined);
+      assert.strictEqual(json.properties.flags.maxItems, 3);
+      assert.strictEqual(json.properties.unrestricted.minItems, undefined);
+      assert.strictEqual(json.properties.unrestricted.maxItems, undefined);
+    });
+
+    it("should validate arrays within min/max bounds", () => {
+      const schema = new MinMaxArraySchema();
+      const validData = {
+        tags: ["a", "b", "c"],
+        scores: [1, 2, 3],
+        flags: [true, false],
+        unrestricted: [],
+      };
+
+      assert.strictEqual(schema.validate(validData), true);
+    });
+
+    it("should validate array exactly at min boundary", () => {
+      const schema = new MinMaxArraySchema();
+      const data = {
+        tags: ["one"],
+        scores: [1, 2],
+        flags: [],
+        unrestricted: [],
+      };
+
+      assert.strictEqual(schema.validate(data), true);
+    });
+
+    it("should validate array exactly at max boundary", () => {
+      const schema = new MinMaxArraySchema();
+      const data = {
+        tags: ["a", "b", "c", "d", "e"],
+        scores: [1, 2],
+        flags: [true, false, true],
+        unrestricted: [],
+      };
+
+      assert.strictEqual(schema.validate(data), true);
+    });
+
+    it("should reject array below minimum length", () => {
+      const schema = new MinMaxArraySchema();
+      const data = {
+        tags: [],
+        scores: [1, 2],
+        flags: [],
+        unrestricted: [],
+      };
+
+      assert.strictEqual(schema.validate(data), false);
+    });
+
+    it("should reject array above maximum length", () => {
+      const schema = new MinMaxArraySchema();
+      const data = {
+        tags: ["a", "b", "c", "d", "e", "f"],
+        scores: [1, 2],
+        flags: [],
+        unrestricted: [],
+      };
+
+      assert.strictEqual(schema.validate(data), false);
+    });
+
+    it("should reject array with only min constraint violated", () => {
+      const schema = new MinMaxArraySchema();
+      const data = {
+        tags: ["a"],
+        scores: [1],
+        flags: [],
+        unrestricted: [],
+      };
+
+      assert.strictEqual(schema.validate(data), false);
+    });
+
+    it("should reject array with only max constraint violated", () => {
+      const schema = new MinMaxArraySchema();
+      const data = {
+        tags: ["a"],
+        scores: [1, 2],
+        flags: [true, false, true, false],
+        unrestricted: [],
+      };
+
+      assert.strictEqual(schema.validate(data), false);
+    });
+
+    it("should allow unrestricted array with any length", () => {
+      const schema = new MinMaxArraySchema();
+      const data = {
+        tags: ["a"],
+        scores: [1, 2],
+        flags: [],
+        unrestricted: ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"],
+      };
+
+      assert.strictEqual(schema.validate(data), true);
+    });
+
+    it("should throw detailed error for min violation in fromJSON", () => {
+      const schema = new MinMaxArraySchema();
+      const data = {
+        tags: [],
+        scores: [1, 2],
+        flags: [],
+        unrestricted: [],
+      };
+
+      assert.throws(
+        () => schema.fromJSON(data),
+        (error) => {
+          return (
+            error.message.includes("length") && error.message.includes("minimum") && error.message.includes("tags")
+          );
+        }
+      );
+    });
+
+    it("should throw detailed error for max violation in fromJSON", () => {
+      const schema = new MinMaxArraySchema();
+      const data = {
+        tags: ["a", "b", "c", "d", "e", "f"],
+        scores: [1, 2],
+        flags: [],
+        unrestricted: [],
+      };
+
+      assert.throws(
+        () => schema.fromJSON(data),
+        (error) => {
+          return (
+            error.message.includes("length") && error.message.includes("maximum") && error.message.includes("tags")
+          );
+        }
+      );
+    });
+
+    it("should populate arrays respecting min/max constraints", () => {
+      const schema = new MinMaxArraySchema();
+      const data = {
+        tags: ["a", "b", "c"],
+        scores: [10, 20, 30],
+        flags: [true],
+        unrestricted: ["x", "y"],
+      };
+
+      schema.fromJSON(data);
+
+      assert.deepStrictEqual(schema.tags.value, ["a", "b", "c"]);
+      assert.deepStrictEqual(schema.scores.value, [10, 20, 30]);
+      assert.deepStrictEqual(schema.flags.value, [true]);
+      assert.deepStrictEqual(schema.unrestricted.value, ["x", "y"]);
+    });
+
+    it("should combine min/max with enum constraints", () => {
+      class CombinedSchema extends Schema {
+        tags = Schema.field([], {
+          description: "Tags",
+          items: String,
+          enum: ["bug", "feature", "docs"],
+          min: 1,
+          max: 3,
+        });
+      }
+
+      const schema = new CombinedSchema();
+      const validData = { tags: ["bug", "feature"] };
+      const invalidEnum = { tags: ["bug", "invalid"] };
+      const invalidMin = { tags: [] };
+      const invalidMax = { tags: ["bug", "feature", "docs", "bug"] };
+
+      assert.strictEqual(schema.validate(validData), true);
+      assert.strictEqual(schema.validate(invalidEnum), false);
+      assert.strictEqual(schema.validate(invalidMin), false);
+      assert.strictEqual(schema.validate(invalidMax), false);
+    });
+
+    it("should work with nested schema arrays and min/max", () => {
+      class NestedMinMaxSchema extends Schema {
+        users = Schema.field([], {
+          description: "Users",
+          items: new SimpleSchema(),
+          min: 1,
+          max: 3,
+        });
+      }
+
+      const schema = new NestedMinMaxSchema();
+      const validData = {
+        users: [
+          { name: "Alice", age: 30, active: true },
+          { name: "Bob", age: 25, active: false },
+        ],
+      };
+      const invalidMin = { users: [] };
+      const invalidMax = {
+        users: [
+          { name: "Alice", age: 30, active: true },
+          { name: "Bob", age: 25, active: false },
+          { name: "Charlie", age: 35, active: true },
+          { name: "David", age: 40, active: false },
+        ],
+      };
+
+      assert.strictEqual(schema.validate(validData), true);
+      assert.strictEqual(schema.validate(invalidMin), false);
+      assert.strictEqual(schema.validate(invalidMax), false);
+
+      schema.fromJSON(validData);
+      assert.strictEqual(schema.users.value.length, 2);
+      assert.ok(schema.users.value[0] instanceof SimpleSchema);
     });
   });
 

@@ -27,6 +27,8 @@
  * @property {boolean} optional
  * @property {Array<any>} [enum]
  * @property {PrimitiveType | PrimitiveConstructor | Schema} [items]
+ * @property {number} [min]
+ * @property {number} [max]
  */
 
 /**
@@ -99,20 +101,24 @@
  * doc.validate({ status: "invalid", priority: 99, tags: [] }); // false
  *
  * @example
- * // Define arrays with explicit items type
+ * // Define arrays with explicit items type and length constraints
  * class Task extends Schema {
  *   tags = Schema.field([], {
  *     description: "Task tags",
  *     items: String,
- *     enum: ["urgent", "normal", "low"]
+ *     enum: ["urgent", "normal", "low"],
+ *     min: 1,
+ *     max: 5
  *   });
  *   scores = Schema.field([], {
  *     description: "Task scores",
- *     items: Number
+ *     items: Number,
+ *     min: 1
  *   });
  *   flags = Schema.field([], {
  *     description: "Boolean flags",
- *     items: Boolean
+ *     items: Boolean,
+ *     max: 10
  *   });
  *   users = Schema.field([], {
  *     description: "Assigned users",
@@ -295,10 +301,18 @@ export class Schema {
       const arrayItem = metadata?.items !== undefined ? metadata.items : field[0];
       const itemSchema =
         arrayItem instanceof Schema ? this.#buildSchema(arrayItem) : { type: this.#getTypeString(arrayItem) };
-      return {
+      /** @type {Record<string, any>} */
+      const schema = {
         type: "array",
         items: itemSchema,
       };
+      if (metadata?.min !== undefined) {
+        schema.minItems = metadata.min;
+      }
+      if (metadata?.max !== undefined) {
+        schema.maxItems = metadata.max;
+      }
+      return schema;
     }
     return { type: typeof field };
   }
@@ -342,13 +356,16 @@ export class Schema {
   #populateFromJson(instance, jsonData) {
     for (const [key, field] of Object.entries(instance)) {
       if (field?.metadata) {
-        if (jsonData[key] === undefined) {
+        const value = jsonData[key];
+        if (value === undefined) {
           if (!field.metadata.optional) {
             throw new Error(`Missing required property: ${key}`);
           }
           // Keep existing default value for optional fields
+        } else if (field.metadata.optional && value === null) {
+          // For optional fields with null, keep default value (don't populate null)
         } else {
-          field.value = this.#deserializeField(field.value, jsonData[key], field.metadata.items);
+          field.value = this.#deserializeField(field.value, value, field.metadata.items);
         }
       } else {
         if (jsonData[key] === undefined) {
@@ -371,11 +388,27 @@ export class Schema {
     for (const [key, field] of Object.entries(instance)) {
       const value = jsonData[key];
       if (field?.metadata) {
+        // Check for missing required field
         if (!field.metadata.optional && value === undefined) {
           throw new Error(`Missing required property: ${key}`);
         }
-        if (value !== undefined) {
-          this.#validateField(field.value, value, key, field.metadata.enum, field.metadata.items);
+        // Optional fields accept null/undefined - skip validation
+        if (field.metadata.optional && (value === null || value === undefined)) {
+          // Valid: optional field with null/undefined
+        } else if (value !== undefined && value !== null) {
+          // Valid value present - validate it
+          this.#validateField(
+            field.value,
+            value,
+            key,
+            field.metadata.enum,
+            field.metadata.items,
+            field.metadata.min,
+            field.metadata.max
+          );
+        } else if (!field.metadata.optional && value === null) {
+          // Invalid: required field with null
+          throw new Error(`Invalid type for ${key}: expected ${typeof field.value}, got null`);
         }
       } else {
         if (value === undefined) {
@@ -395,9 +428,11 @@ export class Schema {
    * @param {string} key - Field name for error context
    * @param {Array<any>} [enumValues] - Optional enum constraint for value validation
    * @param {PrimitiveType | PrimitiveConstructor | Schema} [items] - Optional array items type
+   * @param {number} [min] - Optional minimum array length
+   * @param {number} [max] - Optional maximum array length
    * @throws {Error} Type mismatch or structure validation errors
    */
-  #validateField(field, value, key, enumValues, items) {
+  #validateField(field, value, key, enumValues, items, min, max) {
     if (field instanceof Schema) {
       if (typeof value !== "object" || value === null) {
         throw new Error(`Invalid type for ${key}: expected object`);
@@ -407,6 +442,13 @@ export class Schema {
     } else if (Array.isArray(field)) {
       if (!Array.isArray(value)) {
         throw new Error(`Invalid type for ${key}: expected array`);
+      }
+      // Validate array length constraints
+      if (min !== undefined && value.length < min) {
+        throw new Error(`Array ${key} length ${value.length} is less than minimum ${min}`);
+      }
+      if (max !== undefined && value.length > max) {
+        throw new Error(`Array ${key} length ${value.length} exceeds maximum ${max}`);
       }
       // Use items if present, otherwise fallback to field[0]
       const arrayItem = items !== undefined ? items : field[0];
@@ -479,9 +521,11 @@ export class Schema {
    * @param {boolean} [options.optional=false] - Whether field is optional
    * @param {Array<any>} [options.enum] - Array of allowed values for enum validation
    * @param {PrimitiveType | PrimitiveConstructor | Schema} [options.items] - Array item type (for arrays)
+   * @param {number} [options.min] - Minimum array length (for arrays)
+   * @param {number} [options.max] - Maximum array length (for arrays)
    * @returns {{ value: T, metadata: FieldMetadata }} Field with metadata
    */
-  static field(value, { description = "", optional = false, enum: enumValues, items } = {}) {
+  static field(value, { description = "", optional = false, enum: enumValues, items, min, max } = {}) {
     /** @type {FieldMetadata} */
     const metadata = { description, optional };
     if (enumValues !== undefined) {
@@ -489,6 +533,12 @@ export class Schema {
     }
     if (items !== undefined) {
       metadata.items = items;
+    }
+    if (min !== undefined) {
+      metadata.min = min;
+    }
+    if (max !== undefined) {
+      metadata.max = max;
     }
     return { value, metadata };
   }
